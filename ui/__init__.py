@@ -6,7 +6,7 @@ def setup():
 
 
 def start():
-    pass
+    gl.start()
 
 
 __all__ = ["setup", "start"]
