@@ -15,6 +15,8 @@ if __name__ == "__main__":
     os.environ["KIVY_NO_CONSOLELOG"] = "True"
     # noinspection PyUnresolvedReferences
     import kivy
+    from kivy.logger import Logger
+    Logger.setLevel(int(os.environ["LOG_LEVEL"]))
     base_logger.log_info("Set up kivy")
 
 
