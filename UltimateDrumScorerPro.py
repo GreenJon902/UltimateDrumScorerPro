@@ -19,5 +19,7 @@ if __name__ == "__main__":
 
 
     base_logger.log_info("Starting")
+    import app
+    app.start()
     base_logger.log_info("Finished")
 

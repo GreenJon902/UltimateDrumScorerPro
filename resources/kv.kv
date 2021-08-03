@@ -1,0 +1,62 @@
+#:set bar_size 50
+#:set bar_size_hint None
+
+
+
+BoxLayout:
+    orientation: "vertical"
+
+
+
+    BoxLayout: # HeaderBar
+        size_hint_y: bar_size_hint
+        height: bar_size
+
+
+        canvas.before:
+            Color:
+                rgb: 0.5, 0.5, 0.5
+
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+
+
+
+    BoxLayout:
+        orientation: "horizontal"
+
+
+
+
+        BoxLayout: # SideBar
+            size_hint_x: bar_size_hint
+            width: bar_size
+
+            canvas.before:
+                Color:
+                    rgb: 0.4, 0.4, 0.4
+
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+
+
+
+
+        BoxLayout: # Page
+            canvas.before:
+                Color:
+                    rgb: 0.2, 0.2, 0.2
+
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+
+
+
+<HoverButton@Button>:
+
