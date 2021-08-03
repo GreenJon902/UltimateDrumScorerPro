@@ -1,1 +1,0 @@
-default_window_size = 100, 200
