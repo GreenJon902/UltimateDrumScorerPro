@@ -44,7 +44,7 @@ BoxLayout:
                     pos: self.pos
                     size: self.size
 
-            HoverButton:
+            SquareHoverButton:
                 name: "add_text"
 
             Widget:
@@ -76,4 +76,9 @@ BoxLayout:
 
     Image:
         id: image
+
+
+<SquareHoverButton@HoverButton>:
+    size_hint_y: None
+    on_width: self.height = self.width
 
