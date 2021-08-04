@@ -1,6 +1,10 @@
 #:set bar_size 50
 #:set bar_size_hint None
 
+#:set header_color ([0.5] * 3)
+#:set side_bar_color ([0.4] * 3)
+#:set bg_color ([0.2] * 3)
+
 
 
 BoxLayout:
@@ -15,7 +19,7 @@ BoxLayout:
 
         canvas.before:
             Color:
-                rgb: 0.5, 0.5, 0.5
+                rgb: header_color
 
             Rectangle:
                 pos: self.pos
@@ -38,7 +42,7 @@ BoxLayout:
 
             canvas.before:
                 Color:
-                    rgb: 0.4, 0.4, 0.4
+                    rgb: side_bar_color
 
                 Rectangle:
                     pos: self.pos
@@ -52,10 +56,10 @@ BoxLayout:
 
 
 
-        BoxLayout: # Page
+        BoxLayout: # BG
             canvas.before:
                 Color:
-                    rgb: 0.2, 0.2, 0.2
+                    rgb: bg_color
 
                 Rectangle:
                     pos: self.pos
