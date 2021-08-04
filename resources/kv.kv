@@ -64,13 +64,16 @@ BoxLayout:
 
 
 
-[HoverButton@BoxLayoutWithHoverEvent]:
-    on_mouse_enter: image.source = f"resources/{ctx.name}_button_hover.png"
-    on_mouse_leave: image.source = f"resources/{ctx.name}_button_normal.png"
-    on_touch_down:  if self.collide_point(args[1].x, args[1].y): image.source = f"resources/{ctx.name}_button_click.png"
-    on_touch_up:    image.source = (f"resources/{ctx.name}_button_hover.png" if self.collide_point(args[1].x, args[1].y) else f"resources/{ctx.name}_button_normal.png")
+<HoverButton@BoxLayoutWithClickHoverEvent>:
+    name: "unknown"
+
+    on_mouse_enter: image.source = f"resources/{root.name}_button_hover.png"
+    on_mouse_leave: image.source = f"resources/{root.name}_button_normal.png"
+    on_press: image.source = f"resources/{root.name}_button_click.png"
+    on_release: image.source = f"resources/{root.name}_button_hover.png"
+
+    on_name: image.source = (f"resources/{root.name}_button_click.png" if self.state == "down" else (f"resources/{root.name}_button_hover.png" if self.mouse_over else (f"resources/{root.name}_button_normal.png")))
 
     Image:
         id: image
-        source: f"resources/{ctx.name}_button_normal.png"
 
