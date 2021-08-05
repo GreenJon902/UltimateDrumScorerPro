@@ -12,6 +12,7 @@
 
 #:set score_zoom_bar_width 300
 #:set score_zoom_bar_size_hint_x None
+#:set score_zoom_sign_color ([0.2] * 3)
 
 
 
@@ -36,7 +37,11 @@ BoxLayout:
         Widget: # Spacer
 
 
-
+        Image:
+            source: "resources/zoom_minus_sign.png"
+            size_hint_x: None
+            on_height: self.width = self.height
+            color: score_zoom_sign_color
 
         Slider:
             size_hint_x: score_zoom_bar_size_hint_x
@@ -49,6 +54,11 @@ BoxLayout:
             value: score_zoom_start
             on_value: score_view.zoom = args[1]
 
+        Image:
+            source: "resources/zoom_plus_sign.png"
+            size_hint_x: None
+            on_height: self.width = self.height
+            color: score_zoom_sign_color
 
 
 
