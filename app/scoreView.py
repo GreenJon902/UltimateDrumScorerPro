@@ -1,12 +1,9 @@
 from kivy.clock import Clock
-from kivy.event import EventDispatcher
 from kivy.graphics import Color, Rectangle
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.widget import Widget
 
 from app.graphicsConstants import page_bg_color, page_with_to_height_ratio
 
