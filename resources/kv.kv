@@ -6,6 +6,12 @@
 #:set bg_color ([0.2] * 3)
 
 #:set score_zoom_start 0.5
+#:set score_zoom_min 0.1
+#:set score_zoom_max 2
+#:set score_zoom_step 0.01
+
+#:set score_zoom_bar_width 300
+#:set score_zoom_bar_size_hint_x None
 
 
 
@@ -26,6 +32,22 @@ BoxLayout:
             Rectangle:
                 pos: self.pos
                 size: self.size
+
+        Widget: # Spacer
+
+
+
+
+        Slider:
+            size_hint_x: score_zoom_bar_size_hint_x
+            width: score_zoom_bar_width
+
+            min: score_zoom_min
+            max: score_zoom_max
+            step: score_zoom_step
+
+            value: score_zoom_start
+            on_value: score_view.zoom = args[1]
 
 
 
@@ -69,6 +91,8 @@ BoxLayout:
 
 
             ScoreView:
+                id: score_view
+
                 zoom: score_zoom_start
 
 
