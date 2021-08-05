@@ -80,13 +80,14 @@ BoxLayout:
                     pos: self.pos
                     size: self.size
 
-            SquareHoverButtonW:
+            NoDisableSquareHoverButtonW:
                 name: "add_text"
-                on_press: app.set_cursor("ibeam")
+                on_press: app.sidebar_button_clicked(self)
 
-            SquareHoverButtonW:
+            NoDisableSquareHoverButtonW:
                 name: "add_bar"
-                on_press: app.set_cursor("new_bar")
+                on_press: app.sidebar_button_clicked(self)
+
 
             Widget:
 
@@ -122,18 +123,37 @@ BoxLayout:
 
 
 
-<HoverButton@BoxLayoutWithClickHoverEvent>:
+<_HoverButton@BoxLayoutWithClickHoverEvent>:
     name: "unknown"
 
-    on_mouse_enter: image.source = f"resources/buttons/{root.name}_button_hover.png"
-    on_mouse_leave: image.source = f"resources/buttons/{root.name}_button_normal.png"
     on_press: image.source = f"resources/buttons/{root.name}_button_click.png"
-    on_release: image.source = f"resources/buttons/{root.name}_button_hover.png"
-
     on_name: image.source = (f"resources/buttons/{root.name}_button_click.png" if self.state == "down" else (f"resources/buttons/{root.name}_button_hover.png" if self.mouse_over else (f"resources/buttons/{root.name}_button_normal.png")))
 
     Image:
         id: image
+
+
+<NoDisableHoverButton@_HoverButton>:
+    on_mouse_enter: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png" if root.ids.image.source == f"resources/buttons/{root.name}_button_normal.png" else root.ids.image.source
+    on_mouse_leave: root.ids.image.source = f"resources/buttons/{root.name}_button_normal.png" if root.ids.image.source == f"resources/buttons/{root.name}_button_hover.png" else root.ids.image.source
+
+
+<HoverButton@_HoverButton>:
+    on_mouse_enter: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png"
+    on_mouse_leave: root.ids.image.source = f"resources/buttons/{root.name}_button_normal.png"
+    on_release: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png"
+
+
+
+
+<NoDisableSquareHoverButtonW@NoDisableHoverButton>:
+    size_hint_y: None
+    on_width: self.height = self.width
+
+<NoDisableSquareHoverButtonH@NoDisableHoverButton>:
+    size_hint_x: None
+    on_width: self.width = self.height
+
 
 
 <SquareHoverButtonW@HoverButton>:

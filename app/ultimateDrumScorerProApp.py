@@ -1,14 +1,19 @@
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
+from kivy.properties import ObjectProperty
 
 from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
+from app.graphicsConstants import sidebar_button_name_to_cursor
 from app.scoreView import ScoreView
 from app.customMouse import CustomMouse
 from logger.classWithLogger import ClassWithLogger
 
 
 class UltimateDrumScorerProApp(App, ClassWithLogger):
+    sidebar_button_current = ObjectProperty(None)
+
+
     def build(self):
         root = Builder.load_file("resources/kv.kv")
         self.log_debug("Loaded and built KV")
@@ -33,3 +38,14 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
             self.root.ids["custom_mouse"].hide()
             Window.show_cursor = True
             self.log_debug(f"System cursor found for {name}")
+
+
+    def sidebar_button_clicked(self, obj):
+        if self.sidebar_button_current is not None:
+            self.sidebar_button_current.ids.image.source = \
+                f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
+        self.sidebar_button_current = obj
+
+    def on_sidebar_button_current(self, _instance, value):
+        button = value
+        self.set_cursor(sidebar_button_name_to_cursor[button.name])
