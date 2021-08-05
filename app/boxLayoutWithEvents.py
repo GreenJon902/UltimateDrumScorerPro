@@ -42,4 +42,5 @@ class BoxLayoutWithHoverEvent(BoxLayout):
 
 class BoxLayoutWithClickHoverEvent(ButtonBehavior, BoxLayoutWithHoverEvent):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        ButtonBehavior.__init__(self, **kwargs)
+        BoxLayoutWithHoverEvent.__init__(self, **kwargs)
