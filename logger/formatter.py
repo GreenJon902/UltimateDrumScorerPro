@@ -1,7 +1,8 @@
 import copy
+import threading
 from logging import Formatter as _Formatter
 
-from app_info.logging_info import log_format
+from app_info.logging_info import log_format, custom_name_per_log_array
 from logger import colors
 from logger.format_funcs import colored_format
 
@@ -13,6 +14,13 @@ class Formatter(_Formatter):
 
     def format(self, record):
         record = copy.deepcopy(record)
+
+        if record.name in custom_name_per_log_array.keys():
+            new_name, new_msg = record.msg.split(": ", maxsplit=1)
+
+            record.name = str(custom_name_per_log_array[record.name]) % new_name
+            record.msg = new_msg
+
         record.msg = colored_format(log_format, self.use_color,
                                     custom_tags={"message": record.msg, "logger": self, "level": record.levelname,
                                                  "class_name": record.name},

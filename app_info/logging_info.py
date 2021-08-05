@@ -10,4 +10,6 @@ log_format = \
 
 default_log_level = logging.INFO
 
-__all__ = ["save_dir", "save_name", "log_format", "default_log_level"]
+custom_name_per_log_array = {"kivy": "Kivy.%s"}
+
+__all__ = ["save_dir", "save_name", "log_format", "default_log_level", "custom_name_per_log_array"]
