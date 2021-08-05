@@ -2,6 +2,7 @@ from kivy.app import App
 from kivy.lang.builder import Builder
 
 from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
+from app.scoreView import ScoreView
 from logger.classWithLogger import ClassWithLogger
 
 
