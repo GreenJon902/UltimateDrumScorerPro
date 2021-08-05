@@ -3,6 +3,7 @@ from kivy.event import EventDispatcher
 from kivy.graphics import Color, Rectangle
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
@@ -52,13 +53,8 @@ class Page(RelativeLayout):
         self.canvas.clear()
         with self.canvas:
             Color(rgb=page_bg_color)
-            Rectangle(pos=self.pos, size=self.size)
+            Rectangle(pos=(0, 0), size=self.size)
 
-            Color(rgb=(1, 0, 0))
-            Rectangle(pos=(self.x - 5, self.top - 5), size=(10, 10))
-            Rectangle(pos=(self.x - 5, self.y - 5), size=(10, 10))
-            Rectangle(pos=(self.right - 5, self.top - 5), size=(10, 10))
-            Rectangle(pos=(self.right - 5, self.y - 5), size=(10, 10))
 
     def on_width(self, _instance, value):
         self.height = value * page_with_to_height_ratio
@@ -68,23 +64,33 @@ class Page(RelativeLayout):
 class ScoreView(RelativeLayout):
     zoom = NumericProperty(1)
     scrollView: ScrollView
+    pageHolderHolder: RelativeLayout
     pageHolder: PageHolder
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
 
-        self.scrollView = ScrollView(size_hint_x=None, size_hint_y=1, pos_hint={"center_x": 0.5})
-        self.pageHolder = PageHolder()
+        self.scrollView = ScrollView()
+        self.pageHolderHolder = RelativeLayout(size_hint_y=None)
+        self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
 
         self.pageHolder.add_page(Page())
 
-        self.scrollView.add_widget(self.pageHolder)
+
+        self.pageHolder.bind(height=lambda _instance, value: set_height(self.pageHolderHolder, value))
+
+        self.pageHolderHolder.add_widget(self.pageHolder)
+        self.scrollView.add_widget(self.pageHolderHolder)
         self.add_widget(self.scrollView)
 
 
     def on_zoom(self, _instance, value):
-        self.scrollView.width = self.width * value
+        self.pageHolder.width = self.width * value
 
     def on_width(self, _instance, value):
-        self.scrollView.width = value * self.zoom
+        self.pageHolder.width = value * self.zoom
 
+
+
+def set_height(widget, value):
+    widget.height = value
