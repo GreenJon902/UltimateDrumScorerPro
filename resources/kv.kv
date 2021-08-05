@@ -116,12 +116,12 @@ BoxLayout:
 <HoverButton@BoxLayoutWithClickHoverEvent>:
     name: "unknown"
 
-    on_mouse_enter: image.source = f"resources/{root.name}_button_hover.png"
-    on_mouse_leave: image.source = f"resources/{root.name}_button_normal.png"
-    on_press: image.source = f"resources/{root.name}_button_click.png"
-    on_release: image.source = f"resources/{root.name}_button_hover.png"
+    on_mouse_enter: image.source = f"resources/buttons/{root.name}_button_hover.png"
+    on_mouse_leave: image.source = f"resources/buttons/{root.name}_button_normal.png"
+    on_press: image.source = f"resources/buttons/{root.name}_button_click.png"
+    on_release: image.source = f"resources/buttons/{root.name}_button_hover.png"
 
-    on_name: image.source = (f"resources/{root.name}_button_click.png" if self.state == "down" else (f"resources/{root.name}_button_hover.png" if self.mouse_over else (f"resources/{root.name}_button_normal.png")))
+    on_name: image.source = (f"resources/buttons/{root.name}_button_click.png" if self.state == "down" else (f"resources/buttons/{root.name}_button_hover.png" if self.mouse_over else (f"resources/buttons/{root.name}_button_normal.png")))
 
     Image:
         id: image
