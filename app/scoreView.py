@@ -5,7 +5,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 
-from app.graphicsConstants import page_bg_color, page_with_to_height_ratio
+from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
+    scroll_bar_width
 
 
 class ScoreViewException(Exception):
@@ -67,7 +68,9 @@ class ScoreView(RelativeLayout):
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
 
-        self.scrollView = ScrollView()
+        self.scrollView = ScrollView(do_scroll_x=True, do_scroll_y=True, scroll_type=["bars"],
+                                     bar_width=scroll_bar_width, bar_color=scroll_bar_color,
+                                     bar_inactive_color=scroll_bar_inactive_color)
         self.pageHolderHolder = RelativeLayout(size_hint_y=None)
         self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
 
