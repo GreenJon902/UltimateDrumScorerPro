@@ -4,6 +4,7 @@ from kivy.lang.builder import Builder
 
 from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
 from app.scoreView import ScoreView
+from app.customMouse import CustomMouse
 from logger.classWithLogger import ClassWithLogger
 
 
@@ -23,9 +24,12 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
         if not found:
             Window.show_cursor = False
+            self.root.ids["custom_mouse"].name = name
+            self.root.ids["custom_mouse"].show()
 
             self.log_debug(f"No system cursor found for {name}, trying to find a custom one")
 
         else:
+            self.root.ids["custom_mouse"].hide()
             Window.show_cursor = True
             self.log_debug(f"System cursor found for {name}")

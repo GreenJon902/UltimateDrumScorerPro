@@ -19,8 +19,6 @@
 BoxLayout:
     orientation: "vertical"
 
-
-
     BoxLayout: # HeaderBar
         size_hint_y: bar_size_hint
         height: bar_size
@@ -109,6 +107,17 @@ BoxLayout:
                 id: score_view
 
                 zoom: score_zoom_start
+
+
+
+
+
+    FloatLayout:
+        size_hint: None, None
+        size: 0, 0
+
+        CustomMouse:
+            id: custom_mouse
 
 
 
