@@ -1,9 +1,12 @@
+from kivy import app
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 
 from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width
@@ -58,6 +61,19 @@ class Page(RelativeLayout):
         self.height = value * page_with_to_height_ratio
 
 
+    def on_touch_down(self, touch):
+        current_click_mode = App.get_running_app().sidebar_button_current.name \
+            if App.get_running_app().sidebar_button_current is not None else None
+
+        if current_click_mode == "add_text":
+            App.get_running_app().discard_click_mode()
+
+            ti = TextInput(center=self.to_local(*touch.pos), size=(100, 50), size_hint=(None, None))
+            self.add_widget(ti)
+
+            Clock.schedule_once(lambda _elapsed_time: focus_text_input(ti), 0.2)
+
+
 
 class ScoreView(RelativeLayout):
     zoom = NumericProperty(1)
@@ -94,3 +110,9 @@ class ScoreView(RelativeLayout):
 
 def set_height(widget, value):
     widget.height = value
+
+
+def focus_text_input(box):
+    box.focus = True
+
+

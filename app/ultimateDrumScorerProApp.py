@@ -11,7 +11,7 @@ from logger.classWithLogger import ClassWithLogger
 
 
 class UltimateDrumScorerProApp(App, ClassWithLogger):
-    sidebar_button_current = ObjectProperty(None)
+    sidebar_button_current = ObjectProperty(None, allownone=True)
 
 
     def build(self):
@@ -47,5 +47,13 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
         self.sidebar_button_current = obj
 
     def on_sidebar_button_current(self, _instance, value):
-        button = value
-        self.set_cursor(sidebar_button_name_to_cursor[button.name])
+        if value is None:
+            self.set_cursor(sidebar_button_name_to_cursor[str(value)])
+
+        else:
+            button = value
+            self.set_cursor(sidebar_button_name_to_cursor[str(button.name)])
+
+
+    def discard_click_mode(self):
+        self.sidebar_button_current = None
