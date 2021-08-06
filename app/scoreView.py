@@ -9,8 +9,10 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 
+import scoreContent
 from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width
+from app.zoomScrollView import ZoomScrollView
 
 
 class ScoreViewException(Exception):
@@ -87,10 +89,9 @@ class Page(RelativeLayout):
         if current_click_mode == "add_text":
             App.get_running_app().discard_click_mode()
 
-            ti = TextInput(pos_hint=location_to_put, size=(100, 50), size_hint=(None, None))
-            self.add_widget(ti)
+            content = scoreContent.Text(location_to_put)
+            self.add_widget(content)
 
-            Clock.schedule_once(lambda _elapsed_time: focus_text_input(ti), 0.2)
 
 
     def get_pos_hint_from_pos(self, x, y):
@@ -99,9 +100,12 @@ class Page(RelativeLayout):
         hx = rx / self.width
         hy = ry / self.height
 
-        print(rx, hx, self.x, self.width)
-
         return hx, hy
+
+    def on_size(self, _instance, _value):
+        for child in self.children:
+            if child != self.page_bg:
+                child.draw()
 
 
 
@@ -133,6 +137,7 @@ class ScoreView(RelativeLayout):
     def on_zoom(self, _instance, value):
         self.pageHolder.width = self.width * value
         self.do_page_holder_holder_size()
+        self.scrollView.zoom = value
 
     def on_width(self, _instance, value):
         self.pageHolder.width = value * self.zoom
