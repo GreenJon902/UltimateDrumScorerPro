@@ -7,6 +7,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
 
 from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width
@@ -38,14 +39,13 @@ class PageHolder(BoxLayout):
         self.height = value * page_with_to_height_ratio * len(self.children)
 
 
-class Page(RelativeLayout):
+
+
+class PageBg(Widget):
     draw: callable
 
     def __init__(self, **kwargs):
-        RelativeLayout.__init__(self, **kwargs)
-
-        self.size_hint_y = None
-
+        Widget.__init__(self, **kwargs)
         self.draw = Clock.create_trigger(lambda _elapsed_time: self._draw())
         self.bind(pos=self.draw, size=self.draw)
 
@@ -55,6 +55,21 @@ class Page(RelativeLayout):
         with self.canvas:
             Color(rgb=page_bg_color)
             Rectangle(pos=(0, 0), size=self.size)
+
+
+
+
+class Page(RelativeLayout):
+    page_bg: PageBg
+
+    def __init__(self, **kwargs):
+        RelativeLayout.__init__(self, **kwargs)
+
+        self.size_hint_y = None
+
+        self.page_bg = PageBg()
+        self.add_widget(self.page_bg)
+
 
 
     def on_width(self, _instance, value):
@@ -87,7 +102,7 @@ class ScoreView(RelativeLayout):
         self.scrollView = ScrollView(do_scroll_x=True, do_scroll_y=True, scroll_type=["bars"],
                                      bar_width=scroll_bar_width, bar_color=scroll_bar_color,
                                      bar_inactive_color=scroll_bar_inactive_color)
-        self.pageHolderHolder = RelativeLayout(size_hint_y=None)
+        self.pageHolderHolder = RelativeLayout(size_hint_y=None, size_hint_x=None)
         self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
 
         self.pageHolder.add_page(Page())
@@ -102,9 +117,18 @@ class ScoreView(RelativeLayout):
 
     def on_zoom(self, _instance, value):
         self.pageHolder.width = self.width * value
+        self.do_page_holder_holder_size()
 
     def on_width(self, _instance, value):
         self.pageHolder.width = value * self.zoom
+        self.do_page_holder_holder_size()
+
+    def do_page_holder_holder_size(self):
+        if self.pageHolder.width > self.width:
+            self.pageHolderHolder.width = self.pageHolder.width
+
+        else:
+            self.pageHolderHolder.width = self.width
 
 
 
