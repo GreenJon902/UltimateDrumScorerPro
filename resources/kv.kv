@@ -16,6 +16,10 @@
 
 #:set slider_with_text_height 30
 
+#:set add_text_popup_font_size_min_mm 5
+#:set add_text_popup_font_size_max_mm 50
+#:set add_text_popup_font_size_default_mm 10
+
 
 BoxLayout:
     orientation: "vertical"
@@ -238,9 +242,9 @@ BoxLayout:
             SliderWithText:
                 id: font_size
 
-                min: 10
-                max: 100
-                value: 50
+                min: add_text_popup_font_size_min_mm
+                max: add_text_popup_font_size_max_mm
+                value: add_text_popup_font_size_default_mm
 
                 hint_text: "Font Size"
 
