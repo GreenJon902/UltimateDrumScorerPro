@@ -48,21 +48,6 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
                 f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
         self.sidebar_button_current = obj
 
-        if obj.name == "add_bar":
-
-            def loop(widget: Widget, indent=0):
-                print(("-" * indent) + "> ", widget)
-
-                for child in widget.children:
-                    loop(child, indent + 4)
-
-                print(("-" * indent) + "< ", widget)
-
-            loop(App.get_running_app().root)
-
-
-
-
 
 
 
