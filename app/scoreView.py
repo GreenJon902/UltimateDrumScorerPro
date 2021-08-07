@@ -106,6 +106,28 @@ class Page(RelativeLayout):
             content = scoreContent.Text(location_to_put)
             self.content.add_widget(content)
 
+        else:
+            RelativeLayout.on_touch_down(self, touch)
+
+
+    def to_local(self, px, py, **kwargs):
+        lxh, lyh = self.get_pos_hint_from_pos(px, py)
+
+        nx = lxh * page_size[0]
+        ny = lyh * page_size[1]
+
+        return nx, ny
+
+
+    def to_parent(self, px, py, **kwargs):  # Might not be right, have no way to test
+        lxh = px / page_size[0]
+        lyh = py / page_size[1]
+
+        nx = lxh * self.width
+        ny = lyh * self.height
+
+        return RelativeLayout.to_parent(self, nx, ny, **kwargs)
+
 
 
     def get_pos_hint_from_pos(self, x, y):
@@ -113,8 +135,6 @@ class Page(RelativeLayout):
 
         hx = rx / self.width
         hy = ry / self.height
-
-        print(hx, rx, self.width, hy, ry, self.height)
 
         return hx, hy
 
