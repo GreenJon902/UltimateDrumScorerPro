@@ -53,9 +53,20 @@ class PageBg(Widget):
 
 
 
+class PageContent(RelativeLayout):
+    def __init__(self, **kwargs):
+        RelativeLayout.__init__(self, **kwargs)
+
+        self.size_hint = None, None
+        self.size = page_size
+
+
+
 
 class Page(RelativeLayout):
     page_bg: PageBg
+    content: PageContent
+
     scale_x: int = NumericProperty(1)
     scale_y: int = NumericProperty(1)
     scale_z: int = NumericProperty(1)
@@ -66,8 +77,11 @@ class Page(RelativeLayout):
 
         self.size_hint_y = None
 
+        self.content = PageContent()
+
         self.page_bg = PageBg()
         self.add_widget(self.page_bg)
+        self.add_widget(self.content)
 
 
         self.scale_instruction = Scale(matrix=Matrix())
@@ -90,15 +104,17 @@ class Page(RelativeLayout):
             App.get_running_app().discard_click_mode()
 
             content = scoreContent.Text(location_to_put)
-            self.add_widget(content)
+            self.content.add_widget(content)
 
 
 
     def get_pos_hint_from_pos(self, x, y):
-        rx, ry = self.to_local(x, y)
+        rx, ry = RelativeLayout.to_local(self, x, y)
 
         hx = rx / self.width
         hy = ry / self.height
+
+        print(hx, rx, self.width, hy, ry, self.height)
 
         return hx, hy
 
