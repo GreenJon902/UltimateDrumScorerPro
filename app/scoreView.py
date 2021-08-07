@@ -7,9 +7,9 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 
-from app import scoreContent
-from app.graphicsConstants import page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
-    scroll_bar_width, page_size
+from app import scoreContent, metrics
+from app.graphicsConstants import scroll_bar_color, scroll_bar_inactive_color, \
+    scroll_bar_width
 
 
 class ScoreViewException(Exception):
@@ -32,10 +32,10 @@ class PageHolder(BoxLayout):
 
 
     def on_children(self, _instance, value):
-        self.height = self.width * page_with_to_height_ratio * len(value)
+        self.height = metrics.Page.width_to_height(self.width) * len(value)
 
     def on_width(self, _instance, value):
-        self.height = value * page_with_to_height_ratio * len(self.children)
+        self.height = metrics.Page.width_to_height(value) * len(self.children)
 
 
 
@@ -44,7 +44,7 @@ class PageBg(Widget):
     def __init__(self, **kwargs):
         Widget.__init__(self, **kwargs)
         self.size_hint = None, None
-        self.size = page_size
+        self.size = metrics.page_size_px
 
 
 
@@ -54,7 +54,7 @@ class PageContent(RelativeLayout):
         RelativeLayout.__init__(self, **kwargs)
 
         self.size_hint = None, None
-        self.size = page_size
+        self.size = metrics.page_size_px
 
 
 
@@ -85,7 +85,7 @@ class Page(RelativeLayout):
 
 
     def on_width(self, _instance, value):
-        self.height = value * page_with_to_height_ratio
+        self.height = metrics.Page.width_to_height(value)
 
 
     def on_touch_down(self, touch):
@@ -109,15 +109,15 @@ class Page(RelativeLayout):
     def to_local(self, px, py, **kwargs):
         lxh, lyh = self.get_pos_hint_from_pos(px, py)
 
-        nx = lxh * page_size[0]
-        ny = lyh * page_size[1]
+        nx = lxh * metrics.page_size_px[0]
+        ny = lyh * metrics.page_size_px[1]
 
         return nx, ny
 
 
     def to_parent(self, px, py, **kwargs):  # Might not be right, have no way to test
-        lxh = px / page_size[0]
-        lyh = py / page_size[1]
+        lxh = px / metrics.page_size_px[0]
+        lyh = py / metrics.page_size_px[1]
 
         nx = lxh * self.width
         ny = lyh * self.height
@@ -135,8 +135,8 @@ class Page(RelativeLayout):
         return hx, hy
 
     def on_size(self, _instance, _value):
-        dmx = self.width / page_size[0]
-        dmy = self.height / page_size[1]
+        dmx = self.width / metrics.page_size_px[0]
+        dmy = self.height / metrics.page_size_px[1]
         dmz = 1
 
         self.scale_xyz = dmx, dmy, dmz
