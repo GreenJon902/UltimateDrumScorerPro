@@ -3,7 +3,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle, PushMatrix, PopMatrix, MatrixInstruction, Scale
 from kivy.graphics.transformation import Matrix
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, DictProperty, ReferenceListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
@@ -56,6 +56,10 @@ class PageBg(Widget):
 
 class Page(RelativeLayout):
     page_bg: PageBg
+    scale_x: int = NumericProperty(1)
+    scale_y: int = NumericProperty(1)
+    scale_z: int = NumericProperty(1)
+    scale_xyz: tuple[int, int, int] = ReferenceListProperty(scale_x, scale_y, scale_z)
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
@@ -66,12 +70,7 @@ class Page(RelativeLayout):
         self.add_widget(self.page_bg)
 
 
-        with self.canvas.before:
-            PushMatrix()
-            self.scale_instruction = Scale(matrix=Matrix())
-
-        with self.canvas.after:
-            PopMatrix()
+        self.scale_instruction = Scale(matrix=Matrix())
 
 
 
@@ -108,7 +107,7 @@ class Page(RelativeLayout):
         dmy = self.height / page_size[1]
         dmz = 1
 
-        self.scale_instruction.xyz = dmx, dmy, dmz
+        self.scale_xyz = dmx, dmy, dmz
 
 
 

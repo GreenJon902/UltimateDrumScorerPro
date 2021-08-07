@@ -169,6 +169,16 @@ BoxLayout:
 
 # Score Content
 
+<Page>:
+    canvas.before:
+        PushMatrix
+        Scale:
+            xyz: self.scale_xyz
+
+    canvas.after:
+        PopMatrix
+
+
 <PageBg>:
     canvas:
         Color:
@@ -176,3 +186,9 @@ BoxLayout:
         Rectangle:
             pos: 0, 0
             size: self.size
+
+
+<Text>:
+    Image:
+        id: image
+

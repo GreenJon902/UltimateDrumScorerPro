@@ -20,22 +20,16 @@ from logger.classWithLogger import ClassWithLogger
 
 
 class ScoreContent(RelativeLayout, ClassWithLogger):
-    draw: callable
-
     def __init__(self, location_to_put, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.pos_hint = location_to_put
 
-        self.draw = Clock.create_trigger(lambda _elapsed_time: self._draw())
-
-    def _draw(self):
-        raise NotImplementedError("No draw function implemented")
+        self.size_hint = None, None
 
 
 class Text(ScoreContent):
-    image: Image
     page_related_x: int = NumericProperty(5)
     page_related_y: int = NumericProperty(1)
     text: str = StringProperty("Text")
@@ -45,11 +39,7 @@ class Text(ScoreContent):
     def __init__(self, *args, **kwargs):
         ScoreContent.__init__(self, *args, **kwargs)
 
-        self.image = Image()
         self.popup()
-
-        no_args_draw = lambda *_args: self.draw()
-        self.bind(page_related_x=no_args_draw, page_related_y=no_args_draw, texture=no_args_draw)
 
 
 
@@ -57,10 +47,9 @@ class Text(ScoreContent):
         self.texture = text_to_core_image(value).texture
 
 
-    def _draw(self):
-        self.image.texture = self.texture
-        self.clear_widgets()
-        self.add_widget(self.image)
+    def on_texture(self, _instance, value):
+        self.ids["image"].texture = value
+        self.size = value.size
 
 
     def popup(self):
