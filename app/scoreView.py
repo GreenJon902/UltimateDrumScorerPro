@@ -7,7 +7,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 
-import scoreContent
+from app import scoreContent
 from app.graphicsConstants import page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width, page_size
 
