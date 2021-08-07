@@ -43,7 +43,8 @@ class Text(ScoreContent):
 
 
     def _update(self):
-        self.texture = text_to_core_image(text=self.text, font_size=self.font_size).texture
+        # FIXME: Bug where text is displayed 10 too small, probably to do with metrics
+        self.texture = text_to_core_image(text=self.text, font_size=self.font_size * 10).texture
 
 
     def on_texture(self, _instance, value):
@@ -71,9 +72,9 @@ class Text(ScoreContent):
 def text_to_core_image(text, font_size, color=(0, 0, 0, 255)):
     im = PilImage.new("RGBA", metrics.page_size_px)
 
-    fnt = PilImageFont.truetype("resources/arial.ttf", font_size)
+    font = PilImageFont.truetype("resources/arial.ttf", font_size)
     imDraw = PilImageDraw.Draw(im)
-    imDraw.text((0, 0), text, fill=color, font=fnt)
+    imDraw.text((0, 0), text, fill=color, font=font)
 
     imBbox = im.getbbox()
     imC = im.crop(imBbox)
