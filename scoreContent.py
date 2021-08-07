@@ -1,20 +1,29 @@
+from io import BytesIO
+
+import PIL.ImageDraw
 from kivy.clock import Clock
+from kivy.core.image import Texture
+from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
+from kivy.core.image import Image as CoreImage
+
+from PIL import Image as PilImage, ImageDraw as PilImageDraw, ImageFont as PilImageFont
 
 from logger.classWithLogger import ClassWithLogger
 
 
-class ScoreContent(Widget, ClassWithLogger):
+class ScoreContent(RelativeLayout, ClassWithLogger):
     draw: callable
 
     def __init__(self, location_to_put, **kwargs):
-        Widget.__init__(self, **kwargs)
+        RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.pos_hint = location_to_put
@@ -26,28 +35,27 @@ class ScoreContent(Widget, ClassWithLogger):
 
 
 class Text(ScoreContent):
-    label: Label
     image: Image
-    page_related_x: int = 5
-    page_related_y: int = 1
-    text: str = ""
+    page_related_x: int = NumericProperty(5)
+    page_related_y: int = NumericProperty(1)
+    text: str = StringProperty("Text")
 
 
     def __init__(self, *args, **kwargs):
         ScoreContent.__init__(self, *args, **kwargs)
 
-        self.label = Label()
         self.image = Image()
-
         self.popup()
+
+        no_args_draw = lambda *_args: self.draw()
+        self.bind(page_related_x=no_args_draw, page_related_y=no_args_draw, text=no_args_draw)
+
 
 
     def _draw(self):
-        self.label.size = (self.page_related_x, self.page_related_y)
-        self.label.text = self.text
-        self.label.texture_update()
+        texture = text_to_core_image(self.text).texture
 
-        self.image.texture = self.label.texture
+        self.image.texture = texture
         self.clear_widgets()
         self.add_widget(self.image)
 
@@ -84,3 +92,25 @@ class Text(ScoreContent):
 
             else:
                 self.log_warning("Widget with no name in popup, ignoring")
+
+
+
+
+
+
+
+def text_to_core_image(text, color=(0, 0, 0, 255)):
+    im = PilImage.new("RGBA", (1000, 1000))
+    imDraw = PilImageDraw.Draw(im)
+    imDraw.text((0, 0), text, fill=color)
+    imBbox = im.getbbox()
+    imC = im.crop(imBbox)
+
+    data = BytesIO()
+    imC.save(data, format="png")
+    data.seek(0)
+
+    kvImg = CoreImage(BytesIO(data.read()), ext="png")
+    return kvImg
+
+
