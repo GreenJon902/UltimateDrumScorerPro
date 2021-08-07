@@ -1,20 +1,14 @@
 from io import BytesIO
 
-import PIL.ImageDraw
-from kivy.clock import Clock
+from PIL import Image as PilImage, ImageDraw as PilImageDraw
+from kivy.core.image import Image as CoreImage
 from kivy.core.image import Texture
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.uix.image import Image
-from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
-from kivy.uix.widget import Widget
-from kivy.core.image import Image as CoreImage
-
-from PIL import Image as PilImage, ImageDraw as PilImageDraw, ImageFont as PilImageFont
 
 from logger.classWithLogger import ClassWithLogger
 

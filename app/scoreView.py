@@ -1,19 +1,15 @@
-from kivy import app
 from kivy.app import App
-from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle, PushMatrix, PopMatrix, MatrixInstruction, Scale
+from kivy.graphics import Scale
 from kivy.graphics.transformation import Matrix
-from kivy.properties import NumericProperty, DictProperty, ReferenceListProperty
+from kivy.properties import NumericProperty, ReferenceListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 
 import scoreContent
-from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
+from app.graphicsConstants import page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width, page_size
-from app.zoomScrollView import ZoomScrollView
 
 
 class ScoreViewException(Exception):

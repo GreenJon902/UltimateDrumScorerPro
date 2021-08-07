@@ -1,6 +1,3 @@
-from math import sqrt
-
-
 page_bg_color = [1] * 3
 page_size = 4960, 7015  # A4
 page_with_to_height_ratio = 7015 / 4960  # which is also √2

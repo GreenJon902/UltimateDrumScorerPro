@@ -2,12 +2,16 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
-from kivy.uix.widget import Widget
 
+# noinspection PyUnresolvedReferences
 from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
-from app.graphicsConstants import sidebar_button_name_to_cursor
-from app.scoreView import ScoreView
+# noinspection PyUnresolvedReferences
 from app.customMouse import CustomMouse
+# noinspection PyUnresolvedReferences
+from app.graphicsConstants import sidebar_button_name_to_cursor
+# noinspection PyUnresolvedReferences
+from app.scoreView import ScoreView
+# noinspection PyUnresolvedReferences
 from logger.classWithLogger import ClassWithLogger
 
 
