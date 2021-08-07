@@ -12,6 +12,8 @@ from app.graphicsConstants import sidebar_button_name_to_cursor
 # noinspection PyUnresolvedReferences
 from app.scoreView import ScoreView
 # noinspection PyUnresolvedReferences
+from app.misc import SliderWithText
+
 from logger.classWithLogger import ClassWithLogger
 
 

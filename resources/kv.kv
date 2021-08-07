@@ -14,6 +14,7 @@
 #:set score_zoom_bar_size_hint_x None
 #:set score_zoom_sign_color ([0.2] * 3)
 
+#:set slider_with_text_height 30
 
 
 BoxLayout:
@@ -204,10 +205,71 @@ BoxLayout:
     BoxLayout:
         orientation: "vertical"
 
-        TextInput:
-            id: text
-            hint_text: "Enter your text"
+        BoxLayout:
+            orientation: "horizontal"
+
+            size_hint_y: None
+            height: text.height
+
+            Label:
+                text: "Text "
+                size_hint: None, None
+                on_texture_size: self.width = self.texture.size[0]
+                height: text.height
+
+            TextInput:
+                id: text
+                hint_text: "Enter your text"
+
+
+
+        BoxLayout:
+            orientation: "horizontal"
+
+            size_hint_y: None
+            height: font_size.height
+
+            Label:
+                text: "Font Size "
+                size_hint: None, None
+                on_texture_size: self.width = self.texture.size[0]
+                height: font_size.height
+
+            SliderWithText:
+                id: font_size
+
+                min: 10
+                max: 100
+                value: 50
+
+                hint_text: "Font Size"
+
+
 
         Button:
             text: "Finish"
             on_release: root.dismiss()
+
+
+
+# Misc
+
+<SliderWithText>:
+    size_hint_y: None
+    height: slider_with_text_height
+
+    TextInput:
+        id: text_input
+        multiline: False
+        hint_text: root.hint_text
+
+        on_text_validate: root.validate_text()
+
+    Slider:
+        id: slider
+        orientation: root.orientation
+
+        min: root.min
+        max: root.max
+
+        on_value: root.value = self.value

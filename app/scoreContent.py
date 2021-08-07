@@ -1,6 +1,7 @@
 from io import BytesIO
 
-from PIL import Image as PilImage, ImageDraw as PilImageDraw
+from PIL import Image as PilImage, ImageDraw as PilImageDraw, ImageFont as PilImageFont
+from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 from kivy.core.image import Texture
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty
@@ -25,10 +26,10 @@ class ScoreContent(RelativeLayout, ClassWithLogger):
 
 
 class Text(ScoreContent):
-    page_related_x: int = NumericProperty(5)
-    page_related_y: int = NumericProperty(1)
     text: str = StringProperty("Text")
+    font_size: float = NumericProperty(10)
     texture: Texture = ObjectProperty()
+    update: callable
 
 
     def __init__(self, *args, **kwargs):
@@ -36,10 +37,12 @@ class Text(ScoreContent):
 
         self.popup()
 
+        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+        self.bind(text=lambda _instance, _value: self.update(), font_size=lambda _instance, _value: self.update())
 
 
-    def on_text(self, _instance, value):
-        self.texture = text_to_core_image(value).texture
+    def _update(self):
+        self.texture = text_to_core_image(text=self.text, font_size=self.font_size).texture
 
 
     def on_texture(self, _instance, value):
@@ -55,6 +58,7 @@ class Text(ScoreContent):
 
     def popup_finished(self, instance):
         self.text = instance.ids["text"].text
+        self.font_size = int(instance.ids["font_size"].value)
 
 
 
@@ -62,15 +66,20 @@ class Text(ScoreContent):
 
 
 
-def text_to_core_image(text, color=(0, 0, 0, 255)):
+
+def text_to_core_image(text, font_size, color=(0, 0, 0, 255)):
     im = PilImage.new("RGBA", (1000, 1000))
+
+    fnt = PilImageFont.truetype("resources/arial.ttf", font_size)
     imDraw = PilImageDraw.Draw(im)
-    imDraw.text((0, 0), text, fill=color)
+    imDraw.text((0, 0), text, fill=color, font=fnt)
+
     imBbox = im.getbbox()
     imC = im.crop(imBbox)
 
     data = BytesIO()
     imC.save(data, format="png")
+    imC.save("./text.png", format="png")
     data.seek(0)
 
     kvImg = CoreImage(BytesIO(data.read()), ext="png")
