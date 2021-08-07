@@ -11,6 +11,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
 
+from app.graphicsConstants import mm_to_font_size_func
 from app.popups import AddTextPopup
 from logger.classWithLogger import ClassWithLogger
 
@@ -58,7 +59,8 @@ class Text(ScoreContent):
 
     def popup_finished(self, instance):
         self.text = instance.ids["text"].text
-        self.font_size = int(instance.ids["font_size"].value)
+        self.font_size = \
+            int(mm_to_font_size_func(instance.ids["font_size"].value))
 
 
 
@@ -79,7 +81,6 @@ def text_to_core_image(text, font_size, color=(0, 0, 0, 255)):
 
     data = BytesIO()
     imC.save(data, format="png")
-    imC.save("./text.png", format="png")
     data.seek(0)
 
     kvImg = CoreImage(BytesIO(data.read()), ext="png")
