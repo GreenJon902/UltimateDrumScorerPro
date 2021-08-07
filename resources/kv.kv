@@ -192,3 +192,22 @@ BoxLayout:
     Image:
         id: image
 
+
+
+# Popups
+
+<AddTextPopup>:
+    title: "Text"
+    auto_dismiss: False
+    size_hint: 0.5, 0.5
+
+    BoxLayout:
+        orientation: "vertical"
+
+        TextInput:
+            id: text
+            hint_text: "Enter your text"
+
+        Button:
+            text: "Finish"
+            on_release: root.dismiss()

@@ -10,6 +10,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
 
+from app.popups import AddTextPopup
 from logger.classWithLogger import ClassWithLogger
 
 
@@ -47,37 +48,13 @@ class Text(ScoreContent):
 
 
     def popup(self):
-        content = BoxLayout(orientation="vertical")
-        textInput = TextInput(hint_text="Enter your text")
-        textInput.name = "text"
-        finishedButton = Button(text="Finish")
-        finishedButton.name = "IGNORE"
-        content.add_widget(textInput)
-        content.add_widget(finishedButton)
-
-
-        popup = Popup(title='Text',
-                      content=content,
-                      size_hint=(0.5, 0.5), auto_dismiss=False)
-        finishedButton.bind(on_release=popup.dismiss)
+        popup = AddTextPopup()
         popup.bind(on_dismiss=self.popup_finished)
         popup.open()
 
 
     def popup_finished(self, instance):
-        for child in instance.content.children:
-            if hasattr(child, "name"):
-                if child.name == "IGNORE":
-                    pass
-
-                elif child.name == "text":
-                    self.text = child.text
-
-                else:
-                    self.log_warning("Widget with an unknown in popup, ignoring")
-
-            else:
-                self.log_warning("Widget with no name in popup, ignoring")
+        self.text = instance.ids["text"].text
 
 
 
