@@ -16,6 +16,7 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
     def build(self):
         root = Builder.load_file("resources/kv.kv")
+
         self.log_debug("Loaded and built KV")
         self.log_info("Built")
 

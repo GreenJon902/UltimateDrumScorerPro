@@ -1,7 +1,8 @@
 from kivy import app
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color, Rectangle, PushMatrix, PopMatrix, MatrixInstruction, Scale
+from kivy.graphics.transformation import Matrix
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
@@ -11,7 +12,7 @@ from kivy.uix.widget import Widget
 
 import scoreContent
 from app.graphicsConstants import page_bg_color, page_with_to_height_ratio, scroll_bar_color, scroll_bar_inactive_color, \
-    scroll_bar_width
+    scroll_bar_width, page_size
 from app.zoomScrollView import ZoomScrollView
 
 
@@ -44,19 +45,11 @@ class PageHolder(BoxLayout):
 
 
 class PageBg(Widget):
-    draw: callable
-
     def __init__(self, **kwargs):
         Widget.__init__(self, **kwargs)
-        self.draw = Clock.create_trigger(lambda _elapsed_time: self._draw())
-        self.bind(pos=self.draw, size=self.draw)
+        self.size_hint = None, None
+        self.size = page_size
 
-
-    def _draw(self):
-        self.canvas.clear()
-        with self.canvas:
-            Color(rgb=page_bg_color)
-            Rectangle(pos=(0, 0), size=self.size)
 
 
 
@@ -71,6 +64,14 @@ class Page(RelativeLayout):
 
         self.page_bg = PageBg()
         self.add_widget(self.page_bg)
+
+
+        with self.canvas.before:
+            PushMatrix()
+            self.scale_instruction = Scale(matrix=Matrix())
+
+        with self.canvas.after:
+            PopMatrix()
 
 
 
@@ -103,9 +104,11 @@ class Page(RelativeLayout):
         return hx, hy
 
     def on_size(self, _instance, _value):
-        for child in self.children:
-            if child != self.page_bg:
-                child.draw()
+        dmx = self.width / page_size[0]
+        dmy = self.height / page_size[1]
+        dmz = 1
+
+        self.scale_instruction.xyz = dmx, dmy, dmz
 
 
 
