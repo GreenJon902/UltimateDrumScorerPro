@@ -3,7 +3,7 @@ from io import BytesIO
 import PIL.ImageDraw
 from kivy.clock import Clock
 from kivy.core.image import Texture
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import NumericProperty, StringProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
@@ -39,6 +39,7 @@ class Text(ScoreContent):
     page_related_x: int = NumericProperty(5)
     page_related_y: int = NumericProperty(1)
     text: str = StringProperty("Text")
+    texture: Texture = ObjectProperty()
 
 
     def __init__(self, *args, **kwargs):
@@ -48,14 +49,16 @@ class Text(ScoreContent):
         self.popup()
 
         no_args_draw = lambda *_args: self.draw()
-        self.bind(page_related_x=no_args_draw, page_related_y=no_args_draw, text=no_args_draw)
+        self.bind(page_related_x=no_args_draw, page_related_y=no_args_draw, texture=no_args_draw)
 
+
+
+    def on_text(self, _instance, value):
+        self.texture = text_to_core_image(value).texture
 
 
     def _draw(self):
-        texture = text_to_core_image(self.text).texture
-
-        self.image.texture = texture
+        self.image.texture = self.texture
         self.clear_widgets()
         self.add_widget(self.image)
 
