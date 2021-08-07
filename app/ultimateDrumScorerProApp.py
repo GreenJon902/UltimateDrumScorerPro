@@ -2,6 +2,7 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
+from kivy.uix.widget import Widget
 
 from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
 from app.graphicsConstants import sidebar_button_name_to_cursor
@@ -46,6 +47,25 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
             self.sidebar_button_current.ids.image.source = \
                 f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
         self.sidebar_button_current = obj
+
+        if obj.name == "add_bar":
+
+            def loop(widget: Widget, indent=0):
+                print(("-" * indent) + "> ", widget)
+
+                for child in widget.children:
+                    loop(child, indent + 4)
+
+                print(("-" * indent) + "< ", widget)
+
+            loop(App.get_running_app().root)
+
+
+
+
+
+
+
 
     def on_sidebar_button_current(self, _instance, value):
         if value is None:
