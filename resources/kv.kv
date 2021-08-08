@@ -203,7 +203,6 @@ BoxLayout:
 
 <AddTextPopup>:
     title: "Text"
-    auto_dismiss: False
     size_hint: 0.5, 0.5
 
     BoxLayout:
@@ -252,7 +251,7 @@ BoxLayout:
 
         Button:
             text: "Finish"
-            on_release: root.dismiss()
+            on_release: root.on_finish_button(self, "down")
 
 
 

@@ -54,13 +54,17 @@ class Text(ScoreContent):
 
     def popup(self):
         popup = AddTextPopup()
-        popup.bind(on_dismiss=self.popup_finished)
+        popup.bind(on_submitted=self.popup_submitted, on_cancelled=self.popup_cancelled)
         popup.open()
 
 
-    def popup_finished(self, instance):
-        self.text = instance.ids["text"].text
-        self.font_size = int(metrics.MM.to_pt(instance.ids["font_size"].value))
+    def popup_submitted(self, _instance, data):
+        self.text = data.pop("text")
+        self.font_size = int(metrics.MM.to_pt(data.pop("font_size")))
+
+
+    def popup_cancelled(self, _instance):
+        self.parent.remove_widget(self)
 
 
 
