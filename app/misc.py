@@ -27,11 +27,6 @@ class SliderWithText(BoxLayout):
         self.ids["slider"].value = self.value_normalized
 
 
-    def get(self):
-        self.validate_text()
-        return self.value_normalized
-
-
     def validate_text(self):
         text = self.ids["text_input"].text
 
