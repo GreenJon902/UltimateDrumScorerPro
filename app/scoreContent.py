@@ -4,6 +4,7 @@ from PIL import Image as PilImage, ImageDraw as PilImageDraw, ImageFont as PilIm
 from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 from kivy.core.image import Texture
+from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -12,6 +13,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
 
 from app import metrics
+from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click
 from app.popups import AddTextPopup
 from logger.classWithLogger import ClassWithLogger
 
@@ -70,9 +72,38 @@ class Text(ScoreContent):
             self.parent.remove_widget(self)
 
 
-    def on_touch_up(self, touch):
+    def on_touch_down(self, touch: MotionEvent):
         if self.collide_point(*touch.pos):
+            touch.grab(self)
+
+
+    def on_touch_move(self, touch: MotionEvent):
+        if touch.grab_current == self:
+            self.x += touch.dx
+            self.y += touch.dy
+
+
+    def on_touch_up(self, touch: MotionEvent):
+        s = minimum_mouse_move_for_score_content_to_not_be_a_click
+
+        if touch.grab_current == self and ((s * -1) <= touch.dx <= s) and ((s * -1) <= touch.dy <= s):
+
+            # Get start pos since shouldn't have moved---
+            x, y = touch.pos
+            ox, oy = touch.opos
+
+            tdx = ox - x
+            tdy = oy - y
+
+            self.x += tdx
+            self.y += tdy
+            # -------------------------------------------
+
             self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
+
+            return True
+
+        return False
 
 
 
