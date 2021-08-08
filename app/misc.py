@@ -1,6 +1,6 @@
 import re
 
-from kivy.properties import BoundedNumericProperty, NumericProperty, StringProperty
+from kivy.properties import BoundedNumericProperty, NumericProperty, StringProperty, AliasProperty
 from kivy.uix.boxlayout import BoxLayout
 
 
@@ -25,6 +25,11 @@ class SliderWithText(BoxLayout):
 
         self.ids["text_input"].text = str(self.value_normalized)
         self.ids["slider"].value = self.value_normalized
+
+
+    def get(self):
+        self.validate_text()
+        return self.value_normalized
 
 
     def validate_text(self):

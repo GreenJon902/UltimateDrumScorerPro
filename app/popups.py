@@ -21,7 +21,7 @@ class AddTextPopup(Popup, ClassWithLogger):
             self.ids["font_size"].value = font_size
 
     def get_entered(self):
-        return {"text": self.ids["text"].text, "font_size": self.ids["font_size"].value}
+        return {"text": self.ids["text"].text, "font_size": self.ids["font_size"].get()}
 
     def on_finish_button(self, _instance, _value):
         data = self.get_entered()
