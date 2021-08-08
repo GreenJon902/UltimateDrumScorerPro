@@ -14,6 +14,16 @@ if __name__ == "__main__":
     base_logger = logger.get_logger("BaseLogger")
 
 
+    base_logger.log_info("Setting up PIL")
+
+    # noinspection PyUnresolvedReferences
+    import PIL
+    from PIL.Image import init as PilInit
+    PilInit()
+
+    base_logger.log_info("Set up PIL")
+
+
     base_logger.log_info("Setting up kivy")
     os.environ["KIVY_NO_FILELOG"] = "True"
     os.environ["KIVY_NO_CONSOLELOG"] = "True"
