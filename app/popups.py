@@ -5,11 +5,20 @@ from logger.classWithLogger import ClassWithLogger
 
 class AddTextPopup(Popup, ClassWithLogger):
     def __init__(self, **kwargs):
+
+        text = kwargs.pop("text", None)
+        font_size = kwargs.pop("font_size", None)
+
         Popup.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.register_event_type("on_cancelled")
         self.register_event_type("on_submitted")
+
+        if text:
+            self.ids["text"].text = text
+        if font_size:
+            self.ids["font_size"].value = font_size
 
     def get_entered(self):
         return {"text": self.ids["text"].text, "font_size": self.ids["font_size"].value}

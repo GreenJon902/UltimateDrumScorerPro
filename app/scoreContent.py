@@ -32,6 +32,8 @@ class Text(ScoreContent):
     texture: Texture = ObjectProperty()
     update: callable
 
+    is_active = False  # For cancel - true if has been submitted at least once
+
 
     def __init__(self, *args, **kwargs):
         ScoreContent.__init__(self, *args, **kwargs)
@@ -52,22 +54,27 @@ class Text(ScoreContent):
         self.size = value.size
 
 
-    def popup(self):
-        popup = AddTextPopup()
+    def popup(self, **kwargs):
+        popup = AddTextPopup(**kwargs)
         popup.bind(on_submitted=self.popup_submitted, on_cancelled=self.popup_cancelled)
         popup.open()
 
 
     def popup_submitted(self, _instance, data):
         self.text = data.pop("text")
-        self.font_size = int(metrics.MM.to_pt(data.pop("font_size")))
+        self.font_size = metrics.MM.to_pt(data.pop("font_size"))
+
+        self.is_active = True
 
 
     def popup_cancelled(self, _instance):
-        self.parent.remove_widget(self)
+        if not self.is_active:
+            self.parent.remove_widget(self)
 
 
-
+    def on_touch_up(self, touch):
+        if self.collide_point(*touch.pos):
+            self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
 
 
 
@@ -76,7 +83,7 @@ class Text(ScoreContent):
 def text_to_core_image(text, font_size, color=(0, 0, 0, 255)):
     im = PilImage.new("RGBA", metrics.page_size_px)
 
-    font = PilImageFont.truetype("resources/arial.ttf", font_size)
+    font = PilImageFont.truetype("resources/arial.ttf", int(font_size))
     imDraw = PilImageDraw.Draw(im)
     imDraw.text((0, 0), text, fill=color, font=font)
 

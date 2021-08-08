@@ -38,7 +38,6 @@ class _MM(MetricConverterClass):
         return mm
 
     def to_pt(self, mm: float) -> float:
-        print(mm, mm * pt_per_mm)
         return mm * pt_per_mm
 
     def to_px(self, mm: float) -> float:
