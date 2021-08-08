@@ -17,11 +17,9 @@ from logger.classWithLogger import ClassWithLogger
 
 
 class ScoreContent(RelativeLayout, ClassWithLogger):
-    def __init__(self, location_to_put, **kwargs):
+    def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
-
-        self.pos_hint = location_to_put
 
         self.size_hint = None, None
 
@@ -35,8 +33,8 @@ class Text(ScoreContent):
     is_active = False  # For cancel - true if has been submitted at least once
 
 
-    def __init__(self, *args, **kwargs):
-        ScoreContent.__init__(self, *args, **kwargs)
+    def __init__(self, **kwargs):
+        ScoreContent.__init__(self, **kwargs)
 
         self.popup()
 

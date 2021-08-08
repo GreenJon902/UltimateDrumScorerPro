@@ -97,14 +97,10 @@ class Page(RelativeLayout):
             current_click_mode = App.get_running_app().sidebar_button_current.name \
                 if App.get_running_app().sidebar_button_current is not None else None
 
-            x, y = self.get_pos_hint_from_pos(*touch.pos)
-            location_to_put = {"center_x": x, "center_y": y}
-            del x, y
-
             if current_click_mode == "add_text":
                 App.get_running_app().discard_click_mode()
 
-                content = scoreContent.Text(location_to_put)
+                content = scoreContent.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 
             return True
