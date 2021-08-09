@@ -1,4 +1,3 @@
-from kivy.app import App
 from kivy.graphics import Scale
 from kivy.graphics.transformation import Matrix
 from kivy.properties import NumericProperty, ReferenceListProperty
