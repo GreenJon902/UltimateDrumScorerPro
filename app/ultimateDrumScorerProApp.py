@@ -70,6 +70,10 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
 
     def check_mode(self, mode: str):
-        ret = self.sidebar_button_current.name == mode
+        if self.sidebar_button_current is None:
+            ret = None
+        else:
+            ret = self.sidebar_button_current.name == mode
+
         self.log_dump(f"Checking mode for {mode} which is {ret}")
         return ret
