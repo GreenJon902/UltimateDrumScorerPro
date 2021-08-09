@@ -10,6 +10,7 @@ from kivy.uix.widget import Widget
 from app import scoreContent, metrics
 from app.graphicsConstants import scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width
+from app.misc import check_mode
 
 
 class ScoreViewException(Exception):
@@ -94,12 +95,7 @@ class Page(RelativeLayout):
 
 
         else:
-            current_click_mode = App.get_running_app().sidebar_button_current.name \
-                if App.get_running_app().sidebar_button_current is not None else None
-
-            if current_click_mode == "add_text":
-                App.get_running_app().discard_click_mode()
-
+            if check_mode("text"):
                 content = scoreContent.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 

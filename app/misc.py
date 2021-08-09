@@ -1,5 +1,6 @@
 import re
 
+from kivy.app import App
 from kivy.properties import BoundedNumericProperty, NumericProperty, StringProperty, AliasProperty
 from kivy.uix.boxlayout import BoxLayout
 
@@ -53,3 +54,10 @@ class SliderWithText(BoxLayout):
 
         else:
             return round(value, 2)
+
+
+
+
+
+def check_mode(mode: str):
+    return App.get_running_app().check_mode(mode)

@@ -67,6 +67,5 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
             self.set_cursor(sidebar_button_name_to_cursor[str(button.name)])
 
 
-    def discard_click_mode(self):
-        self.sidebar_button_current.ids.image.source = f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
-        self.sidebar_button_current = None
+    def check_mode(self, mode: str):
+        return self.sidebar_button_current.name == mode

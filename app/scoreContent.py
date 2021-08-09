@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Optional
 
 from PIL import Image as PilImage, ImageDraw as PilImageDraw, ImageFont as PilImageFont
 from kivy.clock import Clock
@@ -14,6 +15,7 @@ from kivy.uix.textinput import TextInput
 
 from app import metrics
 from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click
+from app.misc import check_mode
 from app.popups import AddTextPopup
 from logger.classWithLogger import ClassWithLogger
 
@@ -33,6 +35,8 @@ class Text(ScoreContent):
     update: callable
 
     is_active = False  # For cancel - true if has been submitted at least once
+
+    click_current_uid: Optional[int] = None
 
 
     def __init__(self, **kwargs):
@@ -73,12 +77,12 @@ class Text(ScoreContent):
 
 
     def on_touch_down(self, touch: MotionEvent):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
+        if self.collide_point(*touch.pos) and check_mode("text"):
+            self.click_current_uid = touch.uid
 
 
     def on_touch_move(self, touch: MotionEvent):
-        if touch.grab_current == self:
+        if touch.uid == self.click_current_uid:
             self.x += touch.dx
             self.y += touch.dy
 
@@ -86,21 +90,23 @@ class Text(ScoreContent):
     def on_touch_up(self, touch: MotionEvent):
         s = minimum_mouse_move_for_score_content_to_not_be_a_click
 
-        if touch.grab_current == self and ((s * -1) <= touch.dx <= s) and ((s * -1) <= touch.dy <= s):
+        if touch.uid == self.click_current_uid:
+            if ((s * -1) <= touch.dx <= s) and ((s * -1) <= touch.dy <= s):
 
-            # Get start pos since shouldn't have moved---
-            x, y = touch.pos
-            ox, oy = touch.opos
+                # Get start pos since shouldn't have moved---
+                x, y = touch.pos
+                ox, oy = touch.opos
 
-            tdx = ox - x
-            tdy = oy - y
+                tdx = ox - x
+                tdy = oy - y
 
-            self.x += tdx
-            self.y += tdy
-            # -------------------------------------------
+                self.x += tdx
+                self.y += tdy
+                # -------------------------------------------
 
-            self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
+                self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
 
+            self.click_current_uid = None
             return True
 
         return False
