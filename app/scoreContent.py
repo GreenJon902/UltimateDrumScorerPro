@@ -7,11 +7,7 @@ from kivy.core.image import Image as CoreImage
 from kivy.core.image import Texture
 from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.uix.textinput import TextInput
 
 from app import metrics
 from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click

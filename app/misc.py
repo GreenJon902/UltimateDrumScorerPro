@@ -1,7 +1,5 @@
-import re
-
 from kivy.app import App
-from kivy.properties import BoundedNumericProperty, NumericProperty, StringProperty, AliasProperty
+from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 
 from logger.classWithLogger import ClassWithLogger
