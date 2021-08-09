@@ -11,15 +11,17 @@ from app import scoreContent, metrics
 from app.graphicsConstants import scroll_bar_color, scroll_bar_inactive_color, \
     scroll_bar_width
 from app.misc import check_mode
+from logger.classWithLogger import ClassWithLogger
 
 
 class ScoreViewException(Exception):
     pass
 
 
-class PageHolder(BoxLayout):
+class PageHolder(BoxLayout, ClassWithLogger):
     def __init__(self, **kwargs):
         BoxLayout.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         self.orientation = "vertical"
         self.size_hint_y = None
@@ -28,6 +30,8 @@ class PageHolder(BoxLayout):
     def add_page(self, widget):
         if not isinstance(widget, Page):
             raise ScoreViewException(f"PageHolder only accepts Page widget, not {widget.__class__}")
+
+        self.log_debug("Adding Page")
 
         return BoxLayout.add_widget(self, widget, len(self.children))
 
@@ -60,7 +64,7 @@ class PageContent(RelativeLayout):
 
 
 
-class Page(RelativeLayout):
+class Page(RelativeLayout, ClassWithLogger):
     page_bg: PageBg
     content: PageContent
 
@@ -71,6 +75,7 @@ class Page(RelativeLayout):
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         self.size_hint_y = None
 
@@ -95,7 +100,11 @@ class Page(RelativeLayout):
 
 
         else:
+            self.log_debug("Adding Content")
+
             if check_mode("text"):
+                self.log_dump("which is text")
+
                 content = scoreContent.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 

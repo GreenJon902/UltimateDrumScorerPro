@@ -49,8 +49,10 @@ class Text(ScoreContent):
 
 
     def _update(self):
+        self.log_dump("Updating texture...")
         # FIXME: Bug where text is displayed 10 too small, probably to do with metrics
         self.texture = text_to_core_image(text=self.text, font_size=self.font_size * 10).texture
+        self.log_dump("Updated texture")
 
 
     def on_texture(self, _instance, value):
@@ -59,12 +61,15 @@ class Text(ScoreContent):
 
 
     def popup(self, **kwargs):
+        self.log_debug("Creating popup to edit text")
         popup = AddTextPopup(**kwargs)
         popup.bind(on_submitted=self.popup_submitted, on_cancelled=self.popup_cancelled)
         popup.open()
 
 
     def popup_submitted(self, _instance, data):
+        self.log_dump(f"Popup submitted, data - {data}")
+
         self.text = data.pop("text")
         self.font_size = metrics.MM.to_pt(data.pop("font_size"))
 
@@ -73,8 +78,12 @@ class Text(ScoreContent):
 
     def popup_cancelled(self, _instance):
         if not self.is_active:
+            self.log_dump("Popup cancelled but was already text so not removing")
+
             self.parent.remove_widget(self)
 
+        else:
+            self.log_dump("Popup cancelled")
 
     def on_touch_down(self, touch: MotionEvent):
         if self.collide_point(*touch.pos) and check_mode("text"):

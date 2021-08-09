@@ -4,8 +4,10 @@ from kivy.app import App
 from kivy.properties import BoundedNumericProperty, NumericProperty, StringProperty, AliasProperty
 from kivy.uix.boxlayout import BoxLayout
 
+from logger.classWithLogger import ClassWithLogger
 
-class SliderWithText(BoxLayout):
+
+class SliderWithText(BoxLayout, ClassWithLogger):
     min: int = NumericProperty(0)
     max: int = NumericProperty(10)
 
@@ -30,6 +32,7 @@ class SliderWithText(BoxLayout):
 
     def validate_text(self):
         text = self.ids["text_input"].text
+        self.log_dump(f"Validating text - \"{text}\"")
 
         fl: list[str] = list()
 
@@ -39,10 +42,12 @@ class SliderWithText(BoxLayout):
 
         fs = "".join(fl)
         if fs == "":
+            self.log_dump(f"Got nothing or just text, clearing")
             self.ids["text_input"].text = fs
 
         else:
-            self.value = float(fs)
+            self.value = float(fs)  # Dont have to set text input because slider can link that back to text input
+            self.log_dump(f"Got - {fs}")
 
 
     def normalize(self, value):

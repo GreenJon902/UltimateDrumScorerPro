@@ -3,8 +3,10 @@ from kivy.properties import StringProperty
 from kivy.uix.image import Image
 from kivy.uix.scatter import Scatter
 
+from logger.classWithLogger import ClassWithLogger
 
-class CustomMouse(Scatter):
+
+class CustomMouse(Scatter, ClassWithLogger):
     image: Image
     active: bool
     mouse_in_window: bool
@@ -13,6 +15,7 @@ class CustomMouse(Scatter):
 
     def __init__(self, **kwargs):
         Scatter.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         Window.bind(mouse_pos=lambda _instance, value: self._move_to(value),
                     on_cursor_enter=lambda _instance: self._show(),
@@ -45,6 +48,8 @@ class CustomMouse(Scatter):
 
 
     def show(self):
+        self.log_dump("Showing mouse")
+
         if self.mouse_in_window:
             self.image.opacity = 1
 
@@ -54,5 +59,7 @@ class CustomMouse(Scatter):
         self.active = True
 
     def hide(self):
+        self.log_dump("Hiding mouse")
+
         self.active = False
         self.image.opacity = 0

@@ -49,6 +49,8 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
 
     def sidebar_button_clicked(self, obj):
+        self.log_dump(f"Sidebar button {obj} - {obj.name} - clicked")
+
         if self.sidebar_button_current is not None:
             self.sidebar_button_current.ids.image.source = \
                 f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
@@ -68,4 +70,6 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
 
     def check_mode(self, mode: str):
-        return self.sidebar_button_current.name == mode
+        ret = self.sidebar_button_current.name == mode
+        self.log_dump(f"Checking mode for {mode} which is {ret}")
+        return ret

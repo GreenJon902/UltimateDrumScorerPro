@@ -21,16 +21,19 @@ class AddTextPopup(Popup, ClassWithLogger):
             self.ids["font_size"].value = font_size
 
     def get_entered(self):
-        return {"text": self.ids["text"].text, "font_size": self.ids["font_size"].value}
+        array = {"text": self.ids["text"].text, "font_size": self.ids["font_size"].value}
+        self.log_dump(f"Data entered was requested, returning {array}")
+        return array
 
     def on_finish_button(self, _instance, _value):
         data = self.get_entered()
 
         if data["text"] == "":
-            self.log_info("Tried to close but not text was entered")
+            self.log_debug("Finish button clicked but no text entered so ignoring")
 
         else:
             self.dismiss(correct=True)
+            self.log_dump("Finish button clicked, dismissing self")
 
 
     def dismiss(self, *args, correct=False, **kwargs):  # If correct is false then that means it was auto_dismissed
