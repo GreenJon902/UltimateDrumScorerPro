@@ -23,8 +23,8 @@ level_to_code = {
     "WARNING": yellow,
     "INFO": blue,
     "DEBUG": cyan,
-    "TRACE": green,
-    "DUMP": black
+    "TRACE": black,
+    "DUMP": green
 }
 
 
