@@ -24,7 +24,9 @@ if __name__ == "__main__":
     base_logger.log_info("Setting up kivy")
     os.environ["KIVY_NO_FILELOG"] = "True"
     os.environ["KIVY_NO_CONSOLELOG"] = "True"
-    base_logger.log_dump("Set ENV variables \"KIVY_NO_FILELOG\" and \"KIVY_NO_CONSOLELOG\" too True")
+    os.environ["KCFG_INPUT_MOUSE"] = "mouse,multitouch_on_demand"
+    base_logger.log_dump("Set ENV variables \"KIVY_NO_FILELOG\" and \"KIVY_NO_CONSOLELOG\" too True | "
+                         "\"KCFG_INPUT_MOUSE\" set too \"mouse,multitouch_on_demand\"")
     # noinspection PyUnresolvedReferences
     import kivy
     from kivy.logger import Logger

@@ -1,3 +1,5 @@
+#:import Clock kivy.clock.Clock
+
 #:set bar_size 50
 #:set bar_size_hint None
 
@@ -84,6 +86,10 @@ BoxLayout:
                 Rectangle:
                     pos: self.pos
                     size: self.size
+
+            NoDisableSquareHoverButtonW:
+                name: "move"
+                on_press: app.sidebar_button_clicked(self)
 
             NoDisableSquareHoverButtonW:
                 name: "text"
