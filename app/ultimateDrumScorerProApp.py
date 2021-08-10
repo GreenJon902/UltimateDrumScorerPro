@@ -10,10 +10,9 @@ from app.customMouse import CustomMouse
 # noinspection PyUnresolvedReferences
 from app.graphicsConstants import sidebar_button_name_to_cursor
 # noinspection PyUnresolvedReferences
-from app.scoreView import ScoreView
-# noinspection PyUnresolvedReferences
 from app.misc import SliderWithText
-
+# noinspection PyUnresolvedReferences
+from app.scoreView import ScoreView
 from logger.classWithLogger import ClassWithLogger
 
 
@@ -67,6 +66,12 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
         else:
             button = value
             self.set_cursor(sidebar_button_name_to_cursor[str(button.name)])
+
+            if button.name == "move":
+                self.root.ids["score_view"].set_scroll_view_scroll_mode(["content", "bars"])
+
+            else:
+                self.root.ids["score_view"].set_scroll_view_scroll_mode(["bars"])
 
 
     def check_mode(self, mode: str):

@@ -147,7 +147,7 @@ class Page(RelativeLayout, ClassWithLogger):
 
 
 
-class ScoreView(RelativeLayout):
+class ScoreView(RelativeLayout, ClassWithLogger):
     zoom = NumericProperty(1)
     scrollView: ScrollView
     pageHolderHolder: RelativeLayout
@@ -155,6 +155,7 @@ class ScoreView(RelativeLayout):
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         self.scrollView = ScrollView(do_scroll_x=True, do_scroll_y=True, scroll_type=["bars"],
                                      bar_width=scroll_bar_width, bar_color=scroll_bar_color,
@@ -187,6 +188,11 @@ class ScoreView(RelativeLayout):
 
         else:
             self.pageHolderHolder.width = self.width
+
+
+    def set_scroll_view_scroll_mode(self, thing: list[str]):
+        self.log_dump(f"Setting scroll_view.scroll_type too {thing}")
+        self.scrollView.scroll_type = thing
 
 
 
