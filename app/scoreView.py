@@ -107,7 +107,16 @@ class Page(RelativeLayout, ClassWithLogger):
                 content = scoreContent.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 
+
+            elif check_mode("section"):
+                self.log_dump("which is a section")
+
+                content = scoreContent.Section(pos=self.to_local(*touch.pos))
+                self.content.add_widget(content)
+
+
             elif check_mode("move"):
+                self.log_debug("or not... Hand was selected")
                 return False
 
             return True

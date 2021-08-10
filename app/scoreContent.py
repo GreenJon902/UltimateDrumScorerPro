@@ -17,69 +17,15 @@ from logger.classWithLogger import ClassWithLogger
 
 
 class ScoreContent(RelativeLayout, ClassWithLogger):
+    click_current_uid: Optional[int] = None
+
+
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.size_hint = None, None
 
-
-class Text(ScoreContent):
-    text: str = StringProperty("Text")
-    font_size: float = NumericProperty(10)
-    texture: Texture = ObjectProperty()
-    update: callable
-
-    is_active = False  # For cancel - true if has been submitted at least once
-
-    click_current_uid: Optional[int] = None
-
-
-    def __init__(self, **kwargs):
-        ScoreContent.__init__(self, **kwargs)
-
-        self.popup()
-
-        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
-        self.bind(text=lambda _instance, _value: self.update(), font_size=lambda _instance, _value: self.update())
-
-
-    def _update(self):
-        self.log_dump("Updating texture...")
-        # FIXME: Bug where text is displayed 10 too small, probably to do with metrics
-        self.texture = text_to_core_image(text=self.text, font_size=self.font_size * 10).texture
-        self.log_dump("Updated texture")
-
-
-    def on_texture(self, _instance, value):
-        self.ids["image"].texture = value
-        self.size = value.size
-
-
-    def popup(self, **kwargs):
-        self.log_debug("Creating popup to edit text")
-        popup = AddTextPopup(**kwargs)
-        popup.bind(on_submitted=self.popup_submitted, on_cancelled=self.popup_cancelled)
-        popup.open()
-
-
-    def popup_submitted(self, _instance, data):
-        self.log_dump(f"Popup submitted, data - {data}")
-
-        self.text = data.pop("text")
-        self.font_size = metrics.MM.to_pt(data.pop("font_size"))
-
-        self.is_active = True
-
-
-    def popup_cancelled(self, _instance):
-        if not self.is_active:
-            self.log_dump("Popup cancelled but was already text so not removing")
-
-            self.parent.remove_widget(self)
-
-        else:
-            self.log_dump("Popup cancelled")
 
     def on_touch_down(self, touch: MotionEvent):
         if self.collide_point(*touch.pos) and check_mode("text"):
@@ -92,6 +38,17 @@ class Text(ScoreContent):
             self.y += touch.dy
 
 
+    def on_touch_up(self, touch: MotionEvent):
+        if touch.uid == self.click_current_uid:
+            self.click_current_uid = None
+            return True
+        return False
+
+
+
+
+
+class ScoreContentWithPopup(ScoreContent):
     def on_touch_up(self, touch: MotionEvent):
         s = minimum_mouse_move_for_score_content_to_not_be_a_click
 
@@ -115,6 +72,89 @@ class Text(ScoreContent):
             return True
 
         return False
+
+
+    def __init__(self, **kwargs):
+        ScoreContent.__init__(self, **kwargs)
+
+        self.popup()
+
+    def popup(self, **kwargs):
+        self.log_debug("Creating popup to edit text")
+        popup = self.get_popup_class(**kwargs)
+        popup.bind(on_submitted=self.popup_submitted, on_cancelled=self.popup_cancelled)
+        popup.open()
+
+    def _popup_submitted(self, instance, data):
+        self.log_dump(f"Popup submitted, data - {data}")
+        self.popup_submitted(instance, data)
+
+
+    def popup_cancelled(self, _instance):
+        if not self.is_active:
+            self.log_dump("Popup cancelled but was already text so not removing")
+
+            self.parent.remove_widget(self)
+
+        else:
+            self.log_dump("Popup cancelled")
+
+
+
+    def get_popup_class(self, **kwargs):
+        raise NotImplementedError("No get_popup_class method implemented")
+
+
+    def popup_submitted(self, instance, data):
+        raise NotImplementedError("No popup_submitted method implemented")
+
+
+
+
+
+
+class Text(ScoreContentWithPopup):
+    def get_popup_class(self, **kwargs):
+        return AddTextPopup(**kwargs)
+
+
+    def popup_submitted(self, instance, data):
+        self.text = data.pop("text")
+        self.font_size = metrics.MM.to_pt(data.pop("font_size"))
+
+        self.is_active = True
+
+
+    text: str = StringProperty("Text")
+    font_size: float = NumericProperty(10)
+    texture: Texture = ObjectProperty()
+    update: callable
+
+    is_active = False  # For cancel - true if has been submitted at least once
+
+
+    def __init__(self, **kwargs):
+        ScoreContentWithPopup.__init__(self, **kwargs)
+
+        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+        self.bind(text=lambda _instance, _value: self.update(), font_size=lambda _instance, _value: self.update())
+
+
+    def _update(self):
+        self.log_dump("Updating texture...")
+        # FIXME: Bug where text is displayed 10 too small, probably to do with metrics
+        self.texture = text_to_core_image(text=self.text, font_size=self.font_size * 10).texture
+        self.log_dump("Updated texture")
+
+
+    def on_texture(self, _instance, value):
+        self.ids["image"].texture = value
+        self.size = value.size
+
+
+
+class Section(ScoreContent):
+    pass
 
 
 
