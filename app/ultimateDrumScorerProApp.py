@@ -18,6 +18,7 @@ from logger.classWithLogger import ClassWithLogger
 
 class UltimateDrumScorerProApp(App, ClassWithLogger):
     sidebar_button_current = ObjectProperty(None, allownone=True)
+    current_cursor: str = "pointer"
 
 
     def build(self):
@@ -31,6 +32,8 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
     def set_cursor(self, name):
         self.log_info(f"Setting cursor to {name}")
+
+        self.current_cursor = name
 
         found = Window.set_system_cursor(name)
 
