@@ -107,6 +107,9 @@ class Page(RelativeLayout, ClassWithLogger):
                 content = scoreContent.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 
+            elif check_mode("move"):
+                return False
+
             return True
 
 
