@@ -1,3 +1,4 @@
+from kivy.app import App
 from kivy.uix.popup import Popup
 
 from logger.classWithLogger import ClassWithLogger
@@ -63,3 +64,17 @@ class AddTextPopup(MyPopup):
         else:
             self.dismiss(correct=True)
             self.log_dump("Finish button clicked, dismissing self")
+
+
+
+class AddSectionPopup(MyPopup):
+    def __init__(self, **kwargs):
+        name = kwargs.pop("name", None)
+
+        MyPopup.__init__(self, **kwargs)
+
+        if name:
+            self.ids["name"].text = name
+
+    def get_entered(self):
+        pass

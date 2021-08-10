@@ -12,7 +12,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from app import metrics
 from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click
 from app.misc import check_mode
-from app.popups import AddTextPopup
+from app.popups import AddTextPopup, AddSectionPopup
 from logger.classWithLogger import ClassWithLogger
 
 
@@ -49,6 +49,8 @@ class ScoreContent(RelativeLayout, ClassWithLogger):
 
 
 class ScoreContentWithPopup(ScoreContent):
+    is_active = False  # For cancel - true if has been submitted at least once
+
     def on_touch_up(self, touch: MotionEvent):
         s = minimum_mouse_move_for_score_content_to_not_be_a_click
 
@@ -130,8 +132,6 @@ class Text(ScoreContentWithPopup):
     texture: Texture = ObjectProperty()
     update: callable
 
-    is_active = False  # For cancel - true if has been submitted at least once
-
 
     def __init__(self, **kwargs):
         ScoreContentWithPopup.__init__(self, **kwargs)
@@ -153,8 +153,15 @@ class Text(ScoreContentWithPopup):
 
 
 
-class Section(ScoreContent):
-    pass
+class Section(ScoreContentWithPopup):
+    def get_popup_class(self, **kwargs):
+        return AddSectionPopup(**kwargs)
+
+    def popup_submitted(self, instance, data):
+        pass
+
+    def __init__(self, **kwargs):
+        ScoreContentWithPopup.__init__(self, **kwargs)
 
 
 
