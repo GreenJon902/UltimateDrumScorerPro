@@ -16,7 +16,7 @@
 #:set score_zoom_bar_size_hint_x None
 #:set score_zoom_sign_color ([0.2] * 3)
 
-#:set slider_with_text_height 30
+#:set one_line_text_box_height 30
 
 #:set add_text_popup_font_size_min_mm 5
 #:set add_text_popup_font_size_max_mm 50
@@ -217,14 +217,10 @@ BoxLayout:
         BoxLayout:
             orientation: "horizontal"
 
-            size_hint_y: None
-            height: text.height
-
             Label:
                 text: "Text "
-                size_hint: None, None
+                size_hint_x: None
                 on_texture_size: self.width = self.texture.size[0]
-                height: text.height
 
             TextInput:
                 id: text
@@ -266,14 +262,34 @@ BoxLayout:
     title: "Section"
     size_hint: 0.5, 0.5
 
+    BoxLayout:
+        orientation: "vertical"
 
+
+        BoxLayout:
+            orientation: "horizontal"
+
+            Label:
+                text: "Section Name "
+                size_hint_x: None
+                on_texture_size: self.width = self.texture.size[0]
+
+            TextInput:
+                id: name
+                hint_text: "Enter this section's name"
+
+
+
+        Button:
+            text: "Finish"
+            on_release: root.on_finish_button(self, "down")
 
 
 # Misc
 
 <SliderWithText>:
     size_hint_y: None
-    height: slider_with_text_height
+    height: one_line_text_box_height
 
     TextInput:
         id: text_input
