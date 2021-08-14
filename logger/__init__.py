@@ -8,9 +8,9 @@ from app_info.logging_info import default_log_level
 from logger.classWithLogger import ClassWithLogger
 from logger.consoleHandler import ConsoleHandler
 from logger.fileHandler import FileHandler
-from logger.formatter import Formatter
 # Setting up logger ----------------------------------------------------------------------------------------------------
 from logger.format_funcs import standard_format
+from logger.formatter import Formatter
 
 logging.TRACE = 9
 logging.DUMP = 10
@@ -73,7 +73,7 @@ if "LOG_LEVEL" in os.environ:
     console_handler.setLevel(int(os.environ.get("LOG_LEVEL")))
 else:
     root_logger.warning(f"No log level in environ, defaulting to {default_log_level}")
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(default_log_level)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
