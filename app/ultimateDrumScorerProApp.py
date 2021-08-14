@@ -55,7 +55,7 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
         if self.sidebar_button_current is not None:
             self.sidebar_button_current.ids.image.source = \
-                f"resources/buttons/{self.sidebar_button_current.name}_button_normal.png"
+                f"atlas://resources/atlases/buttons/{self.sidebar_button_current.name}_button_normal"
         self.sidebar_button_current = obj
 
 

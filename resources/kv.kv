@@ -25,6 +25,8 @@
 #:set add_text_popup_font_size_max_mm 50
 #:set add_text_popup_font_size_default_mm 10
 
+#:set mode_button_path "atlas://resources/atlases/buttons/{name}_button_{state}"
+
 
 BoxLayout:
     orientation: "vertical"
@@ -144,22 +146,22 @@ BoxLayout:
 <_HoverButton@BoxLayoutWithClickHoverEvent>:
     name: "unknown"
 
-    on_press: image.source = f"resources/buttons/{root.name}_button_click.png"
-    on_name: image.source = (f"resources/buttons/{root.name}_button_click.png" if self.state == "down" else (f"resources/buttons/{root.name}_button_hover.png" if self.mouse_over else (f"resources/buttons/{root.name}_button_normal.png")))
+    on_press: image.source = mode_button_path.format(name=root.name, state="click")
+    on_name: image.source = (mode_button_path.format(name=root.name, state="click") if self.state == "down" else (mode_button_path.format(name=root.name, state="hover") if self.mouse_over else (mode_button_path.format(name=root.name, state="normal"))))
 
     Image:
         id: image
 
 
 <NoDisableHoverButton@_HoverButton>:
-    on_mouse_enter: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png" if root.ids.image.source == f"resources/buttons/{root.name}_button_normal.png" else root.ids.image.source
-    on_mouse_leave: root.ids.image.source = f"resources/buttons/{root.name}_button_normal.png" if root.ids.image.source == f"resources/buttons/{root.name}_button_hover.png" else root.ids.image.source
+    on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover") if root.ids.image.source == mode_button_path.format(name=root.name, state="normal") else root.ids.image.source
+    on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal") if root.ids.image.source == mode_button_path.format(name=root.name, state="hover") else root.ids.image.source
 
 
 <HoverButton@_HoverButton>:
-    on_mouse_enter: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png"
-    on_mouse_leave: root.ids.image.source = f"resources/buttons/{root.name}_button_normal.png"
-    on_release: root.ids.image.source = f"resources/buttons/{root.name}_button_hover.png"
+    on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
+    on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal")
+    on_release: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
 
 
 
