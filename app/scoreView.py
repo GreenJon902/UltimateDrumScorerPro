@@ -1,3 +1,4 @@
+from kivy.clock import Clock
 from kivy.graphics import Scale
 from kivy.graphics.transformation import Matrix
 from kivy.properties import NumericProperty, ReferenceListProperty
@@ -175,7 +176,15 @@ class ScoreView(RelativeLayout, ClassWithLogger):
         self.pageHolderHolder = RelativeLayout(size_hint_y=None, size_hint_x=None)
         self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
 
-        self.pageHolder.add_page(Page())
+
+
+        page = Page()
+        Clock.schedule_once(lambda _: page.add_widget(scoreContent.Section(pos=self.to_local(100, 100))), -1)
+
+
+
+
+        self.pageHolder.add_page(page)
 
 
         self.pageHolder.bind(height=lambda _instance, value: set_height(self.pageHolderHolder, value))

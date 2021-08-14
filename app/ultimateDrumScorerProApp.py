@@ -18,7 +18,7 @@ from logger.classWithLogger import ClassWithLogger
 
 class UltimateDrumScorerProApp(App, ClassWithLogger):
     sidebar_button_current = ObjectProperty(None, allownone=True)
-    current_cursor: str = "pointer"
+    current_cursor: str = "arrow"
 
 
     def build(self):
