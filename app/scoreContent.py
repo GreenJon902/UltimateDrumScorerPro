@@ -154,6 +154,8 @@ class Text(ScoreContentWithPopup):
 
 
 class Section(ScoreContentWithPopup):
+    notes = None
+
     def get_popup_class(self, **kwargs):
         return AddSectionPopup(**kwargs)
 
@@ -163,6 +165,18 @@ class Section(ScoreContentWithPopup):
     def __init__(self, **kwargs):
         ScoreContentWithPopup.__init__(self, **kwargs)
 
+    def on_touch_up(self, touch: MotionEvent):
+        if self.collide_point(*touch.pos):
+            if check_mode("note"):
+                ret = True
+
+                print("note")
+
+            else:
+                ret = ScoreContentWithPopup.on_touch_up(*touch.pos)
+
+            return ret
+        return False
 
 
 
