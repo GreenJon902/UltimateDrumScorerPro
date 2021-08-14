@@ -3,7 +3,7 @@ import appdirs
 name = "UltimateDrumScorerPro"
 name_short = 'UDSP'
 author = "GreenJon902"
-version = "ALPHA_1.0.1"
+version = "ALPHA_1.0.2"
 
 description = f"{name} is a new drum scorer or sheet music writing program made by {author}. You are using version "\
               f"{version}"
