@@ -30,7 +30,12 @@ if __name__ == "__main__":
     # noinspection PyUnresolvedReferences
     import kivy
     from kivy.logger import Logger
-    Logger.setLevel(int(os.environ["LOG_LEVEL"]))
+
+    try:
+        Logger.setLevel(int(os.environ["LOG_LEVEL"]))
+    except KeyError:
+        Logger.setLevel(logger.default_log_level)
+
     base_logger.log_info("Set up kivy")
 
 
