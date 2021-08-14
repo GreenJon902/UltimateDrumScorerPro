@@ -7,3 +7,5 @@ scroll_bar_width = "20dp"
 sidebar_button_name_to_cursor = {"text": "ibeam", "section": "new_bar", "move": "hand", "note": "arrow"}
 
 minimum_mouse_move_for_score_content_to_not_be_a_click = 5
+
+note_width = 500

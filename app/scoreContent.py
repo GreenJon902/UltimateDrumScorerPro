@@ -7,10 +7,11 @@ from kivy.core.image import Image as CoreImage
 from kivy.core.image import Texture
 from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty
+from kivy.uix.image import Image
 from kivy.uix.relativelayout import RelativeLayout
 
 from app import metrics
-from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click
+from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click, note_width
 from app.misc import check_mode
 from app.popups import AddTextPopup, AddSectionPopup
 from logger.classWithLogger import ClassWithLogger
@@ -162,7 +163,7 @@ class Section(ScoreContentWithPopup):
         return AddSectionPopup(**kwargs)
 
     def popup_submitted(self, instance, data):
-        pass
+        self.update()
 
     def __init__(self, **kwargs):
         ScoreContentWithPopup.__init__(self, **kwargs)
@@ -174,7 +175,7 @@ class Section(ScoreContentWithPopup):
             if check_mode("note"):
                 ret = True
 
-                print("note")
+                self.update()
 
             else:
                 ret = ScoreContentWithPopup.on_touch_up(*touch.pos)
@@ -184,9 +185,18 @@ class Section(ScoreContentWithPopup):
 
 
     def _update(self):
-        note_width = self.width / len(self.notes)
-        
+        self.clear_widgets()
 
+        for n, note in enumerate(self.notes):
+            if note == "rest":
+                note = "quarter_rest"  # TODO: Correct rest types
+
+            self.add_widget(Image(source=f"atlas://resources/atlases/notes/{note}",
+                                  width=note_width,
+                                  size_hint_x=None,
+                                  x=note_width * n))
+
+        self.width = len(self.notes) * note_width
 
 
 def text_to_core_image(text, font_size, color=(0, 0, 0, 255)):

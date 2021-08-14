@@ -215,31 +215,31 @@ BoxLayout:
 
 
 <Section>:
-    width: 1000  # Test Values
     height: staff_height
+    width: 1000
 
     canvas:
         Color:
             rgb: staff_color
 
         Line:
-            points: 0, staff_height / 4 * 0, 1000, staff_height / 4 * 0
+            points: 0, self.height / 4 * 0, self.width, self.height / 4 * 0
             width: 10
 
         Line:
-            points: 0, staff_height / 4 * 1, 1000, staff_height / 4 * 1
+            points: 0, self.height / 4 * 1, self.width, self.height / 4 * 1
             width: 10
 
         Line:
-            points: 0, staff_height / 4 * 2, 1000, staff_height / 4 * 2
-            width: 1
-
-        Line:
-            points: 0, staff_height / 4 * 3, 1000, staff_height / 4 * 3
+            points: 0, self.height / 4 * 2, self.width, self.height / 4 * 2
             width: 10
 
         Line:
-            points: 0, staff_height / 4 * 4, 1000, staff_height / 4 * 4
+            points: 0, self.height / 4 * 3, self.width, self.height / 4 * 3
+            width: 10
+
+        Line:
+            points: 0, self.height / 4 * 4, self.width, self.height / 4 * 4
             width: 10
 
 
