@@ -19,6 +19,7 @@ from logger.classWithLogger import ClassWithLogger
 
 class ScoreContent(RelativeLayout, ClassWithLogger):
     click_current_uid: Optional[int] = None
+    required_mode = None
 
 
     def __init__(self, **kwargs):
@@ -29,7 +30,7 @@ class ScoreContent(RelativeLayout, ClassWithLogger):
 
 
     def on_touch_down(self, touch: MotionEvent):
-        if self.collide_point(*touch.pos) and check_mode("text"):
+        if self.collide_point(*touch.pos) and check_mode(self.required_mode):
             self.click_current_uid = touch.uid
 
 
@@ -117,6 +118,8 @@ class ScoreContentWithPopup(ScoreContent):
 
 
 class Text(ScoreContentWithPopup):
+    required_mode = "text"
+
     def get_popup_class(self, **kwargs):
         return AddTextPopup(**kwargs)
 
@@ -157,6 +160,7 @@ class Text(ScoreContentWithPopup):
 class Section(ScoreContentWithPopup):
     update: callable
 
+    required_mode = "section"
     notes = list(["rest", "rest", "rest", "rest"])
 
     def get_popup_class(self, **kwargs):
