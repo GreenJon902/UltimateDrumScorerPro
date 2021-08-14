@@ -16,6 +16,9 @@
 #:set score_zoom_bar_size_hint_x None
 #:set score_zoom_sign_color ([0.2] * 3)
 
+#:set staff_height 500
+#:set staff_color ([0] * 3)
+
 #:set one_line_text_box_height 30
 
 #:set add_text_popup_font_size_min_mm 5
@@ -202,6 +205,33 @@ BoxLayout:
 <Text>:
     Image:
         id: image
+
+
+
+<Section>:
+    canvas:
+        Color:
+            rgb: staff_color
+
+        Line:
+            points: 0, staff_height / 4 * 0, 1000, staff_height / 4 * 0
+            width: 10
+
+        Line:
+            points: 0, staff_height / 4 * 1, 1000, staff_height / 4 * 1
+            width: 10
+
+        Line:
+            points: 0, staff_height / 4 * 2, 1000, staff_height / 4 * 2
+            width: 1
+
+        Line:
+            points: 0, staff_height / 4 * 3, 1000, staff_height / 4 * 3
+            width: 10
+
+        Line:
+            points: 0, staff_height / 4 * 4, 1000, staff_height / 4 * 4
+            width: 10
 
 
 
