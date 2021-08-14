@@ -154,7 +154,9 @@ class Text(ScoreContentWithPopup):
 
 
 class Section(ScoreContentWithPopup):
-    notes = None
+    update: callable
+
+    notes = list(["rest", "rest", "rest", "rest"])
 
     def get_popup_class(self, **kwargs):
         return AddSectionPopup(**kwargs)
@@ -164,6 +166,8 @@ class Section(ScoreContentWithPopup):
 
     def __init__(self, **kwargs):
         ScoreContentWithPopup.__init__(self, **kwargs)
+
+        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
 
     def on_touch_up(self, touch: MotionEvent):
         if self.collide_point(*touch.pos):
@@ -178,6 +182,10 @@ class Section(ScoreContentWithPopup):
             return ret
         return False
 
+
+    def _update(self):
+        note_width = self.width / len(self.notes)
+        
 
 
 
