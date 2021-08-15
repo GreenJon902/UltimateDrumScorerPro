@@ -1,10 +1,10 @@
 # Basics from https://github.com/GreenJon902/SpaceBuilderMergeGame/blob/master/lib/globalEvents.py
+from logger import ClassWithLogger
+
+logger = ClassWithLogger(name="GlobalEvents")
 
 
-logger = BetterLogger(name="GlobalEvents")
-
-
-class GlobalEvents:
+class GlobalBindings:
     bindings: dict[str, list] = {}
 
     @classmethod
@@ -13,7 +13,7 @@ class GlobalEvents:
             cls.check_binding(event_name)
 
             cls.bindings[event_name].append(function)
-            logger.log_deep_debug(function, "was bound to event '", event_name, "'")
+            logger.log_dump(function, "was bound to event '", event_name, "'")
 
     @classmethod
     def register(cls, event_name: str):
@@ -32,4 +32,4 @@ class GlobalEvents:
             cls.register(event_name)
 
 
-__all__ = ["GlobalEvents"]
+__all__ = ["GlobalBindings"]
