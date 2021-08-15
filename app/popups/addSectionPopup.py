@@ -1,11 +1,11 @@
-from app.popups import _Popup
+from app.popups.popup import Popup
 
 
-class AddSectionPopup(_Popup):
+class AddSectionPopup(Popup):
     def __init__(self, **kwargs):
         name = kwargs.pop("name", None)
 
-        _Popup.__init__(self, **kwargs)
+        Popup.__init__(self, **kwargs)
 
         if name:
             self.ids["name"].text = name

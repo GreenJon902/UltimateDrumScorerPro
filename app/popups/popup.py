@@ -1,14 +1,14 @@
 from kivy.app import App
-from kivy.uix.popup import Popup
+from kivy.uix.popup import Popup as KvPopup
 
 from logger import ClassWithLogger
 
 
-class _Popup(Popup, ClassWithLogger):
+class Popup(KvPopup, ClassWithLogger):
     cursor_before: str
 
     def __init__(self, **kwargs):
-        Popup.__init__(self, **kwargs)
+        KvPopup.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.register_event_type("on_cancelled")
@@ -22,7 +22,7 @@ class _Popup(Popup, ClassWithLogger):
 
 
     def open(self, *args, **kwargs):
-        Popup.open(self, *args, **kwargs)
+        KvPopup.open(self, *args, **kwargs)
 
         self.cursor_before = App.get_running_app().current_cursor
         App.get_running_app().set_cursor("arrow")
@@ -35,7 +35,7 @@ class _Popup(Popup, ClassWithLogger):
         else:
             self.dispatch("on_cancelled")
 
-        Popup.dismiss(self, *args, **kwargs)
+        KvPopup.dismiss(self, *args, **kwargs)
         App.get_running_app().set_cursor(self.cursor_before)
         del self.cursor_before
 

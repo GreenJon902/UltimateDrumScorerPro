@@ -1,12 +1,12 @@
-from app.popups import _Popup
+from app.popups.popup import Popup
 
 
-class AddTextPopup(_Popup):
+class AddTextPopup(Popup):
     def __init__(self, **kwargs):
         text = kwargs.pop("text", None)
         font_size = kwargs.pop("font_size", None)
 
-        _Popup.__init__(self, **kwargs)
+        Popup.__init__(self, **kwargs)
 
         if text:
             self.ids["text"].text = text
