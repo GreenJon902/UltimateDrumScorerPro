@@ -48,7 +48,6 @@ class ScoreView(RelativeLayout, ClassWithLogger):
     def on_zoom(self, _instance, value):
         self.pageHolder.width = self.width * value
         self.do_page_holder_holder_size()
-        self.scrollView.zoom = value
 
     def on_width(self, _instance, value):
         self.pageHolder.width = value * self.zoom
