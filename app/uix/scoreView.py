@@ -30,7 +30,7 @@ class ScoreView(RelativeLayout, ClassWithLogger):
 
         page = Page()
         Clock.schedule_once(lambda _: page.add_widget(
-            app.uix.scoreContent.section.Section(pos=self.to_local(100, 100))), -1)
+            app.uix.scoreContent.section.Section(pos=self.to_local(100, 100))), -1) # Testing stuff
 
 
 
