@@ -5,9 +5,10 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
+import app.uix.scoreContent.section
+import app.uix.scoreContent.text
 from app import metrics
 from app.misc import check_mode
-from app.uix import scoreContent
 from app.uix.scoreViewHelpers import ScoreViewException
 from logger import ClassWithLogger
 
@@ -99,14 +100,14 @@ class Page(RelativeLayout, ClassWithLogger):
             if check_mode("text"):
                 self.log_dump("which is text")
 
-                content = scoreContent.Text(pos=self.to_local(*touch.pos))
+                content = app.uix.scoreContent.text.Text(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 
 
             elif check_mode("section"):
                 self.log_dump("which is a section")
 
-                content = scoreContent.Section(pos=self.to_local(*touch.pos))
+                content = app.uix.scoreContent.section.Section(pos=self.to_local(*touch.pos))
                 self.content.add_widget(content)
 
 

@@ -3,8 +3,8 @@ from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 
+import app.uix.scoreContent.section
 from app.graphicsConstants import scroll_bar_width, scroll_bar_inactive_color, scroll_bar_color
-from app.uix import scoreContent
 from app.uix.scoreViewHelpers import set_height
 from app.uix.scoreViewHelpers.page import PageHolder, Page
 from logger import ClassWithLogger
@@ -29,7 +29,8 @@ class ScoreView(RelativeLayout, ClassWithLogger):
 
 
         page = Page()
-        Clock.schedule_once(lambda _: page.add_widget(scoreContent.Section(pos=self.to_local(100, 100))), -1)
+        Clock.schedule_once(lambda _: page.add_widget(
+            app.uix.scoreContent.section.Section(pos=self.to_local(100, 100))), -1)
 
 
 
