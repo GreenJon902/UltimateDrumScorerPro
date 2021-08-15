@@ -5,9 +5,10 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
-from app import metrics, scoreContent
+from app import metrics
 from app.misc import check_mode
-from app.scoreView.helperFunctions import ScoreViewException
+from app.uix import scoreContent
+from app.uix.scoreViewStuff import ScoreViewException
 from logger import ClassWithLogger
 
 

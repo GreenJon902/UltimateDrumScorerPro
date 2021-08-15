@@ -4,15 +4,15 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 
 # noinspection PyUnresolvedReferences
-from app.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
-# noinspection PyUnresolvedReferences
-from app.customMouse import CustomMouse
-# noinspection PyUnresolvedReferences
 from app.graphicsConstants import sidebar_button_name_to_cursor
 # noinspection PyUnresolvedReferences
-from app.misc import SliderWithText
+from app.uix.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
 # noinspection PyUnresolvedReferences
-from app.scoreView import ScoreView
+from app.uix.customMouse import CustomMouse
+# noinspection PyUnresolvedReferences
+from app.uix.scoreView import ScoreView
+# noinspection PyUnresolvedReferences
+from app.uix.sliderWithText import SliderWithText
 from logger import ClassWithLogger
 
 

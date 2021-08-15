@@ -3,10 +3,10 @@ from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 
-from app import scoreContent
 from app.graphicsConstants import scroll_bar_width, scroll_bar_inactive_color, scroll_bar_color
-from app.scoreView.helperFunctions import set_height
-from app.scoreView.page import PageHolder, Page
+from app.uix import scoreContent
+from app.uix.scoreViewStuff import set_height
+from app.uix.scoreViewStuff.page import PageHolder, Page
 from logger import ClassWithLogger
 
 
