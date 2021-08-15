@@ -1,6 +1,7 @@
 from kivy.app import App
 from kivy.uix.popup import Popup as KvPopup
 
+from app.globalBindings import GlobalBindings
 from logger import ClassWithLogger
 
 
@@ -25,7 +26,7 @@ class Popup(KvPopup, ClassWithLogger):
         KvPopup.open(self, *args, **kwargs)
 
         self.cursor_before = App.get_running_app().current_cursor
-        App.get_running_app().set_cursor("arrow")
+        GlobalBindings.dispatch("set_cursor", "arrow")
 
 
     def dismiss(self, *args, correct=False, **kwargs):  # If correct is false then that means it was auto_dismissed
@@ -36,7 +37,7 @@ class Popup(KvPopup, ClassWithLogger):
             self.dispatch("on_cancelled")
 
         KvPopup.dismiss(self, *args, **kwargs)
-        App.get_running_app().set_cursor(self.cursor_before)
+        GlobalBindings.dispatch("set_cursor", self.cursor_before)
         del self.cursor_before
 
     def on_cancelled(self):

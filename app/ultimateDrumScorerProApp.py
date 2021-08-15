@@ -1,5 +1,4 @@
 from kivy.app import App
-from kivy.core.window import Window
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 
@@ -33,24 +32,7 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
         return root
 
 
-    def set_cursor(self, name):
-        self.log_info(f"Setting cursor to {name}")
 
-        self.current_cursor = name
-
-        found = Window.set_system_cursor(name)
-
-        if not found:
-            Window.show_cursor = False
-            self.root.ids["custom_mouse"].name = name
-            self.root.ids["custom_mouse"].show()
-
-            self.log_debug(f"No system cursor found for {name}, trying to find a custom one")
-
-        else:
-            self.root.ids["custom_mouse"].hide()
-            Window.show_cursor = True
-            self.log_debug(f"System cursor found for {name}")
 
 
     def sidebar_button_clicked(self, obj):
@@ -67,11 +49,11 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
     def on_sidebar_button_current(self, _instance, value):
         if value is None:
-            self.set_cursor(sidebar_button_name_to_cursor[str(value)])
+            GlobalBindings.dispatch("set_cursor", sidebar_button_name_to_cursor[str(value)])
 
         else:
             button = value
-            self.set_cursor(sidebar_button_name_to_cursor[str(button.name)])
+            GlobalBindings.dispatch("set_cursor", sidebar_button_name_to_cursor[str(button.name)])
 
             if button.name == "move":
                 self.root.ids["score_view"].set_scroll_view_scroll_mode(["content", "bars"])
