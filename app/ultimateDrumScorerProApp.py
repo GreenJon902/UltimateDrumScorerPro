@@ -4,6 +4,7 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 
 # noinspection PyUnresolvedReferences
+from app.globalBindings import GlobalBindings
 from app.graphicsConstants import sidebar_button_name_to_cursor
 # noinspection PyUnresolvedReferences
 from app.uix.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
@@ -22,6 +23,8 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
 
     def build(self):
+        GlobalBindings.bind(sidebar_button_clicked=self.sidebar_button_clicked)
+
         root = Builder.load_file("resources/kv.kv")
 
         self.log_debug("Loaded and built KV")

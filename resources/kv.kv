@@ -1,4 +1,5 @@
 #:import Clock kivy.clock.Clock
+#:import GlobalBindings app.globalBindings.GlobalBindings
 
 #:set bar_size 50
 #:set bar_size_hint None
@@ -94,19 +95,19 @@ BoxLayout:
 
             NoDisableSquareHoverButtonW:
                 name: "move"
-                on_press: app.sidebar_button_clicked(self)
+                on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
             NoDisableSquareHoverButtonW:
                 name: "text"
-                on_press: app.sidebar_button_clicked(self)
+                on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
             NoDisableSquareHoverButtonW:
                 name: "section"
-                on_press: app.sidebar_button_clicked(self)
+                on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
             NoDisableSquareHoverButtonW:
                 name: "note"
-                on_press: app.sidebar_button_clicked(self)
+                on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
 
             Widget:

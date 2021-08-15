@@ -23,7 +23,7 @@ class GlobalBindings:
     @classmethod
     def dispatch(cls, event_name: str, *args, **kwargs):
         cls.check_binding(event_name)
-        if len(cls.bindings) != 0:
+        if len(cls.bindings[event_name]) != 0:
             for function in cls.bindings[event_name]:
                 function(*args, **kwargs)
 
