@@ -13,7 +13,7 @@ from app.graphicsConstants import sidebar_button_name_to_cursor
 from app.misc import SliderWithText
 # noinspection PyUnresolvedReferences
 from app.scoreView import ScoreView
-from logger.classWithLogger import ClassWithLogger
+from logger import ClassWithLogger
 
 
 class UltimateDrumScorerProApp(App, ClassWithLogger):

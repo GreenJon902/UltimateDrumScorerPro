@@ -14,7 +14,7 @@ from app import metrics
 from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click, note_width
 from app.misc import check_mode
 from app.popups import AddTextPopup, AddSectionPopup
-from logger.classWithLogger import ClassWithLogger
+from logger import ClassWithLogger
 
 
 class ScoreContent(RelativeLayout, ClassWithLogger):

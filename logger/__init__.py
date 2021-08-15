@@ -83,4 +83,4 @@ def get_logger(name: str) -> ClassWithLogger:
     return ClassWithLogger(name)
 
 
-__all__ = ["get_logger"]
+__all__ = ["get_logger", "ClassWithLogger"]

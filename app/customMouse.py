@@ -3,7 +3,7 @@ from kivy.properties import StringProperty
 from kivy.uix.image import Image
 from kivy.uix.scatter import Scatter
 
-from logger.classWithLogger import ClassWithLogger
+from logger import ClassWithLogger
 
 
 class CustomMouse(Scatter, ClassWithLogger):

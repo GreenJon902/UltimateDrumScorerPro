@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.uix.popup import Popup
 
-from logger.classWithLogger import ClassWithLogger
+from logger import ClassWithLogger
 
 
 class MyPopup(Popup, ClassWithLogger):
