@@ -5,8 +5,8 @@ from kivy.uix.scrollview import ScrollView
 
 from app.graphicsConstants import scroll_bar_width, scroll_bar_inactive_color, scroll_bar_color
 from app.uix import scoreContent
-from app.uix.scoreViewStuff import set_height
-from app.uix.scoreViewStuff.page import PageHolder, Page
+from app.uix.scoreViewHelpers import set_height
+from app.uix.scoreViewHelpers.page import PageHolder, Page
 from logger import ClassWithLogger
 
 
