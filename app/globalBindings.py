@@ -23,8 +23,12 @@ class GlobalBindings:
     @classmethod
     def dispatch(cls, event_name: str, *args, **kwargs):
         cls.check_binding(event_name)
-        for function in cls.bindings[event_name]:
-            function(*args, **kwargs)
+        if len(cls.bindings) != 0:
+            for function in cls.bindings[event_name]:
+                function(*args, **kwargs)
+
+        else:
+            logger.log_warning(f"No functions bound to event {event_name}")
 
     @classmethod
     def check_binding(cls, event_name: str):
