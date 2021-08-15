@@ -43,4 +43,3 @@ if __name__ == "__main__":
     import app
     app.start()
     base_logger.log_info("Finished")
-
