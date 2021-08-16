@@ -8,4 +8,9 @@ sidebar_button_name_to_cursor = {"text": "ibeam", "section": "new_bar", "move": 
 
 minimum_mouse_move_for_score_content_to_not_be_a_click = 5
 
+staff_height = 500
+staff_gap = staff_height / 4
+
 note_width = 500
+note_tail_width = 10
+note_foot_width = staff_gap * 1.5

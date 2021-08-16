@@ -1,5 +1,5 @@
 from kivy.clock import Clock
-from kivy.graphics import Canvas
+from kivy.graphics import Canvas, Translate
 from kivy.input import MotionEvent
 
 from app.graphicsConstants import note_width
@@ -13,7 +13,7 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    notes = list([Note(name="quarter_rest"), Note(name="quarter_rest")])
+    notes = list([Note(name="quarter_rest"), Note(name="bass"), Note(name="snare")])
 
     note_canvas: Canvas
 
@@ -52,5 +52,6 @@ class Section(ScoreContentWithPopup):
                 note = "quarter_rest"  # TODO: Correct rest types
 
             self.note_canvas.add(note.canvas)
+            self.note_canvas.add(Translate(note_width, 0, 0))
 
         self.width = len(self.notes) * note_width

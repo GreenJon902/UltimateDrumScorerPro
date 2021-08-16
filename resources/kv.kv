@@ -18,6 +18,7 @@
 #:set score_zoom_sign_color ([0.2] * 3)
 
 #:set staff_height 500
+#:set staff_gap staff_height / 4
 #:set staff_color ([0] * 3)
 
 #:set one_line_text_box_height 30
@@ -224,23 +225,23 @@ BoxLayout:
             rgb: staff_color
 
         Line:
-            points: 0, self.height / 4 * 0, self.width, self.height / 4 * 0
+            points: 0, staff_gap * 0, self.width, staff_gap * 0
             width: 10
 
         Line:
-            points: 0, self.height / 4 * 1, self.width, self.height / 4 * 1
+            points: 0, staff_gap * 1, self.width, staff_gap * 1
             width: 10
 
         Line:
-            points: 0, self.height / 4 * 2, self.width, self.height / 4 * 2
+            points: 0, staff_gap * 2, self.width, staff_gap * 2
             width: 10
 
         Line:
-            points: 0, self.height / 4 * 3, self.width, self.height / 4 * 3
+            points: 0, staff_gap * 3, self.width, staff_gap * 3
             width: 10
 
         Line:
-            points: 0, self.height / 4 * 4, self.width, self.height / 4 * 4
+            points: 0, staff_gap * 4, self.width, staff_gap * 4
             width: 10
 
 
