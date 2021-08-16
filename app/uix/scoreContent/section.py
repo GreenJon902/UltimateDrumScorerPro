@@ -1,10 +1,11 @@
 from kivy.clock import Clock
+from kivy.graphics import Canvas
 from kivy.input import MotionEvent
-from kivy.uix.image import Image
 
 from app.graphicsConstants import note_width
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
+from app.uix.scoreContent.note import Note
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 
 
@@ -12,7 +13,9 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    notes = list(["rest", "rest", "rest", "rest"])
+    notes = list([Note(name="quarter_rest"), Note(name="quarter_rest")])
+
+    note_canvas: Canvas
 
     def get_popup_class(self, **kwargs):
         return AddSectionPopup(**kwargs)
@@ -24,6 +27,8 @@ class Section(ScoreContentWithPopup):
         ScoreContentWithPopup.__init__(self, **kwargs)
 
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+        self.note_canvas = Canvas()
+        self.canvas.add(self.note_canvas)
 
     def on_touch_up(self, touch: MotionEvent):
         if self.collide_point(*touch.pos):
@@ -40,15 +45,12 @@ class Section(ScoreContentWithPopup):
 
 
     def _update(self):
-        self.clear_widgets()
+        self.note_canvas.clear()
 
         for n, note in enumerate(self.notes):
             if note == "rest":
                 note = "quarter_rest"  # TODO: Correct rest types
 
-            self.add_widget(Image(source=f"atlas://resources/atlases/notes/{note}",
-                                  width=note_width,
-                                  size_hint_x=None,
-                                  x=note_width * n))
+            self.note_canvas.add(note.canvas)
 
         self.width = len(self.notes) * note_width
