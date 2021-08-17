@@ -25,5 +25,5 @@ note_duration | note_names
 
 
 
-![storage_example](https://user-images.githubusercontent.com/37347905/129701154-36443edd-507b-4f22-ac7e-052c8223e98c.png)
+![storage_example](https://user-images.githubusercontent.com/37347905/129701481-d53b75e0-90fe-4919-90aa-fa7ca0b7b422.png)
 
