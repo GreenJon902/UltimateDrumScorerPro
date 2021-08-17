@@ -13,4 +13,7 @@ staff_gap = staff_height / 4
 
 note_width = 500
 note_stem_width = 10
+note_stem_height = 500
 note_head_width = staff_gap * 1.5
+note_flag_dpos = 100, -50
+note_flag_gap = 50

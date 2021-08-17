@@ -2,10 +2,11 @@ from fractions import Fraction
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle, Line
+from kivy.graphics import Canvas, Rectangle, Line
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width, staff_height, note_head_width, staff_gap, note_stem_width
+from app.graphicsConstants import note_width, note_head_width, staff_gap, note_stem_width, note_stem_height, \
+    staff_height, note_flag_dpos, note_flag_gap
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -60,8 +61,9 @@ class Section(ScoreContentWithPopup):
 
         nis = self.note_infos.split(next_notes_char)
         note_index = 0
-        stem_top_points_since_last_beat = list()
+        stem_start_points_since_last_beat = list()
         amount_of_beat_done = 0
+        dx = 0
 
         while note_index < len(nis):
             note_info = nis[note_index]
@@ -72,11 +74,10 @@ class Section(ScoreContentWithPopup):
 
             amount_of_beat_done += duration
 
-            print(duration.__repr__(), duration_s, names, amount_of_beat_done)
+            print(duration.__repr__(), duration_s, names, amount_of_beat_done, dx)
+
 
             with self.note_canvas:
-                PushMatrix()
-                Translate(note_width * note_index, 0)
 
                 for name in names:
                     note_name = name
@@ -88,63 +89,55 @@ class Section(ScoreContentWithPopup):
 
 
                     if note_name in special_note_textures.keys():
-                        Rectangle(pos=(0, 0), size=(note_width, staff_height),
+                        Rectangle(pos=(dx, 0), size=(note_width, staff_height),
                                   texture=special_note_textures[note_name])
 
 
                     elif note_name in note_head_textures.keys():
-                        PushMatrix()
-                        Translate(0, note_name_to_staff_level[name] * staff_gap)
-
-
-                        Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
+                        Rectangle(pos=(dx, note_name_to_staff_level[name] * staff_gap),
+                                  size=(note_head_width, staff_gap),
                                   texture=note_head_textures[note_name])
 
-                        stem_top_points_since_last_beat.append(
-                            (note_name_to_staff_level[name] * staff_gap) + staff_height)
+                        stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
+                                                                  (note_name_to_staff_level[name] * staff_gap) +
+                                                                        (staff_gap / 2),
+                                                                  duration))
 
-                        PopMatrix()
-                PopMatrix()
 
 
                 assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
 
                 if amount_of_beat_done == 1:
-                    print("aobd == 1     ", stem_top_points_since_last_beat)
+                    print("aobd == 1     ", stem_start_points_since_last_beat)
 
-                    if len(stem_top_points_since_last_beat) == 0:  # Rest
+
+                    if len(stem_start_points_since_last_beat) == 0:  # Rest
                         pass
 
-                    else:
+                    elif len(stem_start_points_since_last_beat) == 1:
+                        x, y, d = stem_start_points_since_last_beat[0]
+
                         with self.note_canvas:
-                            if len(stem_top_points_since_last_beat) == 1:
-                                PushMatrix()
-                                Translate(note_width, stem_top_points_since_last_beat[0])
-
-                                Line(points=(0, 0 - staff_height, 0, 0),
-                                     width=note_stem_width)
-
-                                PopMatrix()
-
-                            else:  # More than 1
-                                for n_index, stem_top_pos in enumerate(stem_top_points_since_last_beat):
-                                    PushMatrix()
-                                    Translate(note_width * n_index, stem_top_pos)
-
-                                    Line(points=(0, 0 - staff_height, 0, 0),
-                                         width=note_stem_width)
-
-                                    PopMatrix()
+                            Line(points=(x, y, x, y + note_stem_height), width=note_stem_width)
 
 
+                        # UNTESTED: Flags for single notes
+                        flags = (1 / d / 2) if d != 1 else 0  # no flags if its a crochet
+                        for flag_index in range(flags):
+                            Line(points=(x,
+                                         y + (note_flag_gap * flag_index),
+                                         x + note_flag_dpos[0],
+                                         y + note_flag_dpos[1] + (note_flag_gap * flag_index)),
+                                 width=note_stem_width)
 
 
 
                     amount_of_beat_done = 0
-                    stem_top_points_since_last_beat.clear()
+                    stem_start_points_since_last_beat.clear()
 
 
             note_index += 1
+            dx += note_width
 
 
         self.width = len(self.note_infos.split(next_notes_char)) * note_width
