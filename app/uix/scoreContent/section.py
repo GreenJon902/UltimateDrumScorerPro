@@ -60,7 +60,7 @@ class Section(ScoreContentWithPopup):
 
         nis = self.note_infos.split(next_notes_char)
         note_index = 0
-        tail_top_points_since_last_beat = list()
+        stem_top_points_since_last_beat = list()
         amount_of_beat_done = 0
 
         while note_index < len(nis):
@@ -100,7 +100,7 @@ class Section(ScoreContentWithPopup):
                         Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
                                   texture=note_head_textures[note_name])
 
-                        tail_top_points_since_last_beat.append(
+                        stem_top_points_since_last_beat.append(
                             (note_name_to_staff_level[name] * staff_gap) + staff_height)
 
                         PopMatrix()
@@ -110,16 +110,16 @@ class Section(ScoreContentWithPopup):
                 assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
 
                 if amount_of_beat_done == 1:
-                    print("aobd == 1     ", tail_top_points_since_last_beat)
+                    print("aobd == 1     ", stem_top_points_since_last_beat)
 
-                    if len(tail_top_points_since_last_beat) == 0:  # Rest
+                    if len(stem_top_points_since_last_beat) == 0:  # Rest
                         pass
 
                     else:
                         with self.note_canvas:
-                            if len(tail_top_points_since_last_beat) == 1:
+                            if len(stem_top_points_since_last_beat) == 1:
                                 PushMatrix()
-                                Translate(note_width, tail_top_points_since_last_beat[0])
+                                Translate(note_width, stem_top_points_since_last_beat[0])
 
                                 Line(points=(0, 0 - staff_height, 0, 0),
                                      width=note_stem_width)
@@ -127,9 +127,9 @@ class Section(ScoreContentWithPopup):
                                 PopMatrix()
 
                             else:  # More than 1
-                                for n_index, tail_top_pos in enumerate(tail_top_points_since_last_beat):
+                                for n_index, stem_top_pos in enumerate(stem_top_points_since_last_beat):
                                     PushMatrix()
-                                    Translate(note_width * n_index, tail_top_pos)
+                                    Translate(note_width * n_index, stem_top_pos)
 
                                     Line(points=(0, 0 - staff_height, 0, 0),
                                          width=note_stem_width)
@@ -141,7 +141,7 @@ class Section(ScoreContentWithPopup):
 
 
                     amount_of_beat_done = 0
-                    tail_top_points_since_last_beat.clear()
+                    stem_top_points_since_last_beat.clear()
 
 
             note_index += 1
