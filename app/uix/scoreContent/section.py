@@ -7,7 +7,8 @@ from app.graphicsConstants import note_width, staff_height, note_head_width, sta
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char
+from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char, \
+    note_name_to_staff_level
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -82,10 +83,17 @@ class Section(ScoreContentWithPopup):
                         Rectangle(pos=(0, 0), size=(note_width, staff_height),
                                   texture=special_note_textures[note_name])
 
+
                     elif note_name in note_head_textures.keys():
+                        PushMatrix()
+                        Translate(0, note_name_to_staff_level[name] * staff_gap)
+
+
                         Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
                                   texture=note_head_textures[note_name])
 
+
+                        PopMatrix()
                 PopMatrix()
 
             note_index += 1
