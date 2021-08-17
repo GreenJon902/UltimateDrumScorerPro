@@ -1,19 +1,25 @@
+from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Translate
+from kivy.graphics import Canvas
 from kivy.input import MotionEvent
 
 from app.graphicsConstants import note_width
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
-from app.uix.scoreContent.note import Note
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
+
+image_textures = Atlas("resources/atlases/notes.atlas").textures
+
 
 
 class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    notes = list([Note(name="quarter_rest"), Note(name="bass"), Note(name="snare")])
+    note_infos: list[str] = list(["1|kick",
+                                  "1|rest",
+                                  "1/2|snare",
+                                  "1/2|snare"])  # stored in the format "{note_duration}|{note_name}"
 
     note_canvas: Canvas
 
@@ -47,11 +53,8 @@ class Section(ScoreContentWithPopup):
     def _update(self):
         self.note_canvas.clear()
 
-        for n, note in enumerate(self.notes):
-            if note == "rest":
-                note = "quarter_rest"  # TODO: Correct rest types
+        for note_info in self.note_infos:
+            pass
 
-            self.note_canvas.add(note.canvas)
-            self.note_canvas.add(Translate(note_width, 0, 0))
 
         self.width = len(self.notes) * note_width
