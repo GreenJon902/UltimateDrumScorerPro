@@ -1,9 +1,9 @@
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle
+from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle, Line
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width, staff_height, note_head_width, staff_gap
+from app.graphicsConstants import note_width, staff_height, note_head_width, staff_gap, note_tail_width
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -91,6 +91,9 @@ class Section(ScoreContentWithPopup):
 
                         Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
                                   texture=note_head_textures[note_name])
+
+                        Line(points=(note_head_width, staff_gap / 2, note_head_width, (staff_gap / 2) + staff_height),
+                             width=note_tail_width)
 
 
                         PopMatrix()
