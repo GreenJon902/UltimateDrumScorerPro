@@ -1,15 +1,15 @@
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas
+from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width
+from app.graphicsConstants import note_width, staff_height
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char
 
-image_textures = Atlas("resources/atlases/notes.atlas").textures
+special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 
 
 
@@ -52,11 +52,38 @@ class Section(ScoreContentWithPopup):
         self.note_canvas.clear()
         print(self.note_infos, "\n")
 
-        for note_info in self.note_infos.split(next_notes_char):
+
+        nis = self.note_infos.split(next_notes_char)
+        note_index = 0
+
+        while note_index < len(nis):
+            note_info = nis[note_index]
+
             duration, names_s = note_info.split(note_duration_and_note_names_splitter_char)
             names = names_s.split(note_name_splitter_char)
 
             print(duration, names)
 
+            with self.note_canvas:
+                PushMatrix()
+                Translate(note_width * note_index, 0)
 
-        self.width = len(self.notes) * note_width
+                for name in names:
+                    note_name = name
+
+                    if name == "rest":
+                        note_name = "quarter_rest"  # TODO: More correct rest system
+
+
+
+                    if note_name in special_note_textures.keys():
+                        Rectangle(pos=(0, 0), size=(note_width, staff_height),
+                                  texture=special_note_textures[note_name])
+
+
+                PopMatrix()
+
+            note_index += 1
+
+
+        self.width = len(self.note_infos.split(next_notes_char)) * note_width
