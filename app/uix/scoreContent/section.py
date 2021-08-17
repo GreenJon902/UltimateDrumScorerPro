@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle, Line
@@ -19,7 +21,8 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    note_infos = "1/4-kick\n1/4-rest\n1/16-snare\n1/16-snare\n1/8-kick snare"  # For testing
+    note_infos = "1-kick\n1-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"  # For testing, Everything is x4 bc instead
+    # of bar it is beat fraction
 
     note_canvas: Canvas
 
@@ -57,14 +60,19 @@ class Section(ScoreContentWithPopup):
 
         nis = self.note_infos.split(next_notes_char)
         note_index = 0
+        tail_points_since_last_beat = list()
+        amount_of_beat_done = 0
 
         while note_index < len(nis):
             note_info = nis[note_index]
 
-            duration, names_s = note_info.split(note_duration_and_note_names_splitter_char)
+            duration_s, names_s = note_info.split(note_duration_and_note_names_splitter_char)
             names = names_s.split(note_name_splitter_char)
+            duration = Fraction(duration_s)
 
-            print(duration, names)
+            amount_of_beat_done += duration
+
+            print(duration.__repr__(), duration_s, names, amount_of_beat_done)
 
             with self.note_canvas:
                 PushMatrix()
@@ -92,12 +100,39 @@ class Section(ScoreContentWithPopup):
                         Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
                                   texture=note_head_textures[note_name])
 
-                        Line(points=(note_head_width, staff_gap / 2, note_head_width, (staff_gap / 2) + staff_height),
-                             width=note_stem_width)
-
+                        tail_points_since_last_beat.append((note_head_width, (staff_gap / 2) + staff_height))
 
                         PopMatrix()
                 PopMatrix()
+
+
+                assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
+
+                if amount_of_beat_done == 1:
+                    print("aobd == 1     ", tail_points_since_last_beat)
+
+                    if len(tail_points_since_last_beat) == 0:  # Rest
+                        pass
+
+                    else:
+                        with self.note_canvas:
+                            PushMatrix()
+                            Translate(*tail_points_since_last_beat[0])
+
+                            if len(tail_points_since_last_beat) == 1:
+                                Line(points=(0, 0 - staff_height, 0, 0),
+                                     width=note_stem_width)
+
+                            else:  # More than 1
+                                pass
+
+
+                            PopMatrix()
+
+
+                    amount_of_beat_done = 0
+                    tail_points_since_last_beat.clear()
+
 
             note_index += 1
 
