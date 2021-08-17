@@ -13,4 +13,4 @@ staff_gap = staff_height / 4
 
 note_width = 500
 note_tail_width = 10
-note_foot_width = staff_gap * 1.5
+note_head_width = staff_gap * 1.5

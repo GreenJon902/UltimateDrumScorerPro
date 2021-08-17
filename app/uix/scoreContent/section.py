@@ -3,13 +3,14 @@ from kivy.clock import Clock
 from kivy.graphics import Canvas, Translate, PushMatrix, PopMatrix, Rectangle
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width, staff_height
+from app.graphicsConstants import note_width, staff_height, note_head_width, staff_gap
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
+note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
 
 
 
@@ -73,13 +74,17 @@ class Section(ScoreContentWithPopup):
 
                     if name == "rest":
                         note_name = "quarter_rest"  # TODO: More correct rest system
-
+                    if name in ["kick", "snare"]:
+                        note_name = "circle"
 
 
                     if note_name in special_note_textures.keys():
                         Rectangle(pos=(0, 0), size=(note_width, staff_height),
                                   texture=special_note_textures[note_name])
 
+                    elif note_name in note_head_textures.keys():
+                        Rectangle(pos=(0, 0), size=(note_head_width, staff_gap),
+                                  texture=note_head_textures[note_name])
 
                 PopMatrix()
 
