@@ -16,10 +16,7 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    note_infos: list[str] = list(["1|kick",
-                                  "1|rest",
-                                  "1/2|snare",
-                                  "1/2|snare"])  # stored in the format "{note_duration}|{note_name}"
+    note_infos = "1-2-3-4-5"
 
     note_canvas: Canvas
 
