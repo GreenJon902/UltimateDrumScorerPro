@@ -16,7 +16,7 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    note_infos = "1-2-3-4-5"
+    note_infos = "1-kick\n1-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"  # For testing
 
     note_canvas: Canvas
 
@@ -49,6 +49,7 @@ class Section(ScoreContentWithPopup):
 
     def _update(self):
         self.note_canvas.clear()
+        print(self.note_infos)
 
         for note_info in self.note_infos:
             pass
