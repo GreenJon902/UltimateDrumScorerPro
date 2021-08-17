@@ -19,7 +19,7 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    note_infos = "1-kick\n1-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"  # For testing
+    note_infos = "1/4-kick\n1/4-rest\n1/16-snare\n1/16-snare\n1/8-kick snare"  # For testing
 
     note_canvas: Canvas
 
