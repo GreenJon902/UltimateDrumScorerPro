@@ -1,4 +1,5 @@
 from fractions import Fraction
+from math import log
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
@@ -122,7 +123,7 @@ class Section(ScoreContentWithPopup):
 
 
                         # UNTESTED: Flags for single notes
-                        flags = (1 / d / 2) if d != 1 else 0  # no flags if its a crochet
+                        flags = note_duration_to_bar_or_flag_amount(d)
                         for flag_index in range(flags):
                             Line(points=(x,
                                          y + (note_flag_gap * flag_index),
@@ -133,7 +134,7 @@ class Section(ScoreContentWithPopup):
                     else:  # No special barring method available, will just do a flat one at highest point
                         highest = max([values[1] for values in stem_start_points_since_last_beat])
 
-                        for n_index, (x, y, duration) in enumerate(stem_start_points_since_last_beat):  # Stems
+                        for n_index, (x, y, d) in enumerate(stem_start_points_since_last_beat):  # Stems
                             with self.note_canvas:
                                 Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
 
@@ -159,3 +160,34 @@ class Section(ScoreContentWithPopup):
 
 
         self.width = len(self.note_infos.split(next_notes_char)) * note_width
+
+
+
+
+
+
+def note_duration_to_bar_or_flag_amount(fraction: Fraction):  # denominator = 2^n
+    denominator = fraction.denominator
+
+    # 2^n = denominator
+    # log(2^n) = log(denominator)
+    # n* (log(2)) = log(denominator)
+    # n = log(denominator) / log(2)    <------ is what we need to do
+
+
+
+    # if denominator = 8
+
+    # 2^n = 8
+    # log(2^n) = log(8)
+    # n* (log(2)) = log(8)
+    # n = log(8) / log(2)
+    # n = 3
+
+    n = log(denominator) / log(2)
+
+    # if n is 1.0 or 2.0 then int(n) == 1 or 2 which still == n, but if it is 1.5 then it doesnt == int(n) which is 2
+    assert n == int(n), f"note_duration_to_bar_or_flag_amount has too " \
+                        f"take a fraction that has a denominator that is 1, 2, 4, 8...  not {fraction.denominator}"
+    return int(n)
+
