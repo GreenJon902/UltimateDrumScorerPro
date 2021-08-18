@@ -133,9 +133,18 @@ class Section(ScoreContentWithPopup):
                     else:  # No special barring method available, will just do a flat one at highest point
                         highest = max([values[1] for values in stem_start_points_since_last_beat])
 
-                        for x, y, duration in stem_start_points_since_last_beat:  # Stems
+                        for n_index, (x, y, duration) in enumerate(stem_start_points_since_last_beat):  # Stems
                             with self.note_canvas:
                                 Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
+
+                                if (stem_start_points_since_last_beat[n_index - 1][2] == duration) and (n_index > 0) \
+                                        and (stem_start_points_since_last_beat[n_index - 1][0] != x):
+
+                                    Line(points=(x,
+                                                 y + note_stem_height,
+                                                 stem_start_points_since_last_beat[n_index - 1][0],
+                                                 stem_start_points_since_last_beat[n_index - 1][1] + note_stem_height),
+                                         width=note_stem_width)
 
 
 
