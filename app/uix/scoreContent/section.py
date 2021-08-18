@@ -130,12 +130,14 @@ class Section(ScoreContentWithPopup):
                                          y + note_flag_dpos[1] + (note_flag_gap * flag_index)),
                                  width=note_stem_width)
 
-                    else:  # No barring method available, will just do a flat one at highest point
+                    else:  # No special barring method available, will just do a flat one at highest point
                         highest = max([values[1] for values in stem_start_points_since_last_beat])
 
                         for x, y, duration in stem_start_points_since_last_beat:  # Stems
                             with self.note_canvas:
                                 Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
+
+
 
 
 
