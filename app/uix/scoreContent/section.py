@@ -11,8 +11,7 @@ from app.graphicsConstants import note_width, note_head_width, staff_gap, note_s
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char, \
-    note_name_to_staff_level, duration_to_text_duration, next_note_char
+from app_info.score_info import next_notes_char, note_name_to_staff_level, duration_to_text_duration, next_note_char
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -58,30 +57,22 @@ class Section(ScoreContentWithPopup):
     def _update(self):
         self.note_canvas.clear()
 
-        notes_per_beat = self.notes[0:self.notes.find("[")]
-        notes = [[note for note in notes.split(next_note_char)]
-                 for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)]
-        print(notes_per_beat, notes)
-
-        nis = self.note_infos.split(next_notes_char)
+        notes_per_beat = int(self.notes[0:self.notes.find("[")])
+        all_notes = [[note for note in notes.split(next_note_char)]
+                     for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)]
+        print(notes_per_beat, all_notes)
         note_index = 0
         stem_start_points_since_last_beat = list()
         amount_of_beat_done = 0
         dx = 0
 
-        while note_index < len(nis):
-            note_info = nis[note_index]
+        with self.note_canvas:
+            while note_index < len(all_notes):
+                notes = all_notes[note_index]
 
-            duration_s, names_s = note_info.split(note_duration_and_note_names_splitter_char)
-            names = names_s.split(note_name_splitter_char)
-            duration = Fraction(duration_s)
+                amount_of_beat_done += Fraction(1, notes_per_beat)
+                print(notes, amount_of_beat_done, dx)
 
-            amount_of_beat_done += duration
-
-            print(duration.__repr__(), duration_s, names, amount_of_beat_done, dx)
-
-
-            with self.note_canvas:
 
                 for name in names:
                     note_name = name
@@ -165,8 +156,8 @@ class Section(ScoreContentWithPopup):
                     stem_start_points_since_last_beat.clear()
 
 
-            note_index += 1
-            dx += note_width
+                note_index += 1
+                dx += note_width
 
 
         self.width = len(self.note_infos.split(next_notes_char)) * note_width
