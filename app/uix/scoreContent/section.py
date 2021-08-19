@@ -11,7 +11,7 @@ from app.graphicsConstants import note_width, note_head_width, staff_gap, note_s
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from app_info.score_info import next_notes_char, note_name_to_staff_level, duration_to_text_duration, next_note_char
+from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -74,29 +74,30 @@ class Section(ScoreContentWithPopup):
                 print(notes, amount_of_beat_done, dx)
 
 
-                for name in names:
-                    note_name = name
+                # Note bodies ------------------------------------------------------------------------------------------
+                for note_name in notes:
+                    if note_name == ".":
+                        print(amount_of_beat_done)
 
-                    if name == "rest":
-                        note_name = f"{duration_to_text_duration[duration.denominator]}_rest"
-                    if name in ["kick", "snare"]:
-                        note_name = "circle"
+                        note_shape = None
+                    if note_name in ["kick", "snare"]:
+                        note_shape = "circle"
 
 
-                    if note_name in special_note_textures.keys():
+                    if note_shape in special_note_textures.keys():
                         Rectangle(pos=(dx, 0), size=(note_width, staff_height),
-                                  texture=special_note_textures[note_name])
+                                  texture=special_note_textures[note_shape])
 
 
-                    elif note_name in note_head_textures.keys():
-                        Rectangle(pos=(dx, note_name_to_staff_level[name] * staff_gap),
+                    elif note_shape in note_head_textures.keys():
+                        Rectangle(pos=(dx, note_name_to_staff_level[note_name] * staff_gap),
                                   size=(note_head_width, staff_gap),
-                                  texture=note_head_textures[note_name])
+                                  texture=note_head_textures[note_shape])
 
                         stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
-                                                                  (note_name_to_staff_level[name] * staff_gap) +
+                                                                  (note_name_to_staff_level[note_name] * staff_gap) +
                                                                         (staff_gap / 2),
-                                                                  duration))
+                                                                  5))
 
 
 
@@ -160,7 +161,7 @@ class Section(ScoreContentWithPopup):
                 dx += note_width
 
 
-        self.width = len(self.note_infos.split(next_notes_char)) * note_width
+        self.width = len(self.notes.split(next_notes_char)) * note_width
 
 
 
