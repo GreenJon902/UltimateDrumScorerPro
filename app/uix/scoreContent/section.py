@@ -97,7 +97,7 @@ class Section(ScoreContentWithPopup):
                         stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
                                                                   (note_name_to_staff_level[note_name] * staff_gap) +
                                                                         (staff_gap / 2),
-                                                                  5))
+                                                                  Fraction(1, notes_per_beat)))
 
 
 
