@@ -12,7 +12,7 @@ from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char, \
-    note_name_to_staff_level, duration_to_text_duration
+    note_name_to_staff_level, duration_to_text_duration, next_note_char
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -24,9 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    # For testing, Everything is x4 bc instead
-    note_infos = "1-kick\n1/2-rest\n1/2-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"
-    # of bar it is beat fraction
+    notes = "4[kick,snare snare kick kick,snare snare . snare kick snare snare . kick . . kick .]"
 
     note_canvas: Canvas
 
@@ -59,8 +57,11 @@ class Section(ScoreContentWithPopup):
 
     def _update(self):
         self.note_canvas.clear()
-        print(self.note_infos, "\n")
 
+        notes_per_beat = self.notes[0:self.notes.find("[")]
+        notes = [[note for note in notes.split(next_note_char)]
+                 for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)]
+        print(notes_per_beat, notes)
 
         nis = self.note_infos.split(next_notes_char)
         note_index = 0
