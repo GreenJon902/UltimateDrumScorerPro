@@ -138,14 +138,21 @@ class Section(ScoreContentWithPopup):
                             with self.note_canvas:
                                 Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
 
-                                if (stem_start_points_since_last_beat[n_index - 1][2] == duration) and (n_index > 0) \
-                                        and (stem_start_points_since_last_beat[n_index - 1][0] != x):
+                                if n_index < (len(stem_start_points_since_last_beat) - 1) and \
+                                        (x != stem_start_points_since_last_beat[n_index + 1][0]):
+                                    flags = note_duration_to_bar_or_flag_amount(
+                                        Fraction(1, min((d.denominator,
+                                                         stem_start_points_since_last_beat[n_index + 1][
+                                                             2].denominator))))
+                                    print("f", flags)
+                                    for flag_index in range(flags):
+                                        y_offset = flag_index * note_flag_gap * -1
 
-                                    Line(points=(x,
-                                                 y + note_stem_height,
-                                                 stem_start_points_since_last_beat[n_index - 1][0],
-                                                 stem_start_points_since_last_beat[n_index - 1][1] + note_stem_height),
-                                         width=note_stem_width)
+                                        Line(points=(x,
+                                                     highest + note_stem_height + y_offset,
+                                                     stem_start_points_since_last_beat[n_index + 1][0],
+                                                     highest + note_stem_height + y_offset),
+                                             width=note_stem_width)
 
 
 
