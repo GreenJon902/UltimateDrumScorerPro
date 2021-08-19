@@ -1,5 +1,4 @@
 import copy
-import threading
 from logging import Formatter as _Formatter
 
 from app_info.logging_info import log_format, custom_name_per_log_array

@@ -1,24 +1,22 @@
-from kivy.app import App
 from kivy.graphics import Scale
 from kivy.graphics.transformation import Matrix
 from kivy.properties import NumericProperty, ReferenceListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 
-from app import scoreContent, metrics
-from app.graphicsConstants import scroll_bar_color, scroll_bar_inactive_color, \
-    scroll_bar_width
+import app.uix.scoreContent.section
+import app.uix.scoreContent.text
+from app import metrics
+from app.misc import check_mode
+from app.uix.scoreViewHelpers import ScoreViewException
+from logger import ClassWithLogger
 
 
-class ScoreViewException(Exception):
-    pass
-
-
-class PageHolder(BoxLayout):
+class PageHolder(BoxLayout, ClassWithLogger):
     def __init__(self, **kwargs):
         BoxLayout.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         self.orientation = "vertical"
         self.size_hint_y = None
@@ -27,6 +25,8 @@ class PageHolder(BoxLayout):
     def add_page(self, widget):
         if not isinstance(widget, Page):
             raise ScoreViewException(f"PageHolder only accepts Page widget, not {widget.__class__}")
+
+        self.log_debug("Adding Page")
 
         return BoxLayout.add_widget(self, widget, len(self.children))
 
@@ -59,7 +59,7 @@ class PageContent(RelativeLayout):
 
 
 
-class Page(RelativeLayout):
+class Page(RelativeLayout, ClassWithLogger):
     page_bg: PageBg
     content: PageContent
 
@@ -70,6 +70,7 @@ class Page(RelativeLayout):
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         self.size_hint_y = None
 
@@ -88,22 +89,33 @@ class Page(RelativeLayout):
         self.height = metrics.Page.width_to_height(value)
 
 
-    def on_touch_down(self, touch):
-        current_click_mode = App.get_running_app().sidebar_button_current.name \
-            if App.get_running_app().sidebar_button_current is not None else None
+    def on_touch_up(self, touch):
+        if RelativeLayout.on_touch_up(self, touch):
+            return True
 
-        x, y = self.get_pos_hint_from_pos(*touch.pos)
-        location_to_put = {"center_x": x, "center_y": y}
-        del x, y
-
-        if current_click_mode == "add_text":
-            App.get_running_app().discard_click_mode()
-
-            content = scoreContent.Text(location_to_put)
-            self.content.add_widget(content)
 
         else:
-            RelativeLayout.on_touch_down(self, touch)
+            self.log_debug("Adding Content")
+
+            if check_mode("text"):
+                self.log_dump("which is text")
+
+                content = app.uix.scoreContent.text.Text(pos=self.to_local(*touch.pos))
+                self.content.add_widget(content)
+
+
+            elif check_mode("section"):
+                self.log_dump("which is a section")
+
+                content = app.uix.scoreContent.section.Section(pos=self.to_local(*touch.pos))
+                self.content.add_widget(content)
+
+
+            elif check_mode("move"):
+                self.log_debug("or not... Hand was selected")
+                return False
+
+            return True
 
 
     def to_local(self, px, py, **kwargs):
@@ -140,57 +152,3 @@ class Page(RelativeLayout):
         dmz = 1
 
         self.scale_xyz = dmx, dmy, dmz
-
-
-
-class ScoreView(RelativeLayout):
-    zoom = NumericProperty(1)
-    scrollView: ScrollView
-    pageHolderHolder: RelativeLayout
-    pageHolder: PageHolder
-
-    def __init__(self, **kwargs):
-        RelativeLayout.__init__(self, **kwargs)
-
-        self.scrollView = ScrollView(do_scroll_x=True, do_scroll_y=True, scroll_type=["bars"],
-                                     bar_width=scroll_bar_width, bar_color=scroll_bar_color,
-                                     bar_inactive_color=scroll_bar_inactive_color)
-        self.pageHolderHolder = RelativeLayout(size_hint_y=None, size_hint_x=None)
-        self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
-
-        self.pageHolder.add_page(Page())
-
-
-        self.pageHolder.bind(height=lambda _instance, value: set_height(self.pageHolderHolder, value))
-
-        self.pageHolderHolder.add_widget(self.pageHolder)
-        self.scrollView.add_widget(self.pageHolderHolder)
-        self.add_widget(self.scrollView)
-
-
-    def on_zoom(self, _instance, value):
-        self.pageHolder.width = self.width * value
-        self.do_page_holder_holder_size()
-        self.scrollView.zoom = value
-
-    def on_width(self, _instance, value):
-        self.pageHolder.width = value * self.zoom
-        self.do_page_holder_holder_size()
-
-    def do_page_holder_holder_size(self):
-        if self.pageHolder.width > self.width:
-            self.pageHolderHolder.width = self.pageHolder.width
-
-        else:
-            self.pageHolderHolder.width = self.width
-
-
-
-def set_height(widget, value):
-    widget.height = value
-
-
-def focus_text_input(box):
-    box.focus = True
-
-

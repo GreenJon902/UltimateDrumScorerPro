@@ -3,8 +3,11 @@ from kivy.properties import StringProperty
 from kivy.uix.image import Image
 from kivy.uix.scatter import Scatter
 
+from app.globalBindings import GlobalBindings
+from logger import ClassWithLogger
 
-class CustomMouse(Scatter):
+
+class CustomMouse(Scatter, ClassWithLogger):
     image: Image
     active: bool
     mouse_in_window: bool
@@ -12,7 +15,10 @@ class CustomMouse(Scatter):
     name: str = StringProperty()
 
     def __init__(self, **kwargs):
+        GlobalBindings.bind(set_cursor=self.set_cursor)
+
         Scatter.__init__(self, **kwargs)
+        ClassWithLogger.__init__(self)
 
         Window.bind(mouse_pos=lambda _instance, value: self._move_to(value),
                     on_cursor_enter=lambda _instance: self._show(),
@@ -45,6 +51,8 @@ class CustomMouse(Scatter):
 
 
     def show(self):
+        self.log_dump("Showing mouse")
+
         if self.mouse_in_window:
             self.image.opacity = 1
 
@@ -54,5 +62,26 @@ class CustomMouse(Scatter):
         self.active = True
 
     def hide(self):
+        self.log_dump("Hiding mouse")
+
         self.active = False
         self.image.opacity = 0
+
+
+
+    def set_cursor(self, name):
+        self.log_info(f"Setting cursor to {name}")
+
+        found = Window.set_system_cursor(name)
+
+        if not found:
+            Window.show_cursor = False
+            self.name = name
+            self.show()
+
+            self.log_debug(f"No system cursor found for {name}, trying to find a custom one")
+
+        else:
+            self.hide()
+            Window.show_cursor = True
+            self.log_debug(f"System cursor found for {name}")

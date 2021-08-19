@@ -9,6 +9,8 @@ class ClassWithLogger:
 
     def _create_logger(self):
         self._logger = logging.getLogger(self._logger_name)
+        self._created = True
+        self.log_dump("Created self")
 
     def _check_logger(self):
         if not self._created:
@@ -25,6 +27,7 @@ class ClassWithLogger:
 
     def set_logger_name(self, name: str):
         self._logger.name = name
+        self.log_dump(f"Set name for self to \"{name}\"")
 
     def log_dump(self, *messages):
         self._check_logger()
