@@ -12,7 +12,7 @@ from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_duration_and_note_names_splitter_char, note_name_splitter_char, \
-    note_name_to_staff_level
+    note_name_to_staff_level, duration_to_text_duration
 
 special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -23,7 +23,9 @@ class Section(ScoreContentWithPopup):
     update: callable
 
     required_mode = "section"
-    note_infos = "1-kick\n1-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"  # For testing, Everything is x4 bc instead
+
+    # For testing, Everything is x4 bc instead
+    note_infos = "1-kick\n1/2-rest\n1/2-rest\n1/4-snare\n1/4-snare\n1/2-kick snare"
     # of bar it is beat fraction
 
     note_canvas: Canvas
@@ -84,7 +86,7 @@ class Section(ScoreContentWithPopup):
                     note_name = name
 
                     if name == "rest":
-                        note_name = "quarter_rest"  # TODO: More correct rest system
+                        note_name = f"{duration_to_text_duration[duration.denominator]}_rest"
                     if name in ["kick", "snare"]:
                         note_name = "circle"
 
