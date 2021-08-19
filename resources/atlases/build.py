@@ -5,7 +5,7 @@ from kivy.atlas import Atlas
 from kivy.logger import Logger
 
 padding = 5
-names_width = {"buttons": 3, "special_notes": 1, "note_heads": 1}
+names_width = {"buttons": 3, "rests": 1, "note_heads": 1}
 
 if __name__ == '__main__':
     for name in names_width.keys():

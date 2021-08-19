@@ -13,7 +13,7 @@ from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char
 
-special_note_textures = Atlas("resources/atlases/special_notes.atlas").textures
+rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
 
 
@@ -84,9 +84,9 @@ class Section(ScoreContentWithPopup):
                         note_shape = "circle"
 
 
-                    if note_shape in special_note_textures.keys():
+                    if note_shape in rest_textures.keys():
                         Rectangle(pos=(dx, 0), size=(note_width, staff_height),
-                                  texture=special_note_textures[note_shape])
+                                  texture=rest_textures[note_shape])
 
 
                     elif note_shape in note_head_textures.keys():
