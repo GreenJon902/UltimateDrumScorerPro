@@ -2,28 +2,14 @@
 
 
 ## Storage
-Notes are stored as a series of lines, begining with the note duration and ends with the note names, the note duration and note names are seperated by a dash while the note names are seperated by a space.
+At the start is the amount of notes in a beat, then between the square brackets are the notes. If there are multiple notes on the same beat then they are split by a comma, otherwise notes are split by a space.
 
 ```
-1-kick high_hat_closed
-1-rest
-1/4-snare
-1/4-snare high_hat_open
-1/2-kick
+4[kick,snare snare kick kick,snare snare . snare kick snare snare . kick . . kick .]
 ```
 
 
-Which in table form is
+Which looks like this
+[![storage_example](https://user-images.githubusercontent.com/37347905/130093809-610a9e42-0782-4170-adb5-bccdcf1a1f62.png)](https://www.mikeslessons.com/gscribe?TimeSig=4/4&Div=16&Tempo=80&Measures=1&H=|----------------|&S=|OO-OO-O-OO------|&K=|o-oo---o---o--o-|)
 
-note_duration | note_names
---------------|----------
-1             | kick + high_hat_closed
-1             | rest
-1/4           | snare
-1/4           | snare + high_hat_open
-1/2           | kick
-
-
-
-![storage_example](https://user-images.githubusercontent.com/37347905/129701481-d53b75e0-90fe-4919-90aa-fa7ca0b7b422.png)
 
