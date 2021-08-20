@@ -61,43 +61,49 @@ class Section(ScoreContentWithPopup):
         all_notes = [[note for note in notes.split(next_note_char)]
                      for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)]
         print(notes_per_beat, all_notes)
-        note_index = 0
+        beat_index = 0
         stem_start_points_since_last_beat = list()
         amount_of_beat_done = 0
         dx = 0
 
         with self.note_canvas:
-            while note_index < len(all_notes):
-                notes = all_notes[note_index]
+            while beat_index < len(all_notes):
+                beat_notes = all_notes[beat_index]
 
                 amount_of_beat_done += Fraction(1, notes_per_beat)
-                print(notes, amount_of_beat_done, dx)
+                print(beat_notes, amount_of_beat_done, dx)
 
 
                 # Note bodies ------------------------------------------------------------------------------------------
-                for note_name in notes:
+                for note_name in beat_notes:
                     if note_name == ".":
                         print(amount_of_beat_done)
 
-                        note_shape = None
-                    if note_name in ["kick", "snare"]:
+                        should_draw = False
+
+
+                    elif note_name in ["kick", "snare"]:
+                        should_draw = True
                         note_shape = "circle"
 
 
-                    if note_shape in rest_textures.keys():
-                        Rectangle(pos=(dx, 0), size=(note_width, staff_height),
-                                  texture=rest_textures[note_shape])
+
+                    # Drawing ------------------------------------------------------------------------------------------
+                    if should_draw:
+                        if note_shape in rest_textures.keys():
+                            Rectangle(pos=(dx, 0), size=(note_width, staff_height),
+                                      texture=rest_textures[note_shape])
 
 
-                    elif note_shape in note_head_textures.keys():
-                        Rectangle(pos=(dx, note_name_to_staff_level[note_name] * staff_gap),
-                                  size=(note_head_width, staff_gap),
-                                  texture=note_head_textures[note_shape])
+                        elif note_shape in note_head_textures.keys():
+                            Rectangle(pos=(dx, note_name_to_staff_level[note_name] * staff_gap),
+                                      size=(note_head_width, staff_gap),
+                                      texture=note_head_textures[note_shape])
 
-                        stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
-                                                                  (note_name_to_staff_level[note_name] * staff_gap) +
-                                                                        (staff_gap / 2),
-                                                                  Fraction(1, notes_per_beat)))
+                            stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
+                                                                      (note_name_to_staff_level[note_name] * staff_gap) +
+                                                                            (staff_gap / 2),
+                                                                      Fraction(1, notes_per_beat)))
 
 
 
@@ -157,7 +163,7 @@ class Section(ScoreContentWithPopup):
                     stem_start_points_since_last_beat.clear()
 
 
-                note_index += 1
+                beat_index += 1
                 dx += note_width
 
 
