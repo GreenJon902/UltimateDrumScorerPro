@@ -11,7 +11,7 @@ from app.graphicsConstants import note_width, note_head_width, staff_gap, note_s
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char
+from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char, duration_to_text_duration
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -56,120 +56,150 @@ class Section(ScoreContentWithPopup):
 
     def _update(self):
         self.note_canvas.clear()
+        self.note_canvas.__enter__()
+
 
         notes_per_beat = int(self.notes[0:self.notes.find("[")])
-        all_notes = [[note for note in notes.split(next_note_char)]
-                     for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)]
-        print(notes_per_beat, all_notes)
-        beat_index = 0
-        stem_start_points_since_last_beat = list()
-        amount_of_beat_done = 0
-        dx = 0
+        _all_notes = [([note for note in notes.split(next_note_char)])
+                      for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)
+                      ]
 
-        with self.note_canvas:
-            while beat_index < len(all_notes):
-                beat_notes = all_notes[beat_index]
+        all_notes = [_all_notes[n:n+4] for n in range(0, len(_all_notes), notes_per_beat)]
+        self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
+        self.log_dump()
+        dx = 0
+        beat_index = 0
+
+        for beat in all_notes:
+            self.log_dump()
+            self.log_debug(f"Beat {beat_index} --------------| notes: {beat} |--------------")
+            amount_of_beat_done = 0
+            had_not_rest_this_beat = False
+
+
+            for notes in beat:
+                self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}")
+                did_do_a_draw = False
 
                 amount_of_beat_done += Fraction(1, notes_per_beat)
-                print(beat_notes, amount_of_beat_done, dx)
 
 
-                # Note bodies ------------------------------------------------------------------------------------------
-                for note_name in beat_notes:
-                    if note_name == ".":
-                        print(amount_of_beat_done)
-
-                        should_draw = False
-
-
-                    elif note_name in ["kick", "snare"]:
-                        should_draw = True
-                        note_shape = "circle"
+                # Drawing note bodies -----------------------
+                if notes == ["."]:
+                    if not had_not_rest_this_beat:
+                        draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
+                        did_do_a_draw = True
 
 
-
-                    # Drawing ------------------------------------------------------------------------------------------
-                    if should_draw:
-                        if note_shape in rest_textures.keys():
-                            Rectangle(pos=(dx, 0), size=(note_width, staff_height),
-                                      texture=rest_textures[note_shape])
-
-
-                        elif note_shape in note_head_textures.keys():
-                            Rectangle(pos=(dx, note_name_to_staff_level[note_name] * staff_gap),
-                                      size=(note_head_width, staff_gap),
-                                      texture=note_head_textures[note_shape])
-
-                            stem_start_points_since_last_beat.append((dx + note_head_width - (note_stem_width / 2),
-                                                                      (note_name_to_staff_level[note_name] * staff_gap) +
-                                                                            (staff_gap / 2),
-                                                                      Fraction(1, notes_per_beat)))
+                else:
+                    for note in notes:
+                        draw_note(note, dx * note_width)
+                        did_do_a_draw = True
+                        had_not_rest_this_beat = True
 
 
 
-                assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
-
-                if amount_of_beat_done == 1:
-                    print("aobd == 1     ", stem_start_points_since_last_beat)
-
-
-                    if len(stem_start_points_since_last_beat) == 0:  # Rest
-                        pass
-
-                    elif len(stem_start_points_since_last_beat) == 1:
-                        x, y, d = stem_start_points_since_last_beat[0]
-
-                        with self.note_canvas:
-                            Line(points=(x, y, x, y + note_stem_height), width=note_stem_width)
-
-
-                        # UNTESTED: Flags for single notes
-                        flags = note_duration_to_bar_or_flag_amount(d)
-                        for flag_index in range(flags):
-                            Line(points=(x,
-                                         y + (note_flag_gap * flag_index),
-                                         x + note_flag_dpos[0],
-                                         y + note_flag_dpos[1] + (note_flag_gap * flag_index)),
-                                 width=note_stem_width)
-
-                    else:  # No special barring method available, will just do a flat one at highest point
-                        highest = max([values[1] for values in stem_start_points_since_last_beat])
-
-                        for n_index, (x, y, d) in enumerate(stem_start_points_since_last_beat):  # Stems
-                            with self.note_canvas:
-                                Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
-
-                                if n_index < (len(stem_start_points_since_last_beat) - 1) and \
-                                        (x != stem_start_points_since_last_beat[n_index + 1][0]):
-                                    flags = note_duration_to_bar_or_flag_amount(
-                                        Fraction(1, min((d.denominator,
-                                                         stem_start_points_since_last_beat[n_index + 1][
-                                                             2].denominator))))
-                                    print("f", flags)
-                                    for flag_index in range(flags):
-                                        y_offset = flag_index * note_flag_gap * -1
-
-                                        Line(points=(x,
-                                                     highest + note_stem_height + y_offset,
-                                                     stem_start_points_since_last_beat[n_index + 1][0],
-                                                     highest + note_stem_height + y_offset),
-                                             width=note_stem_width)
+                if did_do_a_draw:
+                    dx += 1
 
 
 
 
 
-                    amount_of_beat_done = 0
-                    stem_start_points_since_last_beat.clear()
 
 
-                beat_index += 1
-                dx += note_width
+            beat_index += 1
 
-
+        self.log_dump()
         self.width = len(self.notes.split(next_notes_char)) * note_width
 
 
+        self.note_canvas.__exit__()
+
+
+
+def draw_note(note_name, x):
+    note_shape = note_name
+
+    if note_name in ["kick", "snare"]:
+        note_shape = "circle"
+
+
+    if note_shape in rest_textures.keys():
+        Rectangle(pos=(x, 0), size=(note_width, staff_height),
+                  texture=rest_textures[note_shape])
+
+
+    elif note_shape in note_head_textures.keys():
+        Rectangle(pos=(x, note_name_to_staff_level[note_name] * staff_gap),
+                  size=(note_head_width, staff_gap),
+                  texture=note_head_textures[note_shape])
+
+
+def draw_beat(beat_notes):
+
+
+
+    for note_name in beat_notes:
+        if note_name == ".":
+            print(amount_of_beat_done)
+
+
+        else:
+            draw_note()
+
+
+
+
+    # Stems, Bars, Flags -----------------------------------------------------------------------------------------------
+    assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
+
+    if amount_of_beat_done == 1:
+        print("aobd == 1     ", stem_start_points_since_last_beat)
+
+        if len(stem_start_points_since_last_beat) == 0:  # Rest
+            pass
+
+        elif len(stem_start_points_since_last_beat) == 1:
+            x, y, d = stem_start_points_since_last_beat[0]
+
+            with self.note_canvas:
+                Line(points=(x, y, x, y + note_stem_height), width=note_stem_width)
+
+            # UNTESTED: Flags for single notes
+            flags = note_duration_to_bar_or_flag_amount(d)
+            for flag_index in range(flags):
+                Line(points=(x,
+                             y + (note_flag_gap * flag_index),
+                             x + note_flag_dpos[0],
+                             y + note_flag_dpos[1] + (note_flag_gap * flag_index)),
+                     width=note_stem_width)
+
+        else:  # No special barring method available, will just do a flat one at highest point
+            highest = max([values[1] for values in stem_start_points_since_last_beat])
+
+            for n_index, (x, y, d) in enumerate(stem_start_points_since_last_beat):  # Stems
+                with self.note_canvas:
+                    Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
+
+                    if n_index < (len(stem_start_points_since_last_beat) - 1) and \
+                            (x != stem_start_points_since_last_beat[n_index + 1][0]):
+                        flags = note_duration_to_bar_or_flag_amount(
+                            Fraction(1, min((d.denominator,
+                                             stem_start_points_since_last_beat[n_index + 1][
+                                                 2].denominator))))
+                        print("f", flags)
+                        for flag_index in range(flags):
+                            y_offset = flag_index * note_flag_gap * -1
+
+                            Line(points=(x,
+                                         highest + note_stem_height + y_offset,
+                                         stem_start_points_since_last_beat[n_index + 1][0],
+                                         highest + note_stem_height + y_offset),
+                                 width=note_stem_width)
+
+        amount_of_beat_done = 0
+        stem_start_points_since_last_beat.clear()
 
 
 
