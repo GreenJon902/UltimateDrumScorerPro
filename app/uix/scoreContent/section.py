@@ -3,11 +3,10 @@ from math import log
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Rectangle, Line
+from kivy.graphics import Canvas, Rectangle
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width, note_head_width, staff_gap, note_stem_width, note_stem_height, \
-    staff_height, note_flag_dpos, note_flag_gap
+from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -151,71 +150,6 @@ def draw_note(note_name, x):
                   size=(note_head_width, staff_gap),
                   texture=note_head_textures[note_shape])
 
-
-def draw_beat(beat_notes):
-
-
-
-    for note_name in beat_notes:
-        if note_name == ".":
-            print(amount_of_beat_done)
-
-
-        else:
-            draw_note()
-
-
-
-
-    # Stems, Bars, Flags -----------------------------------------------------------------------------------------------
-    assert amount_of_beat_done <= 1, "Somehow amount_of_beat_done was over 1"
-
-    if amount_of_beat_done == 1:
-        print("aobd == 1     ", stem_start_points_since_last_beat)
-
-        if len(stem_start_points_since_last_beat) == 0:  # Rest
-            pass
-
-        elif len(stem_start_points_since_last_beat) == 1:
-            x, y, d = stem_start_points_since_last_beat[0]
-
-            with self.note_canvas:
-                Line(points=(x, y, x, y + note_stem_height), width=note_stem_width)
-
-            # UNTESTED: Flags for single notes
-            flags = note_duration_to_bar_or_flag_amount(d)
-            for flag_index in range(flags):
-                Line(points=(x,
-                             y + (note_flag_gap * flag_index),
-                             x + note_flag_dpos[0],
-                             y + note_flag_dpos[1] + (note_flag_gap * flag_index)),
-                     width=note_stem_width)
-
-        else:  # No special barring method available, will just do a flat one at highest point
-            highest = max([values[1] for values in stem_start_points_since_last_beat])
-
-            for n_index, (x, y, d) in enumerate(stem_start_points_since_last_beat):  # Stems
-                with self.note_canvas:
-                    Line(points=(x, y, x, highest + note_stem_height), width=note_stem_width)
-
-                    if n_index < (len(stem_start_points_since_last_beat) - 1) and \
-                            (x != stem_start_points_since_last_beat[n_index + 1][0]):
-                        flags = note_duration_to_bar_or_flag_amount(
-                            Fraction(1, min((d.denominator,
-                                             stem_start_points_since_last_beat[n_index + 1][
-                                                 2].denominator))))
-                        print("f", flags)
-                        for flag_index in range(flags):
-                            y_offset = flag_index * note_flag_gap * -1
-
-                            Line(points=(x,
-                                         highest + note_stem_height + y_offset,
-                                         stem_start_points_since_last_beat[n_index + 1][0],
-                                         highest + note_stem_height + y_offset),
-                                 width=note_stem_width)
-
-        amount_of_beat_done = 0
-        stem_start_points_since_last_beat.clear()
 
 
 
