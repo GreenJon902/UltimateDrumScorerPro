@@ -23,7 +23,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[kick,snare snare kick kick,snare snare . snare kick snare snare . kick . . kick .]"
+    notes = "4[. . . . kick . snare . . . snare,kick .]"
 
     note_canvas: Canvas
 
@@ -75,21 +75,37 @@ class Section(ScoreContentWithPopup):
             self.log_debug(f"Beat {beat_index} --------------| notes: {beat} |--------------")
             amount_of_beat_done = 0
             had_not_rest_this_beat = False
+            sub_beats_to_skip = 0
 
-
-            for notes in beat:
-                self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}")
+            for note_index, notes in enumerate(beat):
+                self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
+                              f"sub_beats_to_skip: {sub_beats_to_skip}")
                 did_do_a_draw = False
 
                 amount_of_beat_done += Fraction(1, notes_per_beat)
+
+                if sub_beats_to_skip > 0:
+                    sub_beats_to_skip -= 1
+                    continue
+
 
 
                 # Drawing note bodies -----------------------
                 if notes == ["."]:
                     if not had_not_rest_this_beat:
-                        draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
                         did_do_a_draw = True
 
+                        # Combining rests ----
+                        if note_index < len(beat) - 1 and all([beat[note_index + n] == ["."] for n in range(1, 4)]):
+                            sub_beats_to_skip = 3
+                            draw_note(f"{duration_to_text_duration[notes_per_beat / 4]}_rest", dx * note_width)
+
+                        elif note_index < len(beat) - 1 and beat[note_index + 1] == ["."]:
+                            sub_beats_to_skip = 1
+                            draw_note(f"{duration_to_text_duration[notes_per_beat / 2]}_rest", dx * note_width)
+
+                        else:
+                            draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
 
                 else:
                     for note in notes:
