@@ -24,7 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[snare kick . . kick,snare snare snare snare . . kick snare]"
+    notes = "4[snare kick . . kick . kick . snare . . kick]"
 
     note_canvas: Canvas
 
@@ -178,6 +178,13 @@ class Section(ScoreContentWithPopup):
 
                 Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + note_stem_height), width=note_stem_width)
                 Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + note_stem_height), width=note_stem_width)
+
+
+                denominator = 4 - len(beat[beat.index(music_notes[0]) + 1:
+                                           (beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
+                                            [i for i, n in enumerate(beat) if n == music_notes[1]][1])])
+                fraction = Fraction(1, denominator)
+                print(fraction)
 
                 Line(points=(note_1_pos[0], note_1_pos[1] + note_stem_height, note_2_pos[0],
                              note_2_pos[1] + note_stem_height), width=note_stem_width)
