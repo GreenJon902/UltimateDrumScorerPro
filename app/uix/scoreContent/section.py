@@ -54,6 +54,7 @@ class Section(ScoreContentWithPopup):
 
 
     def _update(self):
+        self.push_logger_name("_update")
         self.note_canvas.clear()
         self.note_canvas.__enter__()
 
@@ -72,6 +73,7 @@ class Section(ScoreContentWithPopup):
         for beat in all_notes:
             self.log_dump()
             self.log_debug(f"Beat {beat_index} --------------| notes: {beat} |--------------")
+            self.push_logger_name(f"beat_{beat_index}")
             amount_of_beat_done = 0
             had_not_rest_this_beat = False
             sub_beats_to_skip = 0
@@ -121,7 +123,7 @@ class Section(ScoreContentWithPopup):
 
 
 
-
+            self.pop_logger_name()
             beat_index += 1
 
         self.log_dump()
@@ -129,7 +131,7 @@ class Section(ScoreContentWithPopup):
 
 
         self.note_canvas.__exit__()
-
+        self.pop_logger_name()
 
 
 def draw_note(note_name, x):
