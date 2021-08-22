@@ -160,11 +160,11 @@ class Section(ScoreContentWithPopup):
 
             elif len(music_notes) == 2:
 
-                n_poses = list()
+                note_poses = list()
                 sx = 0
                 for note_index, notes in enumerate(beat):
                     if notes != ["."]:
-                        n_poses.append((
+                        note_poses.append((
                             (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] * note_width),
                             min([note_name_to_staff_level[note_name] for note_name in notes]
                                 ) * staff_gap + (staff_gap / 2)
@@ -173,14 +173,14 @@ class Section(ScoreContentWithPopup):
                     if note_index in draw_notes_indexes_this_beat:
                         sx += 1
 
-                n1_pos, n2_pos = n_poses
-                self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {n1_pos, n2_pos}")
+                note_1_pos, note_2_pos = note_poses
+                self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {note_1_pos, note_2_pos}")
 
-                Line(points=(*n1_pos, n1_pos[0], n1_pos[1] + note_stem_height), width=note_stem_width)
-                Line(points=(*n2_pos, n2_pos[0], n2_pos[1] + note_stem_height), width=note_stem_width)
+                Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + note_stem_height), width=note_stem_width)
+                Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + note_stem_height), width=note_stem_width)
 
-                Line(points=(n1_pos[0], n1_pos[1] + note_stem_height, n2_pos[0], n2_pos[1] + note_stem_height),
-                     width=note_stem_width)
+                Line(points=(note_1_pos[0], note_1_pos[1] + note_stem_height, note_2_pos[0],
+                             note_2_pos[1] + note_stem_height), width=note_stem_width)
 
 
             # More ----------------------
