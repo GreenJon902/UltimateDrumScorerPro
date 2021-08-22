@@ -21,10 +21,10 @@ level_to_code = {
     "CRITICAL": red + bold,
     "ERROR": red,
     "WARNING": yellow,
-    "INFO": blue,
+    "INFO": green,
     "DEBUG": cyan,
-    "TRACE": black,
-    "DUMP": green
+    "DUMP": blue,
+    "TRACE": black
 }
 
 
