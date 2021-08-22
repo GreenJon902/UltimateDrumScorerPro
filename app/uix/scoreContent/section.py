@@ -3,10 +3,11 @@ from math import log
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Rectangle
+from kivy.graphics import Canvas, Rectangle, Line
 from kivy.input import MotionEvent
 
-from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height
+from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height, note_stem_width, \
+    note_stem_height
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -70,6 +71,9 @@ class Section(ScoreContentWithPopup):
         self.log_dump()
         dx = 0
         beat_index = 0
+        note_positions_with_indexes = list()
+        beat_end_dx_list = list()
+        draw_notes_indexes_this_beat = list()
 
         for beat in all_notes:
             self.log_dump()
@@ -116,16 +120,68 @@ class Section(ScoreContentWithPopup):
 
 
 
+
                 if did_do_a_draw:
+                    draw_notes_indexes_this_beat.append(note_index)
                     dx += 1
 
                 self.pop_logger_name()
-
+            beat_end_dx_list.append(dx)
 
             # Baring and flags -----------------------------------------------------------------------------------------
+            """anchors_with_indexes = list()
+
+            for n, (pos, note_index) in enumerate(note_positions_with_indexes):
+                found = False
+
+                for n2, (pos2, note_index2) in enumerate(note_positions_with_indexes):
+                    if note_index == note_index2 and n != n2 and note_index:
+                        found = True
+                        to_add = ((pos[0], min((pos[1], pos2[1]))), note_index)
+
+                        if to_add not in anchors_with_indexes:
+                            anchors_with_indexes.append(to_add)
+
+
+                if not found:
+                    anchors_with_indexes.append(((pos[0], pos[1]), note_index))
+
+            self.log_dump(f"\b[Bars and Tails ]  Sorted note_stem_anchor_points_and_their_note_indexes, got "
+                          f"{anchors_with_indexes} from {note_positions_with_indexes}")"""
+
+            music_notes = [notes for notes in beat if notes != ["."]]
+            self.log_dump(f"\b[Bars and Tails ]  There are {len(music_notes)} sub beats, looking for special rule")
 
 
 
+            # Two Notes --------------
+            if len(music_notes) == 2:
+
+                n_poses = list()
+                sx = 0
+                for note_index, notes in enumerate(beat):
+                    if notes != ["."]:
+                        n_poses.append((
+                            (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] * note_width),
+                            min([note_name_to_staff_level[note_name] for note_name in notes]
+                                ) * staff_gap + (staff_gap / 2)
+                        ))
+
+                    if note_index in draw_notes_indexes_this_beat:
+                        sx += 1
+
+                n1_pos, n2_pos = n_poses
+                self.log_dump(f"\b[Bars and Tails ]  Special rule found, positions are {n1_pos, n2_pos}")
+
+                Line(points=(*n1_pos, n1_pos[0], n1_pos[1] + note_stem_height), width=note_stem_width)
+                Line(points=(*n2_pos, n2_pos[0], n2_pos[1] + note_stem_height), width=note_stem_width)
+
+                Line(points=(n1_pos[0], n1_pos[1] + note_stem_height, n2_pos[0], n2_pos[1] + note_stem_height),
+                     width=note_stem_width)
+
+
+
+            note_positions_with_indexes.clear()
             self.pop_logger_name()
             beat_index += 1
 
@@ -146,12 +202,14 @@ def draw_note(note_name, x):
     if note_shape in rest_textures.keys():
         Rectangle(pos=(x, 0), size=(note_width, staff_height),
                   texture=rest_textures[note_shape])
+        return x, 0
 
 
     elif note_shape in note_head_textures.keys():
         Rectangle(pos=(x, note_name_to_staff_level[note_name] * staff_gap),
                   size=(note_head_width, staff_gap),
                   texture=note_head_textures[note_shape])
+        return x, note_name_to_staff_level[note_name] * staff_gap
 
 
 
