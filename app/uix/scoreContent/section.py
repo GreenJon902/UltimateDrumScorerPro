@@ -82,8 +82,8 @@ class Section(ScoreContentWithPopup):
             # Drawing note bodies --------------------------------------------------------------------------------------
             for note_index, notes in enumerate(beat):
                 self.push_logger_name(f"{note_index + 1}/{notes_per_beat}")
-                self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
-                              f"sub_beats_to_skip: {sub_beats_to_skip}")
+                self.log_dump(f"\b[Notes and Rests]  values: ({notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
+                              f"sub_beats_to_skip: {sub_beats_to_skip})")
                 did_do_a_draw = False
 
                 amount_of_beat_done += Fraction(1, notes_per_beat)
@@ -120,6 +120,7 @@ class Section(ScoreContentWithPopup):
                     dx += 1
 
                 self.pop_logger_name()
+
 
             # Baring and flags -----------------------------------------------------------------------------------------
 
