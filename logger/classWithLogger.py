@@ -5,10 +5,12 @@ from logging import Logger
 class ClassWithLogger:
     _created = False
     _logger: Logger = None
-    _logger_name: str = "GreenJon902IsPog"
+    _logger_base_name: str = "GreenJon902IsPog"
+
+    _logger_name_stack: list[str]
 
     def _create_logger(self):
-        self._logger = logging.getLogger(self._logger_name)
+        self._logger = logging.getLogger(self._logger_base_name)
         self._created = True
         self.log_dump("Created self")
 
@@ -17,17 +19,39 @@ class ClassWithLogger:
             self._create_logger()
 
     def __init__(self, name=None):
-        if self._logger_name == "GreenJon902IsPog":
+        if self._logger_base_name == "GreenJon902IsPog":
             if name is None:
-                self._logger_name = self.__class__.__name__
+                self._logger_base_name = self.__class__.__name__
             else:
-                self._logger_name = str(name)
+                self._logger_base_name = str(name)
 
+
+        self._logger_name_stack = list()
         self._check_logger()
 
     def set_logger_name(self, name: str):
+        self._logger_base_name = name
+        self._do_logger_name()
+        self.log_dump(f"Set base name for self to \"{name}\"")
+
+    def push_logger_name(self, name: str):
+        self._logger_name_stack.append(name)
+        self._do_logger_name()
+
+    def pop_logger_name(self) -> str:
+        last_name = self._logger_name_stack.pop(-1)
+        self._do_logger_name()
+
+        return last_name
+
+
+    def _do_logger_name(self):
+        name = self._logger_base_name
+
+        if len(self._logger_name_stack) > 0:
+            name += ("." + ".".join(self._logger_name_stack))
+
         self._logger.name = name
-        self.log_dump(f"Set name for self to \"{name}\"")
 
     def log_dump(self, *messages):
         self._check_logger()
@@ -61,3 +85,24 @@ class ClassWithLogger:
 
 
 __all__ = ["ClassWithLogger"]
+
+
+if __name__ == '__main__':
+    # noinspection PyUnresolvedReferences
+    import logger
+
+    # noinspection PyRedeclaration
+    logger = ClassWithLogger("TestLogger")
+    logger.log_info("I should be called Test")
+
+    logger.set_logger_name("Test2")
+    logger.log_info("I should be called Test2")
+
+    logger.push_logger_name("Foo")
+    logger.log_info("I should be called Test2.Foo")
+
+    logger.push_logger_name("Bar")
+    logger.log_info("I should be called Test2.Foo.Bar")
+
+    n = logger.pop_logger_name()
+    logger.log_info(f"I should be called Test2.Foo and also \"{n}\" should be \"Bar\"")
