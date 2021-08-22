@@ -24,7 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[. . . . kick . snare . . . snare,kick .]"
+    notes = "4[snare kick . . kick,snare snare snare snare . . kick snare]"
 
     note_canvas: Canvas
 
@@ -72,7 +72,7 @@ class Section(ScoreContentWithPopup):
         dx = 0
         beat_index = 0
         note_positions_with_indexes = list()
-        beat_end_dx_list = list()
+        beat_end_dx_list = list([0])
         draw_notes_indexes_this_beat = list()
 
         for beat in all_notes:
@@ -185,9 +185,30 @@ class Section(ScoreContentWithPopup):
 
             # More ----------------------
             else:
-                pass
+                highest_point = max([max([note_name_to_staff_level[note_name] for note_name in notes])
+                                     for notes in beat]) * staff_gap + (staff_gap / 2)
+
+                note_poses = list()
+                sx = 0
+                for note_index, notes in enumerate(beat):
+                    if notes != ["."]:
+                        note_poses.append((
+                            (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] * note_width),
+                            min([note_name_to_staff_level[note_name] for note_name in notes]
+                                ) * staff_gap + (staff_gap / 2)
+                        ))
+
+                    if note_index in draw_notes_indexes_this_beat:
+                        sx += 1
+
+                for note_pos in note_poses:
+                    Line(points=(*note_pos, note_pos[0], highest_point + note_stem_height), width=note_stem_width)
+
+                Line(points=(note_poses[0][0], highest_point + note_stem_height, note_poses[-1][0], highest_point +
+                             note_stem_height))
 
 
+            # ----------------------------
             note_positions_with_indexes.clear()
             draw_notes_indexes_this_beat.clear()
             self.pop_logger_name()
