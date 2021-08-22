@@ -76,6 +76,7 @@ class Section(ScoreContentWithPopup):
             had_not_rest_this_beat = False
             sub_beats_to_skip = 0
 
+            # Drawing note bodies --------------------------------------------------------------------------------------
             for note_index, notes in enumerate(beat):
                 self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
                               f"sub_beats_to_skip: {sub_beats_to_skip}")
@@ -89,7 +90,6 @@ class Section(ScoreContentWithPopup):
 
 
 
-                # Drawing note bodies -----------------------
                 if notes == ["."]:
                     if not had_not_rest_this_beat:
                         did_do_a_draw = True
@@ -117,8 +117,7 @@ class Section(ScoreContentWithPopup):
                 if did_do_a_draw:
                     dx += 1
 
-
-
+            # Baring and flags -----------------------------------------------------------------------------------------
 
 
 
