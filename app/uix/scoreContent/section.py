@@ -146,16 +146,19 @@ class Section(ScoreContentWithPopup):
                 if not found:
                     anchors_with_indexes.append(((pos[0], pos[1]), note_index))
 
-            self.log_dump(f"\b[Bars and Tails ]  Sorted note_stem_anchor_points_and_their_note_indexes, got "
+            self.log_dump(f"\b[Bars and Flags ]  Sorted note_stem_anchor_points_and_their_note_indexes, got "
                           f"{anchors_with_indexes} from {note_positions_with_indexes}")"""
 
             music_notes = [notes for notes in beat if notes != ["."]]
-            self.log_dump(f"\b[Bars and Tails ]  There are {len(music_notes)} sub beats, looking for special rule")
+            self.log_dump(f"\b[Bars and Flags ]  There are {len(music_notes)} sub beats, looking for special rule")
 
 
 
             # Two Notes --------------
-            if len(music_notes) == 2:
+            if len(music_notes) == 0:
+                self.log_dump("\b[Bars and Flags ]  No music notes written / only rests  so no need for Bars or Flags")
+
+            elif len(music_notes) == 2:
 
                 n_poses = list()
                 sx = 0
@@ -171,7 +174,7 @@ class Section(ScoreContentWithPopup):
                         sx += 1
 
                 n1_pos, n2_pos = n_poses
-                self.log_dump(f"\b[Bars and Tails ]  Special rule found, positions are {n1_pos, n2_pos}")
+                self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {n1_pos, n2_pos}")
 
                 Line(points=(*n1_pos, n1_pos[0], n1_pos[1] + note_stem_height), width=note_stem_width)
                 Line(points=(*n2_pos, n2_pos[0], n2_pos[1] + note_stem_height), width=note_stem_width)
@@ -179,6 +182,10 @@ class Section(ScoreContentWithPopup):
                 Line(points=(n1_pos[0], n1_pos[1] + note_stem_height, n2_pos[0], n2_pos[1] + note_stem_height),
                      width=note_stem_width)
 
+
+            # More ----------------------
+            else:
+                pass
 
 
             note_positions_with_indexes.clear()
