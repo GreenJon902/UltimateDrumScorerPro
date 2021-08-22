@@ -153,7 +153,7 @@ class Section(ScoreContentWithPopup):
             self.log_dump(f"\b[Bars and Flags ]  There are {len(music_notes)} sub beats, looking for special rule")
 
 
-
+            # TODO: Multiple bars
             # Two Notes --------------
             if len(music_notes) == 0:
                 self.log_dump("\b[Bars and Flags ]  No music notes written / only rests  so no need for Bars or Flags")
