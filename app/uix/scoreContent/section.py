@@ -81,6 +81,7 @@ class Section(ScoreContentWithPopup):
 
             # Drawing note bodies --------------------------------------------------------------------------------------
             for note_index, notes in enumerate(beat):
+                self.push_logger_name(f"{note_index + 1}/{notes_per_beat}")
                 self.log_dump(f"notes: {notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
                               f"sub_beats_to_skip: {sub_beats_to_skip}")
                 did_do_a_draw = False
@@ -89,36 +90,36 @@ class Section(ScoreContentWithPopup):
 
                 if sub_beats_to_skip > 0:
                     sub_beats_to_skip -= 1
-                    continue
-
-
-
-                if notes == ["."]:
-                    if not had_not_rest_this_beat:
-                        did_do_a_draw = True
-
-                        # Combining rests ----
-                        if note_index < len(beat) - 1 and all([beat[note_index + n] == ["."] for n in range(1, 4)]):
-                            sub_beats_to_skip = 3
-                            draw_note(f"{duration_to_text_duration[notes_per_beat / 4]}_rest", dx * note_width)
-
-                        elif note_index < len(beat) - 1 and beat[note_index + 1] == ["."]:
-                            sub_beats_to_skip = 1
-                            draw_note(f"{duration_to_text_duration[notes_per_beat / 2]}_rest", dx * note_width)
-
-                        else:
-                            draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
 
                 else:
-                    for note in notes:
-                        draw_note(note, dx * note_width)
-                        did_do_a_draw = True
-                        had_not_rest_this_beat = True
+                    if notes == ["."]:
+                        if not had_not_rest_this_beat:
+                            did_do_a_draw = True
+
+                            # Combining rests ----
+                            if note_index < len(beat) - 1 and all([beat[note_index + n] == ["."] for n in range(1, 4)]):
+                                sub_beats_to_skip = 3
+                                draw_note(f"{duration_to_text_duration[notes_per_beat / 4]}_rest", dx * note_width)
+
+                            elif note_index < len(beat) - 1 and beat[note_index + 1] == ["."]:
+                                sub_beats_to_skip = 1
+                                draw_note(f"{duration_to_text_duration[notes_per_beat / 2]}_rest", dx * note_width)
+
+                            else:
+                                draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
+
+                    else:
+                        for note in notes:
+                            draw_note(note, dx * note_width)
+                            did_do_a_draw = True
+                            had_not_rest_this_beat = True
 
 
 
                 if did_do_a_draw:
                     dx += 1
+
+                self.pop_logger_name()
 
             # Baring and flags -----------------------------------------------------------------------------------------
 
