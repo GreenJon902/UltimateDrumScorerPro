@@ -182,6 +182,7 @@ class Section(ScoreContentWithPopup):
 
 
             note_positions_with_indexes.clear()
+            draw_notes_indexes_this_beat.clear()
             self.pop_logger_name()
             beat_index += 1
 
