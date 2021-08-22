@@ -32,15 +32,17 @@ class ClassWithLogger:
     def set_logger_name(self, name: str):
         self._logger_base_name = name
         self._do_logger_name()
-        self.log_dump(f"Set base name for self to \"{name}\"")
+        self.log_trace(f"Set base name for self to \"{name}\"")
 
     def push_logger_name(self, name: str):
         self._logger_name_stack.append(name)
         self._do_logger_name()
+        self.log_trace(f"Pushed name \"{name}\" to name stack")
 
     def pop_logger_name(self) -> str:
         last_name = self._logger_name_stack.pop(-1)
         self._do_logger_name()
+        self.log_trace(f"Popped name \"{last_name}\" from name stack")
 
         return last_name
 
@@ -88,6 +90,9 @@ __all__ = ["ClassWithLogger"]
 
 
 if __name__ == '__main__':
+    import os
+    os.environ["LOG_LEVEL"] = "0"
+
     # noinspection PyUnresolvedReferences
     import logger
 
