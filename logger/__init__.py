@@ -83,4 +83,17 @@ def get_logger(name: str) -> ClassWithLogger:
     return ClassWithLogger(name)
 
 
-__all__ = ["get_logger", "ClassWithLogger"]
+def push_name_to_logger_name_stack(function: callable):
+    def wrapper(self, *args, **kwargs):
+        self.push_logger_name(function.__name__)
+        result = function(self, *args, **kwargs)
+        self.pop_logger_name()
+
+        return result
+    return wrapper
+
+
+
+
+
+__all__ = ["get_logger", "ClassWithLogger", "push_name_to_logger_name_stack"]

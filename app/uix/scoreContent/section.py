@@ -11,6 +11,7 @@ from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char, duration_to_text_duration
+from logger import push_name_to_logger_name_stack
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -53,8 +54,8 @@ class Section(ScoreContentWithPopup):
         return False
 
 
+    @push_name_to_logger_name_stack
     def _update(self):
-        self.push_logger_name("_update")
         self.note_canvas.clear()
         self.note_canvas.__enter__()
 
@@ -131,7 +132,6 @@ class Section(ScoreContentWithPopup):
 
 
         self.note_canvas.__exit__()
-        self.pop_logger_name()
 
 
 def draw_note(note_name, x):
