@@ -7,7 +7,7 @@ from kivy.graphics import Canvas, Rectangle, Line
 from kivy.input import MotionEvent
 
 from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height, note_stem_width, \
-    note_stem_height
+    note_stem_height, note_flag_gap
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -24,7 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[snare kick . . kick . kick . snare . . kick]"
+    notes = "4[snare kick . . kick . kick . snare . . kick . . snare snare]"
 
     note_canvas: Canvas
 
@@ -180,14 +180,30 @@ class Section(ScoreContentWithPopup):
                 Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + note_stem_height), width=note_stem_width)
 
 
-                denominator = 4 - len(beat[beat.index(music_notes[0]) + 1:
-                                           (beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
-                                            [i for i, n in enumerate(beat) if n == music_notes[1]][1])])
-                fraction = Fraction(1, denominator)
-                print(fraction)
+                note_1_rests_after = len(beat[beat.index(music_notes[0]) + 1:
+                                         (beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
+                                         [i for i, n in enumerate(beat) if n == music_notes[1]][1])])
 
-                Line(points=(note_1_pos[0], note_1_pos[1] + note_stem_height, note_2_pos[0],
-                             note_2_pos[1] + note_stem_height), width=note_stem_width)
+                note_2_rests_after = len(beat[(beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
+                                              [i for i, n in enumerate(beat) if n == music_notes[1]][1]):
+                                              -1])
+
+                note_1_duration = Fraction(note_1_rests_after + 1, notes_per_beat)
+                note_2_duration = Fraction(note_2_rests_after + 1, notes_per_beat)
+
+                print(note_1_duration, note_2_duration)
+
+                if note_1_duration == note_2_duration:
+                    for bar_index in range(note_duration_to_bar_or_flag_amount(note_1_duration)):
+                        Line(points=(note_1_pos[0],
+                                     note_1_pos[1] + note_stem_height - (bar_index * note_flag_gap),
+                                     note_2_pos[0],
+                                     note_2_pos[1] + note_stem_height - (bar_index * note_flag_gap)),
+                             width=note_stem_width)
+
+                else:
+                    pass
+
 
 
             # More ----------------------
