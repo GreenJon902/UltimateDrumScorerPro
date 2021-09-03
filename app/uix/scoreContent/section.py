@@ -24,7 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[snare kick . . kick . kick . snare . . kick . . snare snare]"
+    notes = "4[snare kick . kick kick kick . . . . kick snare . snare snare .]"
 
     note_canvas: Canvas
 
@@ -74,6 +74,7 @@ class Section(ScoreContentWithPopup):
         note_positions_with_indexes = list()
         beat_end_dx_list = list([0])
         draw_notes_indexes_this_beat = list()
+        note_stem_top_and_duration = list()
 
         for beat in all_notes:
             self.log_dump()
@@ -86,8 +87,8 @@ class Section(ScoreContentWithPopup):
             # Drawing note bodies --------------------------------------------------------------------------------------
             for note_index, notes in enumerate(beat):
                 self.push_logger_name(f"{note_index + 1}/{notes_per_beat}")
-                self.log_dump(f"\b[Notes and Rests]  values: ({notes}, amount_of_beat_done: {amount_of_beat_done}, dx: {dx}, "
-                              f"sub_beats_to_skip: {sub_beats_to_skip})")
+                self.log_dump(f"\b[Notes and Rests]  values: ({notes}, amount_of_beat_done: {amount_of_beat_done}, dx: "
+                              f"{dx}, sub_beats_to_skip: {sub_beats_to_skip})")
                 did_do_a_draw = False
 
                 amount_of_beat_done += Fraction(1, notes_per_beat)
@@ -161,6 +162,7 @@ class Section(ScoreContentWithPopup):
             elif len(music_notes) == 2:
 
                 note_poses = list()
+                note_indexes = list()
                 sx = 0
                 for note_index, notes in enumerate(beat):
                     if notes != ["."]:
@@ -169,46 +171,33 @@ class Section(ScoreContentWithPopup):
                             min([note_name_to_staff_level[note_name] for note_name in notes]
                                 ) * staff_gap + (staff_gap / 2)
                         ))
+                        note_indexes.append(note_index)
 
                     if note_index in draw_notes_indexes_this_beat:
                         sx += 1
 
                 note_1_pos, note_2_pos = note_poses
+                note_1_index, note_2_index = note_indexes
                 self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {note_1_pos, note_2_pos}")
 
                 Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + note_stem_height), width=note_stem_width)
                 Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + note_stem_height), width=note_stem_width)
 
 
-                note_1_rests_after = len(beat[beat.index(music_notes[0]) + 1:
-                                         (beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
-                                         [i for i, n in enumerate(beat) if n == music_notes[1]][1])])
 
-                note_2_rests_after = len(beat[(beat.index(music_notes[1]) if music_notes[0] != music_notes[1] else
-                                              [i for i, n in enumerate(beat) if n == music_notes[1]][1]):
-                                              -1])
+                note_stem_top_and_duration.append(((note_1_pos[0], note_1_pos[1] + note_stem_height),
+                                                   get_note_duration(beat, note_1_index, notes_per_beat)))
+                note_stem_top_and_duration.append(((note_2_pos[0], note_2_pos[1] + note_stem_height),
+                                                   get_note_duration(beat, note_2_index, notes_per_beat)))
 
-                note_1_duration = Fraction(note_1_rests_after + 1, notes_per_beat)
-                note_2_duration = Fraction(note_2_rests_after + 1, notes_per_beat)
-
-                print(note_1_duration, note_2_duration)
-
-                if note_1_duration == note_2_duration:
-                    for bar_index in range(note_duration_to_bar_or_flag_amount(note_1_duration)):
-                        Line(points=(note_1_pos[0],
-                                     note_1_pos[1] + note_stem_height - (bar_index * note_flag_gap),
-                                     note_2_pos[0],
-                                     note_2_pos[1] + note_stem_height - (bar_index * note_flag_gap)),
-                             width=note_stem_width)
-
-                else:
-                    pass
 
 
 
             # More ----------------------
             else:
-                highest_point = max([max([note_name_to_staff_level[note_name] for note_name in notes])
+                self.log_dump(f"\b[Bars and Flags ]  No special rule found")
+                highest_point = max([max([(note_name_to_staff_level[note_name] if note_name != "." else 0)
+                                          for note_name in notes])
                                      for notes in beat]) * staff_gap + (staff_gap / 2)
 
                 note_poses = list()
@@ -221,19 +210,65 @@ class Section(ScoreContentWithPopup):
                                 ) * staff_gap + (staff_gap / 2)
                         ))
 
+                        note_stem_top_and_duration.append(((
+                                (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] *
+                                                                                         note_width),
+                                highest_point + note_stem_height),
+                            get_note_duration(beat, note_index, notes_per_beat)
+                        ))
+
+
                     if note_index in draw_notes_indexes_this_beat:
                         sx += 1
 
                 for note_pos in note_poses:
                     Line(points=(*note_pos, note_pos[0], highest_point + note_stem_height), width=note_stem_width)
 
-                Line(points=(note_poses[0][0], highest_point + note_stem_height, note_poses[-1][0], highest_point +
-                             note_stem_height))
 
 
             # ----------------------------
+
+            self.log_dump(f"\b[Bars and Flags ]  Bar positions and not durations: {note_stem_top_and_duration}")
+            for note_index in range(len(note_stem_top_and_duration) - 1):
+                if note_index < len(note_stem_top_and_duration) - 1:
+
+                    stem_top_pos, duration = note_stem_top_and_duration[note_index]
+                    next_stem_top_pos, next_duration = note_stem_top_and_duration[note_index + 1]
+
+                    print(stem_top_pos, next_stem_top_pos)
+                    print(duration, next_duration)
+
+                    if duration >= next_duration:
+                        for bar_index in range(note_duration_to_bar_or_flag_amount(duration)):
+                            Line(points=(stem_top_pos[0],
+                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         next_stem_top_pos[0],
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
+                                 width=note_stem_width)
+
+                    else:
+                        bar_index = 0
+
+                        for bar_index in range(note_duration_to_bar_or_flag_amount(next_duration) - 1):
+                            Line(points=(stem_top_pos[0],
+                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         next_stem_top_pos[0],
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
+                                 width=note_stem_width)
+
+                        bar_index += 1
+                        Line(points=(stem_top_pos[0],
+                                     stem_top_pos[1] - (bar_index * note_flag_gap),
+                                     stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
+                                     next_stem_top_pos[1] - (bar_index * note_flag_gap) -
+                                        ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
+                             width=note_stem_width)
+
+            print()
+            # ----------------------------
             note_positions_with_indexes.clear()
             draw_notes_indexes_this_beat.clear()
+            note_stem_top_and_duration.clear()
             self.pop_logger_name()
             beat_index += 1
 
@@ -292,3 +327,17 @@ def note_duration_to_bar_or_flag_amount(fraction: Fraction):  # denominator = 2^
                         f"take a fraction that has a denominator that is 1, 2, 4, 8...  not {fraction.denominator}"
     return int(n)
 
+
+def get_note_duration(beat, note_index, notes_per_beat):
+    notes_after_note_index = beat[note_index + 1:len(beat)]
+
+    i = 1
+    for note in notes_after_note_index:
+        if note != ["."]:
+            break
+
+        i += 1
+
+    print(notes_after_note_index, i, beat, note_index)
+
+    return Fraction(i, notes_per_beat)
