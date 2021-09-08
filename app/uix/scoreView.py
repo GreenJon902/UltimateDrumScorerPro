@@ -1,9 +1,7 @@
-from kivy.clock import Clock
 from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 
-import app.uix.scoreContent.section
 from app.graphicsConstants import scroll_bar_width, scroll_bar_inactive_color, scroll_bar_color
 from app.uix.scoreViewHelpers import set_height
 from app.uix.scoreViewHelpers.page import PageHolder, Page
@@ -26,17 +24,8 @@ class ScoreView(RelativeLayout, ClassWithLogger):
         self.pageHolderHolder = RelativeLayout(size_hint_y=None, size_hint_x=None)
         self.pageHolder = PageHolder(size_hint_x=None, size_hint_y=None, pos_hint={"center_x": 0.5})
 
-
-
         page = Page()
-        Clock.schedule_once(lambda _: page.add_widget(
-            app.uix.scoreContent.section.Section(pos=self.to_local(100, 100))), -1) # Testing stuff
-
-
-
-
         self.pageHolder.add_page(page)
-
 
         self.pageHolder.bind(height=lambda _instance, value: set_height(self.pageHolderHolder, value))
 

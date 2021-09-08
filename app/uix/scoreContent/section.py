@@ -237,8 +237,6 @@ class Section(ScoreContentWithPopup):
                     stem_top_pos, duration = note_stem_top_and_duration[note_index]
                     next_stem_top_pos, next_duration = note_stem_top_and_duration[note_index + 1]
 
-                    print(stem_top_pos, next_stem_top_pos)
-                    print(duration, next_duration)
 
                     if duration == Fraction(3, 4):
                         dot_pos = stem_top_pos[0] + note_dot_dpos[0], \
@@ -334,7 +332,6 @@ class Section(ScoreContentWithPopup):
                                      ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
                              width=note_stem_width)"""
 
-            print()
             # ----------------------------
             note_positions_with_indexes.clear()
             draw_notes_indexes_this_beat.clear()
@@ -407,7 +404,5 @@ def get_note_duration(beat, note_index, notes_per_beat):
             break
 
         i += 1
-
-    print(notes_after_note_index, i, beat, note_index)
 
     return Fraction(i, notes_per_beat)

@@ -1,5 +1,3 @@
-from kivy.clock import Clock
-
 from app.popups.popup import Popup
 
 
@@ -11,10 +9,6 @@ class AddSectionPopup(Popup):
 
         if name:
             self.ids["name"].text = name
-
-
-        self.ids["name"].text = "TEST"  # FIXME: FOR TESTING
-        Clock.schedule_once(lambda _: self.on_finish_button(None, "no"), 0)  # FIXME: FOR TESTING
 
     def get_entered(self):
         array = {"name": self.ids["name"].text}
