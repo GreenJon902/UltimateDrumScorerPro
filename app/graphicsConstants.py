@@ -17,3 +17,6 @@ note_stem_height = 500
 note_head_width = staff_gap * 1.5
 note_flag_dpos = 100, -50
 note_flag_gap = 50
+
+note_dot_dpos = 20, -50
+note_dot_size = 50, 50

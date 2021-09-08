@@ -3,11 +3,11 @@ from math import log
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
-from kivy.graphics import Canvas, Rectangle, Line
+from kivy.graphics import Canvas, Rectangle, Line, Ellipse
 from kivy.input import MotionEvent
 
 from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height, note_stem_width, \
-    note_stem_height, note_flag_gap
+    note_stem_height, note_flag_gap, note_dot_dpos, note_dot_size
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -238,10 +238,15 @@ class Section(ScoreContentWithPopup):
                     next_stem_top_pos, next_duration = note_stem_top_and_duration[note_index + 1]
 
                     print(stem_top_pos, next_stem_top_pos)
-                    print(duration, next_duration, Fraction(3, 4))
+                    print(duration, next_duration)
 
                     if next_duration == Fraction(3, 4):
-                        # TODO: Draw Dot
+                        dot_pos = next_stem_top_pos[0] + note_dot_dpos[0], \
+                                  next_stem_top_pos[1] - note_stem_height + note_dot_dpos[1]
+
+                        Ellipse(pos=dot_pos, size=note_dot_size)
+
+
                         next_duration = Fraction(2, 4)
 
 
