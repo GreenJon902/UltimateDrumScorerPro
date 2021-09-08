@@ -232,13 +232,21 @@ class Section(ScoreContentWithPopup):
             for note_index in range(len(note_stem_top_and_duration) - 1):
                 if note_index < len(note_stem_top_and_duration) - 1:
 
+                    duration: Fraction
+                    next_duration: Fraction
                     stem_top_pos, duration = note_stem_top_and_duration[note_index]
                     next_stem_top_pos, next_duration = note_stem_top_and_duration[note_index + 1]
 
                     print(stem_top_pos, next_stem_top_pos)
-                    print(duration, next_duration)
+                    print(duration, next_duration, Fraction(3, 4))
 
-                    if duration >= next_duration:
+                    if next_duration == Fraction(3, 4):
+                        # TODO: Draw Dot
+                        next_duration = Fraction(2, 4)
+
+
+
+                    if duration == next_duration:  # Use d1
                         for bar_index in range(note_duration_to_bar_or_flag_amount(duration)):
                             Line(points=(stem_top_pos[0],
                                          stem_top_pos[1] - (bar_index * note_flag_gap),
@@ -246,8 +254,48 @@ class Section(ScoreContentWithPopup):
                                          next_stem_top_pos[1] - (bar_index * note_flag_gap)),
                                  width=note_stem_width)
 
+
+                    elif duration < next_duration:  # Use d2, Flags d1
+                        bar_amount = note_duration_to_bar_or_flag_amount(next_duration)
+                        flag_amount = note_duration_to_bar_or_flag_amount(duration) - bar_amount
+
+                        for bar_index in range(bar_amount):
+                            Line(points=(stem_top_pos[0],
+                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         next_stem_top_pos[0],
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
+                                 width=note_stem_width)
+
+                        for bar_index in range(flag_amount):
+                            Line(points=(stem_top_pos[0],
+                                         stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap,
+                                         next_stem_top_pos[0] - ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap),
+                                 width=note_stem_width)
+
+
+                    elif duration > next_duration:  # Use d1, Flags d2
+                        bar_amount = note_duration_to_bar_or_flag_amount(duration)
+                        flag_amount = note_duration_to_bar_or_flag_amount(next_duration) - bar_amount
+
+                        for bar_index in range(bar_amount):
+                            Line(points=(stem_top_pos[0],
+                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         next_stem_top_pos[0],
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
+                                 width=note_stem_width)
+
+                        for bar_index in range(flag_amount):
+                            Line(points=(stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
+                                         stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap,
+                                         next_stem_top_pos[0],
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap),
+                                 width=note_stem_width)
+
+
                     else:
-                        bar_index = 0
+                        self.log_critical("How the f*** has this happened????")
+                        """bar_index = 0
 
                         Line(points=(stem_top_pos[0],
                                      stem_top_pos[1],
@@ -267,8 +315,8 @@ class Section(ScoreContentWithPopup):
                                      stem_top_pos[1] - (bar_index * note_flag_gap),
                                      stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
                                      next_stem_top_pos[1] - (bar_index * note_flag_gap) -
-                                        ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
-                             width=note_stem_width)
+                                     ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
+                             width=note_stem_width)"""
 
             print()
             # ----------------------------
