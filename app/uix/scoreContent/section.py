@@ -24,7 +24,7 @@ class Section(ScoreContentWithPopup):
 
     required_mode = "section"
 
-    notes = "4[snare kick . kick kick kick . . . . kick snare . snare snare .]"
+    notes = "4[snare . . kick kick . . snare snare kick . . kick snare . .]"
 
     note_canvas: Canvas
 
@@ -240,7 +240,16 @@ class Section(ScoreContentWithPopup):
                     print(stem_top_pos, next_stem_top_pos)
                     print(duration, next_duration)
 
-                    if next_duration == Fraction(3, 4):
+                    if duration == Fraction(3, 4):
+                        dot_pos = stem_top_pos[0] + note_dot_dpos[0], \
+                                  stem_top_pos[1] - note_stem_height + note_dot_dpos[1]
+
+                        Ellipse(pos=dot_pos, size=note_dot_size)
+
+
+                        duration = Fraction(2, 4)
+
+                    elif next_duration == Fraction(3, 4):
                         dot_pos = next_stem_top_pos[0] + note_dot_dpos[0], \
                                   next_stem_top_pos[1] - note_stem_height + note_dot_dpos[1]
 
@@ -275,7 +284,8 @@ class Section(ScoreContentWithPopup):
                             Line(points=(stem_top_pos[0],
                                          stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap,
                                          next_stem_top_pos[0] - ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap),
+                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) -
+                                            ((next_stem_top_pos[1] - stem_top_pos[1]) / 2) - note_flag_gap),
                                  width=note_stem_width)
 
 
@@ -292,7 +302,8 @@ class Section(ScoreContentWithPopup):
 
                         for bar_index in range(flag_amount):
                             Line(points=(stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap,
+                                         stem_top_pos[1] - (bar_index * note_flag_gap) -
+                                            ((stem_top_pos[1] - next_stem_top_pos[1]) / 2) - note_flag_gap,
                                          next_stem_top_pos[0],
                                          next_stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap),
                                  width=note_stem_width)
