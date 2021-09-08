@@ -249,6 +249,12 @@ class Section(ScoreContentWithPopup):
                     else:
                         bar_index = 0
 
+                        Line(points=(stem_top_pos[0],
+                                     stem_top_pos[1],
+                                     next_stem_top_pos[0],
+                                     next_stem_top_pos[1]),
+                             width=note_stem_width)
+
                         for bar_index in range(note_duration_to_bar_or_flag_amount(next_duration) - 1):
                             Line(points=(stem_top_pos[0],
                                          stem_top_pos[1] - (bar_index * note_flag_gap),
