@@ -49,7 +49,7 @@ class Section(ScoreContentWithPopup):
                 self.update()
 
             else:
-                ret = ScoreContentWithPopup.on_touch_up(*touch.pos)
+                ret = ScoreContentWithPopup.on_touch_up(self, touch)
 
             return ret
         return False

@@ -38,6 +38,7 @@ class Popup(KvPopup, ClassWithLogger):
 
         KvPopup.dismiss(self, *args, **kwargs)
         GlobalBindings.dispatch("set_cursor", self.cursor_before)
+        print(self.cursor_before)
         del self.cursor_before
 
     def on_cancelled(self):

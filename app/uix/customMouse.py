@@ -1,3 +1,4 @@
+from kivy.app import App
 from kivy.core.window import Window
 from kivy.properties import StringProperty
 from kivy.uix.image import Image
@@ -71,6 +72,7 @@ class CustomMouse(Scatter, ClassWithLogger):
 
     def set_cursor(self, name):
         self.log_info(f"Setting cursor to {name}")
+        App.get_running_app().current_cursor = name
 
         found = Window.set_system_cursor(name)
 
