@@ -96,19 +96,23 @@ BoxLayout:
                     pos: self.pos
                     size: self.size
 
-            NoDisableSquareHoverButtonW:
+            NoDisableSquareToolTipHoverButtonW:
                 name: "move"
                 on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
-            NoDisableSquareHoverButtonW:
+                tooltip_text: "Move the screen! Hotkey - \"m\""
+
+            NoDisableSquareToolTipHoverButtonW:
                 name: "text"
                 on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
-            NoDisableSquareHoverButtonW:
+                tooltip_text: "Add Text! Hotkey - \"m\""
+
+            NoDisableSquareToolTipHoverButtonW:
                 name: "section"
                 on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
-            NoDisableSquareHoverButtonW:
+            NoDisableSquareToolTipHoverButtonW:
                 name: "note"
                 on_press: GlobalBindings.dispatch("sidebar_button_clicked", self)
 
@@ -147,7 +151,7 @@ BoxLayout:
 
 
 
-<_HoverButton@BoxLayoutWithClickHoverEvent>:
+<_ToolTipHoverButton@BoxLayoutWithToolTipClickHoverEvent>:
     name: "unknown"
 
     on_press: image.source = mode_button_path.format(name=root.name, state="click")
@@ -157,12 +161,12 @@ BoxLayout:
         id: image
 
 
-<NoDisableHoverButton@_HoverButton>:
+<NoDisableToolTipHoverButton@_ToolTipHoverButton>:
     on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover") if root.ids.image.source == mode_button_path.format(name=root.name, state="normal") else root.ids.image.source
     on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal") if root.ids.image.source == mode_button_path.format(name=root.name, state="hover") else root.ids.image.source
 
 
-<HoverButton@_HoverButton>:
+<ToolTipHoverButton@_ToolTipHoverButton>:
     on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
     on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal")
     on_release: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
@@ -170,21 +174,21 @@ BoxLayout:
 
 
 
-<NoDisableSquareHoverButtonW@NoDisableHoverButton>:
+<NoDisableSquareToolTipHoverButtonW@NoDisableToolTipHoverButton>:
     size_hint_y: None
     on_width: self.height = self.width
 
-<NoDisableSquareHoverButtonH@NoDisableHoverButton>:
+<NoDisableSquareToolTipHoverButtonH@NoDisableToolTipHoverButton>:
     size_hint_x: None
     on_width: self.width = self.height
 
 
 
-<SquareHoverButtonW@HoverButton>:
+<SquareToolTipHoverButtonW@ToolTipHoverButton>:
     size_hint_y: None
     on_width: self.height = self.width
 
-<SquareHoverButtonH@HoverButton>:
+<SquareToolTipHoverButtonH@ToolTipHoverButton>:
     size_hint_x: None
     on_width: self.width = self.height
 

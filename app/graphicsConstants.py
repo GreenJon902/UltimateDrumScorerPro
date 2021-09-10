@@ -20,3 +20,7 @@ note_flag_gap = 50
 
 note_dot_dpos = 20, -50
 note_dot_size = 50, 50
+
+tooltip_bg_color = [0.1] * 3
+tooltip_text_color = [1] * 3
+tooltip_padding = 5
