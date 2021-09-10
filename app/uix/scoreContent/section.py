@@ -5,6 +5,8 @@ from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.graphics import Canvas, Rectangle, Line, Ellipse
 from kivy.input import MotionEvent
+from kivy.properties import StringProperty, NumericProperty
+from kivy.uix.relativelayout import RelativeLayout
 
 from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height, note_stem_width, \
     note_stem_height, note_flag_gap, note_dot_dpos, note_dot_size
@@ -12,21 +14,83 @@ from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char, duration_to_text_duration
-from logger import push_name_to_logger_name_stack
+from logger import push_name_to_logger_name_stack, ClassWithLogger
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
 
 
-
-class Section(ScoreContentWithPopup):
-    update: callable
-
+class Section(ScoreContentWithPopup, ClassWithLogger):
+    notes: str = StringProperty()
     required_mode = "section"
 
-    notes = "4[snare . . kick kick . . snare snare kick . . kick snare . .]"
+    update = None
+    _time_signature: tuple[int, int]
+    _notes_per_beat: int
+    _notes: list[str]
+    
+    def __init__(self, **kwargs):
+        ClassWithLogger.__init__(self)
+        ScoreContentWithPopup.__init__(self, **kwargs)
 
-    note_canvas: Canvas
+        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+
+        self.notes = "4/4-4[kick . snare . kick . . . snare . . . kick,snare . . . snare . . . snare . . . kick . . " \
+                     ". kick . . .]"
+
+    def on_notes(self, _instance, value):
+        notes = value
+
+        parts = notes.split("-")
+
+        ts = parts[0].split("/")
+        self._time_signature = int(ts[0]), int(ts[1])
+        self._notes_per_beat = int(parts[1].split("[")[0])
+        self._notes = parts[1].split("[")[1].replace("]", "").split(" ")
+
+        self.log_debug(f"Notes changed, time_signature={self._time_signature} | notes_per_beat={self._notes_per_beat} "
+                       f"| notes={self._notes}")
+
+        self.update()
+
+    @push_name_to_logger_name_stack
+    def _update(self):
+        beats_per_bar = self._notes_per_beat * self._time_signature[0]
+        self.log_debug(f"{beats_per_bar} beats per bar")
+        bars_needed = len(self._notes) / beats_per_bar
+
+        # if bars_needed is 1.0 or 2.0 then int(bars_needed) == 1 or 2 which still == bars_needed,
+        # but if it is 1.5 then it doesnt == int(bars_needed) which is 2
+        assert bars_needed == int(bars_needed)
+
+        bars_needed = int(bars_needed)
+        bars_too_add = bars_needed - len(self.children)
+        self.log_debug(f"Adding {bars_too_add} bar widgets too self from {bars_needed} out of {len(self.children)}")
+
+
+        for _ in range(bars_too_add):
+            b = Bar()
+            b.bind(width=self.do_width)
+            self.add_widget(b)
+
+        for n, child in enumerate(self.children):
+            notes = " ".join(self._notes[n * beats_per_bar:(n + 1) * beats_per_bar])
+
+            child.notes_per_beat = self._notes_per_beat
+            child.notes = notes
+            self.log_dump(f"Giving {child} \"{notes}\"")
+
+
+
+    def do_width(self, _instance, _value):
+        width = 0
+        for child in self.children:
+            child.x = width
+            width += child.width
+        self.width = width
+
+
+
 
     def get_popup_class(self, **kwargs):
         return AddSectionPopup(**kwargs)
@@ -34,11 +98,26 @@ class Section(ScoreContentWithPopup):
     def popup_submitted(self, instance, data):
         self.update()
 
-    def __init__(self, **kwargs):
-        ScoreContentWithPopup.__init__(self, **kwargs)
 
-        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+
+class Bar(RelativeLayout, ClassWithLogger):
+    update: callable
+
+
+    notes: str = StringProperty()
+    notes_per_beat: int = NumericProperty()
+
+    note_canvas: Canvas
+
+    def __init__(self, **kwargs):
+        ClassWithLogger.__init__(self)
+
         self.note_canvas = Canvas()
+        self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+        self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update())
+
+        RelativeLayout.__init__(self, **kwargs)
+
         self.canvas.add(self.note_canvas)
 
     def on_touch_up(self, touch: MotionEvent):
@@ -61,9 +140,9 @@ class Section(ScoreContentWithPopup):
         self.note_canvas.__enter__()
 
 
-        notes_per_beat = int(self.notes[0:self.notes.find("[")])
+        notes_per_beat = self.notes_per_beat
         _all_notes = [([note for note in notes.split(next_note_char)])
-                      for notes in str(self.notes[self.notes.find("[") + 1:self.notes.find("]")]).split(next_notes_char)
+                      for notes in str(self.notes[0:len(self.notes)]).split(next_notes_char)
                       ]
 
         all_notes = [_all_notes[n:n+4] for n in range(0, len(_all_notes), notes_per_beat)]
@@ -154,7 +233,6 @@ class Section(ScoreContentWithPopup):
             self.log_dump(f"\b[Bars and Flags ]  There are {len(music_notes)} sub beats, looking for special rule")
 
 
-            # TODO: Multiple bars
             # Two Notes --------------
             if len(music_notes) == 0:
                 self.log_dump("\b[Bars and Flags ]  No music notes written / only rests  so no need for Bars or Flags")
@@ -340,7 +418,7 @@ class Section(ScoreContentWithPopup):
             beat_index += 1
 
         self.log_dump()
-        self.width = len(self.notes.split(next_notes_char)) * note_width
+        self.width = dx * note_width
 
 
         self.note_canvas.__exit__()
@@ -406,3 +484,7 @@ def get_note_duration(beat, note_index, notes_per_beat):
         i += 1
 
     return Fraction(i, notes_per_beat)
+
+
+def parse_notes_too_list(string: str) -> list[list[str]]:
+    return [[note for note in notes.split(",")] for notes in string.split(" ")]
