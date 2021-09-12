@@ -25,7 +25,6 @@ tooltip_bg_color = [0.1] * 3
 tooltip_text_color = [1] * 3
 tooltip_padding = 5
 
-
 bar_size = 50
 bar_size_hint = None
 
