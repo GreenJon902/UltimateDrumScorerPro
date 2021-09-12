@@ -6,7 +6,7 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 
-from app.graphicsConstants import tooltip_bg_color, tooltip_text_color, tooltip_padding
+import constants
 
 
 class BoxLayoutWithHoverEvent(BoxLayout):
@@ -61,10 +61,10 @@ class BoxLayoutWithToolTipClickHoverEvent(BoxLayoutWithClickHoverEvent):
     def __init__(self, **kwargs):
         BoxLayoutWithClickHoverEvent.__init__(self, **kwargs)
 
-        self.tooltip = Label(size_hint=(None, None), color=tooltip_text_color)
+        self.tooltip = Label(size_hint=(None, None), color=constants.graphics.tooltip_text_color)
 
         with self.tooltip.canvas.before:
-            Color(rgb=tooltip_bg_color)
+            Color(rgb=constants.graphics.tooltip_bg_color)
             self.tooltip_rect = Rectangle(pos=self.tooltip.pos, size=self.tooltip.size)
 
 
@@ -73,8 +73,8 @@ class BoxLayoutWithToolTipClickHoverEvent(BoxLayoutWithClickHoverEvent):
         self.tooltip.text = value
         self.tooltip.texture_update()
 
-        self.tooltip.size = self.tooltip.texture_size[0] + tooltip_padding, \
-                            self.tooltip.texture_size[1] + tooltip_padding
+        self.tooltip.size = self.tooltip.texture_size[0] + constants.graphics.tooltip_padding, \
+                            self.tooltip.texture_size[1] + constants.graphics.tooltip_padding
         self.tooltip_rect.size = self.tooltip.size
 
 

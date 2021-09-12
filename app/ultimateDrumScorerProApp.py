@@ -2,9 +2,9 @@ from kivy.app import App
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 
+import constants
 # noinspection PyUnresolvedReferences
 from app.globalBindings import GlobalBindings
-from app.graphicsConstants import sidebar_button_name_to_cursor
 # noinspection PyUnresolvedReferences
 from app.uix.boxLayoutWithEvents import BoxLayoutWithHoverEvent, BoxLayoutWithClickHoverEvent
 # noinspection PyUnresolvedReferences
@@ -49,11 +49,11 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
     def on_sidebar_button_current(self, _instance, value):
         if value is None:
-            GlobalBindings.dispatch("set_cursor", sidebar_button_name_to_cursor[str(value)])
+            GlobalBindings.dispatch("set_cursor", constants.graphics.sidebar_button_name_to_cursor[str(value)])
 
         else:
             button = value
-            GlobalBindings.dispatch("set_cursor", sidebar_button_name_to_cursor[str(button.name)])
+            GlobalBindings.dispatch("set_cursor", constants.graphics.sidebar_button_name_to_cursor[str(button.name)])
 
             if button.name == "move":
                 self.root.ids["score_view"].set_scroll_view_scroll_mode(["content", "bars"])

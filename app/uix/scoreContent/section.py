@@ -8,12 +8,10 @@ from kivy.input import MotionEvent
 from kivy.properties import StringProperty, NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 
-from app.graphicsConstants import note_width, note_head_width, staff_gap, staff_height, note_stem_width, \
-    note_stem_height, note_flag_gap, note_dot_dpos, note_dot_size
+import constants
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from app_info.score_info import next_notes_char, note_name_to_staff_level, next_note_char, duration_to_text_duration
 from logger import push_name_to_logger_name_stack, ClassWithLogger
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
@@ -141,8 +139,8 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
         notes_per_beat = self.notes_per_beat
-        _all_notes = [([note for note in notes.split(next_note_char)])
-                      for notes in str(self.notes[0:len(self.notes)]).split(next_notes_char)
+        _all_notes = [([note for note in notes.split(constants.score.next_note_char)])
+                      for notes in str(self.notes[0:len(self.notes)]).split(constants.score.next_notes_char)
                       ]
 
         all_notes = [_all_notes[n:n+4] for n in range(0, len(_all_notes), notes_per_beat)]
@@ -183,18 +181,21 @@ class Bar(RelativeLayout, ClassWithLogger):
                             # Combining rests ----
                             if note_index < len(beat) - 1 and all([beat[note_index + n] == ["."] for n in range(1, 4)]):
                                 sub_beats_to_skip = 3
-                                draw_note(f"{duration_to_text_duration[notes_per_beat / 4]}_rest", dx * note_width)
+                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat / 4]}_rest", dx *
+                                          constants.graphics.note_width)
 
                             elif note_index < len(beat) - 1 and beat[note_index + 1] == ["."]:
                                 sub_beats_to_skip = 1
-                                draw_note(f"{duration_to_text_duration[notes_per_beat / 2]}_rest", dx * note_width)
+                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat / 2]}_rest", dx *
+                                          constants.graphics.note_width)
 
                             else:
-                                draw_note(f"{duration_to_text_duration[notes_per_beat]}_rest", dx * note_width)
+                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat]}_rest", dx *
+                                          constants.graphics.note_width)
 
                     else:
                         for note in notes:
-                            draw_note(note, dx * note_width)
+                            draw_note(note, dx * constants.graphics.note_width)
                             did_do_a_draw = True
                             had_not_rest_this_beat = True
 
@@ -245,9 +246,10 @@ class Bar(RelativeLayout, ClassWithLogger):
                 for note_index, notes in enumerate(beat):
                     if notes != ["."]:
                         note_poses.append((
-                            (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] * note_width),
-                            min([note_name_to_staff_level[note_name] for note_name in notes]
-                                ) * staff_gap + (staff_gap / 2)
+                            (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
+                            constants.graphics.note_stem_width + (beat_end_dx_list[-2] * constants.graphics.note_width),
+                            min([constants.score.note_name_to_staff_level[note_name] for note_name in notes]
+                                ) * constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)
                         ))
                         note_indexes.append(note_index)
 
@@ -258,14 +260,16 @@ class Bar(RelativeLayout, ClassWithLogger):
                 note_1_index, note_2_index = note_indexes
                 self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {note_1_pos, note_2_pos}")
 
-                Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + note_stem_height), width=note_stem_width)
-                Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + note_stem_height), width=note_stem_width)
+                Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + constants.graphics.note_stem_height),
+                     width=constants.graphics.note_stem_width)
+                Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + constants.graphics.note_stem_height),
+                     width=constants.graphics.note_stem_width)
 
 
 
-                note_stem_top_and_duration.append(((note_1_pos[0], note_1_pos[1] + note_stem_height),
+                note_stem_top_and_duration.append(((note_1_pos[0], note_1_pos[1] + constants.graphics.note_stem_height),
                                                    get_note_duration(beat, note_1_index, notes_per_beat)))
-                note_stem_top_and_duration.append(((note_2_pos[0], note_2_pos[1] + note_stem_height),
+                note_stem_top_and_duration.append(((note_2_pos[0], note_2_pos[1] + constants.graphics.note_stem_height),
                                                    get_note_duration(beat, note_2_index, notes_per_beat)))
 
 
@@ -274,24 +278,28 @@ class Bar(RelativeLayout, ClassWithLogger):
             # More ----------------------
             else:
                 self.log_dump(f"\b[Bars and Flags ]  No special rule found")
-                highest_point = max([max([(note_name_to_staff_level[note_name] if note_name != "." else 0)
+                highest_point = max([max([(constants.score.note_name_to_staff_level[note_name] if note_name != "." else
+                                           0)
                                           for note_name in notes])
-                                     for notes in beat]) * staff_gap + (staff_gap / 2)
+                                     for notes in beat]) * constants.graphics.staff_gap + (constants.graphics.staff_gap
+                                                                                           / 2)
 
                 note_poses = list()
                 sx = 0
                 for note_index, notes in enumerate(beat):
                     if notes != ["."]:
                         note_poses.append((
-                            (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] * note_width),
-                            min([note_name_to_staff_level[note_name] for note_name in notes]
-                                ) * staff_gap + (staff_gap / 2)
+                            (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
+                            constants.graphics.note_stem_width + (beat_end_dx_list[-2] * constants.graphics.note_width),
+                            min([constants.score.note_name_to_staff_level[note_name] for note_name in notes]
+                                ) * constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)
                         ))
 
                         note_stem_top_and_duration.append(((
-                                (sx * note_width) + note_head_width - note_stem_width + (beat_end_dx_list[-2] *
-                                                                                         note_width),
-                                highest_point + note_stem_height),
+                                (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
+                                constants.graphics.note_stem_width + (beat_end_dx_list[-2] *
+                                                                      constants.graphics.note_width),
+                                highest_point + constants.graphics.note_stem_height),
                             get_note_duration(beat, note_index, notes_per_beat)
                         ))
 
@@ -300,7 +308,8 @@ class Bar(RelativeLayout, ClassWithLogger):
                         sx += 1
 
                 for note_pos in note_poses:
-                    Line(points=(*note_pos, note_pos[0], highest_point + note_stem_height), width=note_stem_width)
+                    Line(points=(*note_pos, note_pos[0], highest_point + constants.graphics.note_stem_height),
+                         width=constants.graphics.note_stem_width)
 
 
 
@@ -317,19 +326,21 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
                     if duration == Fraction(3, 4):
-                        dot_pos = stem_top_pos[0] + note_dot_dpos[0], \
-                                  stem_top_pos[1] - note_stem_height + note_dot_dpos[1]
+                        dot_pos = stem_top_pos[0] + constants.graphics.note_dot_dpos[0], \
+                                  stem_top_pos[1] - constants.graphics.note_stem_height + \
+                                  constants.graphics.note_dot_dpos[1]
 
-                        Ellipse(pos=dot_pos, size=note_dot_size)
+                        Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
 
 
                         duration = Fraction(2, 4)
 
                     elif next_duration == Fraction(3, 4):
-                        dot_pos = next_stem_top_pos[0] + note_dot_dpos[0], \
-                                  next_stem_top_pos[1] - note_stem_height + note_dot_dpos[1]
+                        dot_pos = next_stem_top_pos[0] + constants.graphics.note_dot_dpos[0], \
+                                  next_stem_top_pos[1] - constants.graphics.note_stem_height + \
+                                  constants.graphics.note_dot_dpos[1]
 
-                        Ellipse(pos=dot_pos, size=note_dot_size)
+                        Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
 
 
                         next_duration = Fraction(2, 4)
@@ -339,10 +350,10 @@ class Bar(RelativeLayout, ClassWithLogger):
                     if duration == next_duration:  # Use d1
                         for bar_index in range(note_duration_to_bar_or_flag_amount(duration)):
                             Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
                                          next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
+                                 width=constants.graphics.note_stem_width)
 
 
                     elif duration < next_duration:  # Use d2, Flags d1
@@ -351,18 +362,20 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                         for bar_index in range(bar_amount):
                             Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
                                          next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
+                                 width=constants.graphics.note_stem_width)
 
                         for bar_index in range(flag_amount):
                             Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap,
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                         constants.graphics.note_flag_gap,
                                          next_stem_top_pos[0] - ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) -
-                                            ((next_stem_top_pos[1] - stem_top_pos[1]) / 2) - note_flag_gap),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                            ((next_stem_top_pos[1] - stem_top_pos[1]) / 2) -
+                                         constants.graphics.note_flag_gap),
+                                 width=constants.graphics.note_stem_width)
 
 
                     elif duration > next_duration:  # Use d1, Flags d2
@@ -371,18 +384,20 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                         for bar_index in range(bar_amount):
                             Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
                                          next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
+                                 width=constants.graphics.note_stem_width)
 
                         for bar_index in range(flag_amount):
                             Line(points=(stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         stem_top_pos[1] - (bar_index * note_flag_gap) -
-                                            ((stem_top_pos[1] - next_stem_top_pos[1]) / 2) - note_flag_gap,
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                            ((stem_top_pos[1] - next_stem_top_pos[1]) / 2) -
+                                         constants.graphics.note_flag_gap,
                                          next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap) - note_flag_gap),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                         constants.graphics.note_flag_gap),
+                                 width=constants.graphics.note_stem_width)
 
 
                     else:
@@ -393,22 +408,22 @@ class Bar(RelativeLayout, ClassWithLogger):
                                      stem_top_pos[1],
                                      next_stem_top_pos[0],
                                      next_stem_top_pos[1]),
-                             width=note_stem_width)
+                             width=constants.graphics.note_stem_width)
 
                         for bar_index in range(note_duration_to_bar_or_flag_amount(next_duration) - 1):
                             Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * note_flag_gap),
+                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
                                          next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * note_flag_gap)),
-                                 width=note_stem_width)
+                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
+                                 width=constants.graphics.note_stem_width)
 
                         bar_index += 1
                         Line(points=(stem_top_pos[0],
-                                     stem_top_pos[1] - (bar_index * note_flag_gap),
+                                     stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
                                      stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                     next_stem_top_pos[1] - (bar_index * note_flag_gap) -
+                                     next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
                                      ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
-                             width=note_stem_width)"""
+                             width=constants.graphics.note_stem_width)"""
 
             # ----------------------------
             note_positions_with_indexes.clear()
@@ -418,7 +433,7 @@ class Bar(RelativeLayout, ClassWithLogger):
             beat_index += 1
 
         self.log_dump()
-        self.width = dx * note_width
+        self.width = dx * constants.graphics.note_width
 
 
         self.note_canvas.__exit__()
@@ -432,16 +447,16 @@ def draw_note(note_name, x):
 
 
     if note_shape in rest_textures.keys():
-        Rectangle(pos=(x, 0), size=(note_width, staff_height),
+        Rectangle(pos=(x, 0), size=(constants.graphics.note_width, constants.graphics.staff_height),
                   texture=rest_textures[note_shape])
         return x, 0
 
 
     elif note_shape in note_head_textures.keys():
-        Rectangle(pos=(x, note_name_to_staff_level[note_name] * staff_gap),
-                  size=(note_head_width, staff_gap),
+        Rectangle(pos=(x, constants.score.note_name_to_staff_level[note_name] * constants.graphics.staff_gap),
+                  size=(constants.graphics.note_head_width, constants.graphics.staff_gap),
                   texture=note_head_textures[note_shape])
-        return x, note_name_to_staff_level[note_name] * staff_gap
+        return x, constants.score.note_name_to_staff_level[note_name] * constants.graphics.staff_gap
 
 
 

@@ -1,7 +1,7 @@
 from kivy.input import MotionEvent
 
+import constants
 from app import metrics
-from app.graphicsConstants import minimum_mouse_move_for_score_content_to_not_be_a_click
 from app.uix.scoreContent import ScoreContent
 
 
@@ -9,7 +9,7 @@ class ScoreContentWithPopup(ScoreContent):
     is_active = False  # For cancel - true if has been submitted at least once
 
     def on_touch_up(self, touch: MotionEvent):
-        s = minimum_mouse_move_for_score_content_to_not_be_a_click
+        s = constants.graphics.minimum_mouse_move_for_score_content_to_not_be_a_click
 
         if touch.uid == self.click_current_uid:
             if ((s * -1) <= touch.dx <= s) and ((s * -1) <= touch.dy <= s):

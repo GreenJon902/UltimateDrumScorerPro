@@ -4,7 +4,7 @@ import os
 import sys
 from logging import Manager
 
-from app_info.logging_info import default_log_level
+import constants
 from logger.classWithLogger import ClassWithLogger
 from logger.consoleHandler import ConsoleHandler
 from logger.fileHandler import FileHandler
@@ -72,8 +72,8 @@ if "LOG_LEVEL" in os.environ:
     root_logger.info(f"Setting log level to {os.environ.get('LOG_LEVEL')}")
     console_handler.setLevel(int(os.environ.get("LOG_LEVEL")))
 else:
-    root_logger.warning(f"No log level in environ, defaulting to {default_log_level}")
-    console_handler.setLevel(default_log_level)
+    root_logger.warning(f"No log level in environ, defaulting to {constants.logging.default_log_level}")
+    console_handler.setLevel(constants.logging.default_log_level)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
