@@ -45,7 +45,12 @@ staff_height = 500
 staff_gap = staff_height / 4
 staff_color = ([0] * 3)
 staff_line_width = 5
-bar_edge_line_width = 30
+
+bar_edge_line_width = staff_line_width
+bar_edge_repeat_line_width = 30
+
+default_bar_start_line_type = "single"
+default_bar_end_line_type = "single"
 
 one_line_text_box_height = 30
 

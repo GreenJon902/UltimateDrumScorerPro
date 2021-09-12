@@ -192,13 +192,16 @@ BoxLayout:
 
 
 <Section>:
-    height: staff_height
+    height: constants.graphics.staff_height
     size_hint_x: None
 
 
 <Bar>:
     height: constants.graphics.staff_height
     size_hint_x: None
+
+    bar_start_line_type: constants.graphics.default_bar_start_line_type
+    bar_end_line_type: constants.graphics.default_bar_start_line_type
 
     canvas:
         Color:
@@ -227,12 +230,12 @@ BoxLayout:
 
         Line:
             points: 0, 0, 0, constants.graphics.staff_height
-            width: constants.graphics.staff_line_width
+            width: self._bar_start_line_width
             cap: "none"
 
         Line:
             points: self.width, 0, self.width, constants.graphics.staff_height
-            width: constants.graphics.bar_edge_line_width
+            width: self._bar_end_line_width
             cap: "none"
 
 

@@ -5,7 +5,7 @@ from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.graphics import Canvas, Rectangle, Line, Ellipse
 from kivy.input import MotionEvent
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, OptionProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 import constants
@@ -78,6 +78,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
             child.notes = notes
             self.log_dump(f"Giving {child} \"{notes}\"")
 
+        self.children[0].bar_start_line_type = "repeat"
+        self.children[-1].bar_end_line_type = "repeat"
 
 
     def do_width(self, _instance, _value):
@@ -105,6 +107,12 @@ class Bar(RelativeLayout, ClassWithLogger):
     notes: str = StringProperty()
     notes_per_beat: int = NumericProperty()
 
+    bar_start_line_type: str = OptionProperty("single", options=["single", "repeat"])
+    bar_end_line_type: str = OptionProperty("single", options=["single", "repeat"])
+
+    _bar_start_line_width: int = NumericProperty(constants.graphics.bar_edge_line_width)
+    _bar_end_line_width: int = NumericProperty(constants.graphics.bar_edge_line_width)
+
     note_canvas: Canvas
 
     def __init__(self, **kwargs):
@@ -117,6 +125,29 @@ class Bar(RelativeLayout, ClassWithLogger):
         RelativeLayout.__init__(self, **kwargs)
 
         self.canvas.add(self.note_canvas)
+
+
+    def on_bar_start_line_type(self, _instance, value):
+        if value == "single":
+            self._bar_start_line_width = constants.graphics.bar_edge_line_width
+
+        elif value == "repeat":
+            self._bar_start_line_width = constants.graphics.bar_edge_repeat_line_width
+
+        else:
+            self.log_critical(f"No know bar_start_line_type called {value}")
+
+
+    def on_bar_end_line_type(self, _instance, value):
+        if value == "single":
+            self._bar_end_line_width = constants.graphics.bar_edge_line_width
+
+        elif value == "repeat":
+            self._bar_end_line_width = constants.graphics.bar_edge_repeat_line_width
+
+        else:
+            self.log_critical(f"No know bar_end_line_type called {value}")
+
 
     def on_touch_up(self, touch: MotionEvent):
         if self.collide_point(*touch.pos):
