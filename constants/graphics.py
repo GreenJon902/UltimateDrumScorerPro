@@ -24,3 +24,34 @@ note_dot_size = 50, 50
 tooltip_bg_color = [0.1] * 3
 tooltip_text_color = [1] * 3
 tooltip_padding = 5
+
+
+bar_size = 50
+bar_size_hint = None
+
+header_color = ([0.5] * 3)
+side_bar_color = ([0.4] * 3)
+bg_color = ([0.2] * 3)
+
+score_zoom_start = 0.5
+score_zoom_min = 0.1
+score_zoom_max = 2
+score_zoom_step = 0.01
+
+score_zoom_bar_width = 300
+score_zoom_bar_size_hint_x = None
+score_zoom_sign_color = ([0.2] * 3)
+
+staff_height = 500
+staff_gap = staff_height / 4
+staff_color = ([0] * 3)
+staff_line_width = 5
+bar_edge_line_width = 30
+
+one_line_text_box_height = 30
+
+add_text_popup_font_size_min_mm = 5
+add_text_popup_font_size_max_mm = 50
+add_text_popup_font_size_default_mm = 10
+
+mode_button_path = "atlas://resources/atlases/buttons/{name}_button_{state}"

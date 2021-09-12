@@ -1,48 +1,20 @@
 #:import Clock kivy.clock.Clock
 #:import GlobalBindings app.globalBindings.GlobalBindings
 
-#:set bar_size 50
-#:set bar_size_hint None
-
-#:set header_color ([0.5] * 3)
-#:set side_bar_color ([0.4] * 3)
-#:set bg_color ([0.2] * 3)
-
-#:set score_zoom_start 0.5
-#:set score_zoom_min 0.1
-#:set score_zoom_max 2
-#:set score_zoom_step 0.01
-
-#:set score_zoom_bar_width 300
-#:set score_zoom_bar_size_hint_x None
-#:set score_zoom_sign_color ([0.2] * 3)
-
-#:set staff_height 500
-#:set staff_gap staff_height / 4
-#:set staff_color ([0] * 3)
-#:set staff_line_width 5
-#:set bar_edge_line_width 30
-
-#:set one_line_text_box_height 30
-
-#:set add_text_popup_font_size_min_mm 5
-#:set add_text_popup_font_size_max_mm 50
-#:set add_text_popup_font_size_default_mm 10
-
-#:set mode_button_path "atlas://resources/atlases/buttons/{name}_button_{state}"
+#:import constants constants
 
 
 BoxLayout:
     orientation: "vertical"
 
     BoxLayout: # HeaderBar
-        size_hint_y: bar_size_hint
-        height: bar_size
+        size_hint_y: constants.graphics.bar_size_hint
+        height: constants.graphics.bar_size
 
 
         canvas.before:
             Color:
-                rgb: header_color
+                rgb: constants.graphics.header_color
 
             Rectangle:
                 pos: self.pos
@@ -55,24 +27,24 @@ BoxLayout:
             source: "resources/zoom_minus_sign.png"
             size_hint_x: None
             on_height: self.width = self.height
-            color: score_zoom_sign_color
+            color: constants.graphics.score_zoom_sign_color
 
         Slider:
-            size_hint_x: score_zoom_bar_size_hint_x
-            width: score_zoom_bar_width
+            size_hint_x: constants.graphics.score_zoom_bar_size_hint_x
+            width: constants.graphics.score_zoom_bar_width
 
-            min: score_zoom_min
-            max: score_zoom_max
-            step: score_zoom_step
+            min: constants.graphics.score_zoom_min
+            max: constants.graphics.score_zoom_max
+            step: constants.graphics.score_zoom_step
 
-            value: score_zoom_start
+            value: constants.graphics.score_zoom_start
             on_value: score_view.zoom = args[1]
 
         Image:
             source: "resources/zoom_plus_sign.png"
             size_hint_x: None
             on_height: self.width = self.height
-            color: score_zoom_sign_color
+            color: constants.graphics.score_zoom_sign_color
 
 
 
@@ -85,12 +57,12 @@ BoxLayout:
         BoxLayout: # SideBar
             orientation: "vertical"
 
-            size_hint_x: bar_size_hint
-            width: bar_size
+            size_hint_x: constants.graphics.bar_size_hint
+            width: constants.graphics.bar_size
 
             canvas.before:
                 Color:
-                    rgb: side_bar_color
+                    rgb: constants.graphics.side_bar_color
 
                 Rectangle:
                     pos: self.pos
@@ -123,7 +95,7 @@ BoxLayout:
         BoxLayout: # BG
             canvas.before:
                 Color:
-                    rgb: bg_color
+                    rgb: constants.graphics.bg_color
 
                 Rectangle:
                     pos: self.pos
@@ -133,7 +105,7 @@ BoxLayout:
             ScoreView:
                 id: score_view
 
-                zoom: score_zoom_start
+                zoom: constants.graphics.score_zoom_start
 
 
 
@@ -152,22 +124,22 @@ BoxLayout:
 <_HoverButton@BoxLayoutWithClickHoverEvent>:
     name: "unknown"
 
-    on_press: image.source = mode_button_path.format(name=root.name, state="click")
-    on_name: image.source = (mode_button_path.format(name=root.name, state="click") if self.state == "down" else (mode_button_path.format(name=root.name, state="hover") if self.mouse_over else (mode_button_path.format(name=root.name, state="normal"))))
+    on_press: image.source = constants.graphics.mode_button_path.format(name=root.name, state="click")
+    on_name: image.source = (constants.graphics.mode_button_path.format(name=root.name, state="click") if self.state == "down" else (constants.graphics.mode_button_path.format(name=root.name, state="hover") if self.mouse_over else (constants.graphics.mode_button_path.format(name=root.name, state="normal"))))
 
     Image:
         id: image
 
 
 <NoDisableHoverButton@_HoverButton>:
-    on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover") if root.ids.image.source == mode_button_path.format(name=root.name, state="normal") else root.ids.image.source
-    on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal") if root.ids.image.source == mode_button_path.format(name=root.name, state="hover") else root.ids.image.source
+    on_mouse_enter: root.ids.image.source = constants.graphics.mode_button_path.format(name=root.name, state="hover") if root.ids.image.source == constants.graphics.mode_button_path.format(name=root.name, state="normal") else root.ids.image.source
+    on_mouse_leave: root.ids.image.source = constants.graphics.mode_button_path.format(name=root.name, state="normal") if root.ids.image.source == constants.graphics.mode_button_path.format(name=root.name, state="hover") else root.ids.image.source
 
 
 <HoverButton@_HoverButton>:
-    on_mouse_enter: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
-    on_mouse_leave: root.ids.image.source = mode_button_path.format(name=root.name, state="normal")
-    on_release: root.ids.image.source = mode_button_path.format(name=root.name, state="hover")
+    on_mouse_enter: root.ids.image.source = constants.graphics.mode_button_path.format(name=root.name, state="hover")
+    on_mouse_leave: root.ids.image.source = constants.graphics.mode_button_path.format(name=root.name, state="normal")
+    on_release: root.ids.image.source = constants.graphics.mode_button_path.format(name=root.name, state="hover")
 
 
 
@@ -221,42 +193,42 @@ BoxLayout:
 
 
 <Bar>:
-    height: staff_height
+    height: constants.graphics.staff_height
     size_hint_x: None
 
     canvas:
         Color:
-            rgb: staff_color
+            rgb: constants.graphics.staff_color
 
         Line:
-            points: 0, staff_gap * 0, self.width, staff_gap * 0
-            width: staff_line_width
+            points: 0, constants.graphics.staff_gap * 0, self.width, constants.graphics.staff_gap * 0
+            width: constants.graphics.staff_line_width
 
         Line:
-            points: 0, staff_gap * 1, self.width, staff_gap * 1
-            width: staff_line_width
+            points: 0, constants.graphics.staff_gap * 1, self.width, constants.graphics.staff_gap * 1
+            width: constants.graphics.staff_line_width
 
         Line:
-            points: 0, staff_gap * 2, self.width, staff_gap * 2
-            width: staff_line_width
+            points: 0, constants.graphics.staff_gap * 2, self.width, constants.graphics.staff_gap * 2
+            width: constants.graphics.staff_line_width
 
         Line:
-            points: 0, staff_gap * 3, self.width, staff_gap * 3
-            width: staff_line_width
+            points: 0, constants.graphics.staff_gap * 3, self.width, constants.graphics.staff_gap * 3
+            width: constants.graphics.staff_line_width
 
         Line:
-            points: 0, staff_gap * 4, self.width, staff_gap * 4
-            width: staff_line_width
+            points: 0, constants.graphics.staff_gap * 4, self.width, constants.graphics.staff_gap * 4
+            width: constants.graphics.staff_line_width
 
 
         Line:
-            points: 0, 0, 0, staff_height
-            width: staff_line_width
+            points: 0, 0, 0, constants.graphics.staff_height
+            width: constants.graphics.staff_line_width
             cap: "none"
 
         Line:
-            points: self.width, 0, self.width, staff_height
-            width: bar_edge_line_width
+            points: self.width, 0, self.width, constants.graphics.staff_height
+            width: constants.graphics.bar_edge_line_width
             cap: "none"
 
 
@@ -300,9 +272,9 @@ BoxLayout:
             SliderWithText:
                 id: font_size
 
-                min: add_text_popup_font_size_min_mm
-                max: add_text_popup_font_size_max_mm
-                value: add_text_popup_font_size_default_mm
+                min: constants.graphics.add_text_popup_font_size_min_mm
+                max: constants.graphics.add_text_popup_font_size_max_mm
+                value: constants.graphics.add_text_popup_font_size_default_mm
 
                 hint_text: "Font Size"
 
@@ -346,7 +318,7 @@ BoxLayout:
 
 <SliderWithText>:
     size_hint_y: None
-    height: one_line_text_box_height
+    height: constants.graphics.one_line_text_box_height
 
     TextInput:
         id: text_input
