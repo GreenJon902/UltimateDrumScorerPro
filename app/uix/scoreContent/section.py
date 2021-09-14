@@ -100,11 +100,22 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
 
     def on_touch_up(self, touch: MotionEvent):
-        if RelativeLayout.on_touch_up(self, touch):
-            return True
+        if check_mode("note") and self.collide_point(*touch.pos):
+            pos = self.to_local(*touch.pos)
 
-        else:
-            ScoreContentWithPopup.on_touch_up(self, touch)
+            note_position = int(((pos[0] - (pos[0] % constants.graphics.note_width)) /
+                                    constants.graphics.note_width) + 1)
+
+            self.log_dump(f"Adding note at {note_position}")
+
+            a, b = self.notes.split("[")
+            notes = b.split(" ")
+            notes[note_position] = ("kick" if notes[note_position] == "." else notes[note_position] + ",kick")
+
+            self.notes = a + "[" + " ".join(notes)
+
+
+        return ScoreContentWithPopup.on_touch_up(self, touch)
 
 
 
@@ -157,18 +168,6 @@ class Bar(RelativeLayout, ClassWithLogger):
             self.log_critical(f"No know bar_end_line_type called {value}")
 
 
-    def on_touch_up(self, touch: MotionEvent):
-        if self.collide_point(*touch.pos):
-            if check_mode("note"):
-                ret = True
-
-                self.update()
-
-            else:
-                ret = ScoreContentWithPopup.on_touch_up(self, touch)
-
-            return ret
-        return False
 
 
     @push_name_to_logger_name_stack
