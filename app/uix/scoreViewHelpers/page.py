@@ -95,7 +95,7 @@ class Page(RelativeLayout, ClassWithLogger):
 
 
         else:
-            self.log_debug("Adding Content")
+            self.log_debug("Trying to adding Content")
 
             if check_mode("text"):
                 self.log_dump("which is text")
@@ -114,6 +114,10 @@ class Page(RelativeLayout, ClassWithLogger):
             elif check_mode("move"):
                 self.log_debug("or not... Hand was selected")
                 return False
+
+
+            else:
+                self.log_debug("or not... Nothing was found")
 
             return True
 

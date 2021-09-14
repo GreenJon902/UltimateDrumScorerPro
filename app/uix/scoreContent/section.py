@@ -99,6 +99,14 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         self.update()
 
 
+    def on_touch_up(self, touch: MotionEvent):
+        if RelativeLayout.on_touch_up(self, touch):
+            return True
+
+        else:
+            ScoreContentWithPopup.on_touch_up(self, touch)
+
+
 
 class Bar(RelativeLayout, ClassWithLogger):
     update: callable
