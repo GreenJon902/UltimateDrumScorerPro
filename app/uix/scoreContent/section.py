@@ -12,7 +12,8 @@ import constants
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
-from logger import push_name_to_logger_name_stack, ClassWithLogger
+from logger import push_name_to_logger_name_stack, ClassWithLogger, reset_logger_name_stack_for_function, \
+    push_name_to_logger_name_stack_custom
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
@@ -36,14 +37,9 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
 
-        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick . snare . "
-                                                                                 "kick . . . "
-                                                                                 "snare . . . "
-                                                                                 "kick,snare . . . "
-                                                                                 "snare . . . "
-                                                                                 "snare . . . "
-                                                                                 "kick . . . "
-                                                                                 "kick . . .]")
+        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick kick kick kick . kick . . "
+                                                                                 "kick,snare . kick snare snare . kick "
+                                                                                 " .]")
 
 
     def parse_string(self, string):
@@ -115,7 +111,7 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
             self.log_dump(f"Adding note at {note_position}")
 
-            a, b = self.notes.split("[")
+            a, b = self.notes.split("[")  # Fixme: update the function to work with the newer system
             notes = b.split(" ")
             notes[note_position] = ("kick" if notes[note_position] == "." else notes[note_position] + ",kick")
 
@@ -179,287 +175,297 @@ class Bar(RelativeLayout, ClassWithLogger):
 
     @push_name_to_logger_name_stack
     def _update(self):
+        notes_per_beat = self.notes_per_beat
+
+        all_notes = [self.notes[n:n + 4] for n in range(0, len(self.notes), notes_per_beat)]
+        self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
+        self.log_dump()
+
+        dx = 0
+
+
         self.note_canvas.clear()
         self.note_canvas.__enter__()
 
 
-        notes_per_beat = self.notes_per_beat
-
-        all_notes = [self.notes[n:n+4] for n in range(0, len(self.notes), notes_per_beat)]
-        self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
-        self.log_dump()
-        dx = 0
-        beat_index = 0
-        note_positions_with_indexes = list()
-        beat_end_dx_list = list([0])
-        draw_notes_indexes_this_beat = list()
-        note_stem_top_and_duration = list()
-
-        for beat in all_notes:
+        for beat_index, beat_notes in enumerate(all_notes):
             self.log_dump()
-            self.log_debug(f"Beat {beat_index} --------------| notes: {beat} |--------------")
+            self.log_debug(f"Beat {beat_index + 1} --------------| notes: {beat_notes} |--------------")
             self.push_logger_name(f"beat_{beat_index}")
-            amount_of_beat_done = 0
-            had_not_rest_this_beat = False
-            sub_beats_to_skip = 0
 
-            # Drawing note bodies --------------------------------------------------------------------------------------
-            for note_index, notes in enumerate(beat):
+            sub_beats_to_skip, dx = self.draw_compressed_rests(beat_notes, dx)
+            stem_y_points = self.get_stem_y_points(beat_notes)
+            last_note_stem_y_points = None
+            last_note_duration = None
+            last_note_dx = None
+            music_notes_draw_this_beat = 0
+
+            for note_index, notes in enumerate(beat_notes):
                 self.push_logger_name(f"{note_index + 1}/{notes_per_beat}")
-                self.log_dump(f"\b[Notes and Rests]  values: ({notes}, amount_of_beat_done: {amount_of_beat_done}, dx: "
-                              f"{dx}, sub_beats_to_skip: {sub_beats_to_skip})")
-                did_do_a_draw = False
+                self.log_dump(f"values: ({notes}, amount_of_beat_done: "
+                              f"{Fraction(note_index, notes_per_beat)}, dx: {dx}, sub_beats_to_skip: "
+                              f"{sub_beats_to_skip})")
 
-                amount_of_beat_done += Fraction(1, notes_per_beat)
+                note_duration = get_note_duration(beat_notes, note_index, notes_per_beat)
 
                 if sub_beats_to_skip > 0:
                     sub_beats_to_skip -= 1
 
                 else:
                     if notes == ["."]:
-                        if not had_not_rest_this_beat:
-                            did_do_a_draw = True
-
-                            # Combining rests ----
-                            if note_index < len(beat) - 1 and all([beat[note_index + n] == ["."] for n in range(1, 4)]):
-                                sub_beats_to_skip = 3
-                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat / 4]}_rest", dx *
-                                          constants.graphics.note_width)
-
-                            elif note_index < len(beat) - 1 and beat[note_index + 1] == ["."]:
-                                sub_beats_to_skip = 1
-                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat / 2]}_rest", dx *
-                                          constants.graphics.note_width)
-
-                            else:
-                                draw_note(f"{constants.score.duration_to_text_duration[notes_per_beat]}_rest", dx *
-                                          constants.graphics.note_width)
+                        pass  # TODO: Rest width - For editing notes in gui, will expand bar probably
 
                     else:
+                        note_stem_y_points = stem_y_points[music_notes_draw_this_beat]
+
                         for note in notes:
-                            draw_note(note, dx * constants.graphics.note_width)
-                            did_do_a_draw = True
-                            had_not_rest_this_beat = True
+                            draw_note(note, dx)
+                            Line(points=(dx + constants.graphics.note_head_width, note_stem_y_points[0],
+                                         dx + constants.graphics.note_head_width, note_stem_y_points[1]),
+                                 width=constants.graphics.note_stem_width)
 
+                            if music_notes_draw_this_beat == 0 and all([sub_beat_notes == ["."]  # Flags required
+                                                                        for sub_beat_notes in
+                                                                        beat_notes[note_index + 1:len(beat_notes) - 1
+                                                                                   ]]):
+                                self.draw_note_flags(note_stem_y_points, note_duration, dx)
 
+                            else:  # Bars required
+                                if last_note_stem_y_points is not None:
+                                    self.draw_note_bars(last_note_stem_y_points, last_note_duration, last_note_dx,
+                                                        note_stem_y_points, note_duration, dx)
 
+                        last_note_dx = dx
+                        dx += constants.graphics.note_width
+                        music_notes_draw_this_beat += 1
 
-                if did_do_a_draw:
-                    draw_notes_indexes_this_beat.append(note_index)
-                    dx += 1
+                        last_note_stem_y_points = note_stem_y_points
+                        last_note_duration = note_duration
+
 
                 self.pop_logger_name()
-            beat_end_dx_list.append(dx)
+            self.pop_logger_name()
+        self.note_canvas.__exit__()
 
-            # Baring and flags -----------------------------------------------------------------------------------------
-
-            music_notes = [notes for notes in beat if notes != ["."]]
-            self.log_dump(f"\b[Bars and Flags ]  There are {len(music_notes)} sub beats, looking for special rule")
+        self.width = dx
 
 
-            # Two Notes --------------
-            if len(music_notes) == 0:
-                self.log_dump("\b[Bars and Flags ]  No music notes written / only rests  so no need for Bars or Flags")
+    @push_name_to_logger_name_stack_custom("bars")
+    def draw_note_bars(self, last_note_stem_y_points, last_note_duration, last_dx,
+                       note_stem_y_points, note_duration, dx):  # Fixme: fix flags on bared notes
+        self.log_dump(f"Drawing bars with {last_note_stem_y_points} last_note_stem_y_points, {last_note_duration} "
+                      f"last_note_duration, {last_dx} last_dx, {note_stem_y_points} note_stem_y_points, {note_duration}"
+                      f" note_duration and {dx} dx")
 
-            elif len(music_notes) == 2:
+        if note_duration == Fraction(3, 4):
+            self.log_dump(f"Note has a duration of {note_duration} so gets a dot")
 
-                note_poses = list()
-                note_indexes = list()
-                sx = 0
-                for note_index, notes in enumerate(beat):
-                    if notes != ["."]:
-                        note_poses.append((
-                            (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
-                            constants.graphics.note_stem_width + (beat_end_dx_list[-2] * constants.graphics.note_width),
-                            min([constants.score.note_name_to_staff_level[note_name] for note_name in notes]
-                                ) * constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)
-                        ))
-                        note_indexes.append(note_index)
+            dot_pos = (dx + constants.graphics.note_dot_dpos[0],
+                       note_stem_y_points[0] + constants.graphics.note_dot_dpos[1])
+            Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
 
-                    if note_index in draw_notes_indexes_this_beat:
-                        sx += 1
+            note_duration = Fraction(2, 4)
 
-                note_1_pos, note_2_pos = note_poses
-                note_1_index, note_2_index = note_indexes
-                self.log_dump(f"\b[Bars and Flags ]  Special rule found, positions are {note_1_pos, note_2_pos}")
 
-                Line(points=(*note_1_pos, note_1_pos[0], note_1_pos[1] + constants.graphics.note_stem_height),
-                     width=constants.graphics.note_stem_width)
-                Line(points=(*note_2_pos, note_2_pos[0], note_2_pos[1] + constants.graphics.note_stem_height),
+
+        if last_note_duration == note_duration:  # Use d1
+            self.log_dump("Using bars of last_note_duration because last_note_duration == note_duration")
+
+            for bar_index in range(note_duration_to_bar_or_flag_amount(last_note_duration)):
+                Line(points=(last_dx + constants.graphics.note_head_width,
+                             last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap),
+                             dx + constants.graphics.note_head_width,
+                             note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)),
                      width=constants.graphics.note_stem_width)
 
 
+        elif last_note_duration < note_duration:  # Use d2, Flags d1
+            self.log_dump("Using bars of note_duration and flags from last_note_duration because last_note_duration < "
+                          "note_duration")
 
-                note_stem_top_and_duration.append(((note_1_pos[0], note_1_pos[1] + constants.graphics.note_stem_height),
-                                                   get_note_duration(beat, note_1_index, notes_per_beat)))
-                note_stem_top_and_duration.append(((note_2_pos[0], note_2_pos[1] + constants.graphics.note_stem_height),
-                                                   get_note_duration(beat, note_2_index, notes_per_beat)))
+            bar_amount = note_duration_to_bar_or_flag_amount(note_duration)
+            flag_amount = note_duration_to_bar_or_flag_amount(last_note_duration) - bar_amount
 
+            for bar_index in range(bar_amount):
+                Line(points=(last_dx + constants.graphics.note_head_width,
+                             last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap),
+                             dx + constants.graphics.note_head_width,
+                             note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)),
+                     width=constants.graphics.note_stem_width)
 
-
-
-            # More ----------------------
-            else:
-                self.log_dump(f"\b[Bars and Flags ]  No special rule found")
-                highest_point = max([max([(constants.score.note_name_to_staff_level[note_name] if note_name != "." else
-                                           0)
-                                          for note_name in notes])
-                                     for notes in beat]) * constants.graphics.staff_gap + (constants.graphics.staff_gap
-                                                                                           / 2)
-
-                note_poses = list()
-                sx = 0
-                for note_index, notes in enumerate(beat):
-                    if notes != ["."]:
-                        note_poses.append((
-                            (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
-                            constants.graphics.note_stem_width + (beat_end_dx_list[-2] * constants.graphics.note_width),
-                            min([constants.score.note_name_to_staff_level[note_name] for note_name in notes]
-                                ) * constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)
-                        ))
-
-                        note_stem_top_and_duration.append(((
-                                (sx * constants.graphics.note_width) + constants.graphics.note_head_width -
-                                constants.graphics.note_stem_width + (beat_end_dx_list[-2] *
-                                                                      constants.graphics.note_width),
-                                highest_point + constants.graphics.note_stem_height),
-                            get_note_duration(beat, note_index, notes_per_beat)
-                        ))
+            for bar_index in range(flag_amount):
+                Line(points=(last_dx + constants.graphics.note_head_width,
+                             last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                constants.graphics.note_flag_gap,
+                             dx + constants.graphics.note_head_width - ((dx + constants.graphics.note_head_width -
+                                                                         last_dx + constants.graphics.note_head_width)
+                                                                        / 2),
+                             note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                ((note_stem_y_points[1] - last_note_stem_y_points[1]) / 2) -
+                                constants.graphics.note_flag_gap),
+                     width=constants.graphics.note_stem_width)
 
 
-                    if note_index in draw_notes_indexes_this_beat:
-                        sx += 1
+        elif last_note_duration > note_duration:  # Use d1, Flags d2
+            self.log_dump("Using bars of last_note_duration and flags from note_duration because last_note_duration > "
+                          "note_duration")
 
-                for note_pos in note_poses:
-                    Line(points=(*note_pos, note_pos[0], highest_point + constants.graphics.note_stem_height),
-                         width=constants.graphics.note_stem_width)
+            bar_amount = note_duration_to_bar_or_flag_amount(last_note_duration)
+            flag_amount = note_duration_to_bar_or_flag_amount(note_duration) - bar_amount
 
+            for bar_index in range(bar_amount):
+                Line(points=(last_dx + constants.graphics.note_head_width,
+                             last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap),
+                             dx + constants.graphics.note_head_width,
+                             note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)),
+                     width=constants.graphics.note_stem_width)
 
-
-            # ----------------------------
-
-            self.log_dump(f"\b[Bars and Flags ]  Bar positions and not durations: {note_stem_top_and_duration}")
-            for note_index in range(len(note_stem_top_and_duration) - 1):
-                if note_index < len(note_stem_top_and_duration) - 1:
-
-                    duration: Fraction
-                    next_duration: Fraction
-                    stem_top_pos, duration = note_stem_top_and_duration[note_index]
-                    next_stem_top_pos, next_duration = note_stem_top_and_duration[note_index + 1]
-
-
-                    if duration == Fraction(3, 4):
-                        dot_pos = stem_top_pos[0] + constants.graphics.note_dot_dpos[0], \
-                                  stem_top_pos[1] - constants.graphics.note_stem_height + \
-                                  constants.graphics.note_dot_dpos[1]
-
-                        Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
-
-
-                        duration = Fraction(2, 4)
-
-                    elif next_duration == Fraction(3, 4):
-                        dot_pos = next_stem_top_pos[0] + constants.graphics.note_dot_dpos[0], \
-                                  next_stem_top_pos[1] - constants.graphics.note_stem_height + \
-                                  constants.graphics.note_dot_dpos[1]
-
-                        Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
-
-
-                        next_duration = Fraction(2, 4)
+            for bar_index in range(flag_amount):
+                Line(points=(last_dx + constants.graphics.note_head_width +
+                                ((dx + constants.graphics.note_head_width - last_dx +
+                                  constants.graphics.note_head_width) / 2),
+                             last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                ((last_note_stem_y_points[1] - note_stem_y_points[1]) / 2) -
+                                constants.graphics.note_flag_gap,
+                             dx + constants.graphics.note_head_width,
+                             note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap) -
+                                constants.graphics.note_flag_gap),
+                     width=constants.graphics.note_stem_width)
 
 
 
-                    if duration == next_duration:  # Use d1
-                        for bar_index in range(note_duration_to_bar_or_flag_amount(duration)):
-                            Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
-                                         next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
-                                 width=constants.graphics.note_stem_width)
+
+    @push_name_to_logger_name_stack_custom("flags")
+    def draw_note_flags(self, note_stem_y_points, note_duration, dx):
+        self.log_dump(f"Drawing flags on note with {note_duration} duration and is at ({dx}, {note_stem_y_points})")
+
+        if note_duration == Fraction(3, 4):
+            self.log_dump(f"Note has a duration of {note_duration} so gets a dot")
+
+            dot_pos = (dx + constants.graphics.note_dot_dpos[0],
+                       note_stem_y_points[0] + constants.graphics.note_dot_dpos[1])
+            Ellipse(pos=dot_pos, size=constants.graphics.note_dot_size)
+
+            note_duration = Fraction(2, 4)
+
+        flag_amount = note_duration_to_bar_or_flag_amount(note_duration)
+        for flag_index in range(flag_amount):
+            Line(points=(dx + constants.graphics.note_head_width,
+                            note_stem_y_points[1] - (flag_index * constants.graphics.note_flag_gap),
+                         dx + constants.graphics.note_head_width + constants.graphics.note_flag_dpos[0],
+                            note_stem_y_points[1] - (flag_index * constants.graphics.note_flag_gap) +
+                            constants.graphics.note_flag_dpos[1]),
+                 width=constants.graphics.note_stem_width)
 
 
-                    elif duration < next_duration:  # Use d2, Flags d1
-                        bar_amount = note_duration_to_bar_or_flag_amount(next_duration)
-                        flag_amount = note_duration_to_bar_or_flag_amount(duration) - bar_amount
-
-                        for bar_index in range(bar_amount):
-                            Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
-                                         next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
-                                 width=constants.graphics.note_stem_width)
-
-                        for bar_index in range(flag_amount):
-                            Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
-                                         constants.graphics.note_flag_gap,
-                                         next_stem_top_pos[0] - ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
-                                            ((next_stem_top_pos[1] - stem_top_pos[1]) / 2) -
-                                         constants.graphics.note_flag_gap),
-                                 width=constants.graphics.note_stem_width)
 
 
-                    elif duration > next_duration:  # Use d1, Flags d2
-                        bar_amount = note_duration_to_bar_or_flag_amount(duration)
-                        flag_amount = note_duration_to_bar_or_flag_amount(next_duration) - bar_amount
+    @push_name_to_logger_name_stack_custom("rests")
+    def draw_compressed_rests(self, beat_notes, dx):
+        sub_beats_to_skip = 0
+        _sub_beats_to_skip = 0
+        had_not_rest = False
 
-                        for bar_index in range(bar_amount):
-                            Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
-                                         next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
-                                 width=constants.graphics.note_stem_width)
+        for note_index, notes in enumerate(beat_notes):
+            if _sub_beats_to_skip > 0:
+                _sub_beats_to_skip -= 1
 
-                        for bar_index in range(flag_amount):
-                            Line(points=(stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
-                                            ((stem_top_pos[1] - next_stem_top_pos[1]) / 2) -
-                                         constants.graphics.note_flag_gap,
-                                         next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
-                                         constants.graphics.note_flag_gap),
-                                 width=constants.graphics.note_stem_width)
 
+            elif not had_not_rest:
+                if notes == ["."]:
+
+                    if note_index < 1 and all([beat_notes[note_index + n] == ["."]
+                                                                 for n in range(1, 4)]):
+                        self.log_dump(f"All sub beats are rests, drawing "
+                                      f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest")
+                        sub_beats_to_skip += 3
+                        _sub_beats_to_skip += 3
+                        draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest", dx)
+
+                    elif note_index < len(beat_notes) - 1 and beat_notes[note_index + 1] == ["."]:
+                        self.log_dump(f"2 sub beats are rests, drawing "
+                                      f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest")
+                        sub_beats_to_skip += 1
+                        _sub_beats_to_skip += 1
+                        draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest", dx)
 
                     else:
-                        self.log_critical("How the f*** has this happened????")
-                        """bar_index = 0
+                        self.log_dump(f"1 sub beat is a rests, drawing "
+                                      f"{constants.score.duration_to_text_duration[self.notes_per_beat / 1]}_rest")
 
-                        Line(points=(stem_top_pos[0],
-                                     stem_top_pos[1],
-                                     next_stem_top_pos[0],
-                                     next_stem_top_pos[1]),
-                             width=constants.graphics.note_stem_width)
+                        draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat]}_rest", dx)
 
-                        for bar_index in range(note_duration_to_bar_or_flag_amount(next_duration) - 1):
-                            Line(points=(stem_top_pos[0],
-                                         stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
-                                         next_stem_top_pos[0],
-                                         next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap)),
-                                 width=constants.graphics.note_stem_width)
+                    dx += constants.graphics.note_width
 
-                        bar_index += 1
-                        Line(points=(stem_top_pos[0],
-                                     stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap),
-                                     stem_top_pos[0] + ((next_stem_top_pos[0] - stem_top_pos[0]) / 2),
-                                     next_stem_top_pos[1] - (bar_index * constants.graphics.note_flag_gap) -
-                                     ((next_stem_top_pos[1] - stem_top_pos[1]) / 2)),
-                             width=constants.graphics.note_stem_width)"""
+                else:
+                    had_not_rest = True
 
-            # ----------------------------
-            note_positions_with_indexes.clear()
-            draw_notes_indexes_this_beat.clear()
-            note_stem_top_and_duration.clear()
-            self.pop_logger_name()
-            beat_index += 1
+        self.log_dump(f"{sub_beats_to_skip} sub beats need to be skipped")
 
-        self.log_dump()
-        self.width = dx * constants.graphics.note_width
+        return sub_beats_to_skip, dx
 
 
-        self.note_canvas.__exit__()
+    @reset_logger_name_stack_for_function
+    @push_name_to_logger_name_stack
+    def get_stem_y_points(self, notes) -> list[tuple[float, float]]:
+        music_notes = [_notes for _notes in notes if _notes != ["."]]
+        self.log_dump(f"There are {len(music_notes)} notes, looking for special rule")
+
+        # Zero Notes -------------
+        if len(music_notes) == 0:
+            self.log_dump("No music notes written / only rests, so no need for Bars or Flags")
+            return []
+
+        # One Note ---------------
+        elif len(music_notes) == 1:
+            self.log_dump(f"Special rule for 1 found")
+            ret = [(float(min([constants.score.note_name_to_staff_level[note_name] for note_name in music_notes[0]]) *
+                    constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)),
+
+                    float(max([constants.score.note_name_to_staff_level[note_name] for note_name in music_notes[0]]) *
+                    constants.graphics.staff_gap + (constants.graphics.staff_gap / 2) +
+                    constants.graphics.note_stem_height)
+                    )]
+            self.log_dump(f"Got {ret}")
+
+            return ret
+
+        # Two Notes --------------
+        elif len(music_notes) == 2:
+            self.log_dump(f"Special rule for 2 found")
+            ret = [(float(min([constants.score.note_name_to_staff_level[note_name] for note_name in _notes]) *
+                    constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)),
+
+                    float(max([constants.score.note_name_to_staff_level[note_name] for note_name in _notes]) *
+                    constants.graphics.staff_gap + (constants.graphics.staff_gap / 2) +
+                    constants.graphics.note_stem_height)
+                    ) for _notes in music_notes]
+            self.log_dump(f"Got {ret}")
+
+            return ret
+
+
+        # More ----------------------
+        else:
+            self.log_dump(f"No special rule found")
+            ret = [(float(min([constants.score.note_name_to_staff_level[note_name] for note_name in _notes]) *
+                          constants.graphics.staff_gap + (constants.graphics.staff_gap / 2)),
+
+                    float(max([constants.score.note_name_to_staff_level[note_name] for note_name in _notes]) *
+                          constants.graphics.staff_gap + (constants.graphics.staff_gap / 2) +
+                          constants.graphics.note_stem_height)
+                    ) for _notes in music_notes]
+
+            highest_y_up = 0
+            for y_down, y_up in ret:
+                if y_up > highest_y_up:
+                    highest_y_up = y_up
+
+            ret = [(y_down, highest_y_up) for y_down, y_up in ret]
+
+            self.log_dump(f"Got {ret}")
+
+            return ret
 
 
 def draw_note(note_name, x):
@@ -511,8 +517,8 @@ def note_duration_to_bar_or_flag_amount(fraction: Fraction):  # denominator = 2^
     return int(n)
 
 
-def get_note_duration(beat, note_index, notes_per_beat):
-    notes_after_note_index = beat[note_index + 1:len(beat)]
+def get_note_duration(notes, note_index, notes_per_beat):
+    notes_after_note_index = notes[note_index + 1:len(notes)]
 
     i = 1
     for note in notes_after_note_index:
