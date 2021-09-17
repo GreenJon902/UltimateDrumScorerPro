@@ -252,25 +252,6 @@ class Bar(RelativeLayout, ClassWithLogger):
             beat_end_dx_list.append(dx)
 
             # Baring and flags -----------------------------------------------------------------------------------------
-            """anchors_with_indexes = list()
-
-            for n, (pos, note_index) in enumerate(note_positions_with_indexes):
-                found = False
-
-                for n2, (pos2, note_index2) in enumerate(note_positions_with_indexes):
-                    if note_index == note_index2 and n != n2 and note_index:
-                        found = True
-                        to_add = ((pos[0], min((pos[1], pos2[1]))), note_index)
-
-                        if to_add not in anchors_with_indexes:
-                            anchors_with_indexes.append(to_add)
-
-
-                if not found:
-                    anchors_with_indexes.append(((pos[0], pos[1]), note_index))
-
-            self.log_dump(f"\b[Bars and Flags ]  Sorted note_stem_anchor_points_and_their_note_indexes, got "
-                          f"{anchors_with_indexes} from {note_positions_with_indexes}")"""
 
             music_notes = [notes for notes in beat if notes != ["."]]
             self.log_dump(f"\b[Bars and Flags ]  There are {len(music_notes)} sub beats, looking for special rule")
