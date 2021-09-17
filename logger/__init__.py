@@ -2,6 +2,7 @@ import logging
 import os
 # noinspection PyUnresolvedReferences
 import sys
+from copy import copy
 from logging import Manager
 
 import constants
@@ -93,6 +94,15 @@ def push_name_to_logger_name_stack(function: callable):
     return wrapper
 
 
+def reset_logger_name_stack_for_function(function: callable):
+    def wrapper(self, *args, **kwargs):
+        name_before = copy(self._logger_name_stack)
+        self._logger_name_stack.clear()
+        result = function(self, *args, **kwargs)
+        self._logger_name_stack = name_before
+
+        return result
+    return wrapper
 
 
 
