@@ -118,4 +118,5 @@ def push_name_to_logger_name_stack_custom(name: str):
 
 
 
-__all__ = ["get_logger", "ClassWithLogger", "push_name_to_logger_name_stack"]
+__all__ = ["get_logger", "ClassWithLogger", "push_name_to_logger_name_stack", "reset_logger_name_stack_for_function",
+           "push_name_to_logger_name_stack_custom"]
