@@ -5,7 +5,7 @@ from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.graphics import Canvas, Rectangle, Line, Ellipse
 from kivy.input import MotionEvent
-from kivy.properties import StringProperty, NumericProperty, OptionProperty
+from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 import constants
@@ -19,13 +19,16 @@ note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
 
 
 class Section(ScoreContentWithPopup, ClassWithLogger):
-    notes: str = StringProperty()
+    notes: list = ListProperty()
+    notes_per_beat = NumericProperty()
+
+    time_signature_a: list = NumericProperty()
+    time_signature_b: list = NumericProperty()
+    time_signature: list = ReferenceListProperty(time_signature_a, time_signature_b)
+
     required_mode = "section"
 
     update = None
-    _time_signature: tuple[int, int]
-    _notes_per_beat: int
-    _notes: list[str]
     
     def __init__(self, **kwargs):
         ClassWithLogger.__init__(self)
@@ -33,29 +36,33 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
 
-        self.notes = "4/4-4[kick . snare . kick . . . snare . . . kick,snare . . . snare . . . snare . . . kick . . " \
-                     ". kick . . .]"
+        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick . snare . "
+                                                                                 "kick . . . "
+                                                                                 "snare . . . "
+                                                                                 "kick,snare . . . "
+                                                                                 "snare . . . "
+                                                                                 "snare . . . "
+                                                                                 "kick . . . "
+                                                                                 "kick . . .]")
 
-    def on_notes(self, _instance, value):
-        notes = value
 
-        parts = notes.split("-")
+    def parse_string(self, string):
+        parts = string.split("-")
 
         ts = parts[0].split("/")
-        self._time_signature = int(ts[0]), int(ts[1])
-        self._notes_per_beat = int(parts[1].split("[")[0])
-        self._notes = parts[1].split("[")[1].replace("]", "").split(" ")
+        time_signature = int(ts[0]), int(ts[1])
+        notes_per_beat = int(parts[1].split("[")[0])
+        notes = [note.split(",") for note in parts[1].split("[")[1].replace("]", "").split(" ")]
 
-        self.log_debug(f"Notes changed, time_signature={self._time_signature} | notes_per_beat={self._notes_per_beat} "
-                       f"| notes={self._notes}")
+        self.log_debug(f"Parsed {string} too ts={time_signature} npb={notes_per_beat} notes={notes}")
+        return time_signature, notes_per_beat, notes
 
-        self.update()
 
     @push_name_to_logger_name_stack
     def _update(self):
-        beats_per_bar = self._notes_per_beat * self._time_signature[0]
+        beats_per_bar = self.notes_per_beat * self.time_signature[0]
         self.log_debug(f"{beats_per_bar} beats per bar")
-        bars_needed = len(self._notes) / beats_per_bar
+        bars_needed = len(self.notes) / beats_per_bar
 
         # if bars_needed is 1.0 or 2.0 then int(bars_needed) == 1 or 2 which still == bars_needed,
         # but if it is 1.5 then it doesnt == int(bars_needed) which is 2
@@ -72,9 +79,9 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
             self.add_widget(b)
 
         for n, child in enumerate(self.children):
-            notes = " ".join(self._notes[n * beats_per_bar:(n + 1) * beats_per_bar])
+            notes = self.notes[n * beats_per_bar:(n + 1) * beats_per_bar]
 
-            child.notes_per_beat = self._notes_per_beat
+            child.notes_per_beat = self.notes_per_beat
             child.notes = notes
             self.log_dump(f"Giving {child} \"{notes}\"")
 
@@ -123,7 +130,7 @@ class Bar(RelativeLayout, ClassWithLogger):
     update: callable
 
 
-    notes: str = StringProperty()
+    notes: list = ListProperty()
     notes_per_beat: int = NumericProperty()
 
     bar_start_line_type: str = OptionProperty("single", options=["single", "repeat"])
@@ -177,11 +184,8 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
         notes_per_beat = self.notes_per_beat
-        _all_notes = [([note for note in notes.split(constants.score.next_note_char)])
-                      for notes in str(self.notes[0:len(self.notes)]).split(constants.score.next_notes_char)
-                      ]
 
-        all_notes = [_all_notes[n:n+4] for n in range(0, len(_all_notes), notes_per_beat)]
+        all_notes = [self.notes[n:n+4] for n in range(0, len(self.notes), notes_per_beat)]
         self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
         self.log_dump()
         dx = 0
