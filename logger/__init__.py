@@ -105,5 +105,17 @@ def reset_logger_name_stack_for_function(function: callable):
     return wrapper
 
 
+def push_name_to_logger_name_stack_custom(name: str):
+    def decorator(function: callable):
+        def wrapper(self, *args, **kwargs):
+            self.push_logger_name(name)
+            result = function(self, *args, **kwargs)
+            self.pop_logger_name()
+
+            return result
+        return wrapper
+    return decorator
+
+
 
 __all__ = ["get_logger", "ClassWithLogger", "push_name_to_logger_name_stack"]
