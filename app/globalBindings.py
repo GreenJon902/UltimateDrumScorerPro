@@ -28,7 +28,8 @@ class GlobalBindings:
                 function(*args, **kwargs)
 
         else:
-            logger.log_warning(f"No functions bound to event {event_name}")
+            logger.log_warning(f"No functions bound to event \"{event_name}\" but event was dispatched with args "
+                               f"{args} {kwargs}")
 
     @classmethod
     def check_binding(cls, event_name: str):
