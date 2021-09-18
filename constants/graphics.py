@@ -61,3 +61,5 @@ add_text_popup_font_size_default_mm = 10
 mode_button_path = "atlas://resources/atlases/buttons/{name}_button_{state}"
 
 default_none_music_note_width = 0
+expanded_none_music_note_width = note_width
+none_music_note_expand_time = 0.1

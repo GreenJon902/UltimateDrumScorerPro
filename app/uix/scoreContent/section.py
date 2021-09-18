@@ -1,6 +1,8 @@
 from fractions import Fraction
 from math import log
+from typing import Optional
 
+from kivy.animation import Animation
 from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -68,11 +70,44 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
             child: Bar
             for child in self.children:
-                if child.collide_point(*pos):
-                    child.none_music_note_width = constants.graphics.note_head_width
+                animation: Optional[Animation]
+
+                if child.current_animation_info is not None:
+                    animation, direction = child.current_animation_info
 
                 else:
-                    child.none_music_note_width = constants.graphics.default_none_music_note_width
+                    animation, direction = None, None
+
+
+                if child.collide_point(*pos):
+                    if direction == "in":
+                        animation.stop(child)
+
+                        child.current_animation_info = (None, None)
+                        animation, direction = None, None
+
+
+                    if direction is None:
+                        animation = Animation(none_music_note_width=constants.graphics.expanded_none_music_note_width,
+                                              duration=constants.graphics.none_music_note_expand_time)
+                        animation.start(child)
+                        child.current_animation_info = (animation, "out")
+
+
+                else:
+                    if direction == "out":
+                        animation.stop(child)
+
+                        child.current_animation_info = (None, None)
+                        animation, direction = None, None
+
+                    if direction is None:
+                        animation = Animation(none_music_note_width=constants.graphics.default_none_music_note_width,
+                                              duration=constants.graphics.none_music_note_expand_time)
+                        animation.start(child)
+                        child.current_animation_info = (animation, "in")
+
+
 
 
     @push_name_to_logger_name_stack
@@ -145,7 +180,10 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
 class Bar(RelativeLayout, ClassWithLogger):
     update: callable
-
+    current_animation_info: tuple[Animation, str] = None
+    """
+    Used by :class:`Section` for expanding the bar when the mouse is over it
+    """
 
     notes: list = ListProperty()
     notes_per_beat: int = NumericProperty()
@@ -216,7 +254,7 @@ class Bar(RelativeLayout, ClassWithLogger):
             self.log_debug(f"Beat {beat_index + 1} --------------| notes: {beat_notes} |--------------")
             self.push_logger_name(f"beat_{beat_index}")
 
-            sub_beats_to_skip, dx = self.draw_compressed_rests(beat_notes, dx)
+            sub_beats_to_skip, dx, did_draw_rest = self.draw_compressed_rests(beat_notes, dx)
             stem_y_points = self.get_stem_y_points(beat_notes)
             last_note_stem_y_points = None
             last_note_duration = None
@@ -236,9 +274,11 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                 else:
                     if notes == ["."]:
-                        dx += self.none_music_note_width
+                        if not did_draw_rest:
+                            dx += self.none_music_note_width
 
                     else:
+                        did_draw_rest = False
                         note_stem_y_points = stem_y_points[music_notes_draw_this_beat]
 
                         for note in notes:
@@ -388,6 +428,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         sub_beats_to_skip = 0
         _sub_beats_to_skip = 0
         had_not_rest = False
+        did_draw_rest = False
 
         for note_index, notes in enumerate(beat_notes):
             if _sub_beats_to_skip > 0:
@@ -419,13 +460,14 @@ class Bar(RelativeLayout, ClassWithLogger):
                         draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat]}_rest", dx)
 
                     dx += constants.graphics.note_width
+                    did_draw_rest = True
 
                 else:
                     had_not_rest = True
 
         self.log_dump(f"{sub_beats_to_skip} sub beats need to be skipped")
 
-        return sub_beats_to_skip, dx
+        return sub_beats_to_skip, dx, did_draw_rest
 
 
     @reset_logger_name_stack_for_function
