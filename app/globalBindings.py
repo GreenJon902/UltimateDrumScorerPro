@@ -13,12 +13,12 @@ class GlobalBindings:
             cls.check_binding(event_name)
 
             cls.bindings[event_name].append(function)
-            logger.log_dump(function, "was bound to event '", event_name, "'")
+            logger.log_dump(function, f"was bound to event \"{event_name}\"")
 
     @classmethod
     def register(cls, event_name: str):
         cls.bindings[event_name] = list()
-        logger.log_debug("Event '", event_name, "' has been created")
+        logger.log_debug(f"Event \"{event_name}\" has been created")
 
     @classmethod
     def dispatch(cls, event_name: str, *args, **kwargs):
