@@ -59,3 +59,5 @@ add_text_popup_font_size_max_mm = 50
 add_text_popup_font_size_default_mm = 10
 
 mode_button_path = "atlas://resources/atlases/buttons/{name}_button_{state}"
+
+default_none_music_note_width = 0

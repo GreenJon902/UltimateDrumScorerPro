@@ -3,12 +3,14 @@ from math import log
 
 from kivy.atlas import Atlas
 from kivy.clock import Clock
+from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Line, Ellipse
 from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 import constants
+from app.globalBindings import GlobalBindings
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
@@ -30,16 +32,19 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
     required_mode = "section"
 
     update = None
+    mode = None
     
     def __init__(self, **kwargs):
         ClassWithLogger.__init__(self)
         ScoreContentWithPopup.__init__(self, **kwargs)
 
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
+        Window.bind(mouse_pos=self.on_mouse_move)
+        GlobalBindings.bind(mode=self.change_mode)
 
         self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick kick kick kick . kick . . "
                                                                                  "kick,snare . kick snare snare . kick "
-                                                                                 " .]")
+                                                                                 ".]")
 
 
     def parse_string(self, string):
@@ -52,6 +57,22 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
         self.log_debug(f"Parsed {string} too ts={time_signature} npb={notes_per_beat} notes={notes}")
         return time_signature, notes_per_beat, notes
+
+
+    def change_mode(self, mode):
+        self.mode = mode
+
+    def on_mouse_move(self, _instance, pos):
+        if self.mode == "note":
+            pos = self.to_widget(*pos)
+
+            child: Bar
+            for child in self.children:
+                if child.collide_point(*pos):
+                    child.none_music_note_width = constants.graphics.note_head_width
+
+                else:
+                    child.none_music_note_width = constants.graphics.default_none_music_note_width
 
 
     @push_name_to_logger_name_stack
@@ -128,6 +149,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
     notes: list = ListProperty()
     notes_per_beat: int = NumericProperty()
+    none_music_note_width = NumericProperty(constants.graphics.default_none_music_note_width)
 
     bar_start_line_type: str = OptionProperty("single", options=["single", "repeat"])
     bar_end_line_type: str = OptionProperty("single", options=["single", "repeat"])
@@ -142,7 +164,8 @@ class Bar(RelativeLayout, ClassWithLogger):
 
         self.note_canvas = Canvas()
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
-        self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update())
+        self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update(),
+                  none_music_note_width=lambda _instance, _value: self.update())
 
         RelativeLayout.__init__(self, **kwargs)
 
@@ -213,7 +236,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                 else:
                     if notes == ["."]:
-                        pass  # TODO: Rest width - For editing notes in gui, will expand bar probably
+                        dx += self.none_music_note_width
 
                     else:
                         note_stem_y_points = stem_y_points[music_notes_draw_this_beat]

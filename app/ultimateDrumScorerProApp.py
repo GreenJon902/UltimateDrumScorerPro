@@ -48,6 +48,8 @@ class UltimateDrumScorerProApp(App, ClassWithLogger):
 
 
     def on_sidebar_button_current(self, _instance, value):
+        GlobalBindings.dispatch("mode", (None if value is None else value.name))
+
         if value is None:
             GlobalBindings.dispatch("set_cursor", constants.graphics.sidebar_button_name_to_cursor[str(value)])
 
