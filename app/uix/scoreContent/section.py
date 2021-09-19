@@ -287,16 +287,16 @@ class Bar(RelativeLayout, ClassWithLogger):
                                          dx + constants.graphics.note_head_width, note_stem_y_points[1]),
                                  width=constants.graphics.note_stem_width)
 
-                            if music_notes_draw_this_beat == 0 and all([sub_beat_notes == ["."]  # Flags required
-                                                                        for sub_beat_notes in
-                                                                        beat_notes[note_index + 1:len(beat_notes) - 1
-                                                                                   ]]):
-                                self.draw_note_flags(note_stem_y_points, note_duration, dx)
+                        if music_notes_draw_this_beat == 0 and all([sub_beat_notes == ["."]  # Flags required
+                                                                    for sub_beat_notes in
+                                                                    beat_notes[note_index + 1:len(beat_notes) - 1
+                                                                               ]]):
+                            self.draw_note_flags(note_stem_y_points, note_duration, dx)
 
-                            else:  # Bars required
-                                if last_note_stem_y_points is not None:
-                                    self.draw_note_bars(last_note_stem_y_points, last_note_duration, last_note_dx,
-                                                        note_stem_y_points, note_duration, dx)
+                        else:  # Bars required
+                            if last_note_stem_y_points is not None:
+                                self.draw_note_bars(last_note_stem_y_points, last_note_duration, last_note_dx,
+                                                    note_stem_y_points, note_duration, dx)
 
                         last_note_dx = dx
                         dx += constants.graphics.note_width
