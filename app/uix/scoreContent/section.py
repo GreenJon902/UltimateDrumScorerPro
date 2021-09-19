@@ -6,16 +6,16 @@ from kivy.animation import Animation
 from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Canvas, Rectangle
+from kivy.graphics import Canvas
 from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 import constants
 from app.globalBindings import GlobalBindings
+from app.mathVertexInstructions import MathLine, MathEllipse, MathRectangle
 from app.misc import check_mode
 from app.popups.addSectionPopup import AddSectionPopup
-from app.uix.scoreContent.barHelpers import BetterLine, BetterEllipse
 from app.uix.scoreContent.scoreContentWithPopup import ScoreContentWithPopup
 from logger import push_name_to_logger_name_stack, ClassWithLogger, reset_logger_name_stack_for_function, \
     push_name_to_logger_name_stack_custom
