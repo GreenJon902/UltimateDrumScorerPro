@@ -31,7 +31,7 @@ class BetterEllipse(Ellipse):
     redo_maths: callable
 
     def __init__(self, bar_instance, properties_to_bind, pos, **kwargs):
-        self.pos_strings = pos
+        self.pos_string = pos
         self.bar_instance = bar_instance
 
         self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths())
@@ -44,12 +44,12 @@ class BetterEllipse(Ellipse):
 
 
     def _redo_maths(self):
-        poses = list()
+        pos = list()
 
-        for pos_str in self.pos_strings:
-            poses.append(eval(pos_str, {}, {"self": self.bar_instance}))
+        for coord_str in self.pos_string:
+            pos.append(eval(coord_str, {}, {"self": self.bar_instance}))
 
-        self.pos = poses
+        self.pos = pos
 
 
 
