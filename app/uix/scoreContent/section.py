@@ -190,6 +190,9 @@ class Bar(RelativeLayout, ClassWithLogger):
     notes_per_beat: int = NumericProperty()
     none_music_note_width = NumericProperty(constants.graphics.default_none_music_note_width)
 
+    _current_not_drawn_rests: int = NumericProperty()
+    _current_dx: int = NumericProperty()
+
     bar_start_line_type: str = OptionProperty("single", options=["single", "repeat"])
     bar_end_line_type: str = OptionProperty("single", options=["single", "repeat"])
 
@@ -203,7 +206,11 @@ class Bar(RelativeLayout, ClassWithLogger):
 
         self.note_canvas = Canvas()
         self.update = Clock.create_trigger(lambda _elapsed_time: self._update())
-        self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update())
+        self.do_width = Clock.create_trigger(lambda _elapsed_time: self._do_width())
+        self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update(),
+                  none_music_note_width=lambda _instance, _value: self.do_width(),
+                  _current_not_drawn_rests=lambda _instance, _value: self.do_width(),
+                  _current_dx=lambda _instance, _value: self.do_width())
 
         RelativeLayout.__init__(self, **kwargs)
 
@@ -232,6 +239,8 @@ class Bar(RelativeLayout, ClassWithLogger):
             self.log_critical(f"No know bar_end_line_type called {value}")
 
 
+    def _do_width(self):
+        self.width = self._current_dx + (self._current_not_drawn_rests * self.none_music_note_width)
 
 
     @push_name_to_logger_name_stack
@@ -243,8 +252,8 @@ class Bar(RelativeLayout, ClassWithLogger):
         self.log_dump()
 
         dx = 0
-        not_drawn_rests_this_beat = 0
-        last_not_drawn_rests_this_beat = 0
+        not_drawn_rests_this_bar = 0
+        last_not_drawn_rests_this_bar = 0
 
 
         self.note_canvas.clear()
@@ -256,7 +265,7 @@ class Bar(RelativeLayout, ClassWithLogger):
             self.log_debug(f"Beat {beat_index + 1} --------------| notes: {beat_notes} |--------------")
             self.push_logger_name(f"beat_{beat_index}")
 
-            sub_beats_to_skip, dx, did_draw_rest = self.draw_compressed_rests(beat_notes, dx, not_drawn_rests_this_beat)
+            sub_beats_to_skip, dx, did_draw_rest = self.draw_compressed_rests(beat_notes, dx, not_drawn_rests_this_bar)
             stem_y_points = self.get_stem_y_points(beat_notes)
             last_note_stem_y_points = None
             last_note_duration = None
@@ -277,19 +286,19 @@ class Bar(RelativeLayout, ClassWithLogger):
                 else:
                     if notes == ["."]:
                         if not did_draw_rest:
-                            not_drawn_rests_this_beat += 1
+                            not_drawn_rests_this_bar += 1
 
                     else:
                         did_draw_rest = False
                         note_stem_y_points = stem_y_points[music_notes_draw_this_beat]
 
                         for note in notes:
-                            draw_note(self, note, dx, not_drawn_rests_this_beat)
+                            draw_note(self, note, dx, not_drawn_rests_this_bar)
                             MathLine(self, ["none_music_note_width"],
-                                     [f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_beat} * "
+                                     [f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
                                             f"self.none_music_note_width)",
                                         f"{note_stem_y_points[0]}",
-                                        f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_beat} * "
+                                        f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
                                             f"self.none_music_note_width)",
                                         f"{note_stem_y_points[1]}"],
                                      width=constants.graphics.note_stem_width)
@@ -299,13 +308,13 @@ class Bar(RelativeLayout, ClassWithLogger):
                                                                     for sub_beat_notes in
                                                                     beat_notes[note_index + 1:len(beat_notes) - 1
                                                                                ]]):
-                            self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat)
+                            self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_bar)
 
                         else:  # Bars required
                             if last_note_stem_y_points is not None:
                                 self.draw_note_bars(last_note_stem_y_points, last_note_duration, last_note_dx,
-                                                    note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat,
-                                                    last_not_drawn_rests_this_beat)
+                                                    note_stem_y_points, note_duration, dx, not_drawn_rests_this_bar,
+                                                    last_not_drawn_rests_this_bar)
 
 
                         last_note_dx = dx
@@ -315,14 +324,15 @@ class Bar(RelativeLayout, ClassWithLogger):
                         last_note_stem_y_points = note_stem_y_points
                         last_note_duration = note_duration
 
-                        last_not_drawn_rests_this_beat = not_drawn_rests_this_beat
+                        last_not_drawn_rests_this_bar = not_drawn_rests_this_bar
 
 
                 self.pop_logger_name()
             self.pop_logger_name()
         self.note_canvas.__exit__()
 
-        self.width = dx
+        self._current_not_drawn_rests = not_drawn_rests_this_bar
+        self._current_dx = dx
 
 
     @push_name_to_logger_name_stack_custom("bars")
