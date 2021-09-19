@@ -45,7 +45,9 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         Window.bind(mouse_pos=self.on_mouse_move)
         GlobalBindings.bind(mode=self.change_mode)
 
-        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("2/4-4[snare kick . snare . kick . .]")
+        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick kick kick kick . kick . . "
+                                                                                 "kick,snare . kick snare snare . kick "
+                                                                                 ".]")
 
 
     def parse_string(self, string):
@@ -241,7 +243,8 @@ class Bar(RelativeLayout, ClassWithLogger):
         self.log_dump()
 
         dx = 0
-        none_draw_rests_this_beat = 0
+        not_drawn_rests_this_beat = 0
+        last_not_drawn_rests_this_beat = 0
 
 
         self.note_canvas.clear()
@@ -274,7 +277,7 @@ class Bar(RelativeLayout, ClassWithLogger):
                 else:
                     if notes == ["."]:
                         if not did_draw_rest:
-                            none_draw_rests_this_beat += 1
+                            not_drawn_rests_this_beat += 1
 
                     else:
                         did_draw_rest = False
@@ -283,10 +286,10 @@ class Bar(RelativeLayout, ClassWithLogger):
                         for note in notes:
                             draw_note(note, dx)
                             BetterLine(self, ["none_music_note_width"],
-                                       [f"{dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
+                                       [f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_beat} * "
                                             f"self.none_music_note_width)",
                                         f"{note_stem_y_points[0]}",
-                                        f"{dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
+                                        f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_beat} * "
                                             f"self.none_music_note_width)",
                                         f"{note_stem_y_points[1]}"],
                                        width=constants.graphics.note_stem_width)
@@ -296,12 +299,14 @@ class Bar(RelativeLayout, ClassWithLogger):
                                                                     for sub_beat_notes in
                                                                     beat_notes[note_index + 1:len(beat_notes) - 1
                                                                                ]]):
-                            self.draw_note_flags(note_stem_y_points, note_duration, dx, none_draw_rests_this_beat)
+                            self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat,
+                                                 last_not_drawn_rests_this_beat)
 
                         else:  # Bars required
                             if last_note_stem_y_points is not None:
                                 self.draw_note_bars(last_note_stem_y_points, last_note_duration, last_note_dx,
-                                                    note_stem_y_points, note_duration, dx, none_draw_rests_this_beat)
+                                                    note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat,
+                                                    last_not_drawn_rests_this_beat)
 
 
                         last_note_dx = dx
@@ -310,6 +315,8 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                         last_note_stem_y_points = note_stem_y_points
                         last_note_duration = note_duration
+
+                        last_not_drawn_rests_this_beat = not_drawn_rests_this_beat
 
 
                 self.pop_logger_name()
@@ -321,10 +328,12 @@ class Bar(RelativeLayout, ClassWithLogger):
 
     @push_name_to_logger_name_stack_custom("bars")
     def draw_note_bars(self, last_note_stem_y_points, last_note_duration, last_dx,  # Fixme: fix flags on bared notes
-                       note_stem_y_points, note_duration, dx, none_draw_rests_this_beat):
+                       note_stem_y_points, note_duration, dx, none_draw_rests_this_beat,
+                       last_not_drawn_rests_this_beat):
         self.log_dump(f"Drawing bars with {last_note_stem_y_points} last_note_stem_y_points, {last_note_duration} "
                       f"last_note_duration, {last_dx} last_dx, {note_stem_y_points} note_stem_y_points, {note_duration}"
-                      f" note_duration and {dx} dx")
+                      f" note_duration, {dx} dx, {none_draw_rests_this_beat}, none_draw_rests_this_beat, "
+                      f"{last_not_drawn_rests_this_beat}")
 
         if note_duration == Fraction(3, 4):
             self.log_dump(f"Note has a duration of {note_duration} so gets a dot")
@@ -342,7 +351,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
             for bar_index in range(note_duration_to_bar_or_flag_amount(last_note_duration)):
                 BetterLine(self, ["none_music_note_width"],
-                           [f"{last_dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
+                           [f"{last_dx + constants.graphics.note_head_width} + ({last_not_drawn_rests_this_beat} * "
                                 f"self.none_music_note_width)",
                             f"{last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)}",
                             f"{dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
@@ -360,7 +369,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
             for bar_index in range(bar_amount):
                 BetterLine(self, ["none_music_note_width"],
-                           [f"{last_dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
+                           [f"{last_dx + constants.graphics.note_head_width} + ({last_not_drawn_rests_this_beat} * "
                                 f"self.none_music_note_width)",
                             f"{last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)}",
                             f"{dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
@@ -394,7 +403,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
             for bar_index in range(bar_amount):
                 BetterLine(self, ["none_music_note_width"],
-                           [f"{last_dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
+                           [f"{last_dx + constants.graphics.note_head_width} + ({last_not_drawn_rests_this_beat} * "
                                 f"self.none_music_note_width)",
                             f"{last_note_stem_y_points[1] - (bar_index * constants.graphics.note_flag_gap)}",
                             f"{dx + constants.graphics.note_head_width} + ({none_draw_rests_this_beat} * "
@@ -422,7 +431,8 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
     @push_name_to_logger_name_stack_custom("flags")
-    def draw_note_flags(self, note_stem_y_points, note_duration, dx, none_draw_rests_this_beat):
+    def draw_note_flags(self, note_stem_y_points, note_duration, dx, none_draw_rests_this_beat,
+                        last_not_drawn_rests_this_beat):
         self.log_dump(f"Drawing flags on note with {note_duration} duration and is at ({dx}, {note_stem_y_points})")
 
         if note_duration == Fraction(3, 4):
