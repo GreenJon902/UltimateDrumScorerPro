@@ -299,8 +299,7 @@ class Bar(RelativeLayout, ClassWithLogger):
                                                                     for sub_beat_notes in
                                                                     beat_notes[note_index + 1:len(beat_notes) - 1
                                                                                ]]):
-                            self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat,
-                                                 last_not_drawn_rests_this_beat)
+                            self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat)
 
                         else:  # Bars required
                             if last_note_stem_y_points is not None:
@@ -431,8 +430,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
     @push_name_to_logger_name_stack_custom("flags")
-    def draw_note_flags(self, note_stem_y_points, note_duration, dx, none_draw_rests_this_beat,
-                        last_not_drawn_rests_this_beat):
+    def draw_note_flags(self, note_stem_y_points, note_duration, dx, none_draw_rests_this_beat):
         self.log_dump(f"Drawing flags on note with {note_duration} duration and is at ({dx}, {note_stem_y_points})")
 
         if note_duration == Fraction(3, 4):
