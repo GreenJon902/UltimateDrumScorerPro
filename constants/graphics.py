@@ -62,4 +62,5 @@ mode_button_path = "atlas://resources/atlases/buttons/{name}_button_{state}"
 
 default_none_music_note_width = 0
 expanded_none_music_note_width = note_width
-none_music_note_expand_time = 0.1
+none_music_note_expand_time = 0.75
+none_music_note_expand_transition = "out_elastic"

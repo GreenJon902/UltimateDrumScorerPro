@@ -2,7 +2,7 @@ from fractions import Fraction
 from math import log
 from typing import Optional
 
-from kivy.animation import Animation
+from kivy.animation import Animation, AnimationTransition
 from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -22,6 +22,8 @@ from logger import push_name_to_logger_name_stack, ClassWithLogger, reset_logger
 
 rest_textures = Atlas("resources/atlases/rests.atlas").textures
 note_head_textures = Atlas("resources/atlases/note_heads.atlas").textures
+
+none_music_note_expand_transition = getattr(AnimationTransition, constants.graphics.none_music_note_expand_transition)
 
 
 class Section(ScoreContentWithPopup, ClassWithLogger):
@@ -88,9 +90,11 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
                         animation, direction = None, None
 
 
+
                     if direction is None:
                         animation = Animation(none_music_note_width=constants.graphics.expanded_none_music_note_width,
-                                              duration=constants.graphics.none_music_note_expand_time)
+                                              duration=constants.graphics.none_music_note_expand_time,
+                                              transition=none_music_note_expand_transition)
                         animation.start(child)
                         child.current_animation_info = (animation, "out")
 
@@ -104,7 +108,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
                     if direction is None:
                         animation = Animation(none_music_note_width=constants.graphics.default_none_music_note_width,
-                                              duration=constants.graphics.none_music_note_expand_time)
+                                              duration=constants.graphics.none_music_note_expand_time,
+                                              transition=none_music_note_expand_transition)
                         animation.start(child)
                         child.current_animation_info = (animation, "in")
 
