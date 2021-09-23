@@ -1,3 +1,4 @@
+from kivy.clock import Clock
 from kivy.input import MotionEvent
 
 import constants
@@ -34,9 +35,15 @@ class ScoreContentWithPopup(ScoreContent):
 
 
     def __init__(self, **kwargs):
+        no_popup = kwargs.pop("no_popup", False)
+
         ScoreContent.__init__(self, **kwargs)
 
-        self.popup()
+        if no_popup:
+            Clock.schedule_once(lambda _elapsed_time: self.popup_submitted(self, []), -1)
+
+        else:
+            self.popup()
 
     def popup(self, **kwargs):
         self.log_debug("Creating popup to edit text")

@@ -1,3 +1,4 @@
+from kivy.clock import Clock
 from kivy.graphics import Scale
 from kivy.graphics.transformation import Matrix
 from kivy.properties import NumericProperty, ReferenceListProperty
@@ -75,6 +76,9 @@ class Page(RelativeLayout, ClassWithLogger):
         self.size_hint_y = None
 
         self.content = PageContent()
+
+        Clock.schedule_once(lambda _elapsed_time: self.content.add_widget(
+            app.uix.scoreContent.section.Section(no_popup=True)), -1)
 
         self.page_bg = PageBg()
         self.add_widget(self.page_bg)
