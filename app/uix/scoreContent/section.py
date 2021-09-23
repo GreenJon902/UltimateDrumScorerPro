@@ -285,7 +285,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         dx = constants.graphics.note_head_width * -1
 
         for note_index, notes in enumerate(self.notes):
-            if notes == []:
+            if not notes:
                 dx += self.none_music_note_width
 
             else:
@@ -560,7 +560,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
             elif not had_not_rest:
-                if notes == []:
+                if not notes:
 
                     if note_index < 1 and all([beat_notes[note_index + n] == []
                                                                  for n in range(1, 4)]):
@@ -719,7 +719,7 @@ def get_note_duration(notes, note_index, notes_per_beat):
 
     i = 1
     for note in notes_after_note_index:
-        if note != []:
+        if note:
             break
 
         i += 1
