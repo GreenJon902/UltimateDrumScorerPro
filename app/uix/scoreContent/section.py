@@ -47,9 +47,7 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         Window.bind(mouse_pos=self.on_mouse_move)
         GlobalBindings.bind(mode=self.change_mode)
 
-        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[kick . kick kick . kick . . "
-                                                                                 "kick,snare . kick snare snare . kick "
-                                                                                 ".]")
+        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("1/4-4[. . . .]")
 
 
     def parse_string(self, string):
@@ -168,19 +166,26 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         if check_mode("note") and self.collide_point(*touch.pos):
             pos = self.to_local(*touch.pos)
 
-            note_position = int(((pos[0] - (pos[0] % constants.graphics.note_width)) /
-                                    constants.graphics.note_width) + 1)
+            child: Bar
+            for child in self.children:
+                r_pos = child.to_local(*pos)
+                note_index, staff_level = child.pos_to_note(*r_pos)
 
-            self.log_dump(f"Adding note at {note_position}")
+                if note_index is not None:
+                    note_type = constants.score.staff_level_to_note_name[
+                        min(constants.score.staff_level_to_note_name.keys(), key=lambda x: abs(staff_level - x))]
 
-            a, b = self.notes.split("[")  # Fixme: update the function to work with the newer system
-            notes = b.split(" ")
-            notes[note_position] = ("kick" if notes[note_position] == "." else notes[note_position] + ",kick")
+                    self.log_debug(f"Added note of level {staff_level} which is {note_type} at {note_index}")
 
-            self.notes = a + "[" + " ".join(notes)
+                    self.notes[note_index] = ((self.notes[note_index] + [note_type]) if self.notes[note_index] != ["."]
+                                              else [note_type])
+                    self.update()
+
+                    return True
 
 
-        return ScoreContentWithPopup.on_touch_up(self, touch)
+        else:
+            return ScoreContentWithPopup.on_touch_up(self, touch)
 
 
 
@@ -246,6 +251,24 @@ class Bar(RelativeLayout, ClassWithLogger):
 
     def _do_width(self):
         self.width = self._current_dx + (self._current_not_drawn_rests * self.none_music_note_width)
+
+
+    def pos_to_note(self, x, y):
+        dx = constants.graphics.note_head_width * -1
+
+        for note_index, notes in enumerate(self.notes):
+            if notes == ["."]:
+                dx += self.none_music_note_width
+
+            else:
+                dx += constants.graphics.note_width
+
+            if x < dx:
+                return note_index, ((y - (constants.graphics.staff_gap / 2)) / constants.graphics.staff_gap)
+
+        return None, None
+
+
 
 
     @push_name_to_logger_name_stack
@@ -497,14 +520,16 @@ class Bar(RelativeLayout, ClassWithLogger):
                                       f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest")
                         sub_beats_to_skip += 3
                         _sub_beats_to_skip += 3
-                        draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest", dx)
+                        draw_note(self, f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest",
+                                  dx, not_drawn_rests_this_beat)
 
                     elif note_index < len(beat_notes) - 1 and beat_notes[note_index + 1] == ["."]:
                         self.log_dump(f"2 sub beats are rests, drawing "
                                       f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest")
                         sub_beats_to_skip += 1
                         _sub_beats_to_skip += 1
-                        draw_note(f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest", dx)
+                        draw_note(self, f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest",
+                                  dx, not_drawn_rests_this_beat)
 
                     else:
                         self.log_dump(f"1 sub beat is a rests, drawing "
@@ -590,7 +615,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 def draw_note(instance, note_name, x, not_drawn_rests_this_beat):
     note_shape = note_name
 
-    if note_name in ["kick", "snare"]:
+    if note_name in ["kick", "snare", "floor_tom", "middle_tom", "high_tom"]:
         note_shape = "circle"
 
 
