@@ -16,7 +16,7 @@ note_color = [0] * 3
 temp_note_color = [0, 0.8, 0.8]
 temp_note_that_exists_color = [0.7, 0, 0]
 note_stem_width = 10
-note_stem_height = 500
+note_stem_height = 600
 note_head_width = staff_gap * 1.5
 note_flag_dpos = 100, -50
 note_flag_gap = 50
@@ -30,6 +30,7 @@ tooltip_padding = 5
 
 bar_size = 50
 bar_size_hint = None
+bar_start_padding = 100
 
 header_color = ([0.5] * 3)
 side_bar_color = ([0.4] * 3)

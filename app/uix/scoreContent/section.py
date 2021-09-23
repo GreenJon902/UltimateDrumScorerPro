@@ -282,7 +282,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
     def pos_to_note(self, x, y):
-        dx = constants.graphics.note_head_width * -1
+        dx = (constants.graphics.note_head_width * -1) + constants.graphics.bar_start_padding
 
         for note_index, notes in enumerate(self.notes):
             if not notes:
@@ -320,7 +320,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         self.note_canvas.__enter__()
         Color(rgb=constants.graphics.note_color)
 
-
+        dx += constants.graphics.bar_start_padding
         for beat_index, beat_notes in enumerate(all_notes):
             self.log_dump()
             self.log_debug(f"Beat {beat_index + 1} --------------| notes: {beat_notes} |--------------")
