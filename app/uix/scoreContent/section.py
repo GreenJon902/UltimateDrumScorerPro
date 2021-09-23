@@ -58,6 +58,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         notes_per_beat = int(parts[1].split("[")[0])
         notes = [note.split(",") for note in parts[1].split("[")[1].replace("]", "").split(" ")]
 
+        notes = [([] if note == ["."] else note) for note in notes]
+
         self.log_debug(f"Parsed {string} too ts={time_signature} npb={notes_per_beat} notes={notes}")
         return time_signature, notes_per_beat, notes
 
@@ -193,14 +195,13 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
                         self.log_debug(f"Removing note of level {staff_level} which is {note_type} at {note_index}")
 
                         self.notes[note_index].remove(note_type)
-                        if not self.notes[note_index]:
-                            self.notes[note_index] = ["."]
+                        child.update()
 
                     else:
                         self.log_debug(f"Added note of level {staff_level} which is {note_type} at {note_index}")
 
-                        self.notes[note_index] = ((self.notes[note_index] + [note_type]) if self.notes[note_index] != ["."]
-                                                  else [note_type])
+                        self.notes[note_index].append(note_type)
+                        child.update()
                     self.update()
 
                     return True
@@ -284,7 +285,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         dx = constants.graphics.note_head_width * -1
 
         for note_index, notes in enumerate(self.notes):
-            if notes == ["."]:
+            if notes == []:
                 dx += self.none_music_note_width
 
             else:
@@ -305,7 +306,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         _all_notes = self.notes.copy()
         if self.temp_note_index is not None:
             _all_notes[self.temp_note_index] = ((_all_notes[self.temp_note_index] + [self.temp_note_type]) if
-                                                 _all_notes[self.temp_note_index] != ["."] else [self.temp_note_type])
+                                                 _all_notes[self.temp_note_index] != [] else [self.temp_note_type])
         all_notes = [_all_notes[n:n + 4] for n in range(0, len(_all_notes), notes_per_beat)]
         self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
         self.log_dump()
@@ -344,7 +345,7 @@ class Bar(RelativeLayout, ClassWithLogger):
                     sub_beats_to_skip -= 1
 
                 else:
-                    if notes == ["."]:
+                    if not notes:
                         if not did_draw_rest:
                             not_drawn_rests_this_bar += 1
 
@@ -379,7 +380,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
 
-                        if music_notes_draw_this_beat == 0 and all([sub_beat_notes == ["."]  # Flags required
+                        if music_notes_draw_this_beat == 0 and all([sub_beat_notes == []  # Flags required
                                                                     for sub_beat_notes in
                                                                     beat_notes[note_index + 1:len(beat_notes) - 1
                                                                                ]]):
@@ -559,9 +560,9 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
             elif not had_not_rest:
-                if notes == ["."]:
+                if notes == []:
 
-                    if note_index < 1 and all([beat_notes[note_index + n] == ["."]
+                    if note_index < 1 and all([beat_notes[note_index + n] == []
                                                                  for n in range(1, 4)]):
                         self.log_dump(f"All sub beats are rests, drawing "
                                       f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest")
@@ -570,7 +571,7 @@ class Bar(RelativeLayout, ClassWithLogger):
                         draw_note(self, f"{constants.score.duration_to_text_duration[self.notes_per_beat / 4]}_rest",
                                   dx, not_drawn_rests_this_beat)
 
-                    elif note_index < len(beat_notes) - 1 and beat_notes[note_index + 1] == ["."]:
+                    elif note_index < len(beat_notes) - 1 and beat_notes[note_index + 1] == []:
                         self.log_dump(f"2 sub beats are rests, drawing "
                                       f"{constants.score.duration_to_text_duration[self.notes_per_beat / 2]}_rest")
                         sub_beats_to_skip += 1
@@ -599,7 +600,7 @@ class Bar(RelativeLayout, ClassWithLogger):
     @reset_logger_name_stack_for_function
     @push_name_to_logger_name_stack
     def get_stem_y_points(self, notes) -> list[tuple[float, float]]:
-        music_notes = [_notes for _notes in notes if _notes != ["."]]
+        music_notes = [_notes for _notes in notes if _notes != []]
         self.log_dump(f"There are {len(music_notes)} notes, looking for special rule")
 
         # Zero Notes -------------
@@ -718,7 +719,7 @@ def get_note_duration(notes, note_index, notes_per_beat):
 
     i = 1
     for note in notes_after_note_index:
-        if note != ["."]:
+        if note != []:
             break
 
         i += 1
