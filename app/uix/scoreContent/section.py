@@ -124,7 +124,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
                         animation.start(child)
                         child.current_animation_info = (animation, "in")
 
-
+                    child.temp_note_index = None
+                    child.temp_note_type = None
 
 
     @push_name_to_logger_name_stack
@@ -188,10 +189,18 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
                     note_type = constants.score.staff_level_to_note_name[
                         min(constants.score.staff_level_to_note_name.keys(), key=lambda x: abs(staff_level - x))]
 
-                    self.log_debug(f"Added note of level {staff_level} which is {note_type} at {note_index}")
+                    if note_type in self.notes[note_index]:
+                        self.log_debug(f"Removing note of level {staff_level} which is {note_type} at {note_index}")
 
-                    self.notes[note_index] = ((self.notes[note_index] + [note_type]) if self.notes[note_index] != ["."]
-                                              else [note_type])
+                        self.notes[note_index].remove(note_type)
+                        if not self.notes[note_index]:
+                            self.notes[note_index] = ["."]
+
+                    else:
+                        self.log_debug(f"Added note of level {staff_level} which is {note_type} at {note_index}")
+
+                        self.notes[note_index] = ((self.notes[note_index] + [note_type]) if self.notes[note_index] != ["."]
+                                                  else [note_type])
                     self.update()
 
                     return True
@@ -347,9 +356,17 @@ class Bar(RelativeLayout, ClassWithLogger):
                             tmp_note = ((note_index == self.temp_note_index) and (note == self.temp_note_type))
 
                             if tmp_note:
-                                Color(rgb=constants.graphics.temp_note_color)
+                                if self.temp_note_type in self.notes[self.temp_note_index]:
+                                    Color(rgb=constants.graphics.temp_note_that_exists_color)
+
+                                else:
+                                    Color(rgb=constants.graphics.temp_note_color)
 
                             draw_note(self, note, dx, not_drawn_rests_this_bar)
+
+                            if tmp_note:
+                                Color(rgb=constants.graphics.note_color)
+
                             MathLine(self, ["none_music_note_width"],
                                      [f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
                                       f"self.none_music_note_width)",
@@ -358,9 +375,6 @@ class Bar(RelativeLayout, ClassWithLogger):
                                       f"self.none_music_note_width)",
                                       f"{note_stem_y_points[1]}"],
                                      width=constants.graphics.note_stem_width)
-
-                            if tmp_note:
-                                Color(rgb=constants.graphics.note_color)
 
 
 
