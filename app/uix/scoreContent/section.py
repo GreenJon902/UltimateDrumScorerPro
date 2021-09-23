@@ -385,7 +385,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
                         if music_notes_draw_this_beat == 0 and all([sub_beat_notes == []  # Flags required
                                                                     for sub_beat_notes in
-                                                                    beat_notes[note_index + 1:len(beat_notes) - 1
+                                                                    beat_notes[note_index + 1:len(beat_notes)
                                                                                ]]):
                             self.draw_note_flags(note_stem_y_points, note_duration, dx, not_drawn_rests_this_bar)
 
@@ -415,7 +415,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
 
     @push_name_to_logger_name_stack_custom("bars")
-    def draw_note_bars(self, last_note_stem_y_points, last_note_duration, last_dx,  # Fixme: fix flags on bared notes
+    def draw_note_bars(self, last_note_stem_y_points, last_note_duration, last_dx,
                        note_stem_y_points, note_duration, dx, not_drawn_rests_this_beat,
                        last_not_drawn_rests_this_beat):
         self.log_dump(f"Drawing bars with {last_note_stem_y_points} last_note_stem_y_points, {last_note_duration} "
@@ -474,10 +474,8 @@ class Bar(RelativeLayout, ClassWithLogger):
                                 f"self.none_music_note_width)",
                             f"""{last_note_stem_y_points[1] - (flag_index * constants.graphics.note_flag_gap) - 
                                  constants.graphics.note_flag_gap}""",
-                            f"""{dx + constants.graphics.note_head_width - ((dx + constants.graphics.note_head_width -
-                                                                         last_dx + constants.graphics.note_head_width)
-                                                                        / 2)} + ({not_drawn_rests_this_beat} * 
-                                self.none_music_note_width)""",
+                            f"""({dx + constants.graphics.note_head_width - ((dx - last_dx) / 2)} + 
+                                ({not_drawn_rests_this_beat} * self.none_music_note_width))""",
                             f"""{note_stem_y_points[1] - (flag_index * constants.graphics.note_flag_gap) -
                                  ((note_stem_y_points[1] - last_note_stem_y_points[1]) / 2) -
                                  constants.graphics.note_flag_gap}"""],
@@ -505,8 +503,7 @@ class Bar(RelativeLayout, ClassWithLogger):
             for flag_index in range(flag_amount):
                 MathLine(self, ["none_music_note_width"],
                          [f"""{last_dx + constants.graphics.note_head_width +
-                                 ((dx + constants.graphics.note_head_width - last_dx +
-                                  constants.graphics.note_head_width) / 2)} + ({not_drawn_rests_this_beat} * 
+                               ((dx - last_dx) / 2)} + ({not_drawn_rests_this_beat} * 
                                 self.none_music_note_width)""",
                             f"""{last_note_stem_y_points[1] - (flag_index * constants.graphics.note_flag_gap) -
                                  ((last_note_stem_y_points[1] - note_stem_y_points[1]) / 2) -
