@@ -6,7 +6,7 @@ from kivy.animation import Animation, AnimationTransition
 from kivy.atlas import Atlas
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Canvas
+from kivy.graphics import Canvas, Color
 from kivy.input import MotionEvent
 from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty, StringProperty
 from kivy.uix.relativelayout import RelativeLayout
@@ -308,6 +308,7 @@ class Bar(RelativeLayout, ClassWithLogger):
 
         self.note_canvas.clear()
         self.note_canvas.__enter__()
+        Color(rgb=constants.graphics.note_color)
 
 
         for beat_index, beat_notes in enumerate(all_notes):
@@ -343,15 +344,25 @@ class Bar(RelativeLayout, ClassWithLogger):
                         note_stem_y_points = stem_y_points[music_notes_draw_this_beat]
 
                         for note in notes:
+                            tmp_note = ((note_index == self.temp_note_index) and (note == self.temp_note_type))
+
+                            if tmp_note:
+                                Color(rgb=constants.graphics.temp_note_color)
+
                             draw_note(self, note, dx, not_drawn_rests_this_bar)
                             MathLine(self, ["none_music_note_width"],
                                      [f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
-                                            f"self.none_music_note_width)",
-                                        f"{note_stem_y_points[0]}",
-                                        f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
-                                            f"self.none_music_note_width)",
-                                        f"{note_stem_y_points[1]}"],
+                                      f"self.none_music_note_width)",
+                                      f"{note_stem_y_points[0]}",
+                                      f"{dx + constants.graphics.note_head_width} + ({not_drawn_rests_this_bar} * "
+                                      f"self.none_music_note_width)",
+                                      f"{note_stem_y_points[1]}"],
                                      width=constants.graphics.note_stem_width)
+
+                            if tmp_note:
+                                Color(rgb=constants.graphics.note_color)
+
+
 
 
                         if music_notes_draw_this_beat == 0 and all([sub_beat_notes == ["."]  # Flags required

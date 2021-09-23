@@ -12,6 +12,8 @@ staff_height = 500
 staff_gap = staff_height / 4
 
 note_width = 500
+note_color = [0] * 3
+temp_note_color = [0.5, 0.3, 0]
 note_stem_width = 10
 note_stem_height = 500
 note_head_width = staff_gap * 1.5
