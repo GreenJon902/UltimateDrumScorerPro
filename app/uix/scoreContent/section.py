@@ -342,6 +342,9 @@ class Bar(RelativeLayout, ClassWithLogger):
                 note_duration = get_note_duration(beat_notes, note_index, notes_per_beat)
 
                 if sub_beats_to_skip > 0:
+                    if sub_beats_to_skip != 0:
+                        not_drawn_rests_this_bar += 1
+
                     sub_beats_to_skip -= 1
 
                 else:
