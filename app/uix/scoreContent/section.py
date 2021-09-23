@@ -8,7 +8,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Canvas
 from kivy.input import MotionEvent
-from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty
+from kivy.properties import NumericProperty, OptionProperty, ListProperty, ReferenceListProperty, StringProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 import constants
@@ -95,6 +95,19 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
                                               transition=none_music_note_expand_transition)
                         animation.start(child)
                         child.current_animation_info = (animation, "out")
+
+
+                    # Future note place
+                    r_pos = child.to_local(*pos)
+                    note_index, staff_level = child.pos_to_note(*r_pos)
+
+                    if note_index is not None:
+                        note_type = constants.score.staff_level_to_note_name[
+                            min(constants.score.staff_level_to_note_name.keys(), key=lambda x: abs(staff_level - x))]
+
+                        child.temp_note_index = note_index
+                        child.temp_note_type = note_type
+
 
 
                 else:
@@ -200,6 +213,9 @@ class Bar(RelativeLayout, ClassWithLogger):
     notes_per_beat: int = NumericProperty()
     none_music_note_width = NumericProperty(constants.graphics.default_none_music_note_width)
 
+    temp_note_index = NumericProperty(None, allownone=True)
+    temp_note_type = StringProperty(None, allownone=True)
+
     _current_not_drawn_rests: int = NumericProperty()
     _current_dx: int = NumericProperty()
 
@@ -219,6 +235,8 @@ class Bar(RelativeLayout, ClassWithLogger):
         self.do_width = Clock.create_trigger(lambda _elapsed_time: self._do_width())
         self.bind(notes=lambda _instance, _value: self.update(), notes_per_beat=lambda _instance, _value: self.update(),
                   none_music_note_width=lambda _instance, _value: self.do_width(),
+                  temp_note_index=lambda _instance, _value: self.update(),
+                  temp_note_type=lambda _instance, _value: self.update(),
                   _current_not_drawn_rests=lambda _instance, _value: self.do_width(),
                   _current_dx=lambda _instance, _value: self.do_width())
 
@@ -275,7 +293,11 @@ class Bar(RelativeLayout, ClassWithLogger):
     def _update(self):
         notes_per_beat = self.notes_per_beat
 
-        all_notes = [self.notes[n:n + 4] for n in range(0, len(self.notes), notes_per_beat)]
+        _all_notes = self.notes.copy()
+        if self.temp_note_index is not None:
+            _all_notes[self.temp_note_index] = ((_all_notes[self.temp_note_index] + [self.temp_note_type]) if
+                                                 _all_notes[self.temp_note_index] != ["."] else [self.temp_note_type])
+        all_notes = [_all_notes[n:n + 4] for n in range(0, len(_all_notes), notes_per_beat)]
         self.log_debug(f"Got notes_per_beat: {notes_per_beat}, all_notes: {all_notes}")
         self.log_dump()
 
