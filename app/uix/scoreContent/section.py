@@ -164,7 +164,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
         bars_needed = int(bars_needed)
         bars_too_add = bars_needed - len(self.content.children)
-        self.log_debug(f"Adding {bars_too_add} bar widgets too self from {bars_needed} out of {len(self.content.children)}")
+        self.log_debug(f"Adding {bars_too_add} bar widgets too self from {bars_needed} out of "
+                       f"{len(self.content.children)}")
 
 
         for _ in range(bars_too_add):
@@ -327,6 +328,7 @@ class Bar(RelativeLayout, ClassWithLogger):
         dx = 0
         not_drawn_rests_this_bar = 0
         last_not_drawn_rests_this_bar = 0
+        total_note_index = 0
 
 
         self.note_canvas.clear()
@@ -370,8 +372,8 @@ class Bar(RelativeLayout, ClassWithLogger):
                         note_stem_y_points = stem_y_points[music_notes_draw_this_beat]
 
                         for note in notes:
-                            tmp_note = ((note_index == self.temp_note_index) and (note == self.temp_note_type))
-
+                            tmp_note = ((total_note_index == self.temp_note_index) and (note == self.temp_note_type))
+                            print(tmp_note, (total_note_index == self.temp_note_index), (note == self.temp_note_type), total_note_index, self.temp_note_index)
                             if tmp_note:
                                 if self.temp_note_type in self.notes[self.temp_note_index]:
                                     Color(rgb=constants.graphics.temp_note_that_exists_color)
@@ -417,6 +419,7 @@ class Bar(RelativeLayout, ClassWithLogger):
                         last_note_duration = note_duration
 
                         last_not_drawn_rests_this_bar = not_drawn_rests_this_bar
+                total_note_index += 1
 
 
                 self.pop_logger_name()
