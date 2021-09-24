@@ -29,10 +29,13 @@ none_music_note_expand_transition = getattr(AnimationTransition, constants.graph
 class Section(ScoreContentWithPopup, ClassWithLogger):
     notes: list = ListProperty()
     notes_per_beat = NumericProperty()
+    title: str = StringProperty()
 
     time_signature_a: list = NumericProperty()
     time_signature_b: list = NumericProperty()
     time_signature: list = ReferenceListProperty(time_signature_a, time_signature_b)
+
+    content: RelativeLayout
 
     required_mode = "section"
 
@@ -49,6 +52,24 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
 
         self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[. . . . . . . . . . . . . . . ."
                                                                                  "]")
+
+
+    def on_kv_post(self, base_widget):
+        self.content = self.ids["content"]
+
+    def on_title(self, _instance, value):
+        self.ids["title_text"].text = value
+
+    def get_popup_class(self, **kwargs):
+        return AddSectionPopup(**kwargs)
+
+    def popup_submitted(self, instance, data):
+        self.title = data.pop("title", "No Title Given")
+
+        self.update()
+
+    def open_popup_with_pre_values(self):
+        self.popup(title=self.title)
 
 
     def parse_string(self, string):
@@ -73,7 +94,7 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
             pos = self.to_widget(*pos)
 
             child: Bar
-            for child in self.children:
+            for child in self.content.children:
                 animation: Optional[Animation]
 
                 if child.current_animation_info is not None:
@@ -142,41 +163,32 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         assert bars_needed == int(bars_needed)
 
         bars_needed = int(bars_needed)
-        bars_too_add = bars_needed - len(self.children)
-        self.log_debug(f"Adding {bars_too_add} bar widgets too self from {bars_needed} out of {len(self.children)}")
+        bars_too_add = bars_needed - len(self.content.children)
+        self.log_debug(f"Adding {bars_too_add} bar widgets too self from {bars_needed} out of {len(self.content.children)}")
 
 
         for _ in range(bars_too_add):
             b = Bar()
             b.bind(width=self.do_width)
-            self.add_widget(b)
+            self.content.add_widget(b)
 
-        for n, child in enumerate(self.children):
+        for n, child in enumerate(self.content.children):
             notes = self.notes[n * beats_per_bar:(n + 1) * beats_per_bar]
 
             child.notes_per_beat = self.notes_per_beat
             child.notes = notes
             self.log_dump(f"Giving {child} \"{notes}\"")
 
-        self.children[0].bar_start_line_type = "repeat"
-        self.children[-1].bar_end_line_type = "repeat"
+        self.content.children[0].bar_start_line_type = "repeat"
+        self.content.children[-1].bar_end_line_type = "repeat"
 
 
     def do_width(self, _instance, _value):
         width = 0
-        for child in self.children:
+        for child in self.content.children:
             child.x = width
             width += child.width
         self.width = width
-
-
-
-
-    def get_popup_class(self, **kwargs):
-        return AddSectionPopup(**kwargs)
-
-    def popup_submitted(self, instance, data):
-        self.update()
 
 
     def on_touch_up(self, touch: MotionEvent):
@@ -184,7 +196,7 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
             pos = self.to_local(*touch.pos)
 
             child: Bar
-            for child in self.children:
+            for child in self.content.children:
                 r_pos = child.to_local(*pos)
                 note_index, staff_level = child.pos_to_note(*r_pos)
 

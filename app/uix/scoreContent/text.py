@@ -21,6 +21,9 @@ class Text(ScoreContentWithPopup):
 
         self.is_active = True
 
+    def open_popup_with_pre_values(self):
+        self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
+
 
     text: str = StringProperty("Text")
     font_size: float = NumericProperty(10)

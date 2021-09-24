@@ -192,8 +192,42 @@ BoxLayout:
 
 
 <Section>:
-    height: constants.graphics.staff_height
+    height: constants.graphics.section_height
     size_hint_x: None
+
+    BoxLayout:
+        size_hint: 1, 1
+        orientation: "vertical"
+
+        SectionTitle:
+            id: title_text
+
+        Widget:
+            id: spacer
+            height: constants.graphics.section_spacer_height
+
+        RelativeLayout:
+            id: content
+
+
+<SectionTitle@Label>:
+    font_size: constants.graphics.section_title_font_size
+    color: 0, 0, 0
+    bold: True
+
+    size_hint: None, None
+    height: constants.graphics.section_title_height
+    width: self.texture_size[0]
+
+    padding_x: constants.graphics.section_title_padding_x
+
+    canvas:
+        Color:
+            rgb: constants.graphics.section_title_outline_color
+
+        Line:
+            rounded_rectangle: (self.x, self.y, self.width, self.height, 50)
+            width: constants.graphics.section_title_outline_width
 
 
 <Bar>:
@@ -311,7 +345,7 @@ BoxLayout:
                 on_texture_size: self.width = self.texture.size[0]
 
             TextInput:
-                id: name
+                id: title
                 hint_text: "Enter this section's name"
 
 

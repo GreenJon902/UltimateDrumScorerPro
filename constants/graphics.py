@@ -68,3 +68,11 @@ default_none_music_note_width = 0
 expanded_none_music_note_width = note_width
 none_music_note_expand_time = 0.75
 none_music_note_expand_transition = "out_elastic"
+
+section_title_font_size = 200
+section_title_height = 200
+section_spacer_height = 100
+section_height = section_title_height + staff_height + section_spacer_height
+section_title_outline_color = [0] * 3
+section_title_outline_width = 10
+section_title_padding_x = 100

@@ -2,7 +2,6 @@ from kivy.clock import Clock
 from kivy.input import MotionEvent
 
 import constants
-from app import metrics
 from app.uix.scoreContent import ScoreContent
 
 
@@ -26,7 +25,7 @@ class ScoreContentWithPopup(ScoreContent):
                 self.y += tdy
                 # -------------------------------------------
 
-                self.popup(text=self.text, font_size=metrics.PT.to_mm(self.font_size))
+                self.open_popup_with_pre_values()
 
             self.click_current_uid = None
             return True
@@ -40,7 +39,7 @@ class ScoreContentWithPopup(ScoreContent):
         ScoreContent.__init__(self, **kwargs)
 
         if no_popup:
-            Clock.schedule_once(lambda _elapsed_time: self.popup_submitted(self, []), -1)
+            Clock.schedule_once(lambda _elapsed_time: self.popup_submitted(self, {}), -1)
 
         else:
             self.popup()
@@ -73,3 +72,7 @@ class ScoreContentWithPopup(ScoreContent):
 
     def popup_submitted(self, instance, data):
         raise NotImplementedError("No popup_submitted method implemented")
+
+
+    def open_popup_with_pre_values(self):
+        raise NotImplementedError("No popup_with_pre_values method implemented")
