@@ -47,7 +47,8 @@ class Section(ScoreContentWithPopup, ClassWithLogger):
         Window.bind(mouse_pos=self.on_mouse_move)
         GlobalBindings.bind(mode=self.change_mode)
 
-        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("1/4-4[. . . .]")
+        self.time_signature, self.notes_per_beat, self.notes = self.parse_string("4/4-4[. . . . . . . . . . . . . . . ."
+                                                                                 "]")
 
 
     def parse_string(self, string):

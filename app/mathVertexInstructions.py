@@ -9,7 +9,7 @@ class MathLine(Line):
         self.point_strings = points
         self.instance = instance
 
-        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths())
+        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths(), -1)
 
         self.redo_maths()
         Line.__init__(self, **kwargs)
@@ -34,7 +34,7 @@ class MathEllipse(Ellipse):
         self.pos_string = pos
         self.instance = instance
 
-        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths())
+        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths(), -1)
 
         self.redo_maths()
         Ellipse.__init__(self, **kwargs)
@@ -60,7 +60,7 @@ class MathRectangle(Rectangle):
         self.pos_string = pos
         self.instance = instance
 
-        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths())
+        self.redo_maths = Clock.create_trigger(lambda _elapsed_time: self._redo_maths(), -1)
 
         self.redo_maths()
         Rectangle.__init__(self, **kwargs)
