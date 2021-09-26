@@ -193,21 +193,57 @@ BoxLayout:
 
 <Section>:
     height: constants.graphics.section_height
-    size_hint_x: None
+    size_hint: None, None
 
     BoxLayout:
         size_hint: 1, 1
         orientation: "vertical"
 
+        canvas:
+            Color:
+                rgba: 1, 0, 0, 0.1
+
+            Rectangle:
+                pos: 0, 0
+                size: self.size
+
         SectionTitle:
             id: title_text
 
+            canvas:
+                Color:
+                    rgba: 0, 0, 1, 0.5
+
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
         Widget:
             id: spacer
+            size_hint_y: None
             height: constants.graphics.section_spacer_height
+
+            canvas:
+                Color:
+                    rgba: 1, 0, 0, 0.5
+
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
         RelativeLayout:
             id: content
+            size_hint_y: None
+            height: constants.graphics.staff_height + (constants.graphics.staff_y_padding * 2)
+
+            canvas:
+                Color:
+                    rgba: 0, 1, 0, 0.5
+
+                Rectangle:
+                    pos: 0, 0
+                    size: self.size
+
 
 
 <SectionTitle@Label>:
@@ -231,11 +267,16 @@ BoxLayout:
 
 
 <Bar>:
-    height: constants.graphics.staff_height
+    height: constants.graphics.staff_height + (constants.graphics.staff_y_padding * 2)
     size_hint_x: None
 
     bar_start_line_type: constants.graphics.default_bar_start_line_type
     bar_end_line_type: constants.graphics.default_bar_start_line_type
+
+    canvas.before:
+        PushMatrix
+        Translate:
+            y: constants.graphics.staff_y_padding
 
     canvas:
         Color:
@@ -272,7 +313,8 @@ BoxLayout:
             width: self._bar_end_line_width
             cap: "none"
 
-
+    canvas.after:
+        PopMatrix
 
 
 # Popups

@@ -49,6 +49,7 @@ staff_height = 500
 staff_gap = staff_height / 4
 staff_color = ([0] * 3)
 staff_line_width = 5
+staff_y_padding = staff_gap
 
 bar_edge_line_width = staff_line_width
 bar_edge_repeat_line_width = 30
@@ -72,7 +73,7 @@ none_music_note_expand_transition = "out_elastic"
 section_title_font_size = 200
 section_title_height = 200
 section_spacer_height = 100
-section_height = section_title_height + staff_height + section_spacer_height
+section_height = section_title_height + staff_height + section_spacer_height + (staff_y_padding * 2)
 section_title_outline_color = [0] * 3
 section_title_outline_width = 10
 section_title_padding_x = 100
