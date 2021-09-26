@@ -20,6 +20,12 @@ BoxLayout:
                 pos: self.pos
                 size: self.size
 
+
+        SquareHoverButtonH:
+            name: "save_pdf"
+            on_press: GlobalBindings.dispatch("save_as_pdf", self)
+
+
         Widget: # Spacer
 
 
