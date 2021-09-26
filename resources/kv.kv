@@ -199,50 +199,21 @@ BoxLayout:
         size_hint: 1, 1
         orientation: "vertical"
 
-        canvas:
-            Color:
-                rgba: 1, 0, 0, 0.1
-
-            Rectangle:
-                pos: 0, 0
-                size: self.size
-
         SectionTitle:
             id: title_text
 
-            canvas:
-                Color:
-                    rgba: 0, 0, 1, 0.5
-
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
 
         Widget:
             id: spacer
             size_hint_y: None
             height: constants.graphics.section_spacer_height
 
-            canvas:
-                Color:
-                    rgba: 1, 0, 0, 0.5
-
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
 
         RelativeLayout:
             id: content
             size_hint_y: None
             height: constants.graphics.staff_height + (constants.graphics.staff_y_padding * 2)
 
-            canvas:
-                Color:
-                    rgba: 0, 1, 0, 0.5
-
-                Rectangle:
-                    pos: 0, 0
-                    size: self.size
 
 
 
