@@ -1,8 +1,9 @@
-from betterLogger import ClassWithLogger, push_name_to_logger_name_stack_custom
+from betterLogger import ClassWithLogger
 
 from UI.root import Root
 
 logger = ClassWithLogger("UI")
+root: Root
 
 
 def registerWidgets():
@@ -12,11 +13,16 @@ def registerWidgets():
     logger.pop_logger_name()
 
 
-def start():
+def prepare():
+    global root
+
     registerWidgets()
 
     root = Root()
-    logger.log_dump("Root instance created, running...")
+    logger.log_dump("Root instance created")
+
+
+def start():
     root.run()
 
 

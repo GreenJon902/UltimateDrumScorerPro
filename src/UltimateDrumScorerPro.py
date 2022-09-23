@@ -1,4 +1,4 @@
-def startup():
+def prepare():
     print("Starting...")
     import os
     import sys
@@ -34,9 +34,14 @@ def startup():
 
     base_logger.log_info("Starting...")
     import UI
-    UI.start()
+    UI.prepare()
     base_logger.log_info("Finished!")
 
 
+def run():
+    pass
+
+
 if __name__ == "__main__":
-    startup()
+    prepare()
+    run()
