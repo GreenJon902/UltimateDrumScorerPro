@@ -6,8 +6,8 @@ if typing.TYPE_CHECKING:
     from noteTree.note import Note
 
 
-class Subdivision:
-    parts: list[Union[Note, Subdivision]]
+class MultipleNotes:
+    parts: list[Union[Note, MultipleNotes]]
 
     def __init__(self, parts):
         self.parts = parts
