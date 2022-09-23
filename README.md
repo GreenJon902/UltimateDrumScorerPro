@@ -1,5 +1,12 @@
 # UltimateDrumScorerPro
 
+## Controls
+| Key    | Specification       | Result                      |
+|--------|---------------------|-----------------------------|
+| Scroll |                     | Zoom                        |
+| Drag   | On Background       | Moves the page              |
+| Drag   | On piece of content | Moves that piece of content |
+
 ## Note drawing
 Eventually there will be multiple methods that you can choose from! At the moment only the official note drawing rules
 are being created.
