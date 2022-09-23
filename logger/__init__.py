@@ -117,7 +117,5 @@ def push_name_to_logger_name_stack_custom(name: str):
     return decorator
 
 
-default_log_level = logging.INFO
-
 __all__ = ["get_logger", "ClassWithLogger", "push_name_to_logger_name_stack", "reset_logger_name_stack_for_function",
-           "push_name_to_logger_name_stack_custom", "default_log_level"]
+           "push_name_to_logger_name_stack_custom"]
