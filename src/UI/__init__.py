@@ -1,4 +1,5 @@
 from betterLogger import ClassWithLogger
+from kivy.cache import Cache
 
 from UI.root import Root
 
@@ -17,6 +18,8 @@ def prepare():
     global root
 
     registerWidgets()
+
+    Cache.register("UI.score.notation.timeSignature")
 
     root = Root()
     logger.log_dump("Root instance created")
