@@ -33,6 +33,8 @@ def prepare():
     # ==================================================================================================================
 
     base_logger.log_info("Starting...")
+    import notationSymbols
+    notationSymbols.prepare()
     import UI
     UI.prepare()
     base_logger.log_info("Finished!")
