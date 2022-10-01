@@ -7,7 +7,6 @@ from kivy.graphics import *
 from kivy.core.text import Label as CoreLabel
 from kivy.graphics.texture import Texture
 
-from notationSymbols.quarterRest import QuarterRest
 
 if typing.TYPE_CHECKING:
     from notationTree import Bar
@@ -62,7 +61,6 @@ def renderLine(notes: list[Bar], config: NotationRendererConfig) -> Canvas:
 
                 if beat is None:
                     logger.log_debug("Beat has no contents, rendering quarter rest")
-
                     x_offset += config.restConfig.bufferSpace.before
 
                     PushMatrix()
@@ -73,6 +71,17 @@ def renderLine(notes: list[Bar], config: NotationRendererConfig) -> Canvas:
                     x_offset += config.restConfig.bufferSpace.after
 
 
+                else:
+                    beat_contents = beat.flatten()
+
+                    x_offset += config.beatConfig.bufferSpace.before
+                    PushMatrix()
+                    Translate(x_offset, 0)
+                    x_offset += drawBeatContents(beat_contents, config)
+                    PopMatrix()
+                    x_offset += config.beatConfig.bufferSpace.after
+
+
                 beatNumber += 1
                 logger.log_dump(f"Rendered beat!")
                 logger.pop_logger_name()
@@ -80,18 +89,40 @@ def renderLine(notes: list[Bar], config: NotationRendererConfig) -> Canvas:
             logger.log_dump(f"Rendered bar")
             logger.pop_logger_name()
 
-
+        for i in range(5):
+            y = i * config.barConfig.staffSpacing - config.barConfig.staffSpacing * 2
+            Line(points=(0, y, x_offset, y))
 
     return canvas
 
 
 
+def drawBeatContents(beat_contents, config):
+    x_offset = 0
+
+    for notes_index, (notes_depth, note_names) in enumerate(beat_contents):
+        logger.log_dump(f"Rendering sub-beat {notes_index} - notes_depth={notes_depth}, "
+                        f"notes={note_names}")
+        for note_name in note_names:
+            x_offset += drawNoteHead(note_name, config)
+
+    return x_offset
+
+
+
+def drawNoteHead(note_name, config):
+    if note_name in config.noteHeadConfig.round_heads:
+        Ellipse(pos=(0, config.barConfig.staffSpacing * (config.noteHeadConfig.noteHeadLevel[note_name] - 1) -
+                     config.barConfig.staffSpacing * 2),
+                size=(config.noteHeadConfig.roundNoteHead.width, config.noteHeadConfig.roundNoteHead.height))
+        return config.noteHeadConfig.roundNoteHead.width
+
+
 def drawQuarterRest(config):
-    Scale(config.restConfig.quarterRestHeight, config.restConfig.quarterRestHeight, 1)
-    for instruction in QuarterRest.getInstructions():
-        instruction()
-    print(QuarterRest.widthIfHeightIs(config.restConfig.quarterRestHeight))
-    return QuarterRest.widthIfHeightIs(config.restConfig.quarterRestHeight)
+    Rectangle(pos=(0, -config.restConfig.quarterRestHeight/2),
+              size=(204/584 * config.restConfig.quarterRestHeight, config.restConfig.quarterRestHeight),
+              source="resources/quarterRest.png")
+    return 204/584 * config.restConfig.quarterRestHeight
 
 
 def drawTimeSignature(measureLength, subdivisionQuantifier, config):

@@ -12,12 +12,26 @@ class MultipleNotes:
     def __init__(self, parts):
         self.parts = parts
 
+    def flatten(self):  # First part of flattening
+        flattened = list()
 
-class Note:
+        my_depth = len(self.parts)
+        for part in self.parts:
+            for part_flattened_part in part.flatten():
+                flattened.append((part_flattened_part[0] * my_depth, part_flattened_part[1]))
+
+        return flattened
+
+
+
+class Notes:
     names: list[str]
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, *names):
+        self.names = list(names)
+
+    def flatten(self):
+        return [(1, self.names)]
 
 
 class Bar:
@@ -52,6 +66,6 @@ class Bar:
 
 
 
-noteTree = Union[MultipleNotes, Note]
+noteTree = Union[MultipleNotes, Notes]
 
-__all__ = ["noteTree", "Note", "MultipleNotes", "Bar"]
+__all__ = ["noteTree", "Notes", "MultipleNotes", "Bar"]

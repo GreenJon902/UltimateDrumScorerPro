@@ -2,12 +2,14 @@ from betterLogger import ClassWithLogger
 from kivy.app import App
 from kivy.graphics import Rectangle, Color
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.scatterlayout import ScatterLayout
+from kivy.uix.scatterlayout import *
 from kivy.lang.builder import Builder
 
 import UltimateDrumScorerPro
 from UI.scoreElements.notationElement.notationElement import NotationElement
-from notationTree import Bar
+from UI.scoreElements.notationElement.notationRenderer import drawBeatContents
+from config.notationConfig import NotationRendererConfig
+from notationTree import Bar, Notes, MultipleNotes
 
 
 class Root(ClassWithLogger, App):
@@ -26,9 +28,10 @@ class Root(ClassWithLogger, App):
 
             root.bind(size=update)
 
-        scatterLayout = ScatterLayout()
+        scatterLayout = ScatterPlaneLayout()
         root.add_widget(scatterLayout)
-        scatterLayout.add_widget(NotationElement([Bar.empty(4, 4)]))
+        with scatterLayout.canvas:
+            drawBeatContents(MultipleNotes([Notes("kick"), Notes("snare")]).flatten(), NotationRendererConfig())
         return root
 
 

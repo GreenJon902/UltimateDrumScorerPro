@@ -10,7 +10,7 @@ class BufferSpace:
 class RestConfig:
     quarterRestHeight = 50
 
-    bufferSpace: BufferSpace = BufferSpace(after=5)
+    bufferSpace: BufferSpace = BufferSpace(after=20)
 
 
 class TimeSignatureConfig:
@@ -24,14 +24,31 @@ class TimeSignatureConfig:
 
 
 class BarConfig:
-    pass
+    staffSpacing = 10
 
+
+class RoundNoteHeadConfig:
+    color = (0, 0, 0, 1)
+    width = 15
+    height = 10
+
+
+class NoteHeadConfig:
+    roundNoteHead: RoundNoteHeadConfig = RoundNoteHeadConfig()
+    round_heads = ["kick", "snare"]
+    noteHeadLevel = {"kick": 1, "snare": 3}
+
+
+class BeatConfig:
+    bufferSpace: BufferSpace = BufferSpace(after=10)
 
 
 class NotationRendererConfig:
     restConfig: RestConfig = RestConfig()
     barConfig: BarConfig = BarConfig()
     timeSignatureConfig: TimeSignatureConfig = TimeSignatureConfig()
+    noteHeadConfig: NoteHeadConfig = NoteHeadConfig()
+    beatConfig: BeatConfig = BeatConfig()
 
 
 
