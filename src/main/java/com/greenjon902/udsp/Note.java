@@ -1,10 +1,10 @@
 package com.greenjon902.udsp;
 
-public class ScoreComponent {
+public class Note {
     public int depth;
     public int[] noteIds;
 
-    public ScoreComponent(int depth, int[] noteIds) {
+    public Note(int depth, int[] noteIds) {
         this.depth = depth;
         this.noteIds = noteIds;
     }
