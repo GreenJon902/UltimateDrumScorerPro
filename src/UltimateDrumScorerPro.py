@@ -1,4 +1,14 @@
-def prepare():
+from betterLogger import ClassWithLogger
+from kivy.app import App
+from kivy.graphics import Color, Rectangle
+from kivy.lang import Builder
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.widget import Widget
+
+from src.noteSelector import NoteSelector
+
+
+def run():
     print("Starting...")
     import os
     import sys
@@ -33,17 +43,28 @@ def prepare():
     # ==================================================================================================================
 
     base_logger.log_info("Starting...")
-    import notationSymbols
-    notationSymbols.prepare()
-    import UI
-    UI.prepare()
+    root = Root()
+    root.run()
     base_logger.log_info("Finished!")
 
 
-def run():
-    pass
+class Root(ClassWithLogger, App):
+    def __init__(self):
+        ClassWithLogger.__init__(self, name="UI.RootWidget")
+        App.__init__(self)
+
+    def build(self):
+        layout = FloatLayout()
+        with layout.canvas.before:
+            Color(rgb=(1, 1, 1))
+            r = Rectangle(pos=(0, 0), size=layout.size)
+            layout.bind(size=lambda _, x: setattr(r, "size", x))
+
+        layout.add_widget(NoteSelector(pos=(100, 100)))
+
+        return layout
+
 
 
 if __name__ == "__main__":
-    prepare()
     run()
