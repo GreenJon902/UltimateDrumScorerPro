@@ -2,8 +2,8 @@ import math
 
 from betterLogger import ClassWithLogger
 from kivy import metrics
-from kivy.graphics import Line, PushMatrix, Scale, PopMatrix, Ellipse, Rotate
-from kivy.properties import StringProperty
+from kivy.graphics import Line, PushMatrix, Scale, PopMatrix, Ellipse, Rotate, Color
+from kivy.properties import StringProperty, ColorProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
@@ -15,9 +15,12 @@ class Symbol(RelativeLayout, ClassWithLogger):
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
+        self.size = size
+        self.size_hint = None, None
+
         with self.canvas:
             if name == "tilted_line":
-                Line(points=(0, 0, -size[0], -size[1]), width=Config.line_thickness)
+                Line(points=(0, 0, -size[0], -size[1]/2), width=Config.line_thickness)
 
             elif name == "oval_with_tilted_line":
                 Line(ellipse=(-size[0], -size[1]/2, size[0], size[1]), width=Config.line_thickness)
@@ -41,3 +44,6 @@ class Symbol(RelativeLayout, ClassWithLogger):
 
             else:
                 self.log_error(f"No symbol called \"{name}\"")
+
+    def get_absolute_center(self):
+        return self.to_window(-self.width/2, 0, initial=False)

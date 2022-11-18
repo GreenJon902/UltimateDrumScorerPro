@@ -60,7 +60,7 @@ class Root(ClassWithLogger, App):
             r = Rectangle(pos=(0, 0), size=layout.size)
             layout.bind(size=lambda _, x: setattr(r, "size", x))
 
-        layout.add_widget(NoteSelector(pos=(100, 100)))
+        layout.add_widget(NoteSelector(pos=(100, 100), committed_notes=[1, 2]))
 
         return layout
 
