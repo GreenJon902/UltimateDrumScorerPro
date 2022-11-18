@@ -32,7 +32,7 @@ class Config:
 
     line_thickness: int = metrics.cm(0.05)
     note_selector_transparency = 0.3
-    note_selector_hover_transparency = 0.5
+    note_selector_hover_transparency = 0.7
     note_selector_distance = metrics.cm(0.5)
 
 

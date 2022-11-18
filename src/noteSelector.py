@@ -38,13 +38,18 @@ class NoteSelector(RelativeLayout):
                     color.a = Config.note_selector_transparency
                 symbol.color = color
             self.add_widget(symbol)
-            print(symbol.pos, symbol.size)
             Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
 
             with self.canvas:
                 PopMatrix()
 
-    def mouse_move(self, pos):
+    def get_closest_to_pos(self, pos):
+        """
+        Get the closest symbol to the coordinates provided.
+
+        :return: The symbol widget object, the distance away from the coords, the note id (the index)
+        """
+
         distances = list()
 
         for symbol in self.children:
@@ -59,6 +64,10 @@ class NoteSelector(RelativeLayout):
         index = distances.index(distance)
         symbol = self.children[index]
 
+        return symbol, distance, index
+
+    def mouse_move(self, pos):
+        symbol, distance, index = self.get_closest_to_pos(pos)
 
         if distance <= Config.note_selector_distance:
             if self.current_hover != index and self.current_hover is not None:
@@ -73,3 +82,13 @@ class NoteSelector(RelativeLayout):
             if self.current_hover is not None:
                 symbol.color.a = 1 if (index in self.committed_notes) else Config.note_selector_transparency
             self.current_hover = None
+
+    def on_touch_up(self, touch):
+        symbol, distance, index = self.get_closest_to_pos((touch.x, touch.y))
+        if distance <= Config.note_selector_distance:
+            if index in self.committed_notes:
+                self.committed_notes.remove(index)
+            else:
+                self.committed_notes.append(index)
+            symbol.color.a = Config.note_selector_hover_transparency  # The mouse is over and this is the color it
+                                                                      # should if it's going to be removed or added
