@@ -20,10 +20,10 @@ class NotePainElement(EventDispatcher):
 
 class Config:
     notePains: list[list[NotePainElement]] = [[
-        NotePainElement(pos=("0cm", "0.4cm"), size=("0.5cm", "0.4cm"), color=(0, 0, 0), symbol="oval_with_tilted_line"),  # Tom 1
-        NotePainElement(pos=("0cm", "0cm"), size=("0.5cm", "0.5cm"), color=(0, 0, 0), symbol="tilted_line"),  # Snare
-        NotePainElement(pos=("0cm", "-0.5cm"), size=("0.5cm", "0.4cm"), color=(0, 0, 0), symbol="oval_with_tilted_line"),  # Tom 2
-        NotePainElement(pos=("0cm", "-0.9cm"), size=("0.5cm", "0.4cm"), color=(0, 0, 0), symbol="oval_with_tilted_line"), # Tom 3
+        NotePainElement(pos=("0cm", "0.4cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 1
+        NotePainElement(pos=("0cm", "0cm"), size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
+        NotePainElement(pos=("0cm", "-0.5cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 2
+        NotePainElement(pos=("0cm", "-0.9cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 3
 
 
 
@@ -31,9 +31,12 @@ class Config:
     currentNotePain = 0
 
     line_thickness: int = metrics.cm(0.05)
-    note_selector_transparency = 0.3
-    note_selector_hover_transparency = 0.7
+    note_selector_uncommitted_color = (0, 0, 0, 0.3)
+    note_selector_uncommitted_hover_color = (0.5, 0.5, 1, 1)
+    note_selector_committed_hover_color = (1, 0.5, 0.5, 1)
     note_selector_distance = metrics.cm(0.5)
+
+    note_color = (0, 0, 0, 1)
 
 
 __all__ = ["Config"]

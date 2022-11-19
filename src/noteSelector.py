@@ -31,11 +31,8 @@ class NoteSelector(RelativeLayout):
                 PushMatrix()
                 symbol.pos = noteInfo.pos
 
-                color = Color(*noteInfo.color)
-                if n in self.committed_notes:
-                    color.a = 1
-                else:
-                    color.a = Config.note_selector_transparency
+                color = Color(rgba=(Config.note_color if n in self.committed_notes else
+                              Config.note_selector_uncommitted_color))
                 symbol.color = color
             self.add_widget(symbol)
             Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
@@ -71,16 +68,20 @@ class NoteSelector(RelativeLayout):
 
         if distance <= Config.note_selector_distance:
             if self.current_hover != index and self.current_hover is not None:
-                self.children[self.current_hover].color.a = 1 if (self.current_hover in self.committed_notes) else \
-                    Config.note_selector_transparency
+                self.children[self.current_hover].color.rgba = Config.note_color \
+                    if (self.current_hover in self.committed_notes) else \
+                    Config.note_selector_uncommitted_color
 
-            symbol.color.a = Config.note_selector_hover_transparency
+            symbol.color.rgba = Config.note_selector_committed_hover_color \
+                if (self.current_hover in self.committed_notes) else \
+                Config.note_selector_uncommitted_hover_color
             self.current_hover = index
 
         elif distance > Config.note_selector_distance:
-            symbol.color.a = symbol.color.a  # For some reason it breaks without this
+            symbol.color.rgba = symbol.color.rgba  # For some reason it breaks without this
             if self.current_hover is not None:
-                symbol.color.a = 1 if (index in self.committed_notes) else Config.note_selector_transparency
+                symbol.color.rgba = Config.note_color if (index in self.committed_notes) else \
+                    Config.note_selector_uncommitted_color
             self.current_hover = None
 
     def on_touch_up(self, touch):
@@ -88,7 +89,7 @@ class NoteSelector(RelativeLayout):
         if distance <= Config.note_selector_distance:
             if index in self.committed_notes:
                 self.committed_notes.remove(index)
+                symbol.color.rgba = Config.note_selector_uncommitted_hover_color
             else:
                 self.committed_notes.append(index)
-            symbol.color.a = Config.note_selector_hover_transparency  # The mouse is over and this is the color it
-                                                                      # should if it's going to be removed or added
+                symbol.color.rgba = Config.note_selector_committed_hover_color
