@@ -39,13 +39,13 @@ class Notes(RelativeLayout):
 
         for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
-            symbol.y = noteInfo.y
+            symbol.y = noteInfo.y + Config.beat_bottom_buffer
 
             if symbol.y in taken_y_levels.keys():
-                symbol.expanded_x = taken_y_levels[symbol.y]
+                symbol.expanded_x = taken_y_levels[symbol.y] + Config.beat_x_buffer
                 taken_y_levels[symbol.y] += noteInfo.width + Config.note_selector_x_space
             else:
-                symbol.expanded_x = 0
+                symbol.expanded_x = Config.beat_x_buffer
                 taken_y_levels[symbol.y] = noteInfo.width + Config.note_selector_x_space
 
             symbol.bind(pos=lambda _, __: self.calculate_size(), size=lambda _, __: self.calculate_size())
@@ -66,11 +66,10 @@ class Notes(RelativeLayout):
 
             widths[index] = symbol.x + symbol.width
 
-        self.width = max(widths.values())
-        self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top
+        self.width = max(widths.values()) + Config.beat_x_buffer * 2
+        self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top + \
+            Config.beat_bottom_buffer + Config.beat_top_buffer
 
-    def on_width(self, _, width):
-        self.parent.translate.x = 0#-width
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
         for index in self.symbols.keys():
@@ -82,9 +81,12 @@ class Notes(RelativeLayout):
                               duration=animation_duration)
                 a.start(symbol)
             else:
-                a = Animation(x=0, transparency=(1 if index in self.committed_notes else 0),
+                a = Animation(x=Config.beat_x_buffer, transparency=(1 if index in self.committed_notes else 0),
                               duration=animation_duration)
                 a.start(symbol)
+                a = Animation(r=0, g=0, b=0,
+                              duration=animation_duration)
+                a.start(symbol.color)
 
 
     def get_closest_to_pos(self, pos):

@@ -44,9 +44,11 @@ class Config:
 
     note_color = (0, 0, 0, 1)
 
-    default_section_beat_count = 4
-    section_spacing = metrics.cm(1)
-    focus_speed = 0.1
+    default_section_beat_count = 8
+    beat_x_buffer = metrics.cm(0.25)
+    beat_bottom_buffer = metrics.cm(1)
+    beat_top_buffer = metrics.cm(0)
+    focus_speed = 0.25
     note_commit_speed = 0.1
     note_hover_color_fade_speed = 0.1
 
