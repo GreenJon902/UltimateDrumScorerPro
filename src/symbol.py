@@ -3,7 +3,7 @@ import math
 from betterLogger import ClassWithLogger
 from kivy import metrics
 from kivy.graphics import Line, PushMatrix, Scale, PopMatrix, Ellipse, Rotate, Color, Mesh, Triangle
-from kivy.properties import StringProperty, ColorProperty
+from kivy.properties import StringProperty, ColorProperty, NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
@@ -11,6 +11,8 @@ from config.config import Config
 
 
 class Symbol(RelativeLayout, ClassWithLogger):
+    transparency: int = NumericProperty(defaultvalue=1)
+
     def __init__(self, name, size, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
@@ -19,6 +21,8 @@ class Symbol(RelativeLayout, ClassWithLogger):
         self.size_hint = None, None
 
         with self.canvas:
+            self.color = Color(rgb=(0, 0, 0), a=self.transparency)
+
             if name == "tilted_line":
                 Line(points=(0, 0, -size[0], -size[1]/2), width=Config.line_thickness)
 
@@ -102,3 +106,7 @@ class Symbol(RelativeLayout, ClassWithLogger):
 
     def get_absolute_center(self):
         return self.to_window(-self.width/2, 0, initial=False)
+
+
+    def on_transparency(self, _, a):
+        self.color.a = a

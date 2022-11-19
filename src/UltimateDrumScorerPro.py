@@ -2,10 +2,12 @@ from betterLogger import ClassWithLogger
 from kivy.app import App
 from kivy.graphics import Color, Rectangle
 from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 
-from src.noteSelector import NoteSelector
+from section import Section
+from src.notes import Notes
 
 
 def run():
@@ -54,13 +56,11 @@ class Root(ClassWithLogger, App):
         App.__init__(self)
 
     def build(self):
-        layout = FloatLayout()
+        layout = Section(pos=(100, 100))
         with layout.canvas.before:
             Color(rgb=(1, 1, 1))
             r = Rectangle(pos=(0, 0), size=layout.size)
             layout.bind(size=lambda _, x: setattr(r, "size", x))
-
-        layout.add_widget(NoteSelector(pos=(100, 100), committed_notes=[1, 2]))
 
         return layout
 
