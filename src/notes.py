@@ -71,6 +71,9 @@ class Notes(RelativeLayout):
 
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
+        taken_lines: list[float] = []  # Whether a line already has something on it and then other piece needs to be
+                                       # on the other side. Only used when not focused
+
         for index in self.symbols.keys():
             symbol = self.symbols[index]
 
@@ -79,13 +82,21 @@ class Notes(RelativeLayout):
                                                                  Config.note_selector_uncommitted_transparency),
                               duration=animation_duration)
                 a.start(symbol)
+
             else:
-                a = Animation(x=Config.beat_x_buffer, transparency=(1 if index in self.committed_notes else 0),
+                x = Config.beat_x_buffer
+                if self.symbols[index].y in taken_lines and index in self.committed_notes:
+                    x += self.symbols[index].width
+
+                a = Animation(x=x, transparency=(1 if index in self.committed_notes else 0),
                               duration=animation_duration)
                 a.start(symbol)
                 a = Animation(r=0, g=0, b=0,
                               duration=animation_duration)
                 a.start(symbol.color)
+
+                if index in self.committed_notes:
+                    taken_lines.append(self.symbols[index].y)
 
 
     def get_closest_to_pos(self, pos):
@@ -143,7 +154,14 @@ class Notes(RelativeLayout):
                 if index in self.committed_notes:
                     self.committed_notes.remove(index)
                 else:
-                    self.committed_notes.append(index)
+                    amount = 0  # There can only be 2 per line
+                    for i in self.committed_notes:
+                        if self.symbols[i].y == symbol.y:
+                            amount += 1
+                    if amount < 2:
+
+                        self.committed_notes.append(index)
+
 
                 a = Animation(transparency=(1 if index in self.committed_notes else
                                             Config.note_selector_uncommitted_transparency),

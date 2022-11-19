@@ -45,7 +45,7 @@ class Config:
     note_color = (0, 0, 0, 1)
 
     default_section_beat_count = 8
-    beat_x_buffer = metrics.cm(0.25)
+    beat_x_buffer = metrics.cm(0.25)  # At least 2x the width of a note incase there is 2 on the same line
     beat_bottom_buffer = metrics.cm(1)
     beat_top_buffer = metrics.cm(0)
     focus_speed = 0.25

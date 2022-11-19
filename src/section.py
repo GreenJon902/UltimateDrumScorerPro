@@ -15,7 +15,7 @@ class Section(BoxLayout):
             self.translate = Translate()
 
         for i in range(Config.default_section_beat_count):
-            self.add_widget(Notes(committed_notes=[1]))
+            self.add_widget(Notes())
 
         with self.canvas.after:
             PopMatrix()
