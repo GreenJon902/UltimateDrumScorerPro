@@ -19,15 +19,14 @@ class NotePainElement(EventDispatcher):
 
 
 class Config:
-    notePains: list[list[NotePainElement]] = [[
+    noteSelectorInfo: list[NotePainElement] = [
         NotePainElement(pos=("0cm", "0.4cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 1
-        NotePainElement(pos=("0cm", "0cm"), size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
+        NotePainElement(pos=("0.25cm", "0cm"), size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
+        NotePainElement(pos=("-0.25cm", "0cm"), size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
         NotePainElement(pos=("0cm", "-0.5cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 2
         NotePainElement(pos=("0cm", "-0.9cm"), size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 3
-
-
-
-    ]]
+        NotePainElement(pos=("0cm", "-1.2cm"), size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Kick
+    ]
     currentNotePain = 0
 
     line_thickness: int = metrics.cm(0.05)
