@@ -25,8 +25,8 @@ class Config:
         NoteInfo(y="2.4cm", size=("0.5cm", "0.5cm"), symbol="rotated_square"),  # Ride
         NoteInfo(y="2.4cm", size=("0.5cm", "0.5cm"), symbol="hollow_rotated_square"),  # Ride Bell
         NoteInfo(y="1.8cm", size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 1
-        NoteInfo(y="1.5cm", size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
         NoteInfo(y="1.5cm", size=("0.5cm", "0.5cm"), symbol="tilted_line_with_arc"),  # Flam Snare
+        NoteInfo(y="1.5cm", size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Snare
         NoteInfo(y="0.9cm", size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 2
         NoteInfo(y="0.5cm", size=("0.5cm", "0.4cm"), symbol="oval_with_tilted_line"),  # Tom 3
         NoteInfo(y="0cm", size=("0.5cm", "0.5cm"), symbol="tilted_line"),  # Kick

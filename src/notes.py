@@ -69,6 +69,9 @@ class Notes(RelativeLayout):
         self.width = max(widths.values())
         self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top
 
+    def on_width(self, _, width):
+        self.parent.translate.x = 0#-width
+
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
         for index in self.symbols.keys():
             symbol = self.symbols[index]

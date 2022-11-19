@@ -1,4 +1,4 @@
-
+from kivy.graphics import Translate, PushMatrix, PopMatrix
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 
@@ -10,7 +10,13 @@ class Section(BoxLayout):
     def __init__(self, **kwargs):
         BoxLayout.__init__(self, **kwargs)
 
-        self.spacing = Config.section_spacing
+        with self.canvas.before:
+            PushMatrix()
+            self.translate = Translate()
 
+        self.spacing = Config.section_spacing
         for i in range(Config.default_section_beat_count):
             self.add_widget(Notes(committed_notes=[4, 7]))
+
+        with self.canvas.after:
+            PopMatrix()

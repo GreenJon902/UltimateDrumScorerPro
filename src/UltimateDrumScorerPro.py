@@ -56,13 +56,15 @@ class Root(ClassWithLogger, App):
         App.__init__(self)
 
     def build(self):
-        layout = Section(pos=(100, 100))
-        with layout.canvas.before:
+        container = BoxLayout(pos=(100, 100))
+        layout = Section()
+        container.add_widget(layout)
+        with container.canvas.before:
             Color(rgb=(1, 1, 1))
-            r = Rectangle(pos=(0, 0), size=layout.size)
-            layout.bind(size=lambda _, x: setattr(r, "size", x))
+            r = Rectangle(pos=(0, 0), size=container.size)
+            container.bind(size=lambda _, x: setattr(r, "size", x))
 
-        return layout
+        return container
 
 
 
