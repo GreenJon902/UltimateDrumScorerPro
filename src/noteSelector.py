@@ -24,13 +24,20 @@ class NoteSelector(RelativeLayout):
 
     def update_note_pain(self):
         self.clear_widgets()
+        taken_y_levels: dict[float, int] = {}
 
-        for n, noteInfo in enumerate(Config.noteSelectorInfo):
+        for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
+            symbol.y = noteInfo.y
+
+            if symbol.y in taken_y_levels.keys():
+                symbol.x = taken_y_levels[symbol.y]
+                taken_y_levels[symbol.y] += noteInfo.width + Config.note_selector_x_space
+            else:
+                taken_y_levels[symbol.y] = noteInfo.width + Config.note_selector_x_space
 
             with self.canvas:
                 PushMatrix()
-                symbol.pos = noteInfo.pos
 
                 color = Color(rgba=(Config.note_color if n in self.committed_notes else
                               Config.note_selector_uncommitted_color))
