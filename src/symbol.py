@@ -1,11 +1,9 @@
 import math
 
 from betterLogger import ClassWithLogger
-from kivy import metrics
-from kivy.graphics import Line, PushMatrix, Scale, PopMatrix, Ellipse, Rotate, Color, Mesh, Triangle
-from kivy.properties import StringProperty, ColorProperty, NumericProperty
+from kivy.graphics import Line, Color, Triangle
+from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.uix.widget import Widget
 
 from config.config import Config
 
@@ -96,11 +94,6 @@ class Symbol(RelativeLayout, ClassWithLogger):
                              size[0]/2, -size[1]/2,
                              size[0], 0,
                              size[0]/2, size[1]/2), close=True, joint="miter", width=Config.line_thickness)
-
-                #Line(points=(0, 0, -size[0]/2, -size[1]/2), width=Config.line_thickness)
-                #Line(points=(0, 0, -size[0]/2, size[1]/2), width=Config.line_thickness)
-                #Line(points=(-size[0], 0, -size[0]/2, -size[1]/2), width=Config.line_thickness)
-               # Line(points=(-size[0], 0, -size[0]/2, size[1]/2), width=Config.line_thickness)
 
             else:
                 self.log_error(f"No symbol called \"{name}\"")

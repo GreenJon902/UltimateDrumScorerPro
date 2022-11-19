@@ -1,6 +1,6 @@
 from kivy import metrics
 from kivy.event import EventDispatcher
-from kivy.properties import NumericProperty, ReferenceListProperty, StringProperty, ColorProperty, DictProperty
+from kivy.properties import NumericProperty, ReferenceListProperty, StringProperty, ColorProperty
 
 
 class NoteInfo(EventDispatcher):

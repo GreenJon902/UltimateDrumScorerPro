@@ -1,8 +1,6 @@
 from kivy.core.window import Window
 from kivy.graphics import Translate, PushMatrix, PopMatrix
-from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.scatter import Scatter
 
 from config.config import Config
 from notes import Notes

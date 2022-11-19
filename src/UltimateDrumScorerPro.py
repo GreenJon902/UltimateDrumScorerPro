@@ -1,13 +1,9 @@
 from betterLogger import ClassWithLogger
 from kivy.app import App
 from kivy.graphics import Color, Rectangle
-from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.widget import Widget
 
 from section import Section
-from src.notes import Notes
 
 
 def run():

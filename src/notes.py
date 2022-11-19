@@ -4,8 +4,7 @@ from typing import Union
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import PopMatrix, PushMatrix, Scale, Translate, Color
-from kivy.properties import ListProperty, BooleanProperty, NumericProperty
+from kivy.properties import ListProperty, BooleanProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from config.config import Config
