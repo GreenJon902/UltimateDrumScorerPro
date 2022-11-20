@@ -93,6 +93,8 @@ class Section(RelativeLayout):
             a = Animation(forced_width=0, duration=Config.section_kill_speed)
             a.start(self)
 
+            Clock.schedule_once(lambda _: self.parent.remove_widget(self), Config.section_kill_speed)
+
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
         if not focused and len(self.committed_notes) == 0:  # Empty so delete
