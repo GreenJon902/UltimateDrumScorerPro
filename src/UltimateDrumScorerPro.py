@@ -3,7 +3,7 @@ from kivy.app import App
 from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 
-from section import Section
+from beat import Beat
 
 
 def run():
@@ -53,7 +53,7 @@ class Root(ClassWithLogger, App):
 
     def build(self):
         container = BoxLayout(pos=(100, 100))
-        layout = Section()
+        layout = Beat()
         container.add_widget(layout)
         with container.canvas.before:
             Color(rgb=(1, 1, 1))
