@@ -10,7 +10,6 @@ from config.config import Config
 
 class TrashCanButton(RelativeLayout, ClassWithLogger):
     transparency: int = NumericProperty()
-    callback: Callable[[], None]
 
     def __init__(self, size, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
