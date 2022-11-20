@@ -14,8 +14,8 @@ class Beat(BoxLayout):
             PushMatrix()
             self.translate = Translate()
 
-        for i in range(Config.default_section_beat_count):
-            self.add_widget(Section())
+        for i in range(Config.default_beat_section_count):
+            self.add_widget(Section(committed_notes=[1]))
 
         with self.canvas.after:
             PopMatrix()

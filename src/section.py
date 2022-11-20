@@ -4,7 +4,7 @@ from typing import Union
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import ListProperty, BooleanProperty
+from kivy.properties import ListProperty, BooleanProperty, NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from config.config import Config
@@ -17,10 +17,12 @@ class Section(RelativeLayout):
 
     symbols: dict[int, Symbol]
     focused: bool = BooleanProperty(defaultvalue=False)
+    forced_width: int = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a spacer
 
     def __init__(self, **kwargs):
         self.symbols = {}
         self.calculate_size = Clock.create_trigger(lambda _: self._calculate_size())
+        self.bind(forced_width=lambda _, __: self.calculate_size())
 
         RelativeLayout.__init__(self, **kwargs)
 
@@ -30,21 +32,22 @@ class Section(RelativeLayout):
         highest = max(Config.note_info, key=lambda x: x.y + x.height)
         self.height = highest.y + highest.height
 
-        self.update()
+        self.redraw()
 
-    def update(self):
+    def redraw(self):
         self.clear_widgets()
+        self.canvas.clear()
         taken_y_levels: dict[float, float] = {}
 
         for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
-            symbol.y = noteInfo.y + Config.beat_bottom_buffer
+            symbol.y = noteInfo.y + Config.section_bottom_buffer
 
             if symbol.y in taken_y_levels.keys():
-                symbol.expanded_x = taken_y_levels[symbol.y] + Config.beat_x_buffer
+                symbol.expanded_x = taken_y_levels[symbol.y] + Config.section_x_buffer
                 taken_y_levels[symbol.y] += noteInfo.width + Config.note_selector_x_space
             else:
-                symbol.expanded_x = Config.beat_x_buffer
+                symbol.expanded_x = Config.section_x_buffer
                 taken_y_levels[symbol.y] = noteInfo.width + Config.note_selector_x_space
 
             symbol.bind(pos=lambda _, __: self.calculate_size(), size=lambda _, __: self.calculate_size())
@@ -65,12 +68,37 @@ class Section(RelativeLayout):
 
             widths[index] = symbol.x + symbol.width
 
-        self.width = max(widths.values()) + Config.beat_x_buffer * 2
+        if self.forced_width is None:
+            self.width = max(widths.values()) + Config.section_x_buffer * 2
+        else:
+            self.width = self.forced_width
         self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top + \
-            Config.beat_bottom_buffer + Config.beat_top_buffer
+            Config.section_bottom_buffer + Config.section_top_buffer
+
+
+    def kill_self(self, animated=False):
+        """
+        Remove this section from parent without it looking like poo.
+        :return:
+        """
+        if animated:
+            for index in self.symbols.keys():
+                symbol = self.symbols[index]
+
+                a = (Animation(x=Config.section_x_buffer, y=symbol.y + Config.section_kill_rise_amount, transparency=0,
+                               duration=Config.section_kill_speed))
+                a.start(symbol)
+
+            self.forced_width = self.width
+            a = Animation(forced_width=0, duration=Config.section_kill_speed)
+            a.start(self)
 
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
+        if not focused and len(self.committed_notes) == 0:  # Empty so delete
+            self.kill_self(animated=True)
+            return
+
         taken_lines: list[float] = []  # Whether a line already has something on it and then other piece needs to be
                                        # on the other side. Only used when not focused
 
@@ -84,7 +112,7 @@ class Section(RelativeLayout):
                 a.start(symbol)
 
             else:
-                x = Config.beat_x_buffer
+                x = Config.section_x_buffer
                 if self.symbols[index].y in taken_lines and index in self.committed_notes:
                     x += self.symbols[index].width
 
