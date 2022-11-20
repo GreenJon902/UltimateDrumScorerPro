@@ -9,6 +9,7 @@ from kivy.uix.relativelayout import RelativeLayout
 
 from config.config import Config
 from symbol import Symbol
+from trashCanButton import TrashCanButton
 
 
 class Section(RelativeLayout):
@@ -19,10 +20,14 @@ class Section(RelativeLayout):
     focused: bool = BooleanProperty(defaultvalue=False)
     forced_width: int = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a spacer
 
+    trashCanButton: TrashCanButton = None
+    being_killed: bool = False
+
     def __init__(self, **kwargs):
         self.symbols = {}
         self.calculate_size = Clock.create_trigger(lambda _: self._calculate_size())
         self.bind(forced_width=lambda _, __: self.calculate_size())
+        Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
 
         RelativeLayout.__init__(self, **kwargs)
 
@@ -55,7 +60,12 @@ class Section(RelativeLayout):
             self.add_widget(symbol)
             self.symbols[n] = symbol
 
-        Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
+
+        self.trashCanButton = TrashCanButton(Config.section_trash_can_size)
+        self.trashCanButton.bind(size=lambda _, __: self.calculate_size())
+        self.trashCanButton.y = 0  # x is managed in self._calculate_size
+        self.add_widget(self.trashCanButton)
+
 
         self.on_focused(self, self.focused, animation_duration=0)
         self.calculate_size()
@@ -75,12 +85,17 @@ class Section(RelativeLayout):
         self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top + \
             Config.section_bottom_buffer + Config.section_top_buffer
 
+        if not self.being_killed:
+            self.trashCanButton.right = self.width
+
 
     def kill_self(self, animated=False):
         """
         Remove this section from parent without it looking like poo.
         :return:
         """
+        self.being_killed = True
+
         if animated:
             for index in self.symbols.keys():
                 symbol = self.symbols[index]
@@ -89,11 +104,17 @@ class Section(RelativeLayout):
                                duration=Config.section_kill_speed))
                 a.start(symbol)
 
+            a = (Animation(y=self.trashCanButton.y, transparency=0,
+                           duration=Config.section_kill_speed))
+            a.start(self.trashCanButton)
+
             self.forced_width = self.width
             a = Animation(forced_width=0, duration=Config.section_kill_speed)
             a.start(self)
 
             Clock.schedule_once(lambda _: self.parent.remove_widget(self), Config.section_kill_speed)
+        else:
+            self.parent.remove_widget(self)
 
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed):
@@ -121,12 +142,17 @@ class Section(RelativeLayout):
                 a = Animation(x=x, transparency=(1 if index in self.committed_notes else 0),
                               duration=animation_duration)
                 a.start(symbol)
-                a = Animation(r=0, g=0, b=0,
+                a = Animation(r=0, g=0, b=0,  # Make sure everything is black
                               duration=animation_duration)
                 a.start(symbol.color)
 
                 if index in self.committed_notes:
                     taken_lines.append(self.symbols[index].y)
+
+
+        a = Animation(transparency=(Config.section_trash_can_transparency if focused else 0),
+                      duration=animation_duration)  # x is managed in self._calculate_size
+        a.start(self.trashCanButton)
 
 
     def get_closest_to_pos(self, pos):
@@ -147,7 +173,7 @@ class Section(RelativeLayout):
 
 
     def mouse_move(self, pos):
-        if self.focused:
+        if self.focused and not self.being_killed:
             index, distance = self.get_closest_to_pos(pos)
             symbol = self.symbols[index]
 
@@ -175,8 +201,18 @@ class Section(RelativeLayout):
                 self.current_hover = None
 
 
+            if self.trashCanButton.collide_point(*self.to_local(*pos)):
+                a = Animation(transparency=1,
+                              duration=Config.section_trash_can_hover_fade_speed)
+                a.start(self.trashCanButton)
+            elif self.trashCanButton.transparency == 1:  # Was hovered but isn't anymore
+                a = Animation(transparency=Config.section_trash_can_transparency,
+                              duration=Config.section_trash_can_hover_fade_speed)
+                a.start(self.trashCanButton)
+
+
     def on_touch_up(self, touch):
-        if self.focused:
+        if self.focused and not self.being_killed:
             index, distance = self.get_closest_to_pos((touch.x, touch.y))
             symbol = self.symbols[index]
 
@@ -205,3 +241,6 @@ class Section(RelativeLayout):
                                  Config.note_selector_uncommitted_hover_color[2]),
                               duration=Config.note_hover_color_fade_speed)
                 a.start(symbol.color)
+
+        if self.trashCanButton.collide_point(*self.to_widget(*touch.pos)):
+            self.kill_self(animated=True)

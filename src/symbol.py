@@ -9,7 +9,7 @@ from config.config import Config
 
 
 class Symbol(RelativeLayout, ClassWithLogger):
-    transparency: int = NumericProperty(defaultvalue=1)
+    transparency: int = NumericProperty()
 
     def __init__(self, name, size, **kwargs):
         RelativeLayout.__init__(self, **kwargs)

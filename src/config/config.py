@@ -54,6 +54,10 @@ class Config:
     section_kill_speed = 0.25
     section_kill_rise_amount = metrics.cm(5)
 
+    section_trash_can_size = metrics.cm(0.5), metrics.cm(0.5)
+    section_trash_can_transparency = 0.5
+    section_trash_can_hover_fade_speed = 0.1
+
 
 
 __all__ = ["Config"]
