@@ -58,6 +58,13 @@ class Config:
     section_trash_can_transparency = 0.5
     section_trash_can_hover_fade_speed = 0.1
 
+    section_extender_height = metrics.cm(0.5)  # width is everything not taken up by the trash can
+    section_extender_transparency = 0.3
+    section_extender_hover_transparency = 0.7
+    section_extender_hover_fade_speed = 0.1
+
+    section_extender_trash_can_buffer = metrics.cm(0.1)
+
 
 
 __all__ = ["Config"]
