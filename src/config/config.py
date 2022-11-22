@@ -46,8 +46,6 @@ class Config:
 
     default_beat_section_count = 8
     section_x_buffer = metrics.cm(0.25)  # At least 2x the width of a note incase there is 2 on the same line
-    section_bottom_buffer = metrics.cm(1)
-    section_top_buffer = metrics.cm(0)
     focus_speed = 0.25
     note_commit_speed = 0.1
     note_hover_color_fade_speed = 0.1
@@ -59,6 +57,7 @@ class Config:
     section_trash_can_hover_fade_speed = 0.1
 
     section_extender_height = metrics.cm(0.5)  # width is everything not taken up by the trash can
+    section_extender_space = section_extender_height + metrics.cm(0.5)
     section_extender_transparency = 0.3
     section_extender_hover_transparency = 0.7
     section_extender_hover_fade_speed = 0.1

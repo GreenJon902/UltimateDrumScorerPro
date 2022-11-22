@@ -19,7 +19,8 @@ class Section(RelativeLayout):
 
     symbols: dict[int, Symbol]
     focused: bool = BooleanProperty(defaultvalue=False)
-    forced_width: Union[int, None] = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a spacer
+    forced_width: Union[int, None] = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a
+                                                                                         # spacer
     section_extender_enabled = BooleanProperty(defaultvalue=False)
     section_extender_hovered = BooleanProperty(defaultvalue=False)
     section_extender_acting = BooleanProperty(defaultvalue=False)
@@ -51,13 +52,13 @@ class Section(RelativeLayout):
 
         for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
-            symbol.y = noteInfo.y + Config.section_bottom_buffer
+            symbol.y = noteInfo.y + Config.section_extender_space
 
             if symbol.y in taken_y_levels.keys():
-                symbol.expanded_x = taken_y_levels[symbol.y] + Config.section_x_buffer
+                symbol.expanded_x = taken_y_levels[symbol.y]
                 taken_y_levels[symbol.y] += noteInfo.width + Config.note_selector_x_space
             else:
-                symbol.expanded_x = Config.section_x_buffer
+                symbol.expanded_x = 0
                 taken_y_levels[symbol.y] = noteInfo.width + Config.note_selector_x_space
 
             symbol.bind(pos=lambda _, __: self.calculate_size(), size=lambda _, __: self.calculate_size())
@@ -73,7 +74,7 @@ class Section(RelativeLayout):
 
         self.section_extender = SectionExtender(Config.section_extender_height)  # width managed in self._calculate_size
         self.section_extender.bind(pos=lambda _, __: self.calculate_size(), height=lambda _, __: self.calculate_size())
-        self.section_extender.x = Config.section_x_buffer
+        self.section_extender.x = 0
         self.section_extender.y = 0
         self.add_widget(self.section_extender)
 
@@ -90,17 +91,16 @@ class Section(RelativeLayout):
             widths[index] = symbol.x + symbol.width
 
         if self.forced_width is None:
-            self.width = max(widths.values()) + Config.section_x_buffer * 2
+            self.width = max(widths.values()) + 0 * 2
         else:
             self.width = self.forced_width
 
-        self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top + \
-            Config.section_bottom_buffer + Config.section_top_buffer
+        self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top
 
         if not self.being_killed:
-            self.trashCanButton.right = self.width - Config.section_x_buffer
+            self.trashCanButton.right = self.width - 0
 
-            self.section_extender.width = self.width - Config.section_x_buffer * 2 - self.trashCanButton.width - \
+            self.section_extender.width = self.width - self.trashCanButton.width - \
                 Config.section_extender_trash_can_buffer
 
 
@@ -116,7 +116,7 @@ class Section(RelativeLayout):
                 for index in self.symbols.keys():
                     symbol = self.symbols[index]
 
-                    a = (Animation(x=Config.section_x_buffer, y=symbol.y + Config.section_kill_rise_amount,
+                    a = (Animation(x=0, y=symbol.y + Config.section_kill_rise_amount,
                                    transparency=0,
                                    duration=Config.section_kill_speed))
                     a.start(symbol)
@@ -158,7 +158,7 @@ class Section(RelativeLayout):
                     a.start(symbol)
 
                 else:
-                    x = Config.section_x_buffer
+                    x = 0
                     if self.symbols[index].y in taken_lines and index in self.committed_notes:
                         x += self.symbols[index].width
 
