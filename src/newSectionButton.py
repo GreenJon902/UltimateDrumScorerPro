@@ -1,11 +1,7 @@
-from typing import Callable
-
 from betterLogger import ClassWithLogger
-from kivy.graphics import Color, Line, Rectangle, RoundedRectangle
+from kivy.graphics import Color, RoundedRectangle
 from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
-
-from config.config import Config
 
 
 class NewSectionButton(RelativeLayout, ClassWithLogger):
