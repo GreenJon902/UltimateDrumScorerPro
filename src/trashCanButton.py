@@ -1,5 +1,3 @@
-from typing import Callable
-
 from betterLogger import ClassWithLogger
 from kivy.graphics import Color, Line
 from kivy.properties import NumericProperty
