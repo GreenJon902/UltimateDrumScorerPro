@@ -29,7 +29,7 @@ class Section(RelativeLayout):
     section_extender_hovered = BooleanProperty(defaultvalue=False)
     section_extender_acting = BooleanProperty(defaultvalue=False)
 
-    trashCanButton: TrashCanButton = None
+    trash_can_button: TrashCanButton = None
     section_extender: SectionExtender = None
     new_section_button: NewSectionButton = None
     being_killed: bool = False
@@ -74,10 +74,10 @@ class Section(RelativeLayout):
             self.symbols[n] = symbol
 
 
-        self.trashCanButton = TrashCanButton(Config.section_trash_can_size)
-        self.trashCanButton.bind(y=lambda _, __: self.calculate_size())
-        self.trashCanButton.y = 0  # x is managed in self._calculate_size
-        self.add_widget(self.trashCanButton)
+        self.trash_can_button = TrashCanButton(Config.section_trash_can_size)
+        self.trash_can_button.bind(y=lambda _, __: self.calculate_size())
+        self.trash_can_button.y = 0  # x is managed in self._calculate_size
+        self.add_widget(self.trash_can_button)
 
         self.section_extender = SectionExtender(Config.section_extender_height)  # width managed in self._calculate_size
         self.section_extender.bind(pos=lambda _, __: self.calculate_size(), height=lambda _, __: self.calculate_size())
@@ -119,15 +119,15 @@ class Section(RelativeLayout):
         self.new_section_button.right = self.width
 
         if not self.being_killed:
-            self.trashCanButton.right = self.new_section_button.x - Config.new_section_button_x_buffer * \
-                self.new_section_button_x_space_multiplier
+            self.trash_can_button.right = self.new_section_button.x - Config.new_section_button_x_buffer * \
+                                          self.new_section_button_x_space_multiplier
 
-            self.section_extender.width = self.trashCanButton.x - \
-                Config.section_extender_trash_can_buffer
+            self.section_extender.width = self.trash_can_button.x - \
+                                          Config.section_extender_trash_can_buffer
 
             if self.section_extender.width < 0:  # This would mainly be caused the Config.new_section_button_x_buffer
                 self.section_extender.width = 0
-                self.trashCanButton.x = self.section_extender.width + Config.section_extender_trash_can_buffer
+                self.trash_can_button.x = self.section_extender.width + Config.section_extender_trash_can_buffer
 
 
 
@@ -151,7 +151,7 @@ class Section(RelativeLayout):
 
                 a = (Animation(transparency=0,
                                duration=Config.section_kill_speed))
-                a.start(self.trashCanButton)
+                a.start(self.trash_can_button)
 
                 a = (Animation(width=0, transparency=0,
                                duration=Config.section_kill_speed))
@@ -210,7 +210,7 @@ class Section(RelativeLayout):
 
             a = Animation(transparency=(Config.section_trash_can_transparency if focused else 0),
                           duration=animation_duration)  # x is managed in self._calculate_size
-            a.start(self.trashCanButton)
+            a.start(self.trash_can_button)
 
             a = Animation(transparency=(((1 if self.section_extender_enabled else Config.section_extender_transparency)
                                          if focused else 0)),
@@ -281,14 +281,14 @@ class Section(RelativeLayout):
                 self.current_hover = None
 
 
-            if self.trashCanButton.collide_point(*self.to_local(*pos)):
+            if self.trash_can_button.collide_point(*self.to_local(*pos)):
                 a = Animation(transparency=1,
                               duration=Config.section_trash_can_hover_fade_speed)
-                a.start(self.trashCanButton)
-            elif self.trashCanButton.transparency == 1:  # Was hovered but isn't anymore
+                a.start(self.trash_can_button)
+            elif self.trash_can_button.transparency == 1:  # Was hovered but isn't anymore
                 a = Animation(transparency=Config.section_trash_can_transparency,
                               duration=Config.section_trash_can_hover_fade_speed)
-                a.start(self.trashCanButton)
+                a.start(self.trash_can_button)
 
             if self.section_extender.collide_point(*self.to_local(*pos)):
                 a = Animation(transparency=Config.section_extender_hover_transparency,
@@ -366,7 +366,7 @@ class Section(RelativeLayout):
                     a.start(symbol.color)
 
 
-            if self.trashCanButton.collide_point(*self.to_widget(*touch.pos)):
+            if self.trash_can_button.collide_point(*self.to_widget(*touch.pos)):
                 self.kill_self(animated=True)
 
 
