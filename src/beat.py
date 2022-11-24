@@ -1,7 +1,5 @@
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Translate, PushMatrix, PopMatrix
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 
 from config.config import Config
