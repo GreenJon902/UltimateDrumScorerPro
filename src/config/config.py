@@ -42,15 +42,15 @@ class Config:
     note_selector_distance = metrics.cm(0.5)
     note_selector_x_space = metrics.cm(0.1)
 
-    note_color = (0, 0, 0, 1)
-
-    default_beat_section_count = 8
+    default_beat_section_count = 4
     section_x_buffer = metrics.cm(0.25)  # At least 2x the width of a note incase there is 2 on the same line
     focus_speed = 0.25
     note_commit_speed = 0.1
     note_hover_color_fade_speed = 0.1
     section_kill_speed = 0.25
     section_kill_rise_amount = metrics.cm(5)
+    section_entrance_animation_duration = 0.25
+    # FIXME: Issue where when spawning in the first time it jumps (set section_entrance_animation_duration to 5 to see)
 
     section_trash_can_size = metrics.cm(0.5), metrics.cm(0.5)
     section_trash_can_transparency = 0.5
@@ -63,6 +63,11 @@ class Config:
     section_extender_hover_fade_speed = 0.1
 
     section_extender_trash_can_buffer = metrics.cm(0.1)
+
+    new_section_button_x_buffer = metrics.cm(0.2)
+    new_section_button_size = metrics.cm(0.5), metrics.cm(3)
+    new_section_button_transparency = 0.7
+    new_section_button_hover_fade_speed = 0.1
 
 
 

@@ -8,6 +8,7 @@ from kivy.properties import ListProperty, BooleanProperty, NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from config.config import Config
+from newSectionButton import NewSectionButton
 from sectionExtender import SectionExtender
 from symbol import Symbol
 from trashCanButton import TrashCanButton
@@ -21,18 +22,23 @@ class Section(RelativeLayout):
     focused: bool = BooleanProperty(defaultvalue=False)
     forced_width: Union[int, None] = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a
                                                                                          # spacer
+    new_section_button_x_space_multiplier: int = NumericProperty()  # For focusing and un-focusing
+    parent_x_buffer_multiplier: int = NumericProperty()  # For the parents x buffer space
+
     section_extender_enabled = BooleanProperty(defaultvalue=False)
     section_extender_hovered = BooleanProperty(defaultvalue=False)
     section_extender_acting = BooleanProperty(defaultvalue=False)
 
     trashCanButton: TrashCanButton = None
     section_extender: SectionExtender = None
+    new_section_button: NewSectionButton = None
     being_killed: bool = False
 
-    def __init__(self, **kwargs):
+    def __init__(self, entrance_animated=False, **kwargs):
         self.symbols = {}
-        self.calculate_size = Clock.create_trigger(lambda _: self._calculate_size())
-        self.bind(forced_width=lambda _, __: self.calculate_size())
+        self.calculate_size = Clock.create_trigger(lambda _: self._calculate_size(), -1)
+        self.bind(forced_width=lambda _, __: self.calculate_size(),
+                  new_section_button_x_space_multiplier=lambda _, __: self.calculate_size())
         Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
 
         RelativeLayout.__init__(self, **kwargs)
@@ -43,15 +49,16 @@ class Section(RelativeLayout):
         highest = max(Config.note_info, key=lambda x: x.y + x.height)
         self.height = highest.y + highest.height
 
-        self.redraw()
+        self.redraw(entrance_animated)
 
-    def redraw(self):
+    def redraw(self, entrance_animated):
         self.clear_widgets()
         self.canvas.clear()
         taken_y_levels: dict[float, float] = {}
 
         for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
+            symbol.right = 0
             symbol.y = noteInfo.y + Config.section_extender_space
 
             if symbol.y in taken_y_levels.keys():
@@ -78,8 +85,19 @@ class Section(RelativeLayout):
         self.section_extender.y = 0
         self.add_widget(self.section_extender)
 
+        self.new_section_button = NewSectionButton(Config.new_section_button_size)
+        self.new_section_button.y = self.height / 2 - self.new_section_button.height / 2
+            # x is managed in self._calculate_size
+        self.add_widget(self.new_section_button)
 
-        self.on_focused(self, self.focused, animation_duration=0)
+        if entrance_animated:
+            a = Animation(parent_x_buffer_multiplier=1, duration=Config.section_entrance_animation_duration)
+            a.start(self)
+
+            self.on_focused(self, self.focused, animation_duration=Config.section_entrance_animation_duration)
+        else:
+            self.parent_x_buffer_multiplier = 1
+            self.on_focused(self, self.focused, animation_duration=0)
         self.calculate_size()
 
     def _calculate_size(self):
@@ -91,17 +109,27 @@ class Section(RelativeLayout):
             widths[index] = symbol.x + symbol.width
 
         if self.forced_width is None:
-            self.width = max(widths.values()) + 0 * 2
+            self.width = max(widths.values()) + (Config.new_section_button_x_buffer + self.new_section_button.width) * self.new_section_button_x_space_multiplier
         else:
             self.width = self.forced_width
 
         self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top
 
-        if not self.being_killed:
-            self.trashCanButton.right = self.width - 0
 
-            self.section_extender.width = self.width - self.trashCanButton.width - \
+        self.new_section_button.right = self.width
+
+        if not self.being_killed:
+            self.trashCanButton.right = self.new_section_button.x - Config.new_section_button_x_buffer * \
+                self.new_section_button_x_space_multiplier
+
+            self.section_extender.width = self.trashCanButton.x - \
                 Config.section_extender_trash_can_buffer
+
+            if self.section_extender.width < 0:  # This would mainly be caused the Config.new_section_button_x_buffer
+                self.section_extender.width = 0
+                self.trashCanButton.x = self.section_extender.width + Config.section_extender_trash_can_buffer
+
+
 
 
     def kill_self(self, animated=False):
@@ -129,9 +157,16 @@ class Section(RelativeLayout):
                                duration=Config.section_kill_speed))
                 a.start(self.section_extender)
 
+                a = Animation(transparency=0,
+                              duration=Config.section_kill_speed)
+                a.start(self.new_section_button)
+                a = Animation(new_section_button_x_space_multiplier=0,
+                              duration=Config.section_kill_speed)
+                a.start(self)
+
 
                 self.forced_width = self.width
-                a = Animation(forced_width=0, duration=Config.section_kill_speed)
+                a = Animation(forced_width=0, parent_x_buffer_multiplier=0, duration=Config.section_kill_speed)
                 a.start(self)
 
                 Clock.schedule_once(lambda _: self.parent.remove_widget(self), Config.section_kill_speed)
@@ -181,6 +216,13 @@ class Section(RelativeLayout):
                                          if focused else 0)),
                           duration=animation_duration)  # x is as far left as it will get
             a.start(self.section_extender)
+
+            a = Animation(transparency=(Config.new_section_button_transparency if focused else 0),
+                          duration=animation_duration)
+            a.start(self.new_section_button)
+            a = Animation(new_section_button_x_space_multiplier=(1 if focused else 0),
+                          duration=animation_duration)
+            a.start(self)
 
             if unset_forced_width_at_end:
                 Clock.schedule_once(lambda _: self.unset_forced_width(), animation_duration)
@@ -259,6 +301,16 @@ class Section(RelativeLayout):
                               duration=Config.section_extender_hover_fade_speed)
                 a.start(self.section_extender)
 
+            if self.new_section_button.collide_point(*self.to_local(*pos)):
+                a = Animation(transparency=1,
+                              duration=Config.new_section_button_hover_fade_speed)
+                a.start(self.new_section_button)
+            elif self.new_section_button.transparency == 1:  # Was hovered but isn't anymore
+
+                a = Animation(transparency=Config.new_section_button_transparency,
+                              duration=Config.new_section_button_hover_fade_speed)
+                a.start(self.new_section_button)
+
         if self.section_extender.over_arrow(*self.to_local(*pos)) and self.section_extender_enabled:
             Window.set_system_cursor("size_we")
             self.section_extender_hovered = True
@@ -320,6 +372,10 @@ class Section(RelativeLayout):
 
             if self.section_extender.collide_point(*self.to_widget(*touch.pos)):
                 self.section_extender_enabled = not self.section_extender_enabled
+
+
+            if self.new_section_button.collide_point(*self.to_widget(*touch.pos)):
+                self.parent.add_new(self)
 
 
     def on_section_extender_enabled(self, _, enabled):

@@ -23,7 +23,7 @@ class Beat(Widget):
         Widget.__init__(self, **kwargs)
 
         for i in range(Config.default_beat_section_count):
-            self.add_widget(Section(committed_notes=[1]))
+            self.add_new()
 
 
     def check_focus(self, *_):
@@ -38,6 +38,7 @@ class Beat(Widget):
     def add_widget(self, widget, *args, **kwargs):
         fbind = widget.fbind
         fbind("size", self.trigger_layout)
+        fbind("parent_x_buffer_multiplier", self.trigger_layout)
         Widget.add_widget(self, widget, *args, **kwargs)
 
     def remove_widget(self, widget):
@@ -49,15 +50,26 @@ class Beat(Widget):
         x = self.x
         max_height = 0
         for child in self.children:
-            x += Config.section_x_buffer
+            x += Config.section_x_buffer * child.parent_x_buffer_multiplier
 
             child.x = x
             child.y = self.y
 
-            x += child.width + Config.section_x_buffer
+            x += child.width + Config.section_x_buffer * child.parent_x_buffer_multiplier
 
             if child.height > max_height:
                 max_height = child.top
 
         self.width = x
         self.height = max_height - self.y
+
+    def add_new(self, after=None):
+        # New section needs to have committed notes or else it will kill itself for being empty, so either default hh
+        # or copy last if possible
+        if after is None:
+            committed_notes = [1]
+            index = 0
+        else:
+            committed_notes = after.committed_notes.copy()
+            index = self.children.index(after) + 1
+        self.add_widget(Section(entrance_animated=True, committed_notes=committed_notes), index=index)
