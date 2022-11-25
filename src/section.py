@@ -24,6 +24,7 @@ class Section(RelativeLayout):
                                                                                          # spacer
     new_section_button_x_space_multiplier: int = NumericProperty()  # For focusing and un-focusing
     parent_x_buffer_multiplier: int = NumericProperty()  # For the parents x buffer space
+    stem_x: int = NumericProperty()  # For the parents drawing of stems
 
     section_extender_enabled = BooleanProperty(defaultvalue=False)
     section_extender_hovered = BooleanProperty(defaultvalue=False)
@@ -58,7 +59,8 @@ class Section(RelativeLayout):
 
         for n, noteInfo in enumerate(Config.note_info):
             symbol = Symbol(noteInfo.symbol, noteInfo.size)
-            symbol.right = 0
+            if entrance_animated:
+                symbol.right = 0
             symbol.y = noteInfo.y + Config.section_extender_space
 
             if symbol.y in taken_y_levels.keys():
