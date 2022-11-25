@@ -182,6 +182,9 @@ class Section(RelativeLayout):
         if not self.being_killed:
             taken_lines: list[float] = []  # Whether a line already has something on it and then other piece needs to be
                                            # on the other side. Only used when not focused
+            max_symbol_width: float = max([(self.symbols[index].width if index in self.committed_notes else 0)
+                                           for index in self.symbols.keys()])  # For correct aligning to note stem.
+                                                                               # Only used when not focused
 
             for index in self.symbols.keys():
                 symbol = self.symbols[index]
@@ -194,8 +197,12 @@ class Section(RelativeLayout):
 
                 else:
                     x = 0
-                    if self.symbols[index].y in taken_lines and index in self.committed_notes:
-                        x += self.symbols[index].width
+                    if index in self.committed_notes:
+                        if self.symbols[index].y in taken_lines:
+                            x += self.symbols[index].width
+
+                        elif symbol.width < max_symbol_width:  # first note needs to be aligned correctly
+                            x = max_symbol_width - symbol.width
 
                     a = Animation(x=x, transparency=(1 if index in self.committed_notes else 0),
                                   duration=animation_duration)
