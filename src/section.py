@@ -23,8 +23,10 @@ class Section(RelativeLayout):
     forced_width: Union[int, None] = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a
                                                                                          # spacer
     new_section_button_x_space_multiplier: int = NumericProperty()  # For focusing and un-focusing
-    parent_x_buffer_multiplier: int = NumericProperty()  # For the parents x buffer space
-    stem_x: int = NumericProperty()  # For the parents drawing of stems
+    parent_multiplier: int = NumericProperty()  # For the parents x buffer space
+    stem_x: float = NumericProperty()  # For the parents drawing of stems
+    stem_bottom: float = NumericProperty(defaultvalue=-1)  # For the parents drawing of stems. This is the bottom of
+                                                           # the stem. -1 for unset
 
     section_extender_enabled = BooleanProperty(defaultvalue=False)
     section_extender_hovered = BooleanProperty(defaultvalue=False)
@@ -93,12 +95,12 @@ class Section(RelativeLayout):
         self.add_widget(self.new_section_button)
 
         if entrance_animated:
-            a = Animation(parent_x_buffer_multiplier=1, duration=Config.section_entrance_animation_duration)
+            a = Animation(parent_multiplier=1, duration=Config.section_entrance_animation_duration)
             a.start(self)
 
             self.on_focused(self, self.focused, animation_duration=Config.section_entrance_animation_duration)
         else:
-            self.parent_x_buffer_multiplier = 1
+            self.parent_multiplier = 1
             self.on_focused(self, self.focused, animation_duration=0)
         self.calculate_size()
 
@@ -168,7 +170,7 @@ class Section(RelativeLayout):
 
 
                 self.forced_width = self.width
-                a = Animation(forced_width=0, parent_x_buffer_multiplier=0, duration=Config.section_kill_speed)
+                a = Animation(forced_width=0, parent_multiplier=0, duration=Config.section_kill_speed)
                 a.start(self)
 
                 Clock.schedule_once(lambda _: self.parent.remove_widget(self), Config.section_kill_speed)
@@ -187,6 +189,10 @@ class Section(RelativeLayout):
             max_symbol_width: float = max([(self.symbols[index].width if index in self.committed_notes else 0)
                                            for index in self.symbols.keys()])  # For correct aligning to note stem.
                                                                                # Only used when not focused
+            stem_bottom = self.height  # Lowest committed y if not focused, if focused then top
+
+            if self.stem_x != max_symbol_width:
+                self.stem_x = max_symbol_width
 
             for index in self.symbols.keys():
                 symbol = self.symbols[index]
@@ -200,11 +206,13 @@ class Section(RelativeLayout):
                 else:
                     x = 0
                     if index in self.committed_notes:
-                        if self.symbols[index].y in taken_lines:
-                            x += self.symbols[index].width
-
+                        if symbol.y in taken_lines:
+                            x += symbol.width
                         elif symbol.width < max_symbol_width:  # first note needs to be aligned correctly
                             x = max_symbol_width - symbol.width
+
+                        if symbol.y < stem_bottom:
+                            stem_bottom = symbol.y
 
                     a = Animation(x=x, transparency=(1 if index in self.committed_notes else 0),
                                   duration=animation_duration)
@@ -215,6 +223,12 @@ class Section(RelativeLayout):
 
                     if index in self.committed_notes:
                         taken_lines.append(self.symbols[index].y)
+
+            if self.stem_bottom == -1:
+                self.stem_bottom = stem_bottom
+            else:
+                a = Animation(stem_bottom=stem_bottom, duration=animation_duration)
+                a.start(self)
 
 
             a = Animation(transparency=(Config.section_trash_can_transparency if focused else 0),
