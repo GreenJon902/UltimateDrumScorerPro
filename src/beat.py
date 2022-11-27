@@ -4,7 +4,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 
-from bar import Bars
+from bars import Bars
 from config.config import Config
 from section import Section
 from stem import Stem
@@ -47,17 +47,21 @@ class Beat(Widget):
         for i in range(len(self.sections)):
             section = self.sections[i]
             stem = self.stems[i]  # Use top of stem as top of last bar is -inf, see do_layout
+            bars = self.barss[i]
 
             if ((section.x - Config.section_x_buffer) <= pos[0] <= (section.right + Config.section_x_buffer) and
-                    section.y <= pos[1] <= stem.top):
+                    section.y <= pos[1] <= section.top) or \
+               (bars.x <= pos[0] <= bars.right and section.top <= pos[1] <= (stem.top + Config.bar_top_buffer)):
                 section.focused = True
+                bars.focused = True
             else:
                 section.focused = False
+                bars.focused = False
 
     def add(self, committed_notes, bar_number, index=0):
         section = Section(committed_notes=committed_notes)
         stem = Stem(section)
-        bars = Bars(section)
+        bars = Bars(bar_number)
 
         section.fbind("size", self.trigger_layout)
         section.fbind("parent_multiplier", self.trigger_layout)
@@ -70,8 +74,6 @@ class Beat(Widget):
         self.add_widget(section)
         self.add_widget(stem)
         self.add_widget(bars)
-
-        bars.bar_number = bar_number
 
         self.all_sections.insert(index, section)
         self.sections.insert(index, section)
