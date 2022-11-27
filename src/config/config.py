@@ -43,7 +43,7 @@ class Config:
     note_selector_x_space = metrics.cm(0.1)
 
     default_beat_section_count = 4
-    default_beat_bar_count = 1
+    default_beat_bar_count = 5
     section_x_buffer = metrics.cm(0.25)  # At least 2x the width of a note incase there is 2 on the same line
     focus_speed = 0.25
     note_commit_speed = 0.1

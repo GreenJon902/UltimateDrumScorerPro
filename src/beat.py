@@ -44,12 +44,15 @@ class Beat(Widget):
 
     def check_focus(self, *_):
         pos = Window.mouse_pos
-        for child in self.children:
-            if ((child.x - Config.section_x_buffer) <= pos[0] <= (child.right + Config.section_x_buffer) and
-                    child.y <= pos[1] <= child.top):
-                child.focused = True
+        for i in range(len(self.sections)):
+            section = self.sections[i]
+            stem = self.stems[i]  # Use top of stem as top of last bar is -inf, see do_layout
+
+            if ((section.x - Config.section_x_buffer) <= pos[0] <= (section.right + Config.section_x_buffer) and
+                    section.y <= pos[1] <= stem.top):
+                section.focused = True
             else:
-                child.focused = False
+                section.focused = False
 
     def add(self, committed_notes, bar_number, index=0):
         section = Section(committed_notes=committed_notes)
