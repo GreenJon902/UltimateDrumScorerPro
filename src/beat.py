@@ -1,38 +1,30 @@
+import math
+
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Line, Color
 from kivy.uix.widget import Widget
 
+from bar import Bars
 from config.config import Config
 from section import Section
+from stem import Stem
 
-
-class NoteStem(Line):
-    def __init__(self, note, color, **kwargs):
-        self.note = note
-        self.color = color
-
-        Line.__init__(self, **kwargs)
-        self.width = Config.line_thickness
-        note.fbind("x", self.update_pos)
-        note.fbind("stem_x", self.update_pos)
-        note.fbind("stem_bottom", self.update_pos)
-        note.fbind("parent_multiplier", self.do_color)
-
-        self.update_pos()
-
-    def update_pos(self, *_):
-        x = self.note.x + self.note.stem_x
-        self.points = x, self.note.y + self.note.stem_bottom, x, self.note.top
-
-    def do_color(self, *_):
-        self.color.a = self.note.parent_multiplier
 
 class Beat(Widget):
-    stems: list[Line]
+    killing: list[tuple[Section, Stem, Bars]]
+
+    all_sections: list[Section]  # Includes items in self.killed
+    sections: list[Section]
+    stems: list[Stem]
+    barss: list[Bars]
 
     def __init__(self, **kwargs):
+        self.killing = list()
+
+        self.all_sections = list()
+        self.sections = list()
         self.stems = list()
+        self.barss = list()
 
         self.trigger_layout = Clock.create_trigger(self.do_layout, -1)
         self.trigger_focus_check = Clock.create_trigger(self.check_focus, -1)
@@ -59,46 +51,126 @@ class Beat(Widget):
             else:
                 child.focused = False
 
-    def add_widget(self, widget, index=0, **kwargs):
-        fbind = widget.fbind
-        fbind("size", self.trigger_layout)
-        fbind("parent_x_buffer_multiplier", self.trigger_layout)
-        Widget.add_widget(self, widget, index=index, **kwargs)
+    def add(self, committed_notes, bar_number, index=0):
+        section = Section(committed_notes=committed_notes)
+        stem = Stem(section)
+        bars = Bars(section)
 
-        with self.canvas:
-            color = Color(rgb=(0, 0, 0), a=0)
-            self.stems.insert(index, NoteStem(widget, color))
+        section.fbind("size", self.trigger_layout)
+        section.fbind("parent_multiplier", self.trigger_layout)
+        section.fbind("stem_x", self.trigger_layout)
+        section.fbind("stem_bottom", self.trigger_layout)
 
-    def remove_widget(self, widget):
-        funbind = widget.funbind
-        funbind("size", self.trigger_layout)
-        funbind("parent_x_buffer_multiplier", self.trigger_layout)
-        Widget.remove_widget(self, widget)
+        bars.fbind("height", self.trigger_layout)
+        bars.fbind("bar_number", self.trigger_layout)
+
+        self.add_widget(section)
+        self.add_widget(stem)
+        self.add_widget(bars)
+
+        bars.bar_number = bar_number
+
+        self.all_sections.insert(index, section)
+        self.sections.insert(index, section)
+        self.stems.insert(index, stem)
+        self.barss.insert(index, bars)
+
+
+    def remove(self, section, duration_till_undraw):
+        """
+        Stop laying section out as if this was a box layout.
+
+        :param section: The section to be removed
+        :param duration_till_undraw: The time until it is removed as a widget so isn't drawn anymore
+        """
+        index = self.sections.index(section)
+        stem = self.stems[index]
+        bars = self.barss[index]
+        if len(self.sections) - 1 == index: # is last:
+            bars.bar_number = 0
+
+        self.killing.append((section, stem, bars))
+
+        self.sections.remove(section)
+        self.stems.remove(stem)
+        self.barss.remove(bars)
+
+        Clock.schedule_once(lambda _: self._remove_final(section=section, stem=stem, bars=bars), duration_till_undraw)
+
+    def _remove_final(self, section, stem, bars):
+        self.killing.remove((section, stem, bars))
+        self.all_sections.remove(section)
+
+        self.remove_widget(section)
+        self.remove_widget(stem)
+        self.remove_widget(bars)
 
     def do_layout(self, *_):
         x = self.x
-        max_height = 0
-        for child in self.children:
-            x += Config.section_x_buffer * child.parent_multiplier
+        for i, section in enumerate(self.all_sections):
+            x += Config.section_x_buffer * section.parent_multiplier
 
-            child.x = x
-            child.y = self.y
+            section.x = x
+            section.y = self.y
 
-            x += child.width + Config.section_x_buffer * child.parent_multiplier
+            x += section.width + Config.section_x_buffer * section.parent_multiplier
 
-            if child.height > max_height:
-                max_height = child.top
+
+        section_max_height = 0
+        bars_max_height = 0
+        for i in range(len(self.barss)):
+            if self.sections[i].height > section_max_height:
+                section_max_height = self.sections[i].top
+
+            if self.barss[i].height > bars_max_height:
+                bars_max_height = self.barss[i].height
+
 
         self.width = x
+
+        max_height = section_max_height + bars_max_height
+        for i in range(len(self.stems)):
+            stem = self.stems[i]
+            section = self.sections[i]
+
+            stem.x = section.x + section.stem_x
+            stem.y = section.stem_bottom + section.y
+            stem.height = max_height - stem.y
+
+        for i in range(len(self.barss) - 1):
+            bars = self.barss[i]
+
+            stem = self.stems[i]
+            stem2 = self.stems[i + 1]
+
+            bars.x = stem.x
+            bars.width = stem2.x - stem.x
+            bars.top = max_height
+
+        if len(self.barss) > 0:
+            self.barss[-1].top = -math.inf  # Don't worry about last one, it's easier to have but shouldn't be seen
+
         self.height = max_height - self.y
+
+
+        for (section, stem, bars) in self.killing:
+            stem.x = section.x + section.stem_x
+            stem.y = section.stem_bottom + section.y
+
+            bars.x = stem.x
+            bars.width = section.width
+            bars.top = stem.top
 
     def add_new(self, after=None):
         # New section needs to have committed notes or else it will kill itself for being empty, so either default hh
         # or copy last if possible
         if after is None:
             committed_notes = [1]
-            index = 0
+            index_of_added = 0
+            bar_number = Config.default_beat_bar_count
         else:
             committed_notes = after.committed_notes.copy()
-            index = self.children.index(after) + 1
-        self.add_widget(Section(entrance_animated=True, committed_notes=committed_notes), index=index)
+            index_of_after = self.sections.index(after)
+            index_of_added = index_of_after + 1
+            bar_number = self.barss[index_of_after].bar_number
+        self.add(committed_notes, bar_number, index=index_of_added)

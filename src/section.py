@@ -134,7 +134,10 @@ class Section(RelativeLayout):
                 self.trash_can_button.x = self.section_extender.width + Config.section_extender_trash_can_buffer
 
 
-
+        max_symbol_width: float = max([(self.symbols[index].width if index in self.committed_notes else 0)
+                                       for index in self.symbols.keys()])  # For correct aligning to note stem.
+        if self.stem_x != max_symbol_width:
+            self.stem_x = max_symbol_width
 
     def kill_self(self, animated=False):
         """
@@ -165,6 +168,7 @@ class Section(RelativeLayout):
                               duration=Config.section_kill_speed)
                 a.start(self.new_section_button)
                 a = Animation(new_section_button_x_space_multiplier=0,
+                              stem_bottom=self.stem_bottom + Config.section_kill_rise_amount,
                               duration=Config.section_kill_speed)
                 a.start(self)
 
@@ -173,9 +177,9 @@ class Section(RelativeLayout):
                 a = Animation(forced_width=0, parent_multiplier=0, duration=Config.section_kill_speed)
                 a.start(self)
 
-                Clock.schedule_once(lambda _: self.parent.remove_widget(self), Config.section_kill_speed)
+                self.parent.remove(self, Config.section_kill_speed)
             else:
-                self.parent.remove_widget(self)
+                self.parent.remove(self, 0)
 
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed, unset_forced_width_at_end=False):
@@ -191,8 +195,6 @@ class Section(RelativeLayout):
                                                                                # Only used when not focused
             stem_bottom = self.height  # Lowest committed y if not focused, if focused then top
 
-            if self.stem_x != max_symbol_width:
-                self.stem_x = max_symbol_width
 
             for index in self.symbols.keys():
                 symbol = self.symbols[index]
