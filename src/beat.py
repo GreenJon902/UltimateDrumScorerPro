@@ -153,7 +153,7 @@ class Beat(Widget):
 
             stem.x = section.x + section.stem_x
             stem.y = section.stem_bottom + section.y
-            stem.height = max_height - stem.y
+            stem.height = max_height - stem.y - Config.bar_top_buffer
 
         for i in range(len(self.barss) - 1):
             bars = self.barss[i]

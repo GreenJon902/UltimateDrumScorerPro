@@ -125,7 +125,8 @@ class Bars(Widget):
         else:
             height -= self.new_bar_bar.height * self.focused_amount
 
-        self.height = height + Config.bar_dot_height + self.new_bar_bar.height * self.focused_amount
+        self.height = height + Config.bar_dot_height + self.new_bar_bar.height * self.focused_amount + \
+            Config.bar_top_buffer
 
     def on_focused(self, _, focused):
         if focused:
