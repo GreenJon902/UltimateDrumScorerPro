@@ -46,7 +46,8 @@ class Beat(Widget):
 
     def check_focus(self, *_):
         pos = Window.mouse_pos
-        for i in range(len(self.sections)):
+        i = 0
+        while i < len(self.sections):  # Items get removed half way though this list due to un-focus bindings
             section = self.sections[i]
             stem = self.stems[i]  # Use top of stem as top of last bar is -inf, see do_layout
             bars = self.barss[i]
@@ -59,6 +60,8 @@ class Beat(Widget):
             else:
                 section.focused = False
                 bars.focused = False
+
+            i += 1
 
     def add(self, committed_notes, bars, dot_number, index=0):
         section = Section(committed_notes=committed_notes)
