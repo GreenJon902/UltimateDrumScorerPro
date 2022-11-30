@@ -7,6 +7,7 @@ from kivy.uix.widget import Widget
 from bar import Bar
 from config.config import Config
 from dot import Dot
+from section import Section
 
 
 class Bars(Widget):
@@ -19,7 +20,11 @@ class Bars(Widget):
     dots: list[Dot]
     split = False
 
-    def __init__(self, bars, dot_number, **kwargs):
+    section: Section
+
+    def __init__(self, section, bars, dot_number, **kwargs):
+        self.section = section
+
         self.bars = list()
         self.dots = list()
         self.trigger_posses = Clock.create_trigger(self._do_posses, -1)
@@ -29,6 +34,7 @@ class Bars(Widget):
         self.fbind("width", self.trigger_posses)
         self.fbind("focused_amount", self.trigger_posses)
         self.fbind("children", self.trigger_posses)
+        self.section.fbind("parent_multiplier", self.do_transparency)
         Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
 
         for i in range(len(bars)):
@@ -55,6 +61,10 @@ class Bars(Widget):
         self.new_dot_dot.committed = False
         self.add_widget(self.new_dot_dot)
         self.new_dot_dot.bind(committed=self.new_dot_dot_committed)
+
+    def do_transparency(self, *_):
+        for child in self.children:
+            child.transparency = self.section.parent_multiplier
 
     def new_bar_bar_selected(self, new_bar_bar, _):
         self.bars.insert(0, new_bar_bar)

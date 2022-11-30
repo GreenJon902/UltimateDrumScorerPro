@@ -14,6 +14,7 @@ class Beat(Widget):
     killing: list[tuple[Section, Stem, Bars]]
 
     all_sections: list[Section]  # Includes items in self.killed
+    all_barss: list[Bars]  # Includes items in self.killed
     sections: list[Section]
     stems: list[Stem]
     barss: list[Bars]
@@ -22,6 +23,7 @@ class Beat(Widget):
         self.killing = list()
 
         self.all_sections = list()
+        self.all_barss = list()
         self.sections = list()
         self.stems = list()
         self.barss = list()
@@ -61,7 +63,7 @@ class Beat(Widget):
     def add(self, committed_notes, bars, dot_number, index=0):
         section = Section(committed_notes=committed_notes)
         stem = Stem(section)
-        bars = Bars(bars, dot_number)
+        bars = Bars(section, bars, dot_number)
 
         section.fbind("size", self.trigger_layout)
         section.fbind("parent_multiplier", self.trigger_layout)
@@ -77,6 +79,7 @@ class Beat(Widget):
         self.add_widget(bars)
 
         self.all_sections.insert(index, section)
+        self.all_barss.insert(index, bars)
         self.sections.insert(index, section)
         self.stems.insert(index, stem)
         self.barss.insert(index, bars)
@@ -106,6 +109,7 @@ class Beat(Widget):
     def _remove_final(self, section, stem, bars):
         self.killing.remove((section, stem, bars))
         self.all_sections.remove(section)
+        self.all_barss.remove(bars)
 
         self.remove_widget(section)
         self.remove_widget(stem)
@@ -114,7 +118,7 @@ class Beat(Widget):
     def do_layout(self, *_):
         x = self.x
         for i, section in enumerate(self.all_sections):
-            dot_width = self.barss[i].dot_width
+            dot_width = self.all_barss[i].dot_width * section.parent_multiplier
 
             x += Config.section_x_buffer * section.parent_multiplier
 
