@@ -126,19 +126,32 @@ class Bar(Widget, ClassWithLogger):
 
         name = None
         did_click = False
+        new_hover = None
         if self.y - Config.bar_spacing / 2 < pos[1] < self.y + Config.bar_spacing / 2:
             if a < pos[0] < b1:
                 name = "left"
                 did_click = True
+                new_hover = self.left_color
             elif b2 < pos[0] < c1:
                 name = "middle"
                 did_click = True
+                new_hover = self.middle_color
             elif c2 < pos[0] < d:
                 name = "right"
                 did_click = True
+                new_hover = self.right_color
 
         if did_click:
             if name == self.selection:
                 self.selection = None
             else:
                 self.selection = name
+
+            a = Animation(r=(Config.bar_selector_committed_hover_color[0] if self.selection == name else
+                             Config.bar_selector_uncommitted_hover_color[0]),
+                          b=(Config.bar_selector_committed_hover_color[1] if self.selection == name else
+                             Config.bar_selector_uncommitted_hover_color[1]),
+                          g=(Config.bar_selector_committed_hover_color[2] if self.selection == name else
+                             Config.bar_selector_uncommitted_hover_color[2]),
+                          duration=Config.bar_selector_hover_fade_speed)
+            a.start(new_hover)

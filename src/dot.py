@@ -25,10 +25,11 @@ class Dot(Widget, ClassWithLogger):
 
         self.trigger_poses = Clock.create_trigger(self._do_poses, -1)
         self.fbind("pos", self.trigger_poses)
+        self.fbind("pos", self.do_hovers)
         self.fbind("configurableness", self.do_transparency)#
         self.fbind("transparency", self.do_transparency)
         self.fbind("committed", self.do_transparency)
-        Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
+        Window.bind(mouse_pos=self.do_hovers)
 
         if start_width is None:
             self.width = Config.dot_x_spacing
@@ -50,7 +51,8 @@ class Dot(Widget, ClassWithLogger):
         self.color.a = (1 if self.committed else
                         (Config.dot_selector_uncommitted_transparency * self.configurableness)) * self.transparency
 
-    def mouse_move(self, pos):
+    def do_hovers(self, *_):
+        pos = Window.mouse_pos
         distance = math.sqrt((pos[0] - self.x)**2 + (pos[1] - self.y)**2)
         if distance <= Config.dot_selector_hover_radius:
             if not self.hovered:
