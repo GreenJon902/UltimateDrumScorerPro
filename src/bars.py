@@ -10,6 +10,8 @@ from dot import Dot
 
 
 class Bars(Widget):
+    dot_width: int = NumericProperty()  # For parent, the minimum width this can be because of dots
+
     focused: bool = BooleanProperty(defaultvalue=False)
     focused_amount: bool = NumericProperty()  # Triggered by focused
 
@@ -96,11 +98,12 @@ class Bars(Widget):
         for dot in self.dots:
             dot.x = dot_x
             dot_x += dot.width
+        self.dot_width = dot_x - self.x
 
 
-        self.new_bar_bar.y = self.y + Config.bar_spacing
+        self.new_bar_bar.y = self.y + Config.bar_dot_height
 
-        y = self.y + Config.bar_spacing + self.new_bar_bar.height * self.focused_amount
+        y = self.y + Config.bar_dot_height + self.new_bar_bar.height * self.focused_amount
         height = 0
         bar = None
         for bar in self.bars:
@@ -108,9 +111,11 @@ class Bars(Widget):
             y += bar.height
             height += bar.height
         if bar is not None:
-            height -= bar.height
+            height -= bar.height  # Last one
+        else:
+            height -= self.new_bar_bar.height * self.focused_amount
 
-        self.height = height + Config.bar_spacing + self.new_bar_bar.height * self.focused_amount
+        self.height = height + Config.bar_dot_height + self.new_bar_bar.height * self.focused_amount
 
     def on_focused(self, _, focused):
         if focused:

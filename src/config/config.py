@@ -92,6 +92,7 @@ class Config:
     dot_entrance_speed = 0.25
     dot_kill_speed = 0.25
     default_beat_dot_count = 0
+    bar_dot_height = metrics.cm(0.25)
 
 
 

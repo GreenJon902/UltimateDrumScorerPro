@@ -70,6 +70,7 @@ class Beat(Widget):
 
         bars.fbind("height", self.trigger_layout)
         bars.fbind("bar_number", self.trigger_layout)
+        bars.fbind("dot_width", self.trigger_layout)
 
         self.add_widget(section)
         self.add_widget(stem)
@@ -113,12 +114,17 @@ class Beat(Widget):
     def do_layout(self, *_):
         x = self.x
         for i, section in enumerate(self.all_sections):
+            dot_width = self.barss[i].dot_width
+
             x += Config.section_x_buffer * section.parent_multiplier
 
             section.x = x
             section.y = self.y
 
-            x += section.width + Config.section_x_buffer * section.parent_multiplier
+            width_addition = section.width + Config.section_x_buffer * section.parent_multiplier
+            if dot_width > width_addition:
+                width_addition = dot_width
+            x += width_addition
 
 
         section_max_height = 0
