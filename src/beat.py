@@ -58,10 +58,10 @@ class Beat(Widget):
                 section.focused = False
                 bars.focused = False
 
-    def add(self, committed_notes, bar_number, index=0):
+    def add(self, committed_notes, bars, dot_number, index=0):
         section = Section(committed_notes=committed_notes)
         stem = Stem(section)
-        bars = Bars(bar_number)
+        bars = Bars(bars, dot_number)
 
         section.fbind("size", self.trigger_layout)
         section.fbind("parent_multiplier", self.trigger_layout)
@@ -172,10 +172,12 @@ class Beat(Widget):
         if after is None:
             committed_notes = [1]
             index_of_added = 0
-            bar_number = Config.default_beat_bar_count
+            bars = Config.default_beat_bars
+            dot_number = Config.default_beat_dot_count
         else:
             committed_notes = after.committed_notes.copy()
             index_of_after = self.sections.index(after)
             index_of_added = index_of_after + 1
-            bar_number = self.barss[index_of_after].bar_number
-        self.add(committed_notes, bar_number, index=index_of_added)
+            bars = self.barss[index_of_after].get_bars()
+            dot_number = self.barss[index_of_after].get_dot_number()
+        self.add(committed_notes, bars, dot_number, index=index_of_added)

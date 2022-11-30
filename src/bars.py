@@ -17,7 +17,7 @@ class Bars(Widget):
     dots: list[Dot]
     split = False
 
-    def __init__(self, bar_number, **kwargs):
+    def __init__(self, bars, dot_number, **kwargs):
         self.bars = list()
         self.dots = list()
         self.trigger_posses = Clock.create_trigger(self._do_posses, -1)
@@ -29,11 +29,18 @@ class Bars(Widget):
         self.fbind("children", self.trigger_posses)
         Window.bind(mouse_pos=lambda _, pos: self.mouse_move(pos))
 
-        for i in range(bar_number):
+        for i in range(len(bars)):
             bar = Bar()
             bar.transparency = 1
+            bar.selection = bars[i]
             self.add_widget(bar)
             self.bars.append(bar)
+
+        for i in range(dot_number):
+            dot = Dot()
+            dot.transparency = 1
+            self.add_widget(dot)
+            self.dots.append(dot)
 
         self.new_bar_bar = Bar()  # For adding new bars
         self.new_bar_bar.transparency = 1
@@ -156,3 +163,17 @@ class Bars(Widget):
         Widget.add_widget(self, widget, index=index, canvas=canvas)
         widget.fbind("height", self.trigger_posses)
         widget.fbind("width", self.trigger_posses)
+
+    def get_bars(self):
+        bars = list()
+        for bar in self.bars:
+            if bar.selection is not None:
+                bars.append(bar.selection)
+        return bars
+
+    def get_dot_number(self):
+        n = 0
+        for dot in self.dots:
+            if dot.committed:
+                n += 1
+        return n
