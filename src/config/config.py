@@ -48,10 +48,9 @@ class Config:
     focus_speed = 0.25
     note_commit_speed = 0.1
     note_hover_color_fade_speed = 0.1
-    section_kill_speed = 5
+    section_kill_speed = 0.25
     section_kill_rise_amount = metrics.cm(5)
     section_entrance_animation_duration = 0.25
-    # FIXME: Issue where when spawning in the first time it jumps (set section_entrance_animation_duration to 5 to see)
 
     section_trash_can_size = metrics.cm(0.5), metrics.cm(0.5)
     section_trash_can_transparency = 0.5
