@@ -81,6 +81,16 @@ class Config:
     bar_kill_speed = 0.25
     bar_entrance_speed = 0.1
     bar_top_buffer = metrics.cm(0.5)
+    dot_x_buffer = metrics.cm(0.25)  # Spacing at start
+    dot_x_spacing = metrics.cm(0.25)
+    dot_selector_uncommitted_transparency = 0.3
+    dot_radius = metrics.cm(0.05)
+    dot_selector_hover_radius = metrics.cm(0.1)
+    dot_selector_uncommitted_hover_color = (0, 0, 1)
+    dot_selector_committed_hover_color = (1, 0.5, 0.5)
+    dot_selector_hover_fade_speed = 0.1
+    dot_entrance_speed = 0.25
+    dot_kill_speed = 0.25
 
 
 
