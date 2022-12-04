@@ -93,6 +93,12 @@ class Config:
     default_beat_dot_count = 0
     bar_dot_height = metrics.cm(0.25)
 
+    hover_color_fade_speed = 0.1
+    uncommitted_hover_color = (0, 0, 1)
+    committed_hover_color = (1, 0.5, 0.5)
+    uncommitted_transparency = 0.3
+    commit_speed = 0.1
+
 
 
 __all__ = ["Config"]
