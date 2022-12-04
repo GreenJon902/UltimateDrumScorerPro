@@ -15,7 +15,7 @@ from config.config import Config
 class Bar(Widget, ClassWithLogger):
     transparency: int = NumericProperty()
     split_amount: int = NumericProperty()
-    selection: Union[None, str] = OptionProperty("middle", options=["left", "middle", "right"], allownone=True)
+    selection: Union[None, str] = OptionProperty(None, options=["left", "middle", "right"], allownone=True)
 
     def get_left_selected(self):
         return self.selection == "left"

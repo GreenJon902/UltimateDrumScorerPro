@@ -25,7 +25,8 @@ class CommittableButtonInfo(EventDispatcher):
     def __init__(self, handler, widget: Widget, color: Union[Color, ColorProperty],
                  collide_func: Callable[[tuple[int, int]], tuple[bool, int]], final_transparency_multiplier_name,
                  committed_name, configurableness_name):
-        self.trigger_recalculate_transparency = Clock.create_trigger(self.calculate_transparency, -1)
+        self.trigger_calculate_final_transparency = Clock.create_trigger(self.calculate_final_transparency, -1)
+        self.trigger_calculate_transparency = Clock.create_trigger(self.calculate_transparency, -1)
 
         self.handler = handler
         self.widget = widget
@@ -36,17 +37,20 @@ class CommittableButtonInfo(EventDispatcher):
         self.configurableness_name = configurableness_name
 
         widget.fbind("pos", handler.trigger_recalculation)
-        self.fbind("transparency", self.trigger_recalculate_transparency)
-        widget.fbind(final_transparency_multiplier_name, self.trigger_recalculate_transparency)
-        widget.fbind(configurableness_name, self.trigger_recalculate_transparency)
-        widget.fbind(committed_name, self.on_committed)
+        self.fbind("transparency", self.trigger_calculate_final_transparency)
+        widget.fbind(final_transparency_multiplier_name, self.trigger_calculate_final_transparency)
+        widget.fbind(configurableness_name, self.trigger_calculate_final_transparency)
+        widget.fbind(committed_name, self.trigger_calculate_transparency)
 
-    def on_committed(self, *_):
+        self.trigger_calculate_transparency()
+        self.trigger_calculate_final_transparency()
+
+    def calculate_transparency(self, *_):
         transparency = 1 if getattr(self.widget, self.committed_name) else Config.uncommitted_transparency
         a = Animation(transparency=transparency, duration=Config.commit_speed)
         a.start(self)
 
-    def calculate_transparency(self, *_):
+    def calculate_final_transparency(self, *_):
         self.color.a = self.transparency * \
                        (1 if getattr(self.widget, self.committed_name) else
                         getattr(self.widget, self.configurableness_name)) * \
