@@ -3,7 +3,6 @@ import math
 from betterLogger import ClassWithLogger
 from kivy.animation import Animation
 from kivy.clock import Clock
-from kivy.core.window import Window
 from kivy.graphics import Color, Line
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.uix.widget import Widget
@@ -44,7 +43,6 @@ class Dot(Widget, ClassWithLogger):
     def _do_poses(self, *_):
         self.dot.circle = (*self.pos, Config.dot_radius)
 
-    def check_collision(self, *_):
-        pos = Window.mouse_pos
+    def check_collision(self, pos):
         distance = math.sqrt((pos[0] - self.x)**2 + (pos[1] - self.y)**2)
         return distance <= Config.dot_selector_hover_radius, distance

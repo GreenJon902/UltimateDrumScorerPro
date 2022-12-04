@@ -14,7 +14,7 @@ from config.config import Config
 class CommittableButtonInfo(EventDispatcher):
     widget: Widget
     color: Union[Color, ColorProperty]
-    collide_func: Callable[[int, int], tuple[bool, int]]
+    collide_func: Callable[[tuple[int, int]], tuple[bool, int]]
 
     final_transparency_multiplier_name: str
     committed_name: str
@@ -23,7 +23,7 @@ class CommittableButtonInfo(EventDispatcher):
     transparency: int = NumericProperty()
 
     def __init__(self, handler, widget: Widget, color: Union[Color, ColorProperty],
-                 collide_func: Callable[[int, int], tuple[bool, int]], final_transparency_multiplier_name,
+                 collide_func: Callable[[tuple[int, int]], tuple[bool, int]], final_transparency_multiplier_name,
                  committed_name, configurableness_name):
         self.trigger_recalculate_transparency = Clock.create_trigger(self.calculate_transparency, -1)
 
@@ -102,7 +102,7 @@ class CommittableButtonHandler_:
         pos = Window.mouse_pos
         collided = None
         for info in self.registered:
-            collision_info = info.collide_func(*pos)
+            collision_info = info.collide_func(pos)
             if collision_info[0]:
                 if collided is None:
                     collided = (info, collision_info[1])
@@ -114,7 +114,7 @@ class CommittableButtonHandler_:
 
 
     def register(self, widget: Widget, color: Union[Color, ColorProperty],
-                 collide_func: Callable[[int, int], tuple[bool, int]], final_transparency_multiplier_name,
+                 collide_func: Callable[[tuple[int, int]], tuple[bool, int]], final_transparency_multiplier_name,
                  committed_name, configurableness_name):
         info = CommittableButtonInfo(self, widget, color, collide_func, final_transparency_multiplier_name,
                                      committed_name, configurableness_name)
