@@ -1,4 +1,5 @@
-# UltimateDrumScorerPro
+#UltimateDrumScorerPro
+[![CodeFactor](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro/badge)](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro)
 
 _Hey, this app is in the very early stages of development! It is a program to write drum notes in a way I find easier to read._  
 
