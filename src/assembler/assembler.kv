@@ -1,0 +1,18 @@
+#:set assembler_background (0.1, 0.1, 0.1, 1)
+#:set page_background (1, 1, 1, 1)
+
+<Assembler>:
+    canvas.before:
+        Color:
+            rgba: assembler_background
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<PageContents>:
+    canvas.before:
+        Color:
+            rgba: page_background
+        Rectangle:
+            pos: self.pos
+            size: self.size
