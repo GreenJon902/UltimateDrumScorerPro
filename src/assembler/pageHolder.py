@@ -22,9 +22,9 @@ class PageHolder(RelativeLayout):
     pan_mode: int = BooleanProperty(defaultvalue=True)
 
 
-    def __init__(self, **kwargs):
+    def __init__(self, contents=None, **kwargs):
         self.trigger_scale = Clock.create_trigger(self._trigger_scale, -1)
-        self.page = Page()
+        self.page = Page(contents)
         self.scatter1 = ScatterPlaneLayout(do_translation=False, do_rotation=False, do_scale=False)
         self.scatter2 = ScatterLayout(do_translation=False, do_rotation=False, do_scale=False)
         self._touches = list()

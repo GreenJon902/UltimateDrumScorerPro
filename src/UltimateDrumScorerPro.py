@@ -2,6 +2,7 @@ from kivy.app import App
 from kivy.core.window import Window
 
 from assembler import Assembler
+from assembler.pageContent.text import Text
 
 
 def run():
@@ -33,7 +34,13 @@ class Root(App):
         App.__init__(self)
 
     def build(self):
-        assembler = Assembler()
+        assembler = Assembler(
+           [
+               [
+                   Text("test")
+               ]
+           ]
+        )
         Window.bind(size=lambda _, size: self.update_size(assembler, size))
 
         return assembler

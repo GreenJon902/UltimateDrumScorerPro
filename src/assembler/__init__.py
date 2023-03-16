@@ -9,14 +9,18 @@ Builder.load_file("assembler/assembler.kv")
 class Assembler(RelativeLayout):
     pageHolders: list[PageHolder] = list()
 
-    def __init__(self, **kwargs):
+    def __init__(self, pages_contents=None, **kwargs):
+        if pages_contents is None:
+            pages_contents = list()
+
         self.pageHolders = list()
         RelativeLayout.__init__(self, **kwargs)
 
-        self.add_page()  # Default page
+        for page_contents in pages_contents:
+            self.add_page(page_contents)  # Default page
 
-    def add_page(self):
-        holder = PageHolder()
+    def add_page(self, contents=None):
+        holder = PageHolder(contents)
 
         self.pageHolders.append(holder)
         self.add_widget(holder)
