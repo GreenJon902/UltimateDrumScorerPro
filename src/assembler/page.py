@@ -1,12 +1,8 @@
 from kivy.uix.relativelayout import RelativeLayout
 
-from assembler.pageContents import PageContents
-
 
 class Page(RelativeLayout):
-    pageContents: PageContents
-
     def __init__(self, **kwargs):
-        self.pageContents = PageContents()
         RelativeLayout.__init__(self, **kwargs)
-        self.add_widget(self.pageContents)
+        self.size_hint = None, None
+        self.size = 210, 297  # A4 in mm

@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.core.window import Window
 
 from assembler import Assembler
 
@@ -33,8 +34,12 @@ class Root(App):
 
     def build(self):
         assembler = Assembler()
+        Window.bind(size=lambda _, size: self.update_size(assembler, size))
+
         return assembler
 
+    def update_size(self, widget, size):
+        widget.size = size
 
 
 if __name__ == "__main__":
