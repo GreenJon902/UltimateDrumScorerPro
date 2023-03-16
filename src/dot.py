@@ -18,7 +18,7 @@ class Dot(Widget, ClassWithLogger):
     configurableness: int = NumericProperty()
 
     def __init__(self, start_width=None, **kwargs):
-        color = Color(rgb=(0, 0, 0))
+        color = Color()
         self.dot = Line(width=Config.line_thickness)
 
         CommittableButtonHandler.register(self, color, self.check_collision, "transparency", "committed",

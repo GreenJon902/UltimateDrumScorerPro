@@ -57,15 +57,19 @@ class CommittableButtonInfo(EventDispatcher):
                        getattr(self.widget, self.final_transparency_multiplier_name)
 
 
-def recolor_info(info):
-    committed = getattr(info.widget, info.committed_name)
-    a = Animation(r=(Config.committed_hover_color[0] if committed else
-                     Config.uncommitted_hover_color[0]),
-                  b=(Config.committed_hover_color[1] if committed else
-                     Config.uncommitted_hover_color[1]),
-                  g=(Config.committed_hover_color[2] if committed else
-                     Config.uncommitted_hover_color[2]),
-                  duration=Config.hover_color_fade_speed)
+def recolor_info(info, mouse_over):
+    if mouse_over:
+        committed = getattr(info.widget, info.committed_name)
+        a = Animation(r=(Config.committed_hover_color[0] if committed else
+                         Config.uncommitted_hover_color[0]),
+                      b=(Config.committed_hover_color[1] if committed else
+                         Config.uncommitted_hover_color[1]),
+                      g=(Config.committed_hover_color[2] if committed else
+                         Config.uncommitted_hover_color[2]),
+                      duration=Config.hover_color_fade_speed)
+
+    else:
+        a = Animation(r=0, b=0, g=0, duration=Config.hover_color_fade_speed)
     a.start(info.color)
 
 
@@ -87,26 +91,26 @@ class CommittableButtonHandler_:
         collided = self.get_current_collided()
         if self.current_hover != collided:
             if self.current_hover is not None:
-                a = Animation(r=0, b=0, g=0, duration=Config.hover_color_fade_speed)
-                a.start(self.current_hover.color)
+                recolor_info(self.current_hover, False)
                 self.current_hover = None
 
             if collided is not None:
-                recolor_info(collided)
+                recolor_info(collided, True)
                 self.current_hover = collided
 
     def on_click(self, *_):
         collided = self.get_current_collided()
         if collided is not None:
             setattr(collided.widget, collided.committed_name, not getattr(collided.widget, collided.committed_name))
-            recolor_info(collided)
+            recolor_info(collided, True)
 
 
     def get_current_collided(self) -> Union[None, CommittableButtonInfo]:
         pos = Window.mouse_pos
         collided = None
         for info in self.registered:
-            collision_info = info.collide_func(pos)
+            local_pos = info.widget.to_widget(*pos)
+            collision_info = info.collide_func(local_pos)
             if collision_info[0]:
                 if collided is None:
                     collided = (info, collision_info[1])
@@ -123,6 +127,7 @@ class CommittableButtonHandler_:
         info = CommittableButtonInfo(self, widget, color, collide_func, final_transparency_multiplier_name,
                                      committed_name, configurableness_name)
         self.registered.append(info)
+        recolor_info(info, False)
 
 
 CommittableButtonHandler = CommittableButtonHandler_()

@@ -20,6 +20,7 @@ class Section(RelativeLayout):
 
     symbols: dict[int, Symbol]
     focused: bool = BooleanProperty(defaultvalue=False)
+    configurableness: bool = NumericProperty()  # Triggered by focused
     forced_width: Union[int, None] = NumericProperty(allownone=True, defaultvalue=None)  # For when section is used as a
                                                                                          # spacer
     new_section_button_x_space_multiplier: int = NumericProperty()  # For focusing and un-focusing
@@ -37,8 +38,12 @@ class Section(RelativeLayout):
     new_section_button: NewSectionButton = None
     being_killed: bool = False
 
-    def __init__(self, entrance_animated=False, **kwargs):
+    max_symbol_width: int
+
+    def __init__(self, entrance_animated=False, committed_notes=[], **kwargs):
         self.symbols = {}
+        self.max_symbol_width = 0
+
         self.calculate_size = Clock.create_trigger(lambda _: self._calculate_size(), -1)
         self.bind(forced_width=lambda _, __: self.calculate_size(),
                   new_section_button_x_space_multiplier=lambda _, __: self.calculate_size())
@@ -52,15 +57,17 @@ class Section(RelativeLayout):
         highest = max(Config.note_info, key=lambda x: x.y + x.height)
         self.height = highest.y + highest.height
 
-        self.redraw(entrance_animated)
+        self.redraw(entrance_animated, committed_notes)
 
-    def redraw(self, entrance_animated):
+    def redraw(self, entrance_animated, committed_notes=[]):
         self.clear_widgets()
         self.canvas.clear()
         taken_y_levels: dict[float, float] = {}
 
+        max_width = 0
+
         for n, noteInfo in enumerate(Config.note_info):
-            symbol = Symbol(noteInfo.symbol, noteInfo.size)
+            symbol = Symbol(noteInfo.symbol, noteInfo.size, committed=False)
             if entrance_animated:
                 symbol.right = 0
             symbol.y = noteInfo.y + Config.section_extender_space
@@ -72,11 +79,17 @@ class Section(RelativeLayout):
                 symbol.expanded_x = 0
                 taken_y_levels[symbol.y] = noteInfo.width + Config.note_selector_x_space
 
+            if n in committed_notes:
+                symbol.committed = True
+
             symbol.bind(pos=lambda _, __: self.calculate_size(), size=lambda _, __: self.calculate_size())
 
             self.add_widget(symbol)
             self.symbols[n] = symbol
 
+            if symbol.width > max_width:
+                max_width = symbol.width
+        self.max_symbol_width = max_width
 
         self.trash_can_button = TrashCanButton(Config.section_trash_can_size)
         self.trash_can_button.bind(y=lambda _, __: self.calculate_size())
@@ -104,6 +117,15 @@ class Section(RelativeLayout):
             self.on_focused(self, self.focused, animation_duration=0)
         self.calculate_size()
 
+    def on_configurableness(self, _, value):
+        for symbol in self.symbols.values():
+            symbol.configurableness = value
+            symbol.x = symbol.expanded_x * value - self.max_symbol_width
+
+    def on_parent_multiplier(self, _, value):
+        for symbol in self.symbols.values():
+            symbol.transparency = value
+
     def _calculate_size(self):
         widths: dict[int, float] = {}
 
@@ -113,7 +135,8 @@ class Section(RelativeLayout):
             widths[index] = symbol.x + symbol.width
 
         if self.forced_width is None:
-            self.width = max(widths.values()) + (Config.new_section_button_x_buffer + self.new_section_button.width) * self.new_section_button_x_space_multiplier
+            self.width = max(widths.values()) + (Config.new_section_button_x_buffer + self.new_section_button.width) * \
+                         self.new_section_button_x_space_multiplier
         else:
             self.width = self.forced_width
 
@@ -138,6 +161,7 @@ class Section(RelativeLayout):
                                        for index in self.symbols.keys()])  # For correct aligning to note stem.
         if self.stem_x != max_symbol_width:
             self.stem_x = max_symbol_width
+            print(self.stem_x)
 
     def kill_self(self, animated=False):
         """
@@ -183,6 +207,20 @@ class Section(RelativeLayout):
 
 
     def on_focused(self, _, focused, animation_duration=Config.focus_speed, unset_forced_width_at_end=False):
+        changes = {}
+        changes["configurableness"] = 1 if focused else 0
+
+        stem_bottom = self.height  # Lowest committed y if not focused, if focused then top
+        if not focused:
+            for symbol in self.symbols.values():
+                if symbol.committed and symbol.y < stem_bottom:
+                    stem_bottom = symbol.y
+        changes["stem_bottom"] = stem_bottom
+
+        a = Animation(**changes, duration=animation_duration)
+        a.start(self)
+        return
+
         if not focused and len(self.committed_notes) == 0 and not self.section_extender_enabled:  # Empty so delete
             self.kill_self(animated=True)
             return
@@ -200,8 +238,7 @@ class Section(RelativeLayout):
                 symbol = self.symbols[index]
 
                 if focused and not self.section_extender_enabled:
-                    a = Animation(x=symbol.expanded_x, transparency=(1 if index in self.committed_notes else
-                                                                     Config.note_selector_uncommitted_transparency),
+                    a = Animation(x=symbol.expanded_x, configurableness=(1 if index in self.committed_notes else 0),
                                   duration=animation_duration)
                     a.start(symbol)
 
@@ -216,21 +253,49 @@ class Section(RelativeLayout):
                         if symbol.y < stem_bottom:
                             stem_bottom = symbol.y
 
-                    a = Animation(x=x, transparency=(1 if index in self.committed_notes else 0),
+                    a = Animation(x=x, configurableness=(1 if index in self.committed_notes else 0),
                                   duration=animation_duration)
-                    a.start(symbol)
-                    a = Animation(r=0, g=0, b=0,  # Make sure everything is black
-                                  duration=animation_duration)
-                    a.start(symbol.color)
+                    a.start(symbol)def _calculate_size(self):
+        widths: dict[int, float] = {}
+
+        for index in self.symbols.keys():
+            symbol = self.symbols[index]
+
+            widths[index] = symbol.x + symbol.width
+
+        if self.forced_width is None:
+            self.width = max(widths.values()) + (Config.new_section_button_x_buffer + self.new_section_button.width) * \
+                         self.new_section_button_x_space_multiplier
+        else:
+            self.width = self.forced_width
+
+        self.height = max(self.symbols.values(), key=lambda x: x.y + x.height).top
+
+
+        self.new_section_button.right = self.width
+
+        if not self.being_killed:
+            self.trash_can_button.right = self.new_section_button.x - Config.new_section_button_x_buffer * \
+                                          self.new_section_button_x_space_multiplier
+
+            self.section_extender.width = self.trash_can_button.x - \
+                                          Config.section_extender_trash_can_buffer
+
+            if self.section_extender.width < 0:  # This would mainly be caused the Config.new_section_button_x_buffer
+                self.section_extender.width = 0
+                self.trash_can_button.x = self.section_extender.width + Config.section_extender_trash_can_buffer
+
+
+        max_symbol_width: float = max([(self.symbols[index].width if index in self.committed_notes else 0)
+                                       for index in self.symbols.keys()])  # For correct aligning to note stem.
+        if self.stem_x != max_symbol_width:
+            self.stem_x = max_symbol_width
+            print(self.stem_x)
 
                     if index in self.committed_notes:
                         taken_lines.append(self.symbols[index].y)
 
-            if self.stem_bottom == -1:
-                self.stem_bottom = stem_bottom
-            else:
-                a = Animation(stem_bottom=stem_bottom, duration=animation_duration)
-                a.start(self)
+
 
 
             a = Animation(transparency=(Config.section_trash_can_transparency if focused else 0),
@@ -278,6 +343,7 @@ class Section(RelativeLayout):
 
 
     def mouse_move(self, pos):
+        return
         if self.focused and not self.being_killed and not self.section_extender_enabled:
             index, distance = self.get_closest_to_pos(pos)
             symbol = self.symbols[index]
@@ -356,9 +422,11 @@ class Section(RelativeLayout):
             return RelativeLayout.on_touch_move(self, touch)
 
     def on_touch_up(self, touch):
+
         if self.section_extender_acting:
             self.section_extender_acting = False
-
+        return
+        if False: pass
         elif self.focused and not self.being_killed:
             if not self.section_extender_enabled:
                 index, distance = self.get_closest_to_pos((touch.x, touch.y))

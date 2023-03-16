@@ -2,25 +2,32 @@ import math
 
 from betterLogger import ClassWithLogger
 from kivy.graphics import Line, Color, Triangle
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, BooleanProperty
 from kivy.uix.relativelayout import RelativeLayout
 
+from committableButtonHandler import CommittableButtonHandler
 from config.config import Config
 
 
 class Symbol(RelativeLayout, ClassWithLogger):
     transparency: int = NumericProperty()
+    committed: bool = BooleanProperty()
+
+    configurableness: int = NumericProperty()
 
     def __init__(self, name, size, **kwargs):
+        color = Color()
+        CommittableButtonHandler.register(self, color, self.check_collision, "transparency", "committed",
+                                          "configurableness")
+
         RelativeLayout.__init__(self, **kwargs)
         ClassWithLogger.__init__(self)
 
         self.size = size
         self.size_hint = None, None
 
+        self.canvas.add(color)
         with self.canvas:
-            self.color = Color(rgb=(0, 0, 0), a=self.transparency)
-
             if name == "tilted_line":
                 Line(points=(0, -size[1]/2, size[0], 0), width=Config.line_thickness)
 
@@ -101,6 +108,10 @@ class Symbol(RelativeLayout, ClassWithLogger):
     def get_absolute_center(self):
         return self.to_window(self.width/2, 0, initial=False)
 
+    def check_collision(self, pos):
+        center = self.width/2, 0
+        dx = pos[0] - center[0]
+        dy = pos[1] - center[1]
+        distance = math.sqrt(dx ** 2 + dy ** 2)
 
-    def on_transparency(self, _, a):
-        self.color.a = a
+        return distance <= Config.note_selector_distance, distance
