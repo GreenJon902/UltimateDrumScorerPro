@@ -1,5 +1,6 @@
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 
 from assembler import Assembler
@@ -22,6 +23,7 @@ def run():
     os.environ["KCFG_INPUT_MOUSE"] = "mouse,multitouch_on_demand"
     # noinspection PyUnresolvedReferences
     import kivy
+    Builder.load_file("misc.kv")
 
     # ==================================================================================================================
 
@@ -32,8 +34,6 @@ def run():
 
 
 class UltimateDrumScorerProApp(App):
-
-
     def __init__(self):
         App.__init__(self)
 

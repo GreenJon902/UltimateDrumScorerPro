@@ -1,0 +1,26 @@
+[NicerTextInput@TextInput]:
+    radius: mm(5), mm(5)
+
+    text: ctx.text
+    hint_text: ctx.hint_text
+    on_text: ctx.text_callback(*args)
+
+    canvas.before:
+        Clear
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: ctx.radius
+        Color:
+            rgba:
+                (self.cursor_color
+                if self.focus and not self._cursor_blink
+                and int(self.x + self.padding[0]) <= self._cursor_visual_pos[0] <= int(self.x + self.width - self.padding[2])
+                else (0, 0, 0, 0))
+        Rectangle:
+            pos: self._cursor_visual_pos
+            size: root.cursor_width, -self._cursor_visual_height
+        Color:
+            rgba: self.disabled_foreground_color if self.disabled else (self.hint_text_color if not self.text else self.foreground_color)
