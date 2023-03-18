@@ -18,7 +18,7 @@ class PageHolder(RelativeLayout):
     trigger_scale = None
     _touches: list[MotionEvent]
 
-    zoom: int = NumericProperty(defaultvalue=1)
+    zoom: float = NumericProperty(defaultvalue=1)
 
     def __init__(self, contents=None, **kwargs):
         self.trigger_scale = Clock.create_trigger(self._trigger_scale, -1)

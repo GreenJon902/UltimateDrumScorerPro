@@ -2,6 +2,7 @@ from kivy.properties import ColorProperty, StringProperty
 from kivy.uix.label import Label
 
 from assembler.pageContent import PageContent
+from markdownLabel import MarkdownLabel
 
 
 class Text(PageContent):
@@ -11,7 +12,7 @@ class Text(PageContent):
     label: Label
 
     def __init__(self, *args, **kwargs):
-        self.label = Label(text=self.text, color=self.color)
+        self.label = MarkdownLabel(text=self.text, color=self.color)
         PageContent.__init__(self, *args, **kwargs)
         self.size_hint = None, None
         self.add_widget(self.label)
