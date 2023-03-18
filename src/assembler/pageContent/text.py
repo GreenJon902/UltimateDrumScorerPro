@@ -12,7 +12,7 @@ class Text(PageContent):
     label: Label
 
     def __init__(self, *args, **kwargs):
-        self.label = MarkdownLabel(text=self.text, color=self.color)
+        self.label = MarkdownLabel(text=self.text, color=self.color, font_size="100sp")
         PageContent.__init__(self, *args, **kwargs)
         self.size_hint = None, None
         self.add_widget(self.label)

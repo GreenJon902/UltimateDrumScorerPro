@@ -2,6 +2,7 @@ import re
 
 from kivy.core.text.markup import MarkupLabel as CoreMarkupLabel
 from kivy.uix.label import Label
+from kivy.utils import get_hex_from_color
 
 
 class CoreMarkdownLabel(CoreMarkupLabel):
@@ -65,11 +66,11 @@ class MarkdownLabel(Label):
             # line by line within markup
             if self.halign == 'justify' or self.strip:
                 text = text.strip()
-            #self._label.text = ''.join(('[color=',
-            #                            get_hex_from_color(
-            #                                self.disabled_color if
-            #                                self.disabled else self.color),
-            #                            ']', text, '[/color]'))
+            self._label.text = ''.join(('[color=',
+                                        get_hex_from_color(
+                                            self.disabled_color if
+                                            self.disabled else self.color),
+                                        ']', text, '[/color]'))
             self._label.refresh()
             # force the rendering to get the references
             if self._label.texture:
