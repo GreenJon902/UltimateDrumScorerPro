@@ -1,28 +1,39 @@
-from kivy.properties import ColorProperty, StringProperty
-from kivy.uix.label import Label
+from kivy.clock import Clock
+from kivy.clock import Clock
+from kivy.core.image import Texture
+from kivy.properties import ColorProperty, StringProperty, ObjectProperty, NumericProperty
 
 from assembler.pageContent import PageContent
-from markdownLabel import MarkdownLabel
+from markdownLabel import CoreMarkdownLabel
 
 
 class Text(PageContent):
     text: str = StringProperty(defaultvalue="Text")
     color = ColorProperty(defaultvalue=(0, 0, 0, 1))
+    font_size: float = NumericProperty(defaultvalue=10)  # height of small characters in mm
 
-    label: Label
+    label: CoreMarkdownLabel = ObjectProperty()
+    texture: Texture = ObjectProperty()
 
     def __init__(self, *args, **kwargs):
-        self.label = MarkdownLabel(text=self.text, color=self.color, font_size="100sp")
+        self.trigger_texture = Clock.create_trigger(self._texture_update, -1)
+        self.label = CoreMarkdownLabel(text=self.text, color=self.color, font_size=self.font_size)
+
         PageContent.__init__(self, *args, **kwargs)
-        self.size_hint = None, None
-        self.add_widget(self.label)
-        self.label.bind(texture_size=self.set_size)
 
-    def on_text(self, _, value):
-        self.label.text = value
+        self.bind(text=self.trigger_texture, color=self.trigger_texture, font_size=self.trigger_texture)
 
-    def on_color(self, _, value):
-        self.label.color = value
+        Clock.schedule_once(self.trigger_texture, 0)
 
-    def set_size(self, _, size):
-        self.size = size
+    def _texture_update(self, *args):
+        # So font draws at correct resolution we multiply by the amount that this widget has been zoomed in on
+        zoom_amount = (self.to_window(0, 1)[1] - self.to_window(0, 0)[1])
+
+        self.label.text = self.text
+        self.label.options["color"] = self.color
+        self.label.options["font_size"] = self.font_size * zoom_amount
+
+        self.label.refresh()
+        self.label.texture.bind()
+        self.size = self.label.texture.size[0] / zoom_amount, self.label.texture.size[1] / zoom_amount
+        self.texture = self.label.texture

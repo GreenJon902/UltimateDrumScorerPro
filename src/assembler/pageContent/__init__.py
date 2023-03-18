@@ -6,10 +6,13 @@ import typing
 from kivy import metrics
 from kivy.core.window import Window
 from kivy.input import MotionEvent
+from kivy.lang import Builder
 from kivy.uix.relativelayout import RelativeLayout
 
 if typing.TYPE_CHECKING:
     from editor import Editor
+
+Builder.load_file("assembler/pageContent/pageContent.kv")
 
 
 class PageContent(RelativeLayout):
