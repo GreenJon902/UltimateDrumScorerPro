@@ -34,7 +34,7 @@ class PageHolder(RelativeLayout):
         self.userControlHolder.add_widget(self.page)
         self.centerHolder.add_widget(self.userControlHolder)
         self.generalHolder.add_widget(self.centerHolder)
-        self.add_widget(self.generalHolder)
+        self.add_widget(self.generalHolder, len(self.children))  # Under other widgets - e.g. zoom control
 
         self.userControlHolder.size = self.page.size
         self.userControlHolder.center = 0, 0
