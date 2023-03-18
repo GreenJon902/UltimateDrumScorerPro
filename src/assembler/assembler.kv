@@ -3,16 +3,32 @@
 
 <Assembler>:
     canvas.before:
+        StencilPush
+        Rectangle:
+            size: self.size
+        StencilUse
+
         Color:
             rgba: assembler_background
         Rectangle:
-            pos: self.pos
             size: self.size
+
+    canvas.after:
+        StencilUnUse
+        Rectangle: # has to be re-drawn
+            size: self.size
+        StencilPop
 
 <Page>:
     canvas.before:
         Color:
             rgba: page_background
         Rectangle:
-            pos: self.pos
             size: self.size
+
+    #canvas.after:
+    #    Color:
+    #        rgba: (1, 0, 0, 1)
+    #    Rectangle:
+    #        pos: self.pos[0] - 5, self.pos[1] - 5
+    #        size: 10, 10

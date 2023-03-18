@@ -7,20 +7,24 @@ Builder.load_file("assembler/assembler.kv")
 
 
 class Assembler(RelativeLayout):
-    pageHolders: list[PageHolder] = list()
+    pageHolders: list[PageHolder]
 
     def __init__(self, pages_contents=None, **kwargs):
         if pages_contents is None:
-            pages_contents = list()
+            pages_contents = [[]]
 
-        self.pageHolders = list()
+        self.pageHolders = []
         RelativeLayout.__init__(self, **kwargs)
 
-        for page_contents in pages_contents:
-            self.add_page(page_contents)  # Default page
+        for page_content in pages_contents:
+            self.add_page(page_content)  # Default page
+        self.set_current_page(0)
 
     def add_page(self, contents=None):
         holder = PageHolder(contents)
 
         self.pageHolders.append(holder)
-        self.add_widget(holder)
+
+    def set_current_page(self, page_number):
+        self.clear_widgets()
+        self.add_widget(self.pageHolders[page_number])

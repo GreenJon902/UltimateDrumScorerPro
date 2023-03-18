@@ -1,8 +1,10 @@
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.uix.boxlayout import BoxLayout
 
 from assembler import Assembler
 from assembler.pageContent.text import Text
+from editor import Editor
 
 
 def run():
@@ -24,26 +26,32 @@ def run():
     # ==================================================================================================================
 
     print("Starting...")
-    root = Root()
+    root = UltimateDrumScorerProApp()
     root.run()
     print("Finished!")
 
 
-class Root(App):
+class UltimateDrumScorerProApp(App):
+
+
     def __init__(self):
         App.__init__(self)
 
     def build(self):
-        assembler = Assembler(
-           [
+        boxLayout = BoxLayout(orientation="vertical")
+        editor = Editor()
+        boxLayout.add_widget(Assembler(
                [
-                   Text("test")
+                   [
+                       Text(editor, text="test", pos=(210 / 2, 297 / 2))
+                   ]
                ]
-           ]
+            )
         )
-        Window.bind(size=lambda _, size: self.update_size(assembler, size))
+        boxLayout.add_widget(editor)
+        Window.bind(size=lambda _, size: self.update_size(boxLayout, size))
 
-        return assembler
+        return boxLayout
 
     def update_size(self, widget, size):
         widget.size = size

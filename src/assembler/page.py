@@ -17,5 +17,3 @@ class Page(RelativeLayout):
 
         for content in contents:
             self.add_widget(content)
-            print(content)
-            print(content.pos)
