@@ -39,7 +39,7 @@
                 radius: text_input_radius
                 hint_text: "Enter your message here..."
 
-                text_callback: root.set_text
+                on_text: root.set_text(*args)
 
             Image:
                 id: md_icon

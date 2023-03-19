@@ -1,11 +1,7 @@
 #:kivy 2.1.0
 
-[NicerTextInput@TextInput]:
-    radius: mm(5), mm(5)
-
-    text: ctx.text
-    hint_text: ctx.hint_text
-    on_text: ctx.text_callback(*args)
+<NicerTextInput@TextInput>:
+    radius: None
 
     canvas.before:
         Clear
@@ -14,7 +10,7 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: ctx.radius
+            radius: root.radius if root.radius is not None else (0, 0)
         Color:
             rgba:
                 (self.cursor_color
