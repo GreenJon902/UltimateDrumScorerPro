@@ -6,6 +6,10 @@
 #:set md_icon_padding mm(2.5)
 
 #:set font_size_picker_area_background (0.1, 0.1, 0.1, 1)
+#:set md_icon_enabled_color (0, 0, 0, 1)
+#:set md_icon_enabled_hover_color (0.25, 0.25, 0.25, 1)
+#:set md_icon_disabled_color (0.9, 0.9, 0.9, 1)
+#:set md_icon_disabled_hover_color (0.7, 0.7, 0.7, 1)
 
 #:set font_size_min 1
 #:set font_size_max 50
@@ -13,6 +17,8 @@
 
 
 <TextEditor>:
+    md_icon: md_icon
+
     BoxLayout:
         orientation: "horizontal"
         padding: first_spacing
@@ -28,6 +34,8 @@
                 text_callback: root.set_text
 
             Image:
+                id: md_icon
+
                 source: "mdIcon.png"
                 size_hint: None, None
                 width: md_icon_width
@@ -36,7 +44,11 @@
                 right: self.parent.width - md_icon_padding
                 y: md_icon_padding
 
-                on_touch_up: if self.collide_point(args[0].x, args[0].y): print("yay")
+                on_touch_up: root.md_clicked(args[1])
+                enabled_color:  md_icon_enabled_color
+                enabled_hover_color:  md_icon_enabled_hover_color
+                disabled_color: md_icon_disabled_color
+                disabled_hover_color: md_icon_disabled_hover_color
 
         BoxLayout:
             canvas.before:

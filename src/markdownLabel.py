@@ -18,19 +18,25 @@ class CoreMarkdownLabel(CoreMarkupLabel):
 
     splitter_regex = re.compile(r"(\[.*?])")
 
+
+    do_markup: bool = True
+
     @property
     def markup(self):
-        text = self.label
+        if self.do_markup:
+            text = self.label
 
-        text = self.bold_regex.sub(self.bold_substitution, text)
-        text = self.underline_regex.sub(self.underline_substitution, text)
-        text = self.italic_regex.sub(self.italic_substitution, text)
-        text = self.italic2_regex.sub(self.italic_substitution, text)
-        text = self.color_regex.sub(self.color_substitution, text)
+            text = self.bold_regex.sub(self.bold_substitution, text)
+            text = self.underline_regex.sub(self.underline_substitution, text)
+            text = self.italic_regex.sub(self.italic_substitution, text)
+            text = self.italic2_regex.sub(self.italic_substitution, text)
+            text = self.color_regex.sub(self.color_substitution, text)
 
-        # Markdown has been converted to the kivy format, now we just have use the standard behavior that kivy uses
-        s = re.split(self.splitter_regex, text)
-        s = [x for x in s if x != '']
+            # Markdown has been converted to the kivy format, now we just have use the standard behavior that kivy uses
+            s = re.split(self.splitter_regex, text)
+            s = [x for x in s if x != '']
+        else:
+            s = [self.label]
         return s
 
 

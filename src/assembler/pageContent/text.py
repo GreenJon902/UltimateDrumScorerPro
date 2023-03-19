@@ -1,7 +1,6 @@
 from kivy.clock import Clock
-from kivy.clock import Clock
 from kivy.core.image import Texture
-from kivy.properties import ColorProperty, StringProperty, ObjectProperty, NumericProperty
+from kivy.properties import ColorProperty, StringProperty, ObjectProperty, NumericProperty, BooleanProperty
 
 from assembler.pageContent import PageContent
 from markdownLabel import CoreMarkdownLabel
@@ -11,17 +10,19 @@ class Text(PageContent):
     text: str = StringProperty(defaultvalue="Text")
     color = ColorProperty(defaultvalue=(0, 0, 0, 1))
     font_size: float = NumericProperty(defaultvalue=10)  # height of small characters in mm
+    do_markup: bool = BooleanProperty(defaultvalue=True)  # height of small characters in mm
 
     label: CoreMarkdownLabel = ObjectProperty()
     texture: Texture = ObjectProperty()
 
     def __init__(self, *args, **kwargs):
         self.trigger_texture = Clock.create_trigger(self._texture_update, -1)
-        self.label = CoreMarkdownLabel(text=self.text, color=self.color, font_size=self.font_size)
+        self.label = CoreMarkdownLabel()
 
         PageContent.__init__(self, *args, **kwargs)
 
-        self.bind(text=self.trigger_texture, color=self.trigger_texture, font_size=self.trigger_texture)
+        self.bind(text=self.trigger_texture, color=self.trigger_texture, font_size=self.trigger_texture,
+                  do_markup=self.trigger_texture)
 
         Clock.schedule_once(self.trigger_texture, 0)
 
@@ -32,6 +33,7 @@ class Text(PageContent):
         self.label.text = self.text
         self.label.options["color"] = self.color
         self.label.options["font_size"] = self.font_size * zoom_amount
+        self.label.do_markup = self.do_markup
 
         self.label.refresh()
         self.label.texture.bind()
