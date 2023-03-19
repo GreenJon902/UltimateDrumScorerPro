@@ -50,7 +50,7 @@ class PageHolder(RelativeLayout):
         ret = RelativeLayout.on_touch_down(self, touch)
         if not ret and self.collide_point(touch.x, touch.y):
             self._touches.append(touch)
-            touch.grab(self)
+            touch.grab(self, exclusive=True)
             ret = True
         return ret
 
