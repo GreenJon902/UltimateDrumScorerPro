@@ -15,6 +15,8 @@ class CoreMarkdownLabel(CoreMarkupLabel):
     italic_substitution = r"[i]\g<1>[/i]"
     color_regex = re.compile(r"&#([\dabcdef]{3}(?:[\dabcdef]{1})?(?:[\dabcdef]{2})?(?:[\dabcdef]{2})?)(.*)")
     color_substitution = r"[color=#\g<1>]\g<2>[/color]"
+    strikethrough_regex = re.compile(r"~~(.+?)~~")
+    strikethrough_substitution = r"[s]\g<1>[/s]"
 
     splitter_regex = re.compile(r"(\[.*?])")
 
@@ -31,6 +33,7 @@ class CoreMarkdownLabel(CoreMarkupLabel):
             text = self.italic_regex.sub(self.italic_substitution, text)
             text = self.italic2_regex.sub(self.italic_substitution, text)
             text = self.color_regex.sub(self.color_substitution, text)
+            text = self.strikethrough_regex.sub(self.strikethrough_substitution, text)
 
             # Markdown has been converted to the kivy format, now we just have use the standard behavior that kivy uses
             s = re.split(self.splitter_regex, text)

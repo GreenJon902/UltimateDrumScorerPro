@@ -44,7 +44,7 @@ class UltimateDrumScorerProApp(App):
         boxLayout.add_widget(Assembler(
                [
                    [
-                       Text(editor, text="*hi* **how** __are__ _you_", pos=(210 / 2, 297 / 2))
+                       Text(editor, text="*hi* **how** __are__ _you_ ~~today~~", pos=(210 / 2, 297 / 2))
                    ]
                ]
             )
