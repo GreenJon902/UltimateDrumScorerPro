@@ -1,0 +1,101 @@
+#:kivy 2.1.0
+
+#:set st 0.5  # Standard Thickness
+#:set bt 1.001  # Bold Thickness
+
+<Note>:
+    size_hint: None, None
+
+    canvas.before:
+        Color:
+            rgba: 1, 0, 0, 0.2
+        Rectangle:
+            size: self.size
+
+
+<KickNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 1
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            points: 0, 0, 7.5, 5
+            width: st
+
+
+<SnareNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 2
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            points: 0, 0, 7.5, 5
+            width: st
+
+<TomOneNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 2.2
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            ellipse: (0, 0, root.width, root.drawing_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomTwoNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 2.1
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            ellipse: (0, 0, root.width, root.drawing_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomThreeNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 1.2
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            ellipse: (0, 0, root.width, root.drawing_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomFourNote@Note>:
+    width: 7.5
+    drawing_height: 5
+    note_level: 1.1
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            ellipse: (0, 0, root.width, root.drawing_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+#:set notes {0: "KickNote", 1: "SnareNote", 2: "TomOneNote", 3: "TomTwoNote", 4: "TomThreeNote", 5: "TomFourNote"}

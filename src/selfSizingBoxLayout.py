@@ -7,7 +7,7 @@ class SelfSizingBoxLayout(Widget):
     orientation = OptionProperty("horizontal", options=("horizontal", "vertical"))
     anchor = OptionProperty("middle", options=("lowest", "middle", "highest"))
 
-    _trigger_layout = None
+    trigger_layout = None
     attr_names_for_vertical = {
         "lowest": "x",
         "middle": "center_x",
@@ -20,12 +20,13 @@ class SelfSizingBoxLayout(Widget):
     }
 
     def __init__(self, **kwargs):
-        self._trigger_layout = Clock.create_trigger(self.do_layout, -1)
+        self.trigger_layout = Clock.create_trigger(self.do_layout, -1)
 
         Widget.__init__(self, **kwargs)
-        self.fbind("orientation",  self._trigger_layout)
-        self.fbind("children",  self._trigger_layout)
-        self.fbind("pos",  self._trigger_layout)
+        self.fbind("orientation",  self.trigger_layout)
+        self.fbind("children",  self.trigger_layout)
+        self.fbind("pos",  self.trigger_layout)
+        self.trigger_layout()
 
     def do_layout(self, *_):
         if self.orientation == "vertical":
@@ -59,6 +60,15 @@ class SelfSizingBoxLayout(Widget):
             attr_name = self.attr_names_for_horizontal[self.anchor]
             for child in self.children:
                 setattr(child, attr_name, getattr(self, attr_name))
+        print(self.children, self.size)
+
+    def add_widget(self, widget, **kwargs):
+        widget.fbind("size", self.trigger_layout)
+        Widget.add_widget(self, widget, **kwargs)
+
+    def remove_widget(self, widget):
+        widget.funbind("size", self.trigger_layout)
+        Widget.remove_widget(self, widget)
 
 
 if __name__ == "__main__":
