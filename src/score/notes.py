@@ -21,4 +21,6 @@ class Note(RelativeLayout):
 notes = {}
 for (id, note_name) in global_idmap["notes"].items():
     notes[id] = Factory.get(note_name)
-
+missing_major_note_level_height = global_idmap["missing_major_note_level_height"]  # If gap in consecutive integer
+                                                                                   # note_level values then this is the
+                                                                                   # gap

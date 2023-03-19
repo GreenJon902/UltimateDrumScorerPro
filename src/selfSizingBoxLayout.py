@@ -60,7 +60,7 @@ class SelfSizingBoxLayout(Widget):
             attr_name = self.attr_names_for_horizontal[self.anchor]
             for child in self.children:
                 setattr(child, attr_name, getattr(self, attr_name))
-        print(self.children, self.size)
+
 
     def add_widget(self, widget, **kwargs):
         widget.fbind("size", self.trigger_layout)
