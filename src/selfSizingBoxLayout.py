@@ -23,9 +23,9 @@ class SelfSizingBoxLayout(Widget):
         self.trigger_layout = Clock.create_trigger(self.do_layout, -1)
 
         Widget.__init__(self, **kwargs)
-        self.fbind("orientation",  self.trigger_layout)
-        self.fbind("children",  self.trigger_layout)
-        self.fbind("pos",  self.trigger_layout)
+        self.fbind("orientation", self.trigger_layout)
+        self.fbind("children", self.trigger_layout)
+        self.fbind("pos", self.trigger_layout)
         self.trigger_layout()
 
     def do_layout(self, *_):
