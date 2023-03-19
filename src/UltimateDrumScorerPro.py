@@ -23,6 +23,7 @@ def run():
     os.environ["KCFG_INPUT_MOUSE"] = "mouse,multitouch_on_demand"
     # noinspection PyUnresolvedReferences
     import kivy
+    kivy.require("2.1.0")
     Builder.load_file("misc.kv")
 
     # ==================================================================================================================

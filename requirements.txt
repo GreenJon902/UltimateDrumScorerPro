@@ -1,2 +1,1 @@
-appdirs
-Kivy
+Kivy==2.1.0
