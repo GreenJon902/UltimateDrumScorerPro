@@ -6,6 +6,7 @@ from kivy.properties import ObjectProperty
 from kivy.uix.button import Button
 
 from assembler.pageContent import PageContent
+from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from score import ScoreSectionStorage
 from score.notes import notes, missing_major_note_level_height
 from selfSizingBoxLayout import SelfSizingBoxLayout
@@ -71,8 +72,11 @@ class ScoreSection(PageContent):
             y += note_level_heights[note_level]
 
         for section in self.score.sections:
+            container = MultiNoteHolder()
+
             for note_id in section.note_ids:
                 note = notes[note_id]()
                 note.height = note_level_ys[note.note_level] + note.drawing_height
 
-                self.bottomContainer.add_widget(note, index=len(self.bottomContainer.children))
+                container.add_widget(note, index=len(self.bottomContainer.children))
+            self.bottomContainer.add_widget(container)
