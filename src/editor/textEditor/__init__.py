@@ -2,6 +2,7 @@ from kivy.core.window import Window
 from kivy.input import MotionEvent
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty, BooleanProperty
+from kivy.uix.bubble import Bubble
 from kivy.uix.image import Image
 from kivy.uix.relativelayout import RelativeLayout
 
@@ -10,9 +11,14 @@ from assembler.pageContent.text import Text
 Builder.load_file("editor/textEditor/textEditor.kv")
 
 
+class MdTooltip(Bubble):
+    pass
+
+
 class TextEditor(RelativeLayout):
     text_instance: Text
 
+    md_tooltip: MdTooltip = ObjectProperty()
     md_icon: Image = ObjectProperty()
     md_icon_hovered: bool = BooleanProperty()
 
@@ -22,6 +28,10 @@ class TextEditor(RelativeLayout):
         RelativeLayout.__init__(self, **kwargs)
         Window.bind(mouse_pos=self.on_mouse_pos)
         self.bind(md_icon_hovered=self.do_md_icon_color)
+        self.bind(md_icon_hovered=self.do_md_tooltip)
+
+        self.md_tooltip = MdTooltip()
+        self.md_icon.bind(pos=self.do_md_tooltip_pos)
 
     def set_text(self, _, value):
         self.text_instance.text = value
@@ -52,3 +62,14 @@ class TextEditor(RelativeLayout):
             self.md_icon_hovered = True
         else:
             self.md_icon_hovered = False
+
+
+    def do_md_tooltip(self, _, value):
+        if value:
+            self.add_widget(self.md_tooltip)
+        else:
+            self.remove_widget(self.md_tooltip)
+
+    def do_md_tooltip_pos(self, _, _2):
+        self.md_tooltip.pos = self.md_icon.to_window(self.md_icon.width / 2 - self.md_tooltip.width / 2,
+                                                     self.md_icon.top, False, True)
