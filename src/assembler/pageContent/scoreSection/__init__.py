@@ -116,7 +116,13 @@ class ScoreSection(PageContent):
                 for n in range(last_section.bars):
                     bar_container.add_widget(Bar())
                 self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
-
+                with self.canvas:
+                    line = Line(points=(note_container.x, note_container.y, note_container.x, bar_container.highest_line))
+                    updater = lambda *args, line_=line, note_container_=note_container, bar_container_=bar_container: \
+                        set_points(line_, (note_container_.x, note_container_.y, note_container_.x,
+                                           bar_container_.highest_line))
+                    note_container.bind(pos=updater, size=updater)
+                    bar_container.bind(highest_line=updater)
             else:
                 bar_container = MultiBarHolder(width=note_container.width)  # Bars
                 note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
