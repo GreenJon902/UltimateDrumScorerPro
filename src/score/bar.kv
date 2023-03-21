@@ -1,0 +1,14 @@
+#:kivy 2.1.0
+#:include score/scoreSettings.kv
+
+<Bar>:
+    size_hint: None, None
+    height: 5
+    line_height: 2.5
+
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            points: 0, 2.5, self.width, 2.5
+            width: st

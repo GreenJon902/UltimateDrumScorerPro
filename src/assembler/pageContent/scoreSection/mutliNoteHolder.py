@@ -17,6 +17,8 @@ class MultiNoteHolder(Widget):
         self.fbind("pos", self.trigger_layout)
         self.fbind("size", self.trigger_layout)
 
+        self.trigger_sizing()  # Which then causes layout
+
     def add_widget(self, widget, **kwargs):
         widget.fbind("size", self.trigger_sizing)
         Widget.add_widget(self, widget, **kwargs)

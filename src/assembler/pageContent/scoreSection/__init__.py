@@ -2,14 +2,27 @@ import math
 from typing import Optional
 
 from kivy.clock import Clock
+from kivy.graphics import Color, Line
 from kivy.properties import ObjectProperty
-from kivy.uix.button import Button
+from kivy.uix.widget import Widget
 
 from assembler.pageContent import PageContent
+from score.bar import Bar
+from assembler.pageContent.scoreSection.multiBarHolder import MultiBarHolder
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from score import ScoreSectionStorage
 from score.notes import notes, missing_major_note_level_height
 from selfSizingBoxLayout import SelfSizingBoxLayout
+
+
+def set_width(obj, width, doprint=False):
+    obj.width = width
+    if doprint:
+        print(width, doprint, doprint.children)
+
+
+def set_points(obj: Line, points):
+    obj.points = points
 
 
 class ScoreSection(PageContent):
@@ -26,8 +39,8 @@ class ScoreSection(PageContent):
         self.container = SelfSizingBoxLayout(orientation="vertical")
         self.bottomContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="highest")
         self.topContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="lowest")
-        self.container.add_widget(self.bottomContainer)
         self.container.add_widget(self.topContainer)
+        self.container.add_widget(self.bottomContainer)
 
         PageContent.__init__(self, *args, **kwargs)
 
@@ -71,12 +84,42 @@ class ScoreSection(PageContent):
             note_level_ys[note_level] = y
             y += note_level_heights[note_level]
 
-        for section in self.score.sections:
-            container = MultiNoteHolder()
+        #  Draw --------------------------------------------------------------------------------------------------
+        reversed_sections = self.score.sections[::-1]
+        for i in range(len(reversed_sections) + 1):
+            if i < len(reversed_sections):
+                section = reversed_sections[i]
+            else:
+                section = None
+            if i - 1 >= 0:
+                last_section = reversed_sections[i - 1]
+            else:
+                last_section = None
 
-            for note_id in section.note_ids:
-                note = notes[note_id]()
-                note.height = note_level_ys[note.note_level] + note.drawing_height
+            if section is not None:  # Heads
+                note_container = MultiNoteHolder()
+                for note_id in section.note_ids:
+                    note = notes[note_id]()
+                    note.height = note_level_ys[note.note_level] + note.drawing_height
+                    note_container.add_widget(note)
+                self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
+            else:
+                note_container = MultiNoteHolder()
+                note_container.add_widget(Widget(width=5, height=5))  # Need a size so bars show
+                self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
 
-                container.add_widget(note, index=len(self.bottomContainer.children))
-            self.bottomContainer.add_widget(container)
+            if i != 0:
+                assert last_section is not None
+                bar_container = MultiBarHolder(width=note_container.width)  # Bars
+                note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
+                                    set_width(bar_container_, note_container_.width))
+                for n in range(last_section.bars):
+                    bar_container.add_widget(Bar())
+                self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
+
+            else:
+                bar_container = MultiBarHolder(width=note_container.width)  # Bars
+                note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
+                                    set_width(bar_container_, note_container_.width, bar_container_))
+                self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
+

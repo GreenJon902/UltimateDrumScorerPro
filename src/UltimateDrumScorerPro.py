@@ -48,22 +48,17 @@ class UltimateDrumScorerProApp(App):
                    [
                        Text(editor, pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
                        ScoreSection(editor, pos=(210 / 2, 297 / 2), score=ScoreSectionStorage([
-                           ScoreSectionSectionStorage(note_ids=[1, 0], bars=1),
-                           ScoreSectionSectionStorage(note_ids=[1]),
-                           ScoreSectionSectionStorage(note_ids=[2, 0]),
-                           ScoreSectionSectionStorage(note_ids=[2]),
-                           ScoreSectionSectionStorage(note_ids=[3, 0]),
+                           ScoreSectionSectionStorage(note_ids=[1, 0], bars=3),
+                           ScoreSectionSectionStorage(note_ids=[1], bars=3),
+                           ScoreSectionSectionStorage(note_ids=[2, 0], bars=3),
+                           ScoreSectionSectionStorage(note_ids=[2], bars=3),
+                           ScoreSectionSectionStorage(note_ids=[3, 0], bars=2),
                            ScoreSectionSectionStorage(note_ids=[3]),
-                           ScoreSectionSectionStorage(note_ids=[4, 0]),
+                           ScoreSectionSectionStorage(note_ids=[4, 0], bars=1),
                            ScoreSectionSectionStorage(note_ids=[4]),
-                           ScoreSectionSectionStorage(note_ids=[5, 0]),
-                           ScoreSectionSectionStorage(note_ids=[5]),
+                           ScoreSectionSectionStorage(note_ids=[5, 0], bars=5),
+                           ScoreSectionSectionStorage(note_ids=[5], bars=1),
                        ])),
-                       ScoreSection(editor, pos=(210 / 2-10, 297 / 2), score=ScoreSectionStorage([
-                           ScoreSectionSectionStorage(note_ids=range(6), bars=1)])),
-                       ScoreSection(editor, pos=(0, 297 / 2), score=ScoreSectionStorage([
-                           ScoreSectionSectionStorage(note_ids=[1], bars=1),
-                           ScoreSectionSectionStorage(note_ids=[0])]))
                    ]
                ]
             )
