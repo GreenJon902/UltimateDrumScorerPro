@@ -15,10 +15,8 @@ from score.notes import notes, missing_major_note_level_height
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 
-def set_width(obj, width, doprint=False):
+def set_width(obj, width):
     obj.width = width
-    if doprint:
-        print(width, doprint, doprint.children)
 
 
 def set_points(obj: Line, points):
@@ -120,6 +118,6 @@ class ScoreSection(PageContent):
             else:
                 bar_container = MultiBarHolder(width=note_container.width)  # Bars
                 note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
-                                    set_width(bar_container_, note_container_.width, bar_container_))
+                                    set_width(bar_container_, note_container_.width))
                 self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
 
