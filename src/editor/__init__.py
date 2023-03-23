@@ -1,7 +1,9 @@
 from kivy.lang import Builder
 from kivy.uix.relativelayout import RelativeLayout
 
+from assembler.pageContent.scoreSection import ScoreSection
 from assembler.pageContent.text import Text
+from editor.scoreSectionEditor import ScoreSectionEditor
 from editor.textEditor import TextEditor
 
 Builder.load_file("editor/editor.kv")
@@ -29,8 +31,10 @@ class Editor(RelativeLayout):
 
             if type(obj) == Text:
                 self.add_widget(TextEditor(obj))
+            elif type(obj) == ScoreSection:
+                self.add_widget(ScoreSectionEditor(obj))
             else:
-                raise TypeError(f"Expected object to be None / Text, not {type(obj)}")
+                raise TypeError(f"Expected object to be None / ScoreSection / Text, not {type(obj)}")
 
     def has_selected(self, obj):
         return self.selected == obj

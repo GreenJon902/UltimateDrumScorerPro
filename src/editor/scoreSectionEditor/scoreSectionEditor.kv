@@ -1,0 +1,35 @@
+#:kivy 2.1.0
+
+#:set tab_radius [(mm(3), mm(3)), (mm(3), mm(3)), (0, 0), (0, 0)]
+#:set tab_padding mm(10), mm(0), mm(0), mm(0)
+#:set tab_spacing mm(0.5)
+#:set default_tab_width mm(20)
+
+<ScoreSectionEditor>:
+    do_default_tab: False
+    y: self.tab_height
+    tab_width: None
+    tab_height: mm(7)
+
+    enabled_tab_color: (0.2, 0.2, 0.2, 1)
+    disabled_tab_color: (0.1, 0.1, 0.1, 1)
+
+
+<TabbedPanelItem>:
+
+<TabbedPanelHeader>:
+    background_normal: 'transparent.png'
+    background_down: 'transparent.png'
+
+    canvas.before:
+        Color:
+            rgba: (self.parent.parent.parent.parent.enabled_tab_color if self.state == "down" else self.parent.parent.parent.parent.disabled_tab_color) if self.parent is not None and self.parent.parent is not None and self.parent.parent.parent is not None and self.parent.parent.parent.parent is not None else (0, 0, 0, 0)
+        RoundedRectangle:
+            pos: self.x + tab_spacing, self.y
+            size: self.width - tab_spacing * 2, self.height
+            radius: tab_radius
+
+<-TabbedPanelContent>:
+
+<StripLayout>:
+    padding: tab_padding
