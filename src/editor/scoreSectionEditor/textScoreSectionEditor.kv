@@ -1,0 +1,17 @@
+#:kivy 2.1.0
+
+#:include editor/scoreSectionEditor/scoreSectionEditor.kv
+
+#:set text_input_radius mm(5), mm(5)
+#:set padding mm(5), mm(5), mm(5), mm(5)
+
+<TextScoreSectionEditor>:
+    text: "Text Editor"
+    text_input: textInput
+
+    BoxLayout:
+        padding: padding
+        RoundedTextInput:
+            id: textInput
+
+            radius: text_input_radius

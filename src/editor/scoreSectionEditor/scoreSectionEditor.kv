@@ -3,13 +3,15 @@
 #:set tab_radius [(mm(3), mm(3)), (mm(3), mm(3)), (0, 0), (0, 0)]
 #:set tab_padding mm(10), mm(0), mm(0), mm(0)
 #:set tab_spacing mm(0.5)
+#:set tab_height mm(7)
 #:set default_tab_width mm(20)
 
 <ScoreSectionEditor>:
     do_default_tab: False
-    y: self.tab_height
+    size_hint_y: None
+    height: (self.parent.height + self.tab_height) if self.parent is not None else 100
     tab_width: None
-    tab_height: mm(7)
+    tab_height: tab_height
 
     enabled_tab_color: (0.2, 0.2, 0.2, 1)
     disabled_tab_color: (0.1, 0.1, 0.1, 1)

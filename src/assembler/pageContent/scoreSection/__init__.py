@@ -61,6 +61,8 @@ class ScoreSection(PageContent):
 
     def _update(self, *_):
         print(f"Redrawing {self}")
+        self.bottomContainer.clear_widgets()
+        self.topContainer.clear_widgets()
         note_objs = [notes[note_id]() for section in self.score.sections for note_id in section.note_ids]
 
         #  Get note levels as y levels ---------------------------------------------------------------------------------
@@ -72,7 +74,10 @@ class ScoreSection(PageContent):
             elif note.drawing_height > note_level_heights[note.note_level]:
                 note_level_heights[note.note_level] = note.drawing_height
             major_note_levels.add(math.floor(note.note_level))
-        max_note_level = max(note_level_heights)
+        if len(note_level_heights) != 0:
+            max_note_level = max(note_level_heights)
+        else:
+            max_note_level = 1
         missing_levels = major_note_levels.symmetric_difference(range(1, math.floor(max_note_level) + 1))
         note_level_heights.update({level: missing_major_note_level_height for level in missing_levels})
 
