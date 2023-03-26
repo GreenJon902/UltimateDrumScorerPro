@@ -3,7 +3,6 @@ import re
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
-from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.tabbedpanel import TabbedPanelItem
 from kivy.uix.textinput import TextInput
 

@@ -1,5 +1,5 @@
 from kivy.event import EventDispatcher
-from kivy.properties import ObjectProperty, ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty
 
 
 class ScoreSectionSectionStorage(EventDispatcher):

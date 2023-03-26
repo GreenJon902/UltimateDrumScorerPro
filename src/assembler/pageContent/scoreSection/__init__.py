@@ -2,17 +2,15 @@ import math
 from typing import Optional
 
 from kivy.clock import Clock
-from kivy.graphics import Color, Line, Canvas
-from kivy.properties import ObjectProperty, NumericProperty, AliasProperty, ReferenceListProperty
-from kivy.uix.widget import Widget
+from kivy.graphics import Line, Canvas
+from kivy.properties import ObjectProperty
 
 from assembler.pageContent import PageContent
 from assembler.pageContent.scoreSection.bars import MultiBarHolder, Bar, draw_bar
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from assembler.pageContent.scoreSection.stems import draw_stem
-from betterLine import betterLine
 from score import ScoreSectionStorage
-from score.notes import notes, missing_major_note_level_height, bar_height, bar_width
+from score.notes import notes, missing_major_note_level_height
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 

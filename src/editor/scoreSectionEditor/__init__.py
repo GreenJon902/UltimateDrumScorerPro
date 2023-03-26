@@ -1,7 +1,6 @@
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import ColorProperty
-from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
 
 from assembler.pageContent.scoreSection import ScoreSection

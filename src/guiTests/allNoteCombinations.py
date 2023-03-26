@@ -1,10 +1,7 @@
 import kivy.base
 from kivy import metrics
-from kivy.core.window import Window
-from kivy.graphics import Rectangle, Color
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 from kivy.uix.scatterlayout import ScatterPlaneLayout
 from kivy.uix.stacklayout import StackLayout
 

@@ -1,4 +1,3 @@
-from kivy.clock import Clock
 from kivy.factory import Factory
 from kivy.lang import Builder, global_idmap
 from kivy.properties import NumericProperty

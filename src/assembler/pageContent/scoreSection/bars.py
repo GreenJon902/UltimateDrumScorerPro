@@ -2,7 +2,6 @@ import typing
 
 from kivy.clock import Clock
 from kivy.graphics import Instruction, Line, Color, InstructionGroup
-from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
 from score.notes import bar_height, bar_width
