@@ -7,7 +7,9 @@ from kivy.properties import ObjectProperty, NumericProperty, AliasProperty, Refe
 from kivy.uix.widget import Widget
 
 from assembler.pageContent import PageContent
+from assembler.pageContent.scoreSection.bars import MultiBarHolder, Bar, draw_bar
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
+from assembler.pageContent.scoreSection.stems import draw_stem
 from betterLine import betterLine
 from score import ScoreSectionStorage
 from score.notes import notes, missing_major_note_level_height, bar_height, bar_width
@@ -24,25 +26,32 @@ def set_points(obj: Line, points):
 
 class ScoreSection(PageContent):
     score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
-    max_bar_height: float = NumericProperty()
     _old_score: Optional[ScoreSectionStorage] = None
 
-    container: SelfSizingBoxLayout
-    bar_container: Canvas  # Also has stems
+    container: SelfSizingBoxLayout  # Holes everything
+    bottomContainer: SelfSizingBoxLayout  # Note heads and decoration
+    topContainer: SelfSizingBoxLayout  # Bars
+    bar_canvas: Canvas
+    stem_canvas: Canvas
     update = None
 
     def __init__(self, *args, **kwargs):
         self.update = Clock.create_trigger(self._update, -1)
-        self.container = SelfSizingBoxLayout(orientation="horizontal", anchor="highest", size_hint=(None, None))
-        self.bar_container = Canvas()
+        self.container = SelfSizingBoxLayout(orientation="vertical")
+        self.bottomContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="highest")
+        self.topContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="highest")
+        self.bar_canvas = Canvas()
+        self.stem_canvas = Canvas()
+        self.container.add_widget(self.topContainer)
+        self.container.add_widget(self.bottomContainer)
 
         PageContent.__init__(self, *args, **kwargs)
 
-        self.bind(score=self.do_size)
-        self.container.bind(size=self.do_size)
+        self.container.bind(size=self.on_container_size)
 
         self.add_widget(self.container)
-        self.canvas.add(self.bar_container)
+        self.canvas.add(self.bar_canvas)
+        self.canvas.add(self.stem_canvas)
         self.on_score(self, self.score)
 
     def on_score(self, _, value):
@@ -54,13 +63,15 @@ class ScoreSection(PageContent):
 
         self.update()
 
-    def do_size(self, _, _2):
-        self.size = self.container.width, self.container.height + self.max_bar_height
+    def on_container_size(self, _, value):
+        self.size = value
 
     def _update(self, *_):
         print(f"Redrawing {self}")
-        self.container.clear_widgets()
-        self.bar_container.clear()
+        self.bottomContainer.clear_widgets()
+        self.topContainer.clear_widgets()
+        self.bar_canvas.clear()
+        self.stem_canvas.clear()
         note_objs = [notes[note_id]() for section in self.score.sections for note_id in section.note_ids]
 
         #  Get note levels as y levels ---------------------------------------------------------------------------------
@@ -87,39 +98,42 @@ class ScoreSection(PageContent):
 
         #  Draw --------------------------------------------------------------------------------------------------
         bar_start_widgets = []
-        max_bar_height = 0
 
         for section in self.score.sections:
-            note_container = MultiNoteHolder()  # Note heads ----
-            for note_id in section.note_ids:
+            note_container = MultiNoteHolder()
+            bar_container = MultiBarHolder(note_container)
+            self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
+            self.topContainer.add_widget(bar_container, index=len(self.topContainer.children))
+
+
+            for note_id in section.note_ids:  # Note heads ----
                 note = notes[note_id]()
                 note.height = note_level_ys[note.note_level] + note.drawing_height
                 note_container.add_widget(note)
-            self.container.add_widget(note_container, index=len(self.container.children))
 
 
+            for n in range(len(bar_start_widgets)):  # Retaining bars
+                bar = Bar()
+                bar_container.add_widget(bar)
 
-            if section.delta_bars > 0:  # Adding bars ----
+            if section.delta_bars > 0:  # Adding bars
                 for n in range(section.delta_bars):
-                    bar_start_widgets.append(note_container)
+                    bar = Bar()
+                    bar_container.add_widget(bar)
+                    bar_start_widgets.append(bar)
 
-
-            if section.delta_bars < 0:  # Removing Bars ----
+            if section.delta_bars < 0:  # Removing Bars
                 for n in range(section.delta_bars * -1):
                     if not len(bar_start_widgets) > 0:
                         print(f"TRIED TO DRAW BAR THAT HASN'T STARTED - {bar_start_widgets}")
                     else:
-                        if len(bar_start_widgets) * bar_height > max_bar_height:
-                            max_bar_height = len(bar_start_widgets) * bar_height
-                        widget = bar_start_widgets.pop(-1)
-                        y = len(bar_start_widgets) * bar_height
-                        self.bar_container.add(
-                            betterLine(
-                                widget, ("right", "top"), (0, y + bar_height / 2), 0, 0, 0, 0,
-                                note_container, ("right", "top"), (0, y + bar_height / 2), 0, 0, 0, 0,
-                                bar_width
-                            )
-                        )
+                        old_bar = bar_start_widgets.pop(-1)
+                        new_bar = bar_container.children[n]
+                        self.bar_canvas.add(draw_bar(old_bar, new_bar))
+
+            self.stem_canvas.add(draw_stem(note_container, bar_container))   # Stems ----
+
+
+
         if len(bar_start_widgets) > 0:
             print(f"STILL HAS BARS LEFT TO DRAW - {bar_start_widgets}")
-        self.max_bar_height = max_bar_height

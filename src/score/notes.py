@@ -27,3 +27,4 @@ missing_major_note_level_height = global_idmap["missing_major_note_level_height"
                                                                                    # gap
 bar_height = global_idmap["bar_height"]
 bar_width = global_idmap["st"]
+stem_width = global_idmap["st"]
