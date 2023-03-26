@@ -103,13 +103,14 @@ class ScoreSection(PageContent):
             self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
             self.topContainer.add_widget(bar_container, index=len(self.topContainer.children))
 
-
-            for note_id in section.note_ids:  # Note heads ----
+            # Heads ----------------------------------------------
+            for note_id in section.note_ids:
                 note = notes[note_id]()
                 note.height = note_level_ys[note.note_level] + note.drawing_height
                 note_container.add_widget(note)
 
 
+            # Bars ----------------------------------------------
             for n in range(len(bar_start_widgets)):  # Retaining bars
                 bar = Bar()
                 bar_container.add_widget(bar)
@@ -129,7 +130,9 @@ class ScoreSection(PageContent):
                         new_bar = bar_container.children[n]
                         self.bar_canvas.add(draw_bar(old_bar, new_bar))
 
-            self.stem_canvas.add(draw_stem(note_container, bar_container))   # Stems ----
+
+            # Stems ----------------------------------------------
+            self.stem_canvas.add(draw_stem(note_container, bar_container))
 
 
 
