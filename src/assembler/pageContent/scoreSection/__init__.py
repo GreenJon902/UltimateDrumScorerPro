@@ -2,16 +2,15 @@ import math
 from typing import Optional
 
 from kivy.clock import Clock
-from kivy.graphics import Color, Line
-from kivy.properties import ObjectProperty
+from kivy.graphics import Color, Line, Canvas
+from kivy.properties import ObjectProperty, NumericProperty, AliasProperty, ReferenceListProperty
 from kivy.uix.widget import Widget
 
 from assembler.pageContent import PageContent
-from score.bar import Bar
-from assembler.pageContent.scoreSection.multiBarHolder import MultiBarHolder
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
+from betterLine import betterLine
 from score import ScoreSectionStorage
-from score.notes import notes, missing_major_note_level_height
+from score.notes import notes, missing_major_note_level_height, bar_height, bar_width
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 
@@ -25,26 +24,25 @@ def set_points(obj: Line, points):
 
 class ScoreSection(PageContent):
     score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
+    max_bar_height: float = NumericProperty()
     _old_score: Optional[ScoreSectionStorage] = None
 
-    container: SelfSizingBoxLayout  # Holes everything
-    bottomContainer: SelfSizingBoxLayout  # Note heads and decoration
-    topContainer: SelfSizingBoxLayout  # Bars
+    container: SelfSizingBoxLayout
+    bar_container: Canvas  # Also has stems
     update = None
 
     def __init__(self, *args, **kwargs):
         self.update = Clock.create_trigger(self._update, -1)
-        self.container = SelfSizingBoxLayout(orientation="vertical")
-        self.bottomContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="highest")
-        self.topContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="lowest")
-        self.container.add_widget(self.topContainer)
-        self.container.add_widget(self.bottomContainer)
+        self.container = SelfSizingBoxLayout(orientation="horizontal", anchor="highest", size_hint=(None, None))
+        self.bar_container = Canvas()
 
         PageContent.__init__(self, *args, **kwargs)
 
-        self.container.bind(size=self.on_container_size)
+        self.bind(score=self.do_size)
+        self.container.bind(size=self.do_size)
 
         self.add_widget(self.container)
+        self.canvas.add(self.bar_container)
         self.on_score(self, self.score)
 
     def on_score(self, _, value):
@@ -56,13 +54,13 @@ class ScoreSection(PageContent):
 
         self.update()
 
-    def on_container_size(self, _, value):
-        self.size = value
+    def do_size(self, _, _2):
+        self.size = self.container.width, self.container.height + self.max_bar_height
 
     def _update(self, *_):
         print(f"Redrawing {self}")
-        self.bottomContainer.clear_widgets()
-        self.topContainer.clear_widgets()
+        self.container.clear_widgets()
+        self.bar_container.clear()
         note_objs = [notes[note_id]() for section in self.score.sections for note_id in section.note_ids]
 
         #  Get note levels as y levels ---------------------------------------------------------------------------------
@@ -88,41 +86,40 @@ class ScoreSection(PageContent):
             y += note_level_heights[note_level]
 
         #  Draw --------------------------------------------------------------------------------------------------
-        reversed_sections = self.score.sections
-        for i in range(len(reversed_sections) + 1):
-            if i < len(reversed_sections):
-                section = reversed_sections[i]
-            else:
-                section = None
-            if i - 1 >= 0:
-                last_section = reversed_sections[i - 1]
-            else:
-                last_section = None
+        bar_start_widgets = []
+        max_bar_height = 0
 
-            if section is not None:  # Heads
-                note_container = MultiNoteHolder()
-                for note_id in section.note_ids:
-                    note = notes[note_id]()
-                    note.height = note_level_ys[note.note_level] + note.drawing_height
-                    note_container.add_widget(note)
-                self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
-            else:
-                note_container = MultiNoteHolder()
-                note_container.add_widget(Widget(width=5, height=5))  # Need a size so bars show
-                self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
+        for section in self.score.sections:
+            note_container = MultiNoteHolder()  # Note heads ----
+            for note_id in section.note_ids:
+                note = notes[note_id]()
+                note.height = note_level_ys[note.note_level] + note.drawing_height
+                note_container.add_widget(note)
+            self.container.add_widget(note_container, index=len(self.container.children))
 
-            if i != 0:
-                assert last_section is not None
-                bar_container = MultiBarHolder(width=note_container.width)  # Bars
-                note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
-                                    set_width(bar_container_, note_container_.width))
-                for n in range(last_section.bars):
-                    bar_container.add_widget(Bar())
-                self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
 
-            else:
-                bar_container = MultiBarHolder(width=note_container.width)  # Bars
-                note_container.bind(width=lambda *args, bar_container_=bar_container, note_container_=note_container:
-                                    set_width(bar_container_, note_container_.width))
-                self.topContainer.add_widget(bar_container, index=len(self.bottomContainer.children))
 
+            if section.delta_bars > 0:  # Adding bars ----
+                for n in range(section.delta_bars):
+                    bar_start_widgets.append(note_container)
+
+
+            if section.delta_bars < 0:  # Removing Bars ----
+                for n in range(section.delta_bars * -1):
+                    if not len(bar_start_widgets) > 0:
+                        print(f"TRIED TO DRAW BAR THAT HASN'T STARTED - {bar_start_widgets}")
+                    else:
+                        if len(bar_start_widgets) * bar_height > max_bar_height:
+                            max_bar_height = len(bar_start_widgets) * bar_height
+                        widget = bar_start_widgets.pop(-1)
+                        y = len(bar_start_widgets) * bar_height
+                        self.bar_container.add(
+                            betterLine(
+                                widget, ("right", "top"), (0, y + bar_height / 2), 0, 0, 0, 0,
+                                note_container, ("right", "top"), (0, y + bar_height / 2), 0, 0, 0, 0,
+                                bar_width
+                            )
+                        )
+        if len(bar_start_widgets) > 0:
+            print(f"STILL HAS BARS LEFT TO DRAW - {bar_start_widgets}")
+        self.max_bar_height = max_bar_height

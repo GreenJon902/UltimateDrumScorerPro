@@ -19,7 +19,7 @@ class TextScoreSectionEditor(TabbedPanelItem):
     _old_score_section_storage: ScoreSectionStorage = None
 
     trigger_set_content = None
-    parser_regex = re.compile(r"(\d+) +(\d+) +(\d+(,\d+){0,}) {0,}\n+")
+    parser_regex = re.compile(r"(-?\d+) +(\d+) +(\d+(,\d+)*) *\n+")
 
     text_input: TextInput = ObjectProperty(allownone=True)
     _old_text_input = None
@@ -47,7 +47,7 @@ class TextScoreSectionEditor(TabbedPanelItem):
         string = ""
         section: ScoreSectionSectionStorage
         for section in self.score_section_instance.score.sections:
-            string += str(section.bars) + " "
+            string += str(section.delta_bars) + " "
             string += str(section.dots) + " "
             string += ",".join(str(n_id) for n_id in section.note_ids) + "\n"
         self.text_input.text = string
@@ -55,13 +55,13 @@ class TextScoreSectionEditor(TabbedPanelItem):
     def on_text_input_text(self, _, value):
         sections: list[ScoreSectionSectionStorage] = []
         for group in self.parser_regex.findall(value):
-            bars = int(group[0])
+            delta_bars = int(group[0])
             dots = int(group[1])
             note_ids = {(int(n_id) if n_id != "" else "") for n_id in group[2].split(",")}
             for n_id in note_ids.copy():
                 if n_id not in notes:
                     note_ids.remove(n_id)  # Also gets ""
                     print(f"User tried inputting an unknown note id - {n_id}")
-            sections.append(ScoreSectionSectionStorage(bars=bars, dots=dots, note_ids=note_ids))
+            sections.append(ScoreSectionSectionStorage(delta_bars=delta_bars, dots=dots, note_ids=note_ids))
         section = ScoreSectionStorage(sections)
         self.score_section_instance.score = section

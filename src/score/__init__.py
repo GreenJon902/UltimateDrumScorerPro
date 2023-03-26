@@ -4,15 +4,19 @@ from kivy.properties import ObjectProperty, ListProperty, NumericProperty
 
 class ScoreSectionSectionStorage(EventDispatcher):
     decoration_id: int = NumericProperty(defalutvalue=None, allownone=True)
-    bars: int = NumericProperty(defalutvalue=0)
+    delta_bars: int = NumericProperty(defalutvalue=0)
+    before_flags: int = NumericProperty(defalutvalue=0)  # Can be just half bars
+    after_flags: int = NumericProperty(defalutvalue=0)
     dots: int = NumericProperty(defalutvalue=0)
     note_ids: list[int] = ListProperty(defalutvalue=[])
 
     def unbind_all(self, callback):
-        self.unbind(decoration_id=callback, bars=callback, note_ids=callback, dots=callback)
+        self.unbind(decoration_id=callback, delta_bars=callback, before_flags=callback,
+                    after_flags=callback, note_ids=callback, dots=callback)
 
     def bind_all(self, callback):
-        self.bind(decoration_id=callback, bars=callback, note_ids=callback, dots=callback)
+        self.bind(decoration_id=callback, delta_bars=callback, before_flags=callback,
+                  after_flags=callback, note_ids=callback, dots=callback)
 
 
 class ScoreSectionStorage(EventDispatcher):

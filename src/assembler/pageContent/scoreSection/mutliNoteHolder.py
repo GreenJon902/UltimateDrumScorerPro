@@ -1,4 +1,5 @@
 from kivy.clock import Clock
+from kivy.properties import AliasProperty
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
