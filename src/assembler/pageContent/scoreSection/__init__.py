@@ -7,6 +7,7 @@ from kivy.properties import ObjectProperty
 
 from assembler.pageContent import PageContent
 from assembler.pageContent.scoreSection.bars import MultiBarHolder, Bar, draw_bar
+from assembler.pageContent.scoreSection.flags import draw_before_flag, draw_after_flag, draw_slanted_flag
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from assembler.pageContent.scoreSection.stems import draw_stem
 from score import ScoreSectionStorage
@@ -96,6 +97,7 @@ class ScoreSection(PageContent):
 
         #  Draw --------------------------------------------------------------------------------------------------
         bar_start_widgets = []
+        next_flags = []
 
         for section in self.score.sections:
             note_container = MultiNoteHolder()
@@ -131,10 +133,35 @@ class ScoreSection(PageContent):
                         self.bar_canvas.add(draw_bar(old_bar, new_bar))
 
 
+            # Flags ----------------------------------------------
+            for n in range(section.before_flags):  # Before stem
+                bar = Bar()
+                bar_container.add_widget(bar)
+                self.bar_canvas.add(draw_before_flag(bar))
+
+            for bar in next_flags:   # Last stem's after
+                bar_container.add_widget(bar)
+                self.bar_canvas.add(draw_after_flag(bar))
+            next_flags.clear()
+
+            for n in range(section.after_flags):  # Prepare this stem's after
+                bar = Bar()
+                next_flags.append(bar)
+
+
             # Stems ----------------------------------------------
             self.stem_canvas.add(draw_stem(note_container, bar_container))
 
 
-
         if len(bar_start_widgets) > 0:
             print(f"STILL HAS BARS LEFT TO DRAW - {bar_start_widgets}")
+
+        if len(next_flags) > 0:
+            note_container = MultiNoteHolder()
+            bar_container = MultiBarHolder(note_container)
+            self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))
+            self.topContainer.add_widget(bar_container, index=len(self.topContainer.children))
+
+            for bar in next_flags:
+                bar_container.add_widget(bar)
+                self.bar_canvas.add(draw_slanted_flag(bar))

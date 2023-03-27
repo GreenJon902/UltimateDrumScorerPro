@@ -27,3 +27,7 @@ missing_major_note_level_height = global_idmap["missing_major_note_level_height"
 bar_height = global_idmap["bar_height"]
 bar_width = global_idmap["st"]
 stem_width = global_idmap["st"]
+flag_width = global_idmap["st"]
+flag_length = global_idmap["flag_length"]
+slanted_flag_length = global_idmap["slanted_flag_length"]
+slanted_flag_height_offset = global_idmap["slanted_flag_height_offset"]
