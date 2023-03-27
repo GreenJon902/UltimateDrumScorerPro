@@ -7,6 +7,7 @@ from kivy.properties import ObjectProperty
 
 from assembler.pageContent import PageContent
 from assembler.pageContent.scoreSection.bars import MultiBarHolder, Bar, draw_bar
+from assembler.pageContent.scoreSection.dots import draw_dots
 from assembler.pageContent.scoreSection.flags import draw_before_flag, draw_after_flag, draw_slanted_flag
 from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from assembler.pageContent.scoreSection.stems import draw_stem
@@ -32,6 +33,7 @@ class ScoreSection(PageContent):
     topContainer: SelfSizingBoxLayout  # Bars
     bar_canvas: Canvas
     stem_canvas: Canvas
+    dot_canvas: Canvas
     update = None
 
     def __init__(self, *args, **kwargs):
@@ -41,6 +43,7 @@ class ScoreSection(PageContent):
         self.topContainer = SelfSizingBoxLayout(orientation="horizontal", anchor="highest")
         self.bar_canvas = Canvas()
         self.stem_canvas = Canvas()
+        self.dot_canvas = Canvas()
         self.container.add_widget(self.topContainer)
         self.container.add_widget(self.bottomContainer)
 
@@ -51,6 +54,7 @@ class ScoreSection(PageContent):
         self.add_widget(self.container)
         self.canvas.add(self.bar_canvas)
         self.canvas.add(self.stem_canvas)
+        self.canvas.add(self.dot_canvas)
         self.on_score(self, self.score)
 
     def on_score(self, _, value):
@@ -110,6 +114,11 @@ class ScoreSection(PageContent):
                 note = notes[note_id]()
                 note.height = note_level_ys[note.note_level] + note.drawing_height
                 note_container.add_widget(note)
+
+
+            # Dots ----------------------------------------------
+            for child in note_container.children:
+                self.dot_canvas.add(draw_dots(section.dots, child))
 
 
             # Bars ----------------------------------------------
