@@ -1,0 +1,99 @@
+#:kivy 2.1.0
+#:import Matrix kivy.graphics.transformation.Matrix
+
+#:set note_editor_background_color 1, 1, 1, 1
+#:set note_name_color 0, 0, 0, 1
+
+#:set editor_padding mm(5)
+#:set labels_and_notes_spacing mm(5)
+
+<NormalScoreSectionEditor>:
+    text: "Normal Editor"
+
+    label_holder: label_holder
+    note_holder: note_holder
+
+    RelativeLayout:
+        BoxLayout:
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+
+            size_hint: None, None
+            width: self.parent.width - editor_padding * 2
+            height: self.parent.height - editor_padding * 2
+
+            canvas.before:
+                Color:
+                    rgba: note_editor_background_color
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: mm(5), mm(5)
+
+                 # The scroll view stencil doesn't account for rounded part of rectangle
+                StencilPush
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: mm(5), mm(5)
+                StencilUse
+
+            canvas.after:
+                StencilUnUse
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: mm(5), mm(5)
+                StencilPop
+
+
+            ScrollView:
+                do_scroll_x: True
+
+                BoxLayout:
+                    padding: editor_padding
+                    width: container.width + labels_and_notes_spacing * 2
+                    height: container.height + labels_and_notes_spacing * 2
+                    size_hint_x: None
+
+                    SelfSizingBoxLayout:  # Widgets are wrong way round because of some positioning thing i think?
+                        id: container
+
+                        ZoomedLayout:
+                            id: note_holder
+                            orientation: "horizontal"
+
+                        Widget:
+                            width: labels_and_notes_spacing
+
+                        SelfSizingBoxLayout:
+                            id: label_holder
+                            orientation: "vertical"
+                            anchor: "lowest"
+                            size_hint_x: None
+
+
+
+<ZoomedLayout>:
+    canvas.before:
+        PushMatrix
+        Scale:
+            x: mm(1)
+            y: mm(1)
+    canvas.after:
+        PopMatrix
+
+    container: container
+    width: self.container.width * mm(1)
+    height: self.container.height * mm(1)
+
+    SelfSizingBoxLayout:
+        id: container
+        x: root.x / mm(1)  # Start pos doesn't need to be scaled
+        y: root.y / mm(1)
+        orientation: root.orientation
+        anchor: root.anchor
+
+
+<NoteNameLabel>:
+    width: self.texture_size[0]
+    color: note_name_color

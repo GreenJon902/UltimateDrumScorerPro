@@ -1,6 +1,8 @@
 from kivy.event import EventDispatcher
 from kivy.properties import ListProperty, NumericProperty
 
+from score.notes import Note
+
 
 class ScoreSectionSectionStorage(EventDispatcher):
     decoration_id: int = NumericProperty(defalutvalue=None, allownone=True)
@@ -61,3 +63,7 @@ class ScoreSectionStorage(EventDispatcher):
             for binding in self.bindings:
                 section.unbind_all(binding)
         self.sections.clear()
+
+
+    # Editor Settings
+    normal_editor_note_ids: list[int] = ListProperty()

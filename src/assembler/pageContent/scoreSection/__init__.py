@@ -28,7 +28,7 @@ class ScoreSection(PageContent):
     score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
     _old_score: Optional[ScoreSectionStorage] = None
 
-    container: SelfSizingBoxLayout  # Holes everything
+    container: SelfSizingBoxLayout  # Holds everything
     bottomContainer: SelfSizingBoxLayout  # Note heads and decoration
     topContainer: SelfSizingBoxLayout  # Bars
     bar_canvas: Canvas
