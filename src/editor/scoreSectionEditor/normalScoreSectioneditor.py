@@ -6,7 +6,7 @@ from kivy.uix.tabbedpanel import TabbedPanelItem
 from kivy.uix.widget import Widget
 
 from assembler.pageContent.scoreSection import ScoreSection
-from score.notes import notes
+from score.notes import notes, Note
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor.kv")
@@ -49,15 +49,17 @@ class NormalScoreSectionEditor(TabbedPanelItem):
 
     def _refresh_all_notes(self, *args):
         note_ids = {note_id for section in self.score_section_instance.score.sections for note_id in section.note_ids}
-        ordered_note_types = sorted([notes[note_id] for note_id in note_ids], key=lambda x: x().note_level,
+        ordered_note_types = sorted([(note_id, notes[note_id]) for note_id in note_ids],
+                                    key=lambda x: x[1]().note_level,
                                     reverse=True)  # Reverse cause of how they get added
         for section in self.score_section_instance.score.sections:
             holder = SelfSizingBoxLayout(orientation="vertical")
-            for note_type in ordered_note_types:
-                note = note_type()
+            for (note_id, note_type) in ordered_note_types:
+                note: Note = note_type()
                 note.height = note.drawing_height
+                note.color[3] = 1 if note_id in section.note_ids else 0.1
                 holder.add_widget(note)
-            self.note_holder.add_widget(holder)
+            self.note_holder.add_widget(holder, index=len(self.note_holder.container.children))
 
 
 class NoteNameLabel(Label):

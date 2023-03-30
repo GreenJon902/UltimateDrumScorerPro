@@ -1,6 +1,6 @@
 from kivy.factory import Factory
 from kivy.lang import Builder, global_idmap
-from kivy.properties import NumericProperty, ReferenceListProperty, StringProperty
+from kivy.properties import NumericProperty, ReferenceListProperty, StringProperty, ColorProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 Builder.load_file("score/notes.kv")
@@ -17,6 +17,7 @@ class Note(RelativeLayout):
     dot_offset_y: float = NumericProperty()
     dot_offset: tuple[float, float] = ReferenceListProperty(dot_offset_x, dot_offset_y)
     name: str = StringProperty()
+    color = ColorProperty(defaultvalue=(0, 0, 0, 1))
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
