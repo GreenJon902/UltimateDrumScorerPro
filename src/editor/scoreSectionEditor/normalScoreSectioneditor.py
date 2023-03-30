@@ -1,11 +1,14 @@
+from kivy.input import MotionEvent
 from kivy.lang import Builder
 from kivy.metrics import mm
 from kivy.properties import ObjectProperty, Clock, OptionProperty
 from kivy.uix.label import Label
+from kivy.uix.scatterlayout import ScatterLayout
 from kivy.uix.tabbedpanel import TabbedPanelItem
 from kivy.uix.widget import Widget
 
 from assembler.pageContent.scoreSection import ScoreSection
+from score import ScoreSectionSectionStorage
 from score.notes import notes, Note
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
@@ -58,21 +61,44 @@ class NormalScoreSectionEditor(TabbedPanelItem):
                 note: Note = note_type()
                 note.height = note.drawing_height
                 note.color[3] = 1 if note_id in section.note_ids else 0.1
+                note.bind(on_touch_up=lambda _, touch, note_=note, section_=section, note_id_=note_id:
+                          note_clicked(note_, touch, section_, note_id_))
                 holder.add_widget(note)
-            self.note_holder.add_widget(holder, index=len(self.note_holder.container.children))
+            self.note_holder.add_widget(holder, index=self.note_holder.n_children())
+
+
+
+def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionStorage, note_id: int):
+    if note.collide_point(*touch.pos):
+        if note_id in section.note_ids:
+            section.note_ids.remove(note_id)
+        else:
+            section.note_ids.append(note_id)
+
+        note.color[3] = 1 if note_id in section.note_ids else 0.1
 
 
 class NoteNameLabel(Label):
     pass
 
 
-class ZoomedLayout(Widget):
+class ZoomedLayout(ScatterLayout):
     container: SelfSizingBoxLayout = ObjectProperty()
     orientation = OptionProperty("horizontal", options=("horizontal", "vertical"))
     anchor = OptionProperty("middle", options=("lowest", "middle", "highest"))
 
     def add_widget(self, widget, *args, **kwargs):
-        if len(self.children) != 0:
-            self.children[0].add_widget(widget, *args, **kwargs)
-        else:
-            Widget.add_widget(self, widget, *args, **kwargs)
+        if self.container is None:
+            self.container = SelfSizingBoxLayout(orientation=self.orientation, anchor=self.anchor)
+            self.container.bind(size=self.do_size)
+            Widget.add_widget(self, self.container, *args, **kwargs)
+
+        self.container.add_widget(widget, *args, **kwargs)
+
+    def do_size(self, *args):
+        self.width = self.container.width * mm(1)
+        self.height = self.container.height * mm(1)
+
+
+    def n_children(self):  # number of children
+        return len(self.container.children) if self.container is not None else 0

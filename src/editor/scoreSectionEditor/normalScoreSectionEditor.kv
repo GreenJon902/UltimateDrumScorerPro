@@ -58,9 +58,16 @@
                     SelfSizingBoxLayout:  # Widgets are wrong way round because of some positioning thing i think?
                         id: container
 
-                        ZoomedLayout:
-                            id: note_holder
-                            orientation: "horizontal"
+                        RelativeLayout:
+                            size_hint: None, None
+                            size: note_holder.size
+
+                            ZoomedLayout:
+                                size_hint: None, None
+                                pos: 0, 0
+
+                                id: note_holder
+                                orientation: "horizontal"
 
                         Widget:
                             width: labels_and_notes_spacing
@@ -74,25 +81,7 @@
 
 
 <ZoomedLayout>:
-    canvas.before:
-        PushMatrix
-        Scale:
-            x: mm(1)
-            y: mm(1)
-    canvas.after:
-        PopMatrix
-
-    container: container
-    width: self.container.width * mm(1)
-    height: self.container.height * mm(1)
-
-    SelfSizingBoxLayout:
-        id: container
-        x: root.x / mm(1)  # Start pos doesn't need to be scaled
-        y: root.y / mm(1)
-        orientation: root.orientation
-        anchor: root.anchor
-
+    scale: mm(1)
 
 <NoteNameLabel>:
     width: self.texture_size[0]
