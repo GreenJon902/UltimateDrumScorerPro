@@ -31,6 +31,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         TabbedPanelItem.__init__(self, **kwargs)
 
         self.score_section_instance.score.bind(normal_editor_note_ids=self.trigger_update_labels)
+        self.score_section_instance.score.bind(normal_editor_note_ids=self._refresh_all_notes)
         self.score_section_instance.score.bind_all(self.trigger_update_labels)
 
         self.trigger_update_labels()
@@ -38,9 +39,10 @@ class NormalScoreSectionEditor(TabbedPanelItem):
 
     def _update_labels(self, *args):
         note_ids = set(self.score_section_instance.score.normal_editor_note_ids)
-        note_ids.update({note_id for section in self.score_section_instance.score.sections
+        note_ids.update({note_id for section in self.score_section_instance.score.get_sections()
                          for note_id in section.note_ids})
-        #  We add in any that may have been missed but are in the score, use set so no duplicates
+        self.score_section_instance.score.normal_editor_note_ids = note_ids
+        #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
 
         ordered_note_types = sorted([notes[note_id] for note_id in note_ids], key=lambda x: x().note_level,
                                     reverse=True)  # Reverse cause of how they get added
@@ -51,11 +53,13 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.drawing_height)))
 
     def _refresh_all_notes(self, *args):
-        note_ids = {note_id for section in self.score_section_instance.score.sections for note_id in section.note_ids}
+        note_ids = {note_id for section in self.score_section_instance.score.get_sections() for note_id in
+                    section.note_ids}
         ordered_note_types = sorted([(note_id, notes[note_id]) for note_id in note_ids],
                                     key=lambda x: x[1]().note_level,
                                     reverse=True)  # Reverse cause of how they get added
-        for section in self.score_section_instance.score.sections:
+        for i in range(len(self.score_section_instance.score.get_sections())):
+            section = self.score_section_instance.score.get_sections()[i]
             holder = SelfSizingBoxLayout(orientation="vertical")
             for (note_id, note_type) in ordered_note_types:
                 note: Note = note_type()

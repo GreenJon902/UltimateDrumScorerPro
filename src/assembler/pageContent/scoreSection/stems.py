@@ -6,12 +6,19 @@ from score.notes import stem_width, bar_height, Note
 
 
 def update_line_points(line: Line, note_container: MultiNoteHolder, bar_container: MultiBarHolder):
-    bottom_note: Note = min(note_container.children, key=lambda x: x.note_level)
-    line.points = \
-        note_container.right, \
-        bottom_note.y + bottom_note.stem_connection_offset, \
-        note_container.right, \
-        bar_container.top - bar_height
+    if len(note_container.children) > 0:
+        bottom_note: Note = min(note_container.children, key=lambda x: x.note_level)
+        line.points = \
+            note_container.right, \
+            bottom_note.y + bottom_note.stem_connection_offset, \
+            note_container.right, \
+            bar_container.top - bar_height
+    else:
+        line.points = \
+            note_container.right, \
+            note_container.y, \
+            note_container.right, \
+            bar_container.top - bar_height
     line.flag_update()
 
 

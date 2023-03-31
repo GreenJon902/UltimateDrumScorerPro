@@ -45,7 +45,7 @@ class TextScoreSectionEditor(TabbedPanelItem):
     def _set_content(self, *args):  # Set content to what's in score_section_instance.score
         string = ""
         section: ScoreSectionSectionStorage
-        for section in self.score_section_instance.score.sections:
+        for section in self.score_section_instance.score.get_sections():
             string += str(section.delta_bars) + " "
             string += str(section.dots) + " "
             string += ",".join(str(n_id) for n_id in section.note_ids) + "\n"
@@ -62,4 +62,4 @@ class TextScoreSectionEditor(TabbedPanelItem):
                     note_ids.remove(n_id)  # Also gets ""
                     print(f"User tried inputting an unknown note id - {n_id}")
             sections.append(ScoreSectionSectionStorage(delta_bars=delta_bars, dots=dots, note_ids=note_ids))
-        self.score_section_instance.score.sections = sections
+        self.score_section_instance.score.set_sections(sections)

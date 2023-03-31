@@ -75,7 +75,7 @@ class ScoreSection(PageContent):
         self.topContainer.clear_widgets()
         self.bar_canvas.clear()
         self.stem_canvas.clear()
-        note_objs = [notes[note_id]() for section in self.score.sections for note_id in section.note_ids]
+        note_objs = [notes[note_id]() for section in self.score.get_sections() for note_id in section.note_ids]
 
         #  Get note levels as y levels ---------------------------------------------------------------------------------
         note_level_heights = {}  # Biggest height at each note_level
@@ -103,7 +103,7 @@ class ScoreSection(PageContent):
         bar_start_widgets = []
         next_flags = []
 
-        for section in self.score.sections:
+        for section in self.score.get_sections():
             note_container = MultiNoteHolder()
             bar_container = MultiBarHolder(note_container)
             self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))

@@ -22,47 +22,60 @@ class ScoreSectionSectionStorage(EventDispatcher):
 
 
 class ScoreSectionStorage(EventDispatcher):
-    sections: list[ScoreSectionSectionStorage]
-    bindings: list[EventDispatcher]
+    _sections: list[ScoreSectionSectionStorage]  # Protect because of bindings
+    bindings: list[callable]
 
     def __init__(self, sections=None, **kwargs):
         if sections is None:
             sections = []
 
         self.bindings = []
-        self.sections = sections
+        self._sections = []
+        self.set_sections(sections)
         EventDispatcher.__init__(self, **kwargs)
 
     def unbind_all(self, callback):
         self.bindings.remove(callback)
-        for section in self.sections:
+        for section in self._sections:
             section.unbind_all(callback)
 
     def bind_all(self, callback):
         self.bindings.append(callback)
-        for section in self.sections:
+        for section in self._sections:
             section.bind_all(callback)
 
 
     def get_section(self, index):
-        return self.sections[index]
+        return self._sections[index]
 
     def pop_section(self, index):
-        section = self.sections.pop(index)
+        section = self._sections.pop(index)
         for binding in self.bindings:
             section.unbind_all(binding)
         return section
 
     def remove_section(self, section):
-        self.sections.remove(section)
+        self._sections.remove(section)
         for binding in self.bindings:
             section.unbind_all(binding)
 
     def clear_all_sections(self):
-        for section in self.sections:
+        for section in self._sections:
             for binding in self.bindings:
                 section.unbind_all(binding)
-        self.sections.clear()
+        self._sections.clear()
+
+    def get_sections(self):
+        return self._sections
+
+    def set_sections(self, sections):
+        self.clear_all_sections()
+        for section in sections:
+            self._sections.append(section)
+            for callback in self.bindings:
+                section.bind_all(callback)
+        for binding in self.bindings:
+            binding(self, self.get_sections())
 
 
     # Editor Settings
