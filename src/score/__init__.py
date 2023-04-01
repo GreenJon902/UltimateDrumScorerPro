@@ -20,12 +20,12 @@ class ScoreSectionSectionStorage(EventDispatcher):
     def bind_all(self, callback):
         if callback not in self.binding_groups:
             binding_group = [
-                ("decoration_id", lambda *_: callback(self, "section", "decoration_id")),
-                ("delta_bars", lambda *_: callback(self, "section", "delta_bars")),
-                ("before_flags", lambda *_: callback(self, "section", "before_flags")),
-                ("after_flags", lambda *_: callback(self, "section", "after_flags")),
-                ("note_ids", lambda *_: callback(self, "section", "note_ids")),
-                ("dots", lambda *_: callback(self, "section", "dots"))
+                ("decoration_id", lambda *_: callback("section", "decoration_id", self)),
+                ("delta_bars", lambda *_: callback("section", "delta_bars", self)),
+                ("before_flags", lambda *_: callback("section", "before_flags", self)),
+                ("after_flags", lambda *_: callback("section", "after_flags", self)),
+                ("note_ids", lambda *_: callback("section", "note_ids", self)),
+                ("dots", lambda *_: callback("section", "dots", self))
             ]
             self.binding_groups[callable] = binding_group
             for binding in binding_group:
@@ -89,6 +89,9 @@ class ScoreSectionStorage(EventDispatcher):
         for callback in self.callbacks:
             callback(self, "storage", "set")
 
+    def index(self, section):
+        return self._sections.index(section)
+
 
     def __len__(self):
         return len(self._sections)
@@ -96,8 +99,8 @@ class ScoreSectionStorage(EventDispatcher):
     def __iter__(self):
         return SectionIterator(self)
 
-    def __getitem__(self, item):
-        return self._sections[item]
+    def __getitem__(self, index):
+        return self._sections[index]
 
 
     # Editor Settings

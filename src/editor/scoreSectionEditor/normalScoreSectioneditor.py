@@ -37,12 +37,16 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         self.trigger_update_labels()
         self.trigger_refresh_all_notes()
 
-    def _update_labels(self, *args):
+
+    def fix_and_get_normal_editor_note_ids(self):
+        #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
         note_ids = set(self.score_section_instance.score.normal_editor_note_ids)
         note_ids.update({note_id for section in self.score_section_instance.score for note_id in section.note_ids})
         self.score_section_instance.score.normal_editor_note_ids = note_ids
-        #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
+        return note_ids
 
+    def _update_labels(self, *args):
+        note_ids = self.fix_and_get_normal_editor_note_ids()
         ordered_note_types = sorted([notes[note_id] for note_id in note_ids], key=lambda x: x().note_level,
                                     reverse=True)  # Reverse cause of how they get added
 
@@ -52,7 +56,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.drawing_height)))
 
     def _refresh_all_notes(self, *args):
-        note_ids = {note_id for section in self.score_section_instance.score for note_id in section.note_ids}
+        note_ids = self.fix_and_get_normal_editor_note_ids()
         ordered_note_types = sorted([(note_id, notes[note_id]) for note_id in note_ids],
                                     key=lambda x: x[1]().note_level,
                                     reverse=True)  # Reverse cause of how they get added
@@ -65,7 +69,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
                 note: Note = note_type()
                 note.height = note.drawing_height
                 note.color[3] = 1 if note_id in section.note_ids else 0.1
-                note.bind(on_touch_up=lambda _, touch, note_=note, section_=section, note_id_=note_id:
+                note.bind(on_touch_down=lambda _, touch, note_=note, section_=section, note_id_=note_id:
                           note_clicked(note_, touch, section_, note_id_))
                 holder.add_widget(note)
             self.note_holder.add_widget(holder, index=self.note_holder.n_children())

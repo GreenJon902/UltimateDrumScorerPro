@@ -28,7 +28,8 @@ def draw_stem(note_container: MultiNoteHolder, bar_container: MultiBarHolder):
     line = Line(width=stem_width)  # We just run updater function
     update_trigger = Clock.create_trigger(
         lambda _: update_line_points(line, note_container, bar_container),
-        -1)
+        0)  # TODO: 0 means it updates after frame, -1 means it updates before positioning has finished. Probs todo with
+            # https://github.com/kivy/kivy/blob/cf4f5b8cc18fe7a41150e56da6d9d7e3ec537704/kivy/_clock.pyx#L195
     note_container.bind(pos=update_trigger, size=update_trigger)
     bar_container.bind(pos=update_trigger, size=update_trigger)
     update_trigger()
