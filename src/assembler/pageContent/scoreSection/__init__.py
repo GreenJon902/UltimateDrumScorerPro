@@ -1,4 +1,5 @@
 import math
+import time
 from typing import Optional
 
 from kivy.clock import Clock
@@ -27,6 +28,7 @@ def set_points(obj: Line, points):
 class ScoreSection(PageContent):
     score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
     _old_score: Optional[ScoreSectionStorage] = None
+    _old_section_count = None
 
     container: SelfSizingBoxLayout  # Holds everything
     bottomContainer: SelfSizingBoxLayout  # Note heads and decoration
@@ -75,7 +77,7 @@ class ScoreSection(PageContent):
         self.topContainer.clear_widgets()
         self.bar_canvas.clear()
         self.stem_canvas.clear()
-        note_objs = [notes[note_id]() for section in self.score.get_sections() for note_id in section.note_ids]
+        note_objs = [notes[note_id]() for section in self.score for note_id in section.note_ids]
 
         #  Get note levels as y levels ---------------------------------------------------------------------------------
         note_level_heights = {}  # Biggest height at each note_level
@@ -103,7 +105,8 @@ class ScoreSection(PageContent):
         bar_start_widgets = []
         next_flags = []
 
-        for section in self.score.get_sections():
+        self._old_section_count = len(self.score)
+        for section in self.score:
             note_container = MultiNoteHolder()
             bar_container = MultiBarHolder(note_container)
             self.bottomContainer.add_widget(note_container, index=len(self.bottomContainer.children))

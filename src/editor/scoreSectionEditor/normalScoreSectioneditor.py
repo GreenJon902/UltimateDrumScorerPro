@@ -39,8 +39,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
 
     def _update_labels(self, *args):
         note_ids = set(self.score_section_instance.score.normal_editor_note_ids)
-        note_ids.update({note_id for section in self.score_section_instance.score.get_sections()
-                         for note_id in section.note_ids})
+        note_ids.update({note_id for section in self.score_section_instance.score for note_id in section.note_ids})
         self.score_section_instance.score.normal_editor_note_ids = note_ids
         #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
 
@@ -53,13 +52,14 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.drawing_height)))
 
     def _refresh_all_notes(self, *args):
-        note_ids = {note_id for section in self.score_section_instance.score.get_sections() for note_id in
-                    section.note_ids}
+        note_ids = {note_id for section in self.score_section_instance.score for note_id in section.note_ids}
         ordered_note_types = sorted([(note_id, notes[note_id]) for note_id in note_ids],
                                     key=lambda x: x[1]().note_level,
                                     reverse=True)  # Reverse cause of how they get added
-        for i in range(len(self.score_section_instance.score.get_sections())):
-            section = self.score_section_instance.score.get_sections()[i]
+
+        self.note_holder.clear_widgets()
+        for i in range(len(self.score_section_instance.score)):
+            section = self.score_section_instance.score[i]
             holder = SelfSizingBoxLayout(orientation="vertical")
             for (note_id, note_type) in ordered_note_types:
                 note: Note = note_type()
@@ -80,6 +80,7 @@ def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionSto
             section.note_ids.append(note_id)
 
         note.color[3] = 1 if note_id in section.note_ids else 0.1
+        return True
 
 
 class NoteNameLabel(Label):
@@ -91,13 +92,21 @@ class ZoomedLayout(ScatterLayout):
     orientation = OptionProperty("horizontal", options=("horizontal", "vertical"))
     anchor = OptionProperty("middle", options=("lowest", "middle", "highest"))
 
+    def make_container(self, *args, **kwargs):
+        self.container = SelfSizingBoxLayout(orientation=self.orientation, anchor=self.anchor)
+        self.container.bind(size=self.do_size)
+        Widget.add_widget(self, self.container, *args, **kwargs)
+
     def add_widget(self, widget, *args, **kwargs):
         if self.container is None:
-            self.container = SelfSizingBoxLayout(orientation=self.orientation, anchor=self.anchor)
-            self.container.bind(size=self.do_size)
-            Widget.add_widget(self, self.container, *args, **kwargs)
+            self.make_container(*args, **kwargs)
 
         self.container.add_widget(widget, *args, **kwargs)
+
+    def clear_widgets(self, *args, **kwargs):
+        if self.container is None:
+            self.make_container(*args, **kwargs)
+        self.container.clear_widgets(*args, **kwargs)
 
     def do_size(self, *args):
         self.width = self.container.width * mm(1)
