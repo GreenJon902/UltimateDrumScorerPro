@@ -8,7 +8,6 @@ Builder.load_file("score/notes.kv")
 
 # Height is figured out by parent using the drawing_height and note_level(optional).
 class Note(RelativeLayout):
-    drawing_height: float = NumericProperty()  # The actual height of what is drawn
     stem_connection_offset: float = NumericProperty()  # Offset from relative y=0 where stem connects
     note_level: float = NumericProperty()  # The level upon which the note is drawn, the integer part will always affect
     # the height, the decimal part is only used when there are two notes with the

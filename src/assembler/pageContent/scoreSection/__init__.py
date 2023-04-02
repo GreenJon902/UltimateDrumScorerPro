@@ -2,19 +2,15 @@ import time
 from typing import Optional
 
 from kivy import Logger
+from kivy.clock import Clock
 from kivy.graphics import Line, Canvas, PushMatrix, PopMatrix, Translate, InstructionGroup
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, NumericProperty, ListProperty
 
 from argumentTrigger import ArgumentTrigger
 from assembler.pageContent import PageContent
-from assembler.pageContent.scoreSection.bars import MultiBarHolder, Bar, draw_bar
-from assembler.pageContent.scoreSection.dots import draw_dots
-from assembler.pageContent.scoreSection.flags import draw_before_flag, draw_after_flag, draw_slanted_flag
-from assembler.pageContent.scoreSection.mutliNoteHolder import MultiNoteHolder
 from assembler.pageContent.scoreSection.noteHeightCalculator import NoteHeightCalculator
-from assembler.pageContent.scoreSection.stems import draw_stem
-from score import ScoreSectionStorage
-from score.notes import Note
+from score import ScoreSectionStorage, ScoreSectionSectionStorage
+from score.notes import Note, stem_width
 
 
 def set_width(obj, width):
@@ -28,28 +24,49 @@ def set_points(obj: Line, points):
 class ScoreSection(PageContent):
     score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
     _old_score: Optional[ScoreSectionStorage] = None
+    stem_top: float = NumericProperty()
+    section_widths: list[float] = ListProperty()
 
-    head_canvas: Canvas
+    head_canvas: Canvas  # Contains stems
     head_canvas_container: Canvas
+    head_canvas_translate: Translate
 
     update = None
+    update_size = None
 
     noteHeightCalculator: NoteHeightCalculator
 
     def __init__(self, *args, **kwargs):
         self.update = ArgumentTrigger(self._update, -1, True)
+        self.update_size = Clock.create_trigger(self._update_size, -1)
         self.noteHeightCalculator = NoteHeightCalculator()
 
         self.head_canvas_container = Canvas()
         self.head_canvas = Canvas()
+        self.head_canvas_translate = Translate()
         self.head_canvas_container.add(PushMatrix())
+        self.head_canvas_container.add(self.head_canvas_translate)
         self.head_canvas_container.add(self.head_canvas)
         self.head_canvas_container.add(PopMatrix())
 
         PageContent.__init__(self, *args, **kwargs)
 
+        self.fbind("section_widths", self.update_size)
+        for note in self.noteHeightCalculator.note_objects.values():
+            note.fbind("y", self.update_size)
+        self.update_size()
+
         self.canvas.add(self.head_canvas_container)
         self.on_score(self, self.score)
+
+    def _update_size(self, _):
+        self.width = sum(self.section_widths)
+        lowest_y = min([note.y for note in self.noteHeightCalculator.note_objects.values()])
+        self.height = -lowest_y
+
+        self.head_canvas_translate.y = -lowest_y
+        self.head_canvas_translate.flag_update()
+        self.stem_top = self.height + lowest_y  # Cause its being translated by lowest y
 
     def on_score(self, _, value):
         if self._old_score is not None:
@@ -89,19 +106,24 @@ class ScoreSection(PageContent):
             self.add_section(i)
 
     def add_section(self, index):
-        self.head_canvas.insert(index, self._make_section_group(index))
+        group, width = self._make_group_from_section(self.score[index])
+        self.head_canvas.insert(index, group)
+        self.section_widths.insert(index, width)
 
     def update_section(self, index):
-        self.head_canvas.children[index] = self._make_section_group(index)
+        group, width = self._make_group_from_section(self.score[index])
+        self.head_canvas.children[index] = group
         self.head_canvas.flag_update()
+        self.section_widths[index] = width
 
-    def _make_section_group(self, index):
+    def _make_group_from_section(self, section: ScoreSectionSectionStorage):
         self.noteHeightCalculator.update()
 
-        section = self.score[index]
         group = InstructionGroup()
 
+        width = 0
         if len(section.note_ids) != 0:
+            # Heads ------------------------------------------
             note_widths: dict[float, list[Note]] = {}
             for note_id in section.note_ids:
                 note = self.noteHeightCalculator.note_objects[note_id]
@@ -119,4 +141,21 @@ class ScoreSection(PageContent):
                     group.add(note.canvas)
             group.add(Translate(max_width - x, 0, 0))  # The rest of the heads so wide enough for next section
 
-        return group
+            # Stems ------------------------------------------
+            lowest_y_id = min(section.note_ids, key=lambda x: self.noteHeightCalculator.note_objects[x].note_level)
+            stem = Line(width=stem_width)
+            updater = lambda *_: self.update_stem_pos(stem, lowest_y_id)
+            self.noteHeightCalculator.note_objects[lowest_y_id].bind(y=updater)
+            self.bind(stem_top=updater)
+            updater()  # Incase the binding doesn't immediately run
+            group.add(stem)
+
+            # Return info ------------------------------------------
+            width = max_width
+
+        return group, width
+
+    def update_stem_pos(self, stem: Line, note_id):
+        note = self.noteHeightCalculator.note_objects[note_id]
+        stem.points = 0, note.y + note.stem_connection_offset, 0, self.stem_top
+        stem.flag_update()

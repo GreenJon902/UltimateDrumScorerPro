@@ -7,7 +7,7 @@ from score import Note, ScoreSectionStorage
 from score.notes import notes, missing_major_note_level_height
 
 
-class NoteHeightCalculator:  # Stores an instance of each note at the height stored in the score
+class NoteHeightCalculator:  # Stores an instance of each note at the correct height depending on the given score
     note_objects: dict[int, Note]
     update = None
     score: ScoreSectionStorage
@@ -34,7 +34,7 @@ class NoteHeightCalculator:  # Stores an instance of each note at the height sto
         major_note_levels = set()  # Integer part of note levels
         for note_id in used_note_ids:
             note = self.note_objects[note_id]
-            note_level_heights[note.note_level] = note.drawing_height
+            note_level_heights[note.note_level] = note.height
             major_note_levels.add(math.floor(note.note_level))
         if len(note_level_heights) != 0:
             max_note_level = max(note_level_heights.keys())
@@ -52,9 +52,9 @@ class NoteHeightCalculator:  # Stores an instance of each note at the height sto
         # Set notes to their y levels ----------------------------------------------------------------------------------
         for note in self.note_objects.values():
             if note.note_level in note_level_ys:
-                note.y = -note_level_ys[note.note_level]
+                note.top = -note_level_ys[note.note_level]
             else:
-                note.y = -1
+                note.y = 0
 
     def __str__(self):
         contents = (', '.join([
