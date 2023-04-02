@@ -80,14 +80,14 @@ class ScoreSectionStorage(EventDispatcher):
         self._sections.insert(index, section)
         for callback in self.callbacks:
             section.bind_all(callback)
-            callback(self, "storage", "insert", index)
+            callback("storage", "insert", index)
 
     def set(self, sections):
         self._clear_bindings()
         self._sections = sections
         self._rebind_bindings()
         for callback in self.callbacks:
-            callback(self, "storage", "set")
+            callback("storage", "set")
 
     def index(self, section):
         return self._sections.index(section)
