@@ -6,7 +6,7 @@ from score.notes import Note
 
 class ScoreSectionSectionStorage(EventDispatcher):
     decoration_id: int = NumericProperty(defalutvalue=None, allownone=True)
-    delta_bars: int = NumericProperty(defalutvalue=0)
+    bars: int = NumericProperty(defalutvalue=0)
     before_flags: int = NumericProperty(defalutvalue=0)  # Can be just half bars
     after_flags: int = NumericProperty(defalutvalue=0)
     dots: int = NumericProperty(defalutvalue=0)
@@ -21,7 +21,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
         if callback not in self.binding_groups:
             binding_group = [
                 ("decoration_id", lambda *_: callback("section", "decoration_id", self)),
-                ("delta_bars", lambda *_: callback("section", "delta_bars", self)),
+                ("bars", lambda *_: callback("section", "bars", self)),
                 ("before_flags", lambda *_: callback("section", "before_flags", self)),
                 ("after_flags", lambda *_: callback("section", "after_flags", self)),
                 ("note_ids", lambda *_: callback("section", "note_ids", self)),

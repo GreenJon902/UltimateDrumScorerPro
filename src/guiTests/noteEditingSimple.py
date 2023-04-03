@@ -27,6 +27,21 @@ def update(_):
         scoreSectionStorage[0].note_ids.remove(1)
     elif n == 4:
         scoreSectionStorage[1].note_ids = [0, 1, 2, 3, 4, 5]
+    elif n == 5:
+        scoreSectionStorage.set([
+            ScoreSectionSectionStorage(note_ids=[0]),
+            ScoreSectionSectionStorage(note_ids=[0], bars=2),
+            ScoreSectionSectionStorage(note_ids=[0], bars=1),
+            ScoreSectionSectionStorage(note_ids=[0], bars=0),
+            ScoreSectionSectionStorage(note_ids=[0], bars=1, after_flags=1),
+            ScoreSectionSectionStorage(note_ids=[0], bars=1),
+            ScoreSectionSectionStorage(note_ids=[0], bars=0, before_flags=1),
+            ScoreSectionSectionStorage(note_ids=[0], after_flags=2)
+        ])
+    elif n == 6:
+        scoreSectionStorage[1].note_ids.append(1)
+    else:
+        print("No more changes to make!!")
     n += 1
 
 

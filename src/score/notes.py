@@ -26,8 +26,8 @@ notes: dict[float, type[Note]] = {}
 for (id, note_name) in global_idmap["notes"].items():
     notes[id] = Factory.get(note_name)
 missing_major_note_level_height = global_idmap["missing_major_note_level_height"]  # If gap in consecutive integer
-# note_level values then this is the
-# gap
+                                                                                   # note_level values then this is the
+                                                                                   # gap
 bar_height = global_idmap["bar_height"]
 bar_width = global_idmap["st"]
 stem_width = global_idmap["st"]
