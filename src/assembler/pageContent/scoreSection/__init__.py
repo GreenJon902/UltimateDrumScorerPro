@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Union
+from typing import Optional
 
 from kivy import Logger
 from kivy.clock import Clock
@@ -75,7 +75,8 @@ class ScoreSection(PageContent):
     def _update_size(self, _):
         self.width = sum(self.section_widths)
         lowest_note_y = min(note.y for note in self.noteHeightCalculator.note_objects.values())
-        max_bar_height = (max((section.bars for section in self.score), default=0) - 1) * bar_height
+        max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags))
+                               for section in self.score), default=0) - 1) * bar_height
         if max_bar_height < 0:
             max_bar_height = 0
         self.height = -lowest_note_y + max_bar_height
@@ -148,8 +149,33 @@ class ScoreSection(PageContent):
     def _make_bar_group_from_section(self, section: ScoreSectionSectionStorage):
         group = InstructionGroup()
         group.add(Color(rgba=(0, 0, 0, 1)))
+
+        bar_group = InstructionGroup()
+        before_flags_group = InstructionGroup()
+        after_flags_group = InstructionGroup()
+        special_flags_group = InstructionGroup()
+
+        n = 0
         for n in range(section.bars):
-            group.add(Line(points=(0, -n * bar_height, 0, -n * bar_height), width=bar_width))  # Minus as draw from top
+            bar_group.add(Line(points=(0, -n * bar_height, 0, -n * bar_height), width=bar_width))  # Minus as draw from
+                                                                                                   # top
+        n += section.bars >= 1   # If loops once then n is 0 so add 1
+        for n2 in range(section.before_flags):
+            n3 = n + n2
+            before_flags_group.add(Line(points=(0, -n3 * bar_height, flag_length, -n3 * bar_height), width=bar_width))
+        for n2 in range(section.after_flags):
+            n3 = n + n2
+            after_flags_group.add(Line(points=(0, -n3 * bar_height, 0, -n3 * bar_height), width=bar_width))
+        for n2 in range(section.special_flags):
+            n3 = n + n2
+            special_flags_group.add(Line(points=(0, -n3 * bar_height, 0, -n3 * bar_height - slanted_flag_height_offset),
+                                         width=bar_width))
+
+        group.add(bar_group)
+        group.add(before_flags_group)
+        group.add(after_flags_group)
+        group.add(special_flags_group)
+
         group.add(Translate())
         return group
 
@@ -199,10 +225,22 @@ class ScoreSection(PageContent):
         stem.flag_update()
 
     def update_bar_width(self, index):
-        bar: Union[Line, Translate]
-        for item in self.bar_canvas.children[index].children:
-            if isinstance(item, Line):  # Do it with if as there are also bind textures and stuff.
-                item.points[2] = self.section_widths[index]
-            elif isinstance(item, Translate):
-                item.x = self.section_widths[index]
-            item.flag_update()
+        bar_group = self.bar_canvas.children[index].children[1]
+        after_flags_group = self.bar_canvas.children[index].children[3]
+        special_flags_group = self.bar_canvas.children[index].children[4]
+        translate = self.bar_canvas.children[index].children[5]
+        for bar in bar_group.children:
+            if isinstance(bar, Line):  # Do it with if as there are also bind textures and stuff.
+                bar.points[2] = self.section_widths[index]
+            bar.flag_update()
+        for after_flags in after_flags_group.children:
+            if isinstance(after_flags, Line):
+                after_flags.points[0] = self.section_widths[index] - flag_length
+                after_flags.points[2] = self.section_widths[index]
+            after_flags.flag_update()
+        for special_flags in special_flags_group.children:
+            if isinstance(special_flags, Line):
+                special_flags.points[0] = self.section_widths[index]
+                special_flags.points[2] = self.section_widths[index] + slanted_flag_length
+            special_flags.flag_update()
+        translate.x = self.section_widths[index]

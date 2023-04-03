@@ -7,8 +7,9 @@ from score.notes import Note
 class ScoreSectionSectionStorage(EventDispatcher):
     decoration_id: int = NumericProperty(defalutvalue=None, allownone=True)
     bars: int = NumericProperty(defalutvalue=0)
-    before_flags: int = NumericProperty(defalutvalue=0)  # Can be just half bars
+    before_flags: int = NumericProperty(defalutvalue=0)  # Half bars
     after_flags: int = NumericProperty(defalutvalue=0)
+    special_flags: int = NumericProperty(defalutvalue=0)  # The rotated flags
     dots: int = NumericProperty(defalutvalue=0)
     note_ids: list[int] = ListProperty(defalutvalue=[])
 

@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 0
+start_location = 6
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -30,13 +30,13 @@ def update(_):
     elif n == 5:
         scoreSectionStorage.set([
             ScoreSectionSectionStorage(note_ids=[0]),
+            ScoreSectionSectionStorage(note_ids=[0]),
+            ScoreSectionSectionStorage(note_ids=[0], bars=1),
             ScoreSectionSectionStorage(note_ids=[0], bars=2),
-            ScoreSectionSectionStorage(note_ids=[0], bars=1),
-            ScoreSectionSectionStorage(note_ids=[0], bars=0),
+            ScoreSectionSectionStorage(note_ids=[0]),
+            ScoreSectionSectionStorage(note_ids=[0], bars=1, before_flags=1),
             ScoreSectionSectionStorage(note_ids=[0], bars=1, after_flags=1),
-            ScoreSectionSectionStorage(note_ids=[0], bars=1),
-            ScoreSectionSectionStorage(note_ids=[0], bars=0, before_flags=1),
-            ScoreSectionSectionStorage(note_ids=[0], after_flags=2)
+            ScoreSectionSectionStorage(special_flags=2),
         ])
     elif n == 6:
         scoreSectionStorage[1].note_ids.append(1)
