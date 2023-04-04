@@ -54,6 +54,15 @@ def update(_):
     elif n == 10:
         scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0], dots=1),
                                  ScoreSectionSectionStorage(note_ids=[0], bars=1, dots=2)])
+    elif n == 11:
+        scoreSectionStorage.insert(1, ScoreSectionSectionStorage(note_ids=[0], dots=5))
+    elif n == 12:
+        scoreSectionStorage[1].dots = 1
+    elif n == 13:
+        scoreSectionStorage[1].dots = 0
+    elif n == 14:
+        scoreSectionStorage[0].dots = 0
+        scoreSectionStorage[2].dots = 0
     else:
         print("No more changes to make!!")
     n += 1

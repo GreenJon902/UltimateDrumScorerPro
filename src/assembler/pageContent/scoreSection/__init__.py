@@ -148,6 +148,9 @@ class ScoreSection(PageContent):
                                              "after_flags" or change[1] == "slanted_flags"):
                 self.update_section_bars(self.score.index(change[2]))
                 pass
+            elif change[0] == "section" and change[1] == "dots":
+                self.update_section_dots(self.score.index(change[2]))
+                pass
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 
@@ -172,11 +175,11 @@ class ScoreSection(PageContent):
         self.update_bar_width(index)
 
         if self.score.dots_at_top:
-            dot_group = self._make_top_dot_group_for_section(self.score[index])
+            dot_group = self._make_top_dot_group_from_section(self.score[index])
             self.dot_canvas.insert(index, dot_group)
             self.update_top_dot_pos(index)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Dots being on notes has not yet been implemented")
 
     def update_section_notes(self, index):
         group, width = self._make_head_group_from_section(self.score[index])
@@ -195,6 +198,18 @@ class ScoreSection(PageContent):
         self.update_bar_width(index)
 
         self.update_size()
+
+    def update_section_dots(self, index):
+        if self.score.dots_at_top:
+            group = self._make_top_dot_group_from_section(self.score[index])
+            self.dot_canvas.children[index].children = group.children  # For some reason we can't change the child, only
+                                                                       # the child's children
+            self.dot_canvas.flag_update()
+            self.update_top_dot_pos(index)
+
+            self.update_size()
+        else:
+            raise NotImplementedError("Dots being on notes has not yet been implemented")
 
 
     # noinspection PyMethodMayBeStatic
@@ -270,8 +285,8 @@ class ScoreSection(PageContent):
 
         return group, width
 
-    def _make_top_dot_group_for_section(self, section: ScoreSectionSectionStorage):  # Makes a single line of dots under
-                                                                                     # bars
+    def _make_top_dot_group_from_section(self, section: ScoreSectionSectionStorage):  # Makes a single line of dots
+                                                                                      # under bars
         group = InstructionGroup()
         group.add(Translate())  # Translate first as we want dots after stem
         group.add(self._make_dot_group(section.dots))
