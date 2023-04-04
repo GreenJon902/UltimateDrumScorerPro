@@ -115,7 +115,8 @@ class ScoreSection(PageContent):
             elif change[0] == "section" and change[1] == "note_ids":
                 self.update_section_notes(self.score.index(change[2]))
                 pass
-            elif change[0] == "section" and change[1] == "bars":
+            elif change[0] == "section" and (change[1] == "bars" or change[1] == "before_flags" or change[1] ==
+                                             "after_flags" or change[1] == "slanted_flags"):
                 self.update_section_bars(self.score.index(change[2]))
                 pass
             else:

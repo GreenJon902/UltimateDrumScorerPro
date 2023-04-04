@@ -44,6 +44,10 @@ def update(_):
         scoreSectionStorage[5].bars = 3
         scoreSectionStorage[3].bars -= 1
         scoreSectionStorage[6].bars -= 1
+    elif n == 8:
+        scoreSectionStorage[1].before_flags = 10
+        scoreSectionStorage[1].after_flags = 10
+        scoreSectionStorage[1].slanted_flags = 10
     else:
         print("No more changes to make!!")
     n += 1
