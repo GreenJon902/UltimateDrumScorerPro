@@ -108,13 +108,12 @@ class ScoreSection(PageContent):
 
         if self.score.dots_at_top:
             self.dot_canvas_translate.x = top_dot_stem_distance
-            self.dot_canvas_translate.y = -lowest_note_y + max_bar_height + dot_head_spacing
+            self.dot_canvas_translate.y = -lowest_note_y + dot_head_spacing
             self.dot_canvas_translate.flag_update()
         else:
             raise NotImplementedError()
 
         self.bar_canvas_translate.y = -lowest_note_y + max_bar_height + top_dot_height
-
         self.bar_canvas_translate.flag_update()
 
     def on_score(self, _, value):
