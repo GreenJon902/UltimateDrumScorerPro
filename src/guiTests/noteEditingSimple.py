@@ -36,7 +36,7 @@ def update(_):
             ScoreSectionSectionStorage(note_ids=[0]),
             ScoreSectionSectionStorage(note_ids=[0], bars=1, before_flags=1),
             ScoreSectionSectionStorage(note_ids=[0], bars=1, after_flags=1),
-            ScoreSectionSectionStorage(special_flags=2),
+            ScoreSectionSectionStorage(slanted_flags=2),
         ])
     elif n == 6:
         scoreSectionStorage[1].note_ids.append(1)

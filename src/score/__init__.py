@@ -9,7 +9,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
     bars: int = NumericProperty(defalutvalue=0)
     before_flags: int = NumericProperty(defalutvalue=0)  # Half bars
     after_flags: int = NumericProperty(defalutvalue=0)
-    special_flags: int = NumericProperty(defalutvalue=0)  # The rotated flags
+    slanted_flags: int = NumericProperty(defalutvalue=0)
     dots: int = NumericProperty(defalutvalue=0)
     note_ids: list[int] = ListProperty(defalutvalue=[])
 
@@ -25,6 +25,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
                 ("bars", lambda *_: callback("section", "bars", self)),
                 ("before_flags", lambda *_: callback("section", "before_flags", self)),
                 ("after_flags", lambda *_: callback("section", "after_flags", self)),
+                ("slanted_flags", lambda *_: callback("section", "slanted_flags", self)),
                 ("note_ids", lambda *_: callback("section", "note_ids", self)),
                 ("dots", lambda *_: callback("section", "dots", self))
             ]

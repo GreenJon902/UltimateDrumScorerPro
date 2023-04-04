@@ -75,7 +75,7 @@ class ScoreSection(PageContent):
     def _update_size(self, _):
         self.width = sum(self.section_widths)
         lowest_note_y = min(note.y for note in self.noteHeightCalculator.note_objects.values())
-        max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags))
+        max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags, section.slanted_flags))
                                for section in self.score), default=0) - 1) * bar_height
         if max_bar_height < 0:
             max_bar_height = 0
@@ -166,7 +166,7 @@ class ScoreSection(PageContent):
         for n2 in range(section.after_flags):
             n3 = n + n2
             after_flags_group.add(Line(points=(0, -n3 * bar_height, 0, -n3 * bar_height), width=bar_width))
-        for n2 in range(section.special_flags):
+        for n2 in range(section.slanted_flags):
             n3 = n + n2
             special_flags_group.add(Line(points=(0, -n3 * bar_height, 0, -n3 * bar_height - slanted_flag_height_offset),
                                          width=bar_width))
