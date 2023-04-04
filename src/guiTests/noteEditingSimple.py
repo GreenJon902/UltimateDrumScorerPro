@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 7
+start_location = 0
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -48,12 +48,18 @@ def update(_):
         scoreSectionStorage[1].before_flags = 10
         scoreSectionStorage[1].after_flags = 10
         scoreSectionStorage[1].slanted_flags = 10
+    elif n == 9:
+        scoreSectionStorage.dots_at_top = True
+        scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0], dots=10)])
+    elif n == 10:
+        scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0], dots=1),
+                                 ScoreSectionSectionStorage(note_ids=[0], bars=1, dots=2)])
     else:
         print("No more changes to make!!")
     n += 1
 
 
-for n in range(start_location):
+for n in range(start_location + 1):
     update(n)
 
 boxLayout = BoxLayout(orientation="vertical")

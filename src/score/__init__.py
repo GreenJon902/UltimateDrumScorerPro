@@ -1,5 +1,5 @@
 from kivy.event import EventDispatcher
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, BooleanProperty
 
 from score.notes import Note
 
@@ -43,12 +43,16 @@ class ScoreSectionSectionStorage(EventDispatcher):
 class ScoreSectionStorage(EventDispatcher):
     _sections: list[ScoreSectionSectionStorage]  # Protect because need to be bound
     callbacks: list[callable]
+    dot_callbacks: dict[callable]
+
+    dots_at_top: int = BooleanProperty(defalutvalue=False)
 
     def __init__(self, sections=None, **kwargs):
         if sections is None:
             sections = []
 
         self.callbacks = []
+        self.dot_callbacks = {}
         self._sections = []
         self.set(sections)
         EventDispatcher.__init__(self, **kwargs)
@@ -58,11 +62,17 @@ class ScoreSectionStorage(EventDispatcher):
         self.callbacks.append(callback)
         for section in self._sections:
             section.bind_all(callback)
+        if callback not in self.dot_callbacks:
+            self.dot_callbacks[callback] = lambda *_: callback("storage", "dots_at_top", self)
+            self.fbind("dots_at_top", self.dot_callbacks[callback])
 
     def unbind_all(self, callback):
         for section in self._sections:
             section.unbind_all(callback)
         self.callbacks.remove(callback)
+        if callback in self.dot_callbacks:
+            self.funbind("dots_at_top", self.dot_callbacks[callback])
+            self.dot_callbacks.pop(callback)
 
     def _clear_bindings(self):  # But doesn't delete from callbacks list
         for callback in self.callbacks:

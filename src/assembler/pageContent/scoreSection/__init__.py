@@ -3,7 +3,7 @@ from typing import Optional
 
 from kivy import Logger
 from kivy.clock import Clock
-from kivy.graphics import Line, Canvas, PushMatrix, PopMatrix, Translate, InstructionGroup, Color
+from kivy.graphics import Line, Canvas, PushMatrix, PopMatrix, Translate, InstructionGroup, Color, Ellipse
 from kivy.properties import ObjectProperty, ListProperty
 
 from argumentTrigger import ArgumentTrigger
@@ -31,9 +31,15 @@ class ScoreSection(PageContent):
     head_canvas_container: Canvas
     head_canvas_translate: Translate
 
-    bar_canvas: Canvas  # Contains stems
+    bar_canvas: Canvas  # flags and slanted flags
     bar_canvas_container: Canvas
     bar_canvas_translate: Translate
+
+    dot_canvas: Canvas
+    dot_canvas_container: Canvas
+    dot_canvas_translate: Translate
+    dot: Ellipse  # We only need one of these so easier to store just one, then we can also easily change values like \
+    dot_translate: Translate  # radius or spacing
 
     update = None
     update_size = None
@@ -55,11 +61,21 @@ class ScoreSection(PageContent):
 
         self.bar_canvas_container = Canvas()
         self.bar_canvas = Canvas()
-        self.bar_canvas_translate = Translate(0, 0, 0)
+        self.bar_canvas_translate = Translate()
         self.bar_canvas_container.add(PushMatrix())
         self.bar_canvas_container.add(self.bar_canvas_translate)
         self.bar_canvas_container.add(self.bar_canvas)
         self.bar_canvas_container.add(PopMatrix())
+
+        self.dot_canvas_container = Canvas()
+        self.dot_canvas = Canvas()
+        self.dot_canvas_translate = Translate()
+        self.dot_canvas_container.add(PushMatrix())
+        self.dot_canvas_container.add(self.dot_canvas_translate)
+        self.dot_canvas_container.add(self.dot_canvas)
+        self.dot_canvas_container.add(PopMatrix())
+        self.dot = Ellipse(pos=[0, 0], size=[dot_radius * 2, dot_radius * 2])  # TODO: Bind this correctly
+        self.dot_translate = Translate(dot_spacing, 0, 0)
 
         PageContent.__init__(self, *args, **kwargs)
 
@@ -70,6 +86,7 @@ class ScoreSection(PageContent):
 
         self.canvas.add(self.head_canvas_container)
         self.canvas.add(self.bar_canvas_container)
+        self.canvas.add(self.dot_canvas_container)
         self.on_score(self, self.score)
 
     def _update_size(self, _):
@@ -79,13 +96,25 @@ class ScoreSection(PageContent):
                                for section in self.score), default=0) - 1) * bar_height
         if max_bar_height < 0:
             max_bar_height = 0
-        self.height = -lowest_note_y + max_bar_height
+        if self.score.dots_at_top and any(section.dots for section in self.score):  # Checks if there are dots present
+            top_dot_height = (dot_radius * 2 + dot_head_spacing + bar_dot_spacing)
+        else:
+            top_dot_height = 0
+        self.height = -lowest_note_y + max_bar_height + top_dot_height
 
         self.head_canvas_translate.y = -lowest_note_y
         self.head_canvas_translate.flag_update()
         self.stem_top = self.height + lowest_note_y  # Cause its being translated by lowest y
 
-        self.bar_canvas_translate.y = -lowest_note_y + max_bar_height
+        if self.score.dots_at_top:
+            self.dot_canvas_translate.x = top_dot_stem_distance
+            self.dot_canvas_translate.y = -lowest_note_y + max_bar_height + dot_head_spacing
+            self.dot_canvas_translate.flag_update()
+        else:
+            raise NotImplementedError()
+
+        self.bar_canvas_translate.y = -lowest_note_y + max_bar_height + top_dot_height
+
         self.bar_canvas_translate.flag_update()
 
     def on_score(self, _, value):
@@ -127,7 +156,9 @@ class ScoreSection(PageContent):
 
     def full_redraw(self):
         self.head_canvas.clear()
+        self.section_widths.clear()
         self.bar_canvas.clear()
+        self.dot_canvas.clear()
         for i in range(len(self.score)):
             self.add_section(i)
 
@@ -136,9 +167,16 @@ class ScoreSection(PageContent):
         self.head_canvas.insert(index, head_group)
         self.section_widths.insert(index, width)
 
-        group = self._make_bar_group_from_section(self.score[index])
-        self.bar_canvas.insert(index, group)
+        bar_group = self._make_bar_group_from_section(self.score[index])
+        self.bar_canvas.insert(index, bar_group)
         self.update_bar_width(index)
+
+        if self.score.dots_at_top:
+            dot_group = self._make_top_dot_group_for_section(self.score[index])
+            self.dot_canvas.insert(index, dot_group)
+            self.update_top_dot_pos(index)
+        else:
+            raise NotImplementedError()
 
     def update_section_notes(self, index):
         group, width = self._make_head_group_from_section(self.score[index])
@@ -232,6 +270,25 @@ class ScoreSection(PageContent):
 
         return group, width
 
+    def _make_top_dot_group_for_section(self, section: ScoreSectionSectionStorage):  # Makes a single line of dots under
+                                                                                     # bars
+        group = InstructionGroup()
+        group.add(Translate())  # Translate first as we want dots after stem
+        group.add(self._make_dot_group(section.dots))
+        return group
+
+    def _make_dot_group(self, amount: int):  # Makes a single line of dots
+        group = InstructionGroup()
+        if amount > 0:
+            group.add(PushMatrix())
+
+            for n in range(amount):
+                group.add(self.dot)
+                group.add(self.dot_translate)
+
+            group.add(PopMatrix())
+        return group
+
 
     def update_stem_pos(self, stem: Line, note_id):
         note = self.noteHeightCalculator.note_objects[note_id]
@@ -257,4 +314,8 @@ class ScoreSection(PageContent):
                 special_flags.points[0] = self.section_widths[index]
                 special_flags.points[2] = self.section_widths[index] + slanted_flag_length
             special_flags.flag_update()
+        translate.x = self.section_widths[index]
+
+    def update_top_dot_pos(self, index):
+        translate: Translate = self.dot_canvas.children[index].children[0]
         translate.x = self.section_widths[index]
