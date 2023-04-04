@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 0
+start_location = 15
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -16,7 +16,7 @@ scoreSectionStorage = ScoreSectionStorage()
 
 def update(_):
     global n
-    if n == 0:
+    if n == 0:  # Heads and stems
         scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0, 1, 2, 4]),
                                  ScoreSectionSectionStorage(note_ids=[0, 2, 4])])
     elif n == 1:
@@ -27,7 +27,7 @@ def update(_):
         scoreSectionStorage[0].note_ids.remove(1)
     elif n == 4:
         scoreSectionStorage[1].note_ids = [0, 1, 2, 3, 4, 5]
-    elif n == 5:
+    elif n == 5:  # Bars
         scoreSectionStorage.set([
             ScoreSectionSectionStorage(note_ids=[0]),
             ScoreSectionSectionStorage(note_ids=[0]),
@@ -48,7 +48,7 @@ def update(_):
         scoreSectionStorage[1].before_flags = 10
         scoreSectionStorage[1].after_flags = 10
         scoreSectionStorage[1].slanted_flags = 10
-    elif n == 9:
+    elif n == 9:  # Dots
         scoreSectionStorage.dots_at_top = True
         scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0], dots=10)])
     elif n == 10:
@@ -63,6 +63,20 @@ def update(_):
     elif n == 14:
         scoreSectionStorage[0].dots = 0
         scoreSectionStorage[2].dots = 0
+    elif n == 15:  # Removing sections
+        scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0]),
+                                 ScoreSectionSectionStorage(note_ids=[0], bars=1, dots=1),
+                                 ScoreSectionSectionStorage(note_ids=[0], bars=2, after_flags=1)])
+    elif n == 16:
+        scoreSectionStorage.pop()
+    elif n == 17:
+        scoreSectionStorage.pop(1)
+    elif n == 18:
+        scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0]),
+                                 ScoreSectionSectionStorage(note_ids=[0], bars=1, dots=1),
+                                 ScoreSectionSectionStorage(note_ids=[0], bars=2, after_flags=1)])
+    elif n == 19:
+        scoreSectionStorage.remove(scoreSectionStorage[0])
     else:
         print("No more changes to make!!")
     n += 1

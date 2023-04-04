@@ -140,6 +140,10 @@ class ScoreSection(PageContent):
             elif change[0] == "storage" and change[1] == "insert":
                 self.add_section(change[2])
                 pass
+            elif change[0] == "storage" and change[1] == "remove":
+                self.remove_section(change[2])
+                pass
+
             elif change[0] == "section" and change[1] == "note_ids":
                 self.update_section_notes(self.score.index(change[2]))
                 pass
@@ -179,6 +183,14 @@ class ScoreSection(PageContent):
             self.update_top_dot_pos(index)
         else:
             raise NotImplementedError("Dots being on notes has not yet been implemented")
+
+    def remove_section(self, index):
+        self.head_canvas.remove(self.head_canvas.children[index])
+        self.section_widths.pop(index)
+        self.bar_canvas.remove(self.bar_canvas.children[index])
+        self.dot_canvas.remove(self.dot_canvas.children[index])
+
+        self.update_size()
 
     def update_section_notes(self, index):
         group, width = self._make_head_group_from_section(self.score[index])

@@ -94,6 +94,18 @@ class ScoreSectionStorage(EventDispatcher):
             section.bind_all(callback)
             callback("storage", "insert", index)
 
+    def pop(self, index=None):
+        if index is None:
+            index = len(self._sections) - 1  # Last item
+        section = self._sections.pop(index)
+        for callback in self.callbacks:
+            section.unbind_all(callback)
+            callback("storage", "remove", index)
+        return section
+
+    def remove(self, section):
+        self.pop(self._sections.index(section))
+
     def set(self, sections):
         self._clear_bindings()
         self._sections = sections
