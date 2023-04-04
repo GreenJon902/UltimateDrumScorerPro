@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 6
+start_location = 7
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -40,6 +40,10 @@ def update(_):
         ])
     elif n == 6:
         scoreSectionStorage[1].note_ids.append(1)
+    elif n == 7:
+        scoreSectionStorage[5].bars = 3
+        scoreSectionStorage[3].bars -= 1
+        scoreSectionStorage[6].bars -= 1
     else:
         print("No more changes to make!!")
     n += 1

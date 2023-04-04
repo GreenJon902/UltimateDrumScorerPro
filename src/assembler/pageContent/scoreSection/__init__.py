@@ -115,6 +115,9 @@ class ScoreSection(PageContent):
             elif change[0] == "section" and change[1] == "note_ids":
                 self.update_section_notes(self.score.index(change[2]))
                 pass
+            elif change[0] == "section" and change[1] == "bars":
+                self.update_section_bars(self.score.index(change[2]))
+                pass
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 
@@ -145,7 +148,17 @@ class ScoreSection(PageContent):
 
         self.update_bar_width(index)
 
+    def update_section_bars(self, index):
+        group = self._make_bar_group_from_section(self.score[index])
+        self.bar_canvas.children[index].children = group.children  # For some reason we can't change the child, only
+                                                                   # the child's children
+        self.bar_canvas.flag_update()
+        self.update_bar_width(index)
 
+        self.update_size()
+
+
+    # noinspection PyMethodMayBeStatic
     def _make_bar_group_from_section(self, section: ScoreSectionSectionStorage):
         group = InstructionGroup()
         group.add(Color(rgba=(0, 0, 0, 1)))
