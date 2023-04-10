@@ -53,7 +53,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         self.label_holder.clear_widgets()
         for note_type in ordered_note_types:
             note = note_type()
-            self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.drawing_height)))
+            self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.height)))
 
     def _refresh_all_notes(self, *args):
         note_ids = self.fix_and_get_normal_editor_note_ids()
@@ -67,7 +67,6 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             holder = SelfSizingBoxLayout(orientation="vertical")
             for (note_id, note_type) in ordered_note_types:
                 note: Note = note_type()
-                note.height = note.drawing_height
                 note.color[3] = 1 if note_id in section.note_ids else 0.1
                 note.bind(on_touch_down=lambda _, touch, note_=note, section_=section, note_id_=note_id:
                           note_clicked(note_, touch, section_, note_id_))
