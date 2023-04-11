@@ -11,7 +11,7 @@
     text: "Normal Editor"
 
     label_holder: label_holder
-    note_holder: note_holder
+    editor_holder: editor_holder
 
     RelativeLayout:
         BoxLayout:
@@ -60,23 +60,27 @@
 
                         RelativeLayout:
                             size_hint: None, None
-                            size: note_holder.size
+                            size: editor_holder.size
 
-                            ZoomedLayout:
+                            EditorHolder:
+                                id: editor_holder
+
                                 size_hint: None, None
                                 pos: 0, 0
 
-                                id: note_holder
                                 orientation: "horizontal"
 
                         Widget:
                             width: labels_and_notes_spacing
 
-                        SelfSizingBoxLayout:
-                            id: label_holder
-                            orientation: "vertical"
-                            anchor: "lowest"
-                            size_hint_x: None
+                        RelativeLayout:
+                            size_hint: None, None
+                            size: editor_holder.size
+
+                            SelfSizingBoxLayout:
+                                id: label_holder
+                                orientation: "vertical"
+                                y: editor_holder.bottom_note_y_offset
 
 
 
