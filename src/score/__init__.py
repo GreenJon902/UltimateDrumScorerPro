@@ -146,3 +146,11 @@ class SectionIterator:
             return value
         else:
             raise StopIteration
+
+
+def fix_and_get_normal_editor_note_ids(score):
+    #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
+    note_ids = set(score.normal_editor_note_ids)
+    note_ids.update({note_id for section in score for note_id in section.note_ids})
+    score.normal_editor_note_ids = note_ids
+    return note_ids

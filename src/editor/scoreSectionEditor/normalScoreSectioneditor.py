@@ -10,6 +10,7 @@ from kivy.uix.tabbedpanel import TabbedPanelItem
 from kivy.uix.widget import Widget
 
 from assembler.pageContent.scoreSection import ScoreSection
+from score import fix_and_get_normal_editor_note_ids
 from score.notes import notes
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
@@ -18,7 +19,7 @@ Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor.kv")
 
 # noinspection PyPep8Naming
 class NormalScoreSectionEditor_NoteEditor(RelativeLayout):
-    pass
+    bottom_note_y_offset: int = NumericProperty()
 
 
 class ZoomedLayout(ScatterLayout):
@@ -56,6 +57,7 @@ class EditorHolder(ZoomedLayout):
 
     def set_editor(self, editor: NormalScoreSectionEditor_NoteEditor):
         self.add_widget(editor)
+        editor.bind(bottom_note_y_offset=lambda _, value: setattr(self, "bottom_note_y_offset", value))
 
 
 
@@ -85,15 +87,8 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         else:
             Logger.warning("NormalScoreSectionEditor: No editor supplied")
 
-    def fix_and_get_normal_editor_note_ids(self):
-        #  We add in any note_ids that are present but not allowed to be edited, use set so no duplicates
-        note_ids = set(self.score_section_instance.score.normal_editor_note_ids)
-        note_ids.update({note_id for section in self.score_section_instance.score for note_id in section.note_ids})
-        self.score_section_instance.score.normal_editor_note_ids = note_ids
-        return note_ids
-
     def _update_labels(self, *args):
-        note_ids = self.fix_and_get_normal_editor_note_ids()
+        note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.score)
         ordered_note_types = sorted([notes[note_id] for note_id in note_ids], key=lambda x: x().note_level,
                                     reverse=True)  # Reverse cause of how they get added
 
