@@ -4,7 +4,7 @@ def run():
 
     os.environ["APPNAME"] = "UltimateDrumScorerPro"
     os.environ["APPAUTHOR"] = "GreenJon902"
-    os.environ["APPVERSION"] = "v3.0"
+    os.environ["APPVERSION"] = "v3.1"
     os.environ["SHORT_APPNAME"] = "UDSP"
 
     # ==================================================================================================================
