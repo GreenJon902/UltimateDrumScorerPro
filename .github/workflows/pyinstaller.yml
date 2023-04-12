@@ -7,21 +7,21 @@ jobs:
   build:
     strategy:
       matrix:
-        os: ["windows", "linux"]
+        platform: [windows, linux]
     
-    name: Create executable for ${{ matrix.os }}
+    name: Create executable for ${{ matrix.platform }}
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v3
       
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-${{ matrix.os }}@main
+      uses: JackMcKew/pyinstaller-action-${{ matrix.platform }}@main
       with:
         path: .
   
     - uses: actions/upload-artifact@v3
       with:
-        name: UDSP-${{ matrix.os }}
-        path: src/dist/${{ matrix.os }}
+        name: UDSP-${{ matrix.platform }}
+        path: src/dist/${{ matrix.platform }}
   
