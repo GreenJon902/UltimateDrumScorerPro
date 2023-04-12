@@ -1,27 +1,44 @@
-name: Create Executable
+name: Create executables
 
 on:
   workflow_dispatch:
 
+
 jobs:
-  build:
-    strategy:
-      matrix:
-        platform: [windows, linux]
+  build-windows:
     
-    name: Create executable for ${{ matrix.platform }}
+    name: Create executable for windows
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v3
       
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-${{ matrix.platform }}@main
+      uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: .
   
     - uses: actions/upload-artifact@v3
       with:
-        name: UDSP-${{ matrix.platform }}
-        path: src/dist/${{ matrix.platform }}
+        name: UDSP-windows
+        path: src/dist/windows
+        
+        
+  build-linux:
+    
+    name: Create executable for linux
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Create executable
+      uses: JackMcKew/pyinstaller-action-linux@main
+      with:
+        path: .
+  
+    - uses: actions/upload-artifact@v3
+      with:
+        name: UDSP-linux
+        path: src/dist/linux
   
