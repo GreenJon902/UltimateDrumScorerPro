@@ -21,7 +21,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: UDSP-windows
-        path: src/dist/windows
+        path: dist/windows
         
         
   build-linux:
@@ -40,5 +40,5 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: UDSP-linux
-        path: src/dist/linux
+        path: dist/linux
   
