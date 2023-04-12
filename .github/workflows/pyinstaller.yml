@@ -34,7 +34,7 @@ jobs:
     - uses: actions/checkout@v3
       
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-linux@tkinter
+      uses: JackMcKew/pyinstaller-action-linux@main
       with:
         path: .
   
