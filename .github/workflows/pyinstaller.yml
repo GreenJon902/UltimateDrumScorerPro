@@ -5,13 +5,23 @@ on:
 
 jobs:
   build:
-    name: Create Executable
+    strategy:
+      matrix:
+        os: [windows, linux]
+    
+    name: Create executable for ${{ matrix.version }}
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v3
       
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-windows@main
+      uses: JackMcKew/pyinstaller-action-${{ matrix.os }}@main
       with:
         path: .
+  
+    - uses: actions/upload-artifact@v3
+      with:
+        name: UDSP-${{ matrix.version }}
+        path: src/dist/${{ matrix.version }}
+  
