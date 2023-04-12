@@ -20,6 +20,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     note_holder: SelfSizingBoxLayout = ObjectProperty()
     plus_holder: SelfSizingBoxLayout = ObjectProperty()
+    cross_holder: SelfSizingBoxLayout = ObjectProperty()
 
     score_section_instance: ScoreSection
 
@@ -62,12 +63,26 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 plus.width = plus.default_width
                 first_note_holder.bind(width=lambda _, value, _plus=plus: setattr(_plus, "custom_click_width", value))
             plus.bind(on_touch_down=lambda _, touch, _plus=plus, _i=i:
-                      plus_clicked(_plus, touch, self, _i))
+                      hover_button_clicked(_plus, touch, lambda: self.insert_new_section_section(_i)))
             self.plus_holder.add_widget(plus)
-        self.bottom_note_y_offset = self.plus_holder.children[0].height
+
+        self.cross_holder.clear_widgets()
+        for i in reversed(range(len(self.score_section_instance.score))):
+            note_holder = self.note_holder.children[i - 1]
+            cross = Cross(width=note_holder.width)
+            note_holder.bind(width=lambda _, value, _cross=cross: setattr(_cross, "width", value))
+            cross.bind(on_touch_down=lambda _, touch, _cross=cross, _i=i:
+                       hover_button_clicked(_cross, touch, lambda: self.remove_section_section(_i)))
+            self.cross_holder.add_widget(cross)
+
+        self.bottom_note_y_offset = self.plus_holder.children[0].height + self.cross_holder.children[0].height
 
     def insert_new_section_section(self, i):
         self.score_section_instance.score.insert(i, ScoreSectionSectionStorage(note_ids=[]))
+        self.full_redraw()
+
+    def remove_section_section(self, i):
+        self.score_section_instance.score.pop(i)
         self.full_redraw()
 
 
@@ -82,7 +97,7 @@ def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionSto
         return True
 
 
-class Plus(RelativeLayout):
+class HoverButton(RelativeLayout):
     mouse_over = BooleanProperty(defaultvalue=False)
     custom_click_width = NumericProperty(defaultvalue=None, allownone=True)  # Width which is checked for mouse, None
                                                                              # for inherit from widget
@@ -92,11 +107,23 @@ class Plus(RelativeLayout):
         Window.bind(mouse_pos=self.mouse_move)
 
     def mouse_move(self, _, pos):
-        pos = self.to_widget(*pos)
+        pos = self.to_widget(*pos, relative=True)
         if self.collide_point(*pos):
             self.mouse_over = True
         else:
             self.mouse_over = False
+
+
+def hover_button_clicked(button: HoverButton, touch: MotionEvent,
+                         callback: callable):
+    pos = button.to_local(*touch.pos)
+    if button.collide_point(*pos):
+        callback()
+        return True
+
+
+class Plus(HoverButton):
+    default_width: int = NumericProperty(defaultvalue=None)
 
     def collide_point(self, x, y):
         hw = (self.width if self.custom_click_width is None else self.custom_click_width) / 2
@@ -105,8 +132,8 @@ class Plus(RelativeLayout):
         return False
 
 
-def plus_clicked(plus: Plus, touch: MotionEvent, editor: NormalScoreSectionEditor_NoteEditor_PlusInbetween, i: int):
-    pos = plus.to_local(*touch.pos)
-    if plus.collide_point(*pos):
-        editor.insert_new_section_section(i)
-        return True
+class Cross(HoverButton):
+    def collide_point(self, x, y):
+        if 0 < x < self.width and 0 < y < self.height:
+            return True
+        return False

@@ -3,6 +3,7 @@
 
     note_holder: note_holder
     plus_holder: plus_holder
+    cross_holder: cross_holder
 
     SelfSizingBoxLayout:
         id: container
@@ -15,9 +16,11 @@
         SelfSizingBoxLayout:
             id: plus_holder
 
+        SelfSizingBoxLayout:
+            id: cross_holder
 
 <Plus>:  # Width set by parent
-    default_width: 2.5  # Width when nothing to set too
+    default_width: 2.5  # Width when nothing to set to
     height: 5
     canvas:
         Color:
@@ -27,4 +30,16 @@
             width: st
         Line:
             points: 0, 2.5, 2.5, 2.5
+            width: st
+
+<Cross>:  # Width set by parent
+    height: 5
+    canvas:
+        Color:
+            rgba: 0, 0, 0, (1 if self.mouse_over else 0.1)
+        Line:
+            points: self.width / 2 - 2.5, 0, self.width / 2 + 2.5, 5  # We want to center the x
+            width: st
+        Line:
+            points: self.width / 2 - 2.5, 5, self.width / 2 + 2.5, 0
             width: st
