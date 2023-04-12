@@ -50,7 +50,7 @@ class UltimateDrumScorerProApp(App):
                        ScoreSection(editor, pos=(210 / 2, 297 / 2), score=ScoreSectionStorage([
                            ScoreSectionSectionStorage(note_ids=[0, 1]),
                            ScoreSectionSectionStorage(note_ids=[0])
-                       ], normal_editor_note_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8])),
+                       ], normal_editor_note_ids=[0, 1, 6, 8])),
                    ]
                ]
             )
