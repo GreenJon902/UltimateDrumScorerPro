@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: [windows, linux]
     
-    name: Create executable for ${{ matrix.version }}
+    name: Create executable for ${{ matrix.os }}
     runs-on: ubuntu-latest
     
     steps:
@@ -22,6 +22,6 @@ jobs:
   
     - uses: actions/upload-artifact@v3
       with:
-        name: UDSP-${{ matrix.version }}
-        path: src/dist/${{ matrix.version }}
+        name: UDSP-${{ matrix.os }}
+        path: src/dist/${{ matrix.os }}
   
