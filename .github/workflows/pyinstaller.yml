@@ -7,7 +7,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows, linux]
+        os: ["windows", "linux"]
     
     name: Create executable for ${{ matrix.os }}
     runs-on: ubuntu-latest
