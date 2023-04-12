@@ -1,0 +1,28 @@
+name: Create Executable
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build on node ${{ matrix.node_version }} and ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' 
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+    
+    - name: Build Executable
+      run: python -m PyInstaller UDSP.spec
