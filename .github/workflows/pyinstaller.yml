@@ -1,0 +1,17 @@
+name: Create Executable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Create Executable
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Create executable
+      uses: JackMcKew/pyinstaller-action-windows@main
+      with:
+        path: .
