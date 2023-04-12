@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: Build on node ${{ matrix.node_version }} and ${{ matrix.os }}
+    name: Create Executable
     runs-on: ubuntu-latest
     
     steps:
@@ -15,3 +15,5 @@ jobs:
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: src
+        requirements: ../requirements.txt
+        spec: ../UDSP.spec
