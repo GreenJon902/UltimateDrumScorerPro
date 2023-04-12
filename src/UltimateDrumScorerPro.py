@@ -48,9 +48,9 @@ class UltimateDrumScorerProApp(App):
                    [
                        Text(editor, pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
                        ScoreSection(editor, pos=(210 / 2, 297 / 2), score=ScoreSectionStorage([
-                           ScoreSectionSectionStorage(note_ids=[0, 1], bars=1),
-                           ScoreSectionSectionStorage(note_ids=[0], bars=-1)
-                       ], normal_editor_note_ids=[3])),
+                           ScoreSectionSectionStorage(note_ids=[0, 1]),
+                           ScoreSectionSectionStorage(note_ids=[0])
+                       ], normal_editor_note_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8])),
                    ]
                ]
             )
