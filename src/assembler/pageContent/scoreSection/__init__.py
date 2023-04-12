@@ -196,7 +196,7 @@ class ScoreSection(PageContent):
         group, width = self._make_head_group_from_section(self.score[index])
         self.head_canvas.children[index].children = group.children  # For some reason we can't change the child, only
                                                                     # the child's children
-        self.head_canvas.flag_update()
+        self.head_canvas.children[index].flag_update()
         self.section_widths[index] = width
 
         self.update_bar_width(index)

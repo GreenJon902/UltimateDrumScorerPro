@@ -5,7 +5,7 @@
 #:set note_name_color 0, 0, 0, 1
 
 #:set editor_padding mm(5)
-#:set labels_and_notes_spacing mm(5)
+#:set labels_and_notes_spacing mm(0)
 
 <NormalScoreSectionEditor>:
     text: "Normal Editor"
@@ -56,6 +56,7 @@
                     size_hint_x: None
 
                     SelfSizingBoxLayout:  # Widgets are wrong way round because of some positioning thing i think?
+                        anchor: "lowest"
                         id: container
 
                         RelativeLayout:
@@ -80,7 +81,8 @@
                             SelfSizingBoxLayout:
                                 id: label_holder
                                 orientation: "vertical"
-                                y: editor_holder.bottom_note_y_offset
+                                anchor: "highest"
+                                y: mm(editor_holder.bottom_note_y_offset)
 
 
 

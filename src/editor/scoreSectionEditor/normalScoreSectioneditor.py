@@ -58,6 +58,7 @@ class EditorHolder(ZoomedLayout):
     def set_editor(self, editor: NormalScoreSectionEditor_NoteEditor):
         self.add_widget(editor)
         editor.bind(bottom_note_y_offset=lambda _, value: setattr(self, "bottom_note_y_offset", value))
+        self.bottom_note_y_offset = editor.bottom_note_y_offset
 
 
 
