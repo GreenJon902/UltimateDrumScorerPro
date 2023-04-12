@@ -1,6 +1,7 @@
 <NormalScoreSectionEditor_NoteEditor_PlusInbetween>:
     size: container.size
 
+    bar_holder: bar_holder
     note_holder: note_holder
     plus_holder: plus_holder
     cross_holder: cross_holder
@@ -9,6 +10,9 @@
         id: container
         orientation: "vertical"
         anchor: "middle"
+
+        SelfSizingBoxLayout:
+            id: bar_holder
 
         SelfSizingBoxLayout:
             id: note_holder
@@ -43,3 +47,54 @@
         Line:
             points: self.width / 2 - 2.5, 5, self.width / 2 + 2.5, 0
             width: st
+
+<BarConfigurer>:
+    RelativeLayout:
+        id: full_bar_container
+        size_hint: None, None
+        width: root.width
+        height: full_bar_label.height
+        y: half_bar_container.top
+
+        BetterSizedLabel:
+            id: full_bar_label
+            center_x: self.parent.center_x
+
+            color: 0, 0, 0, 1
+            text: "1"
+            font_size: 5
+
+    SelfSizingBoxLayout:
+        id: half_bar_container
+        orientation: "horizontal"
+
+        size_hint: None, None
+
+        RelativeLayout:
+            id: before_bar_container
+            width: root.width / 2
+            height: before_bar_label.height
+
+            BetterSizedLabel:
+                id: before_bar_label
+                center_x: self.parent.width / 2
+                size_hint: None, None
+
+                color: 0, 0, 0, 1
+                text: "1"
+                font_size: 5
+
+
+        RelativeLayout:
+            id: after_bar_container
+            width: root.width / 2
+            height: after_bar_label.height
+
+            BetterSizedLabel:
+                id: after_bar_label
+                center_x: self.parent.width / 2
+                size_hint: None, None
+
+                color: 0, 0, 0, 1
+                text: "1"
+                font_size: 5

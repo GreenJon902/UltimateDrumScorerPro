@@ -82,12 +82,12 @@
                                 id: label_holder
                                 orientation: "vertical"
                                 anchor: "highest"
-                                y: mm(editor_holder.bottom_note_y_offset)
+                                y: editor_holder.bottom_note_y_offset * editor_holder.scale
 
 
 
 <ZoomedLayout>:
-    scale: mm(1)
+    scale: mm(1.5)
 
 <NoteNameLabel>:
     width: self.texture_size[0]

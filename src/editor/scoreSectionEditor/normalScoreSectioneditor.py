@@ -96,7 +96,8 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         self.label_holder.clear_widgets()
         for note_type in ordered_note_types:
             note = note_type()
-            self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=mm(note.height)))
+            self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=note.height *
+                                                                                   self.editor_holder.scale))
 
 
 

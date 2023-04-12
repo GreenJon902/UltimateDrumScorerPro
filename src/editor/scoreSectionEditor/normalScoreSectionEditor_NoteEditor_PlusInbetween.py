@@ -18,6 +18,7 @@ Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor_NoteEditor
 class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor_NoteEditor):
     full_redraw = None
 
+    bar_holder: SelfSizingBoxLayout = ObjectProperty()
     note_holder: SelfSizingBoxLayout = ObjectProperty()
     plus_holder: SelfSizingBoxLayout = ObjectProperty()
     cross_holder: SelfSizingBoxLayout = ObjectProperty()
@@ -76,6 +77,15 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             self.cross_holder.add_widget(cross)
 
         self.bottom_note_y_offset = self.plus_holder.children[0].height + self.cross_holder.children[0].height
+
+        # Bar buttons --------------------------------------------------------------------------------------------------
+        self.bar_holder.clear_widgets()
+        for i in range(len(self.score_section_instance.score)):
+            note_holder = self.note_holder.children[i]
+            bar_configurer = BarConfigurer(width=note_holder.width)
+            note_holder.bind(width=lambda _, value, _bar_configurer=bar_configurer:
+                             setattr(_bar_configurer, "width", value))
+            self.bar_holder.add_widget(bar_configurer)
 
     def insert_new_section_section(self, i):
         self.score_section_instance.score.insert(i, ScoreSectionSectionStorage(note_ids=[]))
@@ -137,3 +147,8 @@ class Cross(HoverButton):
         if 0 < x < self.width and 0 < y < self.height:
             return True
         return False
+
+
+class BarConfigurer(RelativeLayout):  # Also handles flags
+    pass
+
