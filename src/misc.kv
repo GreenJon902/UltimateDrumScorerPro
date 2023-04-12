@@ -21,3 +21,13 @@
             size: root.cursor_width, -self._cursor_visual_height
         Color:
             rgba: self.disabled_foreground_color if self.disabled else (self.hint_text_color if not self.text else self.foreground_color)
+
+<BetterSizedLabel>:
+    canvas:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            texture: self.texture
+            size: self.size
+
+    size_hint: None, None

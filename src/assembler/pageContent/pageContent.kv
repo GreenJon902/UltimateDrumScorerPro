@@ -1,20 +1,23 @@
 #:kivy 2.1.0
 
 <Text>:
-    canvas:
-        Color:
-            rgba: 1, 1, 1, 1
-        Rectangle:
-            texture: self.texture
-            size: self.size
+    size: label.size
 
-    size_hint: None, None
+    BetterSizedLabel:
+        id: label
+        size_hint: None, None
+
+        text: root.text
+        font_size: root.font_size
+        do_markup: root.do_markup
 
 
 <ScoreSection>:
-    size_hint: None, None
     canvas:
         Color:
             rgba: 0, 1, 0, 0#.2
         Rectangle:
             size: self.size
+
+<PageContent>:  # No content will even need this
+    size_hint: None, None
