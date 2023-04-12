@@ -22,6 +22,7 @@ jobs:
       with:
         name: UDSP-windows
         path: dist/windows
+        if-no-files-found: error
         
         
   build-linux:
@@ -41,4 +42,5 @@ jobs:
       with:
         name: UDSP-linux
         path: dist/linux
+        if-no-files-found: error
   
