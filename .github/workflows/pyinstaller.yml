@@ -33,6 +33,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       
+    - name: Install gl
+      run: sudo apt-get install -y libgl1-mesa-dev
+
+      
     - name: Create executable
       uses: JackMcKew/pyinstaller-action-linux@main
       with:
