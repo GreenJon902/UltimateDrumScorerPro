@@ -2,11 +2,6 @@
 
 block_cipher = None
 
-import subprocess
-subprocess.run(["apt", "install", "-y", "libgl1-mesa-dev"])
-subprocess.run(["pip", "install", "kivy"])
-
-
 a = Analysis(
     ['src/UltimateDrumScorerPro.py'],
     pathex=[],
