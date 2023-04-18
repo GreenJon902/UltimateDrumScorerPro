@@ -2,6 +2,9 @@
 
 block_cipher = None
 
+subprocess.run(["sudo", "apt", "install", "-y", "libgl1-mesa-dev"])
+subprocess.run(["sudo", "pip", "install", "kivy"])
+
 
 a = Analysis(
     ['src/UltimateDrumScorerPro.py'],
