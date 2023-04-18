@@ -1,3 +1,6 @@
+#:set bar_edge_padding 0.5
+#:set half_bar_edge_padding 1
+
 <NormalScoreSectionEditor_NoteEditor_PlusInbetween>:
     size: container.size
 
@@ -49,52 +52,86 @@
             width: st
 
 <BarConfigurer>:
+    bar_container: bar_container
+    dots_label: dots_label
+    before_bar_label: before_bar_label
+    after_bar_label: after_bar_label
+    full_bar_label: full_bar_label
+
+    height: bar_container.height
     RelativeLayout:
-        id: full_bar_container
+        id: bar_container
         size_hint: None, None
         width: root.width
-        height: full_bar_label.height
-        y: half_bar_container.top
+        height: full_bar_label.top
 
-        BetterSizedLabel:
-            id: full_bar_label
-            center_x: self.parent.center_x
+        BetterSizedLabel:  # Bar before
+            id: dots_label
+            x: 0
+            y: 0
+            size_hint: None, None
 
             color: 0, 0, 0, 1
-            text: "1"
+            text: str(root.dots)
             font_size: 5
 
-    SelfSizingBoxLayout:
-        id: half_bar_container
-        orientation: "horizontal"
+            canvas:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Ellipse:
+                    pos: (self.right + dot_radius, self.height / 2 - dot_radius)
+                    size: (dot_radius * 2, dot_radius * 2)
 
-        size_hint: None, None
+        BetterSizedLabel:  # Bar before
+            id: before_bar_label
+            x: 0
+            y: dots_label.top
+            size_hint: None, None
 
-        RelativeLayout:
-            id: before_bar_container
-            width: root.width / 2
-            height: before_bar_label.height
+            color: 0, 0, 0, 1
+            text: str(root.before_bars)
+            font_size: 5
 
-            BetterSizedLabel:
-                id: before_bar_label
-                center_x: self.parent.width / 2
-                size_hint: None, None
+            canvas:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Line:
+                    points: (self.width, self.height / 2, self.parent.right - half_bar_edge_padding, self.height / 2)
+                    width: st
 
-                color: 0, 0, 0, 1
-                text: "1"
-                font_size: 5
+        BetterSizedLabel:  # Bar after
+            id: after_bar_label
+            right: self.parent.right
+            y: before_bar_label.top
+            size_hint: None, None
 
+            color: 0, 0, 0, 1
+            text: str(root.after_bars)
+            font_size: 5
 
-        RelativeLayout:
-            id: after_bar_container
-            width: root.width / 2
-            height: after_bar_label.height
+            canvas:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Line:
+                    points: (-self.x + half_bar_edge_padding, self.height / 2, 0, self.height / 2)
+                    width: st
 
-            BetterSizedLabel:
-                id: after_bar_label
-                center_x: self.parent.width / 2
-                size_hint: None, None
+        BetterSizedLabel:  # Bar
+            id: full_bar_label
+            center_x: self.parent.center_x
+            y: after_bar_label.top
+            size_hint: None, None
 
-                color: 0, 0, 0, 1
-                text: "1"
-                font_size: 5
+            color: 0, 0, 0, 1
+            text: str(root.bars)
+            font_size: 5
+
+            canvas:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Line:
+                    points: (-self.x + bar_edge_padding, self.height / 2, 0, self.height / 2)
+                    width: st
+                Line:
+                    points: (self.width, self.height / 2, self.parent.right - self.x - bar_edge_padding, self.height / 2)
+                    width: st

@@ -2,10 +2,11 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.input import MotionEvent
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
+from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, BoundedNumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from assembler.pageContent.scoreSection import ScoreSection
+from betterSizedLabel import BetterSizedLabel
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
 from score import ScoreSectionSectionStorage, fix_and_get_normal_editor_note_ids
 from score.notes import notes, Note
@@ -78,22 +79,41 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
         self.bottom_note_y_offset = self.plus_holder.children[0].height + self.cross_holder.children[0].height
 
-        # Bar buttons --------------------------------------------------------------------------------------------------
+        # Bar & Dot buttons --------------------------------------------------------------------------------------------
         self.bar_holder.clear_widgets()
         for i in range(len(self.score_section_instance.score)):
             note_holder = self.note_holder.children[i]
-            bar_configurer = BarConfigurer(width=note_holder.width)
+            bar_configurer = BarConfigurer(self, width=note_holder.width,
+                                           before_bars=self.score_section_instance.score[i].before_flags,
+                                           after_bars=self.score_section_instance.score[i].after_flags,
+                                           bars=self.score_section_instance.score[i].bars)
             note_holder.bind(width=lambda _, value, _bar_configurer=bar_configurer:
                              setattr(_bar_configurer, "width", value))
             self.bar_holder.add_widget(bar_configurer)
 
     def insert_new_section_section(self, i):
         self.score_section_instance.score.insert(i, ScoreSectionSectionStorage(note_ids=[]))
-        self.full_redraw()
+        self.full_redraw()  # TODO: Make this more efficient
 
     def remove_section_section(self, i):
         self.score_section_instance.score.pop(i)
-        self.full_redraw()
+        self.full_redraw()  # TODO: Make this more efficient
+
+    def bar_configure(self, bar_configurer, place, is_add):  # Does dots too
+        index = self.bar_holder.children.index(bar_configurer)
+        d = is_add * 2 - 1
+        if place == "dots":
+            self.score_section_instance.score[index].dots += d
+            self.bar_holder.children[index].dots = self.score_section_instance.score[index].dots
+        elif place == "before":
+            self.score_section_instance.score[index].before_flags += d
+            self.bar_holder.children[index].before_bars = self.score_section_instance.score[index].before_flags
+        elif place == "after":
+            self.score_section_instance.score[index].after_flags += d
+            self.bar_holder.children[index].after_bars = self.score_section_instance.score[index].after_flags
+        elif place == "full":
+            self.score_section_instance.score[index].bars += d
+            self.bar_holder.children[index].bars = self.score_section_instance.score[index].bars
 
 
 def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionStorage, note_id: int):
@@ -149,6 +169,33 @@ class Cross(HoverButton):
         return False
 
 
-class BarConfigurer(RelativeLayout):  # Also handles flags
-    pass
+class BarConfigurer(RelativeLayout):  # Also handles flags and dots
+    dots_label: BetterSizedLabel = ObjectProperty()
+    before_bar_label: BetterSizedLabel = ObjectProperty()
+    after_bar_label: BetterSizedLabel = ObjectProperty()
+    full_bar_label: BetterSizedLabel = ObjectProperty()
+    dots: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    before_bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    after_bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+
+    editor: NormalScoreSectionEditor_NoteEditor_PlusInbetween
+
+    def __init__(self, editor, **kwargs):
+        self.editor = editor
+        RelativeLayout.__init__(self, **kwargs)
+
+    def on_touch_up(self, touch: MotionEvent):
+        x = touch.x - self.x
+        y = touch.y - self.y
+        is_add = touch.button == "left"
+        if 0 < x < self.width:
+            if self.dots_label.y < y < self.dots_label.top:
+                self.editor.bar_configure(self, "dots", is_add)
+            elif self.before_bar_label.y < y < self.before_bar_label.top:
+                self.editor.bar_configure(self, "before", is_add)
+            elif self.after_bar_label.y < y < self.after_bar_label.top:
+                self.editor.bar_configure(self, "after", is_add)
+            elif self.full_bar_label.y < y < self.full_bar_label.top:
+                self.editor.bar_configure(self, "full", is_add)
 
