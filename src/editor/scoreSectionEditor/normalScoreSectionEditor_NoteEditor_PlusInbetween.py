@@ -1,15 +1,16 @@
 from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.graphics import Ellipse, Color, Line
 from kivy.input import MotionEvent
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, BoundedNumericProperty
+from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, BoundedNumericProperty, OptionProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from assembler.pageContent.scoreSection import ScoreSection
 from betterSizedLabel import BetterSizedLabel
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
 from score import ScoreSectionSectionStorage, fix_and_get_normal_editor_note_ids
-from score.notes import notes, Note
+from score.notes import notes, Note, dot_radius, dot_spacing, bar_width
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor_NoteEditor_PlusInbetween.kv")
@@ -174,10 +175,10 @@ class BarConfigurer(RelativeLayout):  # Also handles flags and dots
     before_bar_label: BetterSizedLabel = ObjectProperty()
     after_bar_label: BetterSizedLabel = ObjectProperty()
     full_bar_label: BetterSizedLabel = ObjectProperty()
-    dots: int = BoundedNumericProperty(0, min=0, errorvalue=0)
-    before_bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
-    after_bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
-    bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    dots: int = BoundedNumericProperty(0, min=0)
+    before_bars: int = BoundedNumericProperty(0, min=0)
+    after_bars: int = BoundedNumericProperty(0, min=0)
+    bars: int = BoundedNumericProperty(0, min=0)
 
     editor: NormalScoreSectionEditor_NoteEditor_PlusInbetween
 
@@ -199,3 +200,49 @@ class BarConfigurer(RelativeLayout):  # Also handles flags and dots
             elif self.full_bar_label.y < y < self.full_bar_label.top:
                 self.editor.bar_configure(self, "full", is_add)
 
+
+class BarButton(RelativeLayout):  # And dots and flags
+    amount: int = NumericProperty()
+    type: str = OptionProperty("bars", options=("bars", "before_bars", "after_bars", "dots"))
+    update = None
+
+    def __init__(self, **kwargs):
+        self.update = Clock.create_trigger(self._update, -1)
+        RelativeLayout.__init__(self, **kwargs)
+        self.bind(amount=self.update)
+        self.update()
+
+    def _update(self, _):
+        self.canvas.clear()
+
+        if self.amount == 0:
+            self.canvas.add(Color(rgba=(0, 0, 0, 0.5)))
+            self.canvas.add(self.make_instruction(0, 0))
+            self.height = dot_radius if self.type == "dots" else 4
+        else:
+            self.canvas.add(Color(rgba=(0, 0, 0, 1)))
+            x = 0
+            y = 0
+            for i in range(self.amount):
+                self.canvas.add(self.make_instruction(x, y))
+                if self.type == "dots":
+                    x += dot_spacing
+                else:
+                    y += 2  # Todo: get proper value
+            self.height = max(4, y)
+
+    def make_instruction(self, x=0, y=0):
+        if self.type == "bars":
+            line = Line(points=[x, y, x + self.width, y], width=bar_width)
+            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x, y, x + self_.width, y]))
+            return line
+        elif self.type == "before_bars":
+            line = Line(points=[x, y, x + self.width / 2, y], width=bar_width)
+            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x, y, x + self.width / 2, y]))
+            return line
+        elif self.type == "after_bars":
+            line = Line(points=[x + self.width / 2, y, x + self.width, y], width=bar_width)
+            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x + self.width / 2, y, x + self.width, y]))
+            return line
+        elif self.type == "dots":
+            return Ellipse(pos=[x, y], size=[dot_radius * 2, dot_radius * 2])

@@ -1,6 +1,9 @@
 #:set bar_edge_padding 0.5
 #:set half_bar_edge_padding 1
 
+#:set dot_y 1
+#:set bars_y 4
+
 <NormalScoreSectionEditor_NoteEditor_PlusInbetween>:
     size: container.size
 
@@ -16,6 +19,7 @@
 
         SelfSizingBoxLayout:
             id: bar_holder
+            anchor: "lowest"
 
         SelfSizingBoxLayout:
             id: note_holder
@@ -65,73 +69,27 @@
         width: root.width
         height: full_bar_label.top
 
-        BetterSizedLabel:  # Bar before
+        BarButton:
             id: dots_label
-            x: 0
-            y: 0
-            size_hint: None, None
-
-            color: 0, 0, 0, 1
-            text: str(root.dots)
-            font_size: 5
-
-            canvas:
-                Color:
-                    rgba: 0, 0, 0, 1
-                Ellipse:
-                    pos: (self.right + dot_radius, self.height / 2 - dot_radius)
-                    size: (dot_radius * 2, dot_radius * 2)
-
-        BetterSizedLabel:  # Bar before
+            amount: root.dots
+            y: dot_y
+            size_hint: 1, None
+            type: "dots"
+        BarButton:
             id: before_bar_label
-            x: 0
-            y: dots_label.top
-            size_hint: None, None
-
-            color: 0, 0, 0, 1
-            text: str(root.before_bars)
-            font_size: 5
-
-            canvas:
-                Color:
-                    rgba: 0, 0, 0, 1
-                Line:
-                    points: (self.width, self.height / 2, self.parent.right - half_bar_edge_padding, self.height / 2)
-                    width: st
-
-        BetterSizedLabel:  # Bar after
+            amount: root.before_bars
+            y: bars_y
+            size_hint: 1, None
+            type: "before_bars"
+        BarButton:
             id: after_bar_label
-            right: self.parent.right
+            amount: root.after_bars
             y: before_bar_label.top
-            size_hint: None, None
-
-            color: 0, 0, 0, 1
-            text: str(root.after_bars)
-            font_size: 5
-
-            canvas:
-                Color:
-                    rgba: 0, 0, 0, 1
-                Line:
-                    points: (-self.x + half_bar_edge_padding, self.height / 2, 0, self.height / 2)
-                    width: st
-
-        BetterSizedLabel:  # Bar
+            size_hint: 1, None
+            type: "after_bars"
+        BarButton:
             id: full_bar_label
-            center_x: self.parent.center_x
+            amount: root.bars
             y: after_bar_label.top
-            size_hint: None, None
-
-            color: 0, 0, 0, 1
-            text: str(root.bars)
-            font_size: 5
-
-            canvas:
-                Color:
-                    rgba: 0, 0, 0, 1
-                Line:
-                    points: (-self.x + bar_edge_padding, self.height / 2, 0, self.height / 2)
-                    width: st
-                Line:
-                    points: (self.width, self.height / 2, self.parent.right - self.x - bar_edge_padding, self.height / 2)
-                    width: st
+            size_hint: 1, None
+            type: "bars"
