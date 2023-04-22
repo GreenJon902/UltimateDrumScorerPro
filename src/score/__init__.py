@@ -1,16 +1,16 @@
 from kivy.event import EventDispatcher
-from kivy.properties import ListProperty, NumericProperty, BooleanProperty
+from kivy.properties import ListProperty, NumericProperty, BooleanProperty, BoundedNumericProperty
 
 from score.notes import Note
 
 
 class ScoreSectionSectionStorage(EventDispatcher):
     decoration_id: int = NumericProperty(defalutvalue=None, allownone=True)
-    bars: int = NumericProperty(defalutvalue=0)
-    before_flags: int = NumericProperty(defalutvalue=0)  # Half bars
-    after_flags: int = NumericProperty(defalutvalue=0)
-    slanted_flags: int = NumericProperty(defalutvalue=0)
-    dots: int = NumericProperty(defalutvalue=0)
+    bars: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    before_flags: int = BoundedNumericProperty(0, min=0, errorvalue=0)  # Half bars
+    after_flags: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    slanted_flags: int = BoundedNumericProperty(0, min=0, errorvalue=0)
+    dots: int = BoundedNumericProperty(0, min=0, errorvalue=0)
     note_ids: list[int] = ListProperty(defalutvalue=[])
 
     binding_groups: dict[callable, list[tuple[str, callable]]]

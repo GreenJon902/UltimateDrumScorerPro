@@ -3,7 +3,7 @@ from kivy.core.window import Window
 from kivy.graphics import Ellipse, Color, Line
 from kivy.input import MotionEvent
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, BoundedNumericProperty, OptionProperty
+from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, OptionProperty
 from kivy.uix.relativelayout import RelativeLayout
 
 from assembler.pageContent.scoreSection import ScoreSection
@@ -175,10 +175,10 @@ class BarConfigurer(RelativeLayout):  # Also handles flags and dots
     before_bar_label: BetterSizedLabel = ObjectProperty()
     after_bar_label: BetterSizedLabel = ObjectProperty()
     full_bar_label: BetterSizedLabel = ObjectProperty()
-    dots: int = BoundedNumericProperty(0, min=0)
-    before_bars: int = BoundedNumericProperty(0, min=0)
-    after_bars: int = BoundedNumericProperty(0, min=0)
-    bars: int = BoundedNumericProperty(0, min=0)
+    dots: int = NumericProperty(0)
+    before_bars: int = NumericProperty(0)
+    after_bars: int = NumericProperty(0)
+    bars: int = NumericProperty(0)
 
     editor: NormalScoreSectionEditor_NoteEditor_PlusInbetween
 
@@ -217,21 +217,21 @@ class BarButton(RelativeLayout):  # And dots and flags
 
         if self.amount == 0:
             self.canvas.add(Color(rgba=(0, 0, 0, 0.5)))
-            self.canvas.add(self.make_instruction(0, 0))
-            self.height = dot_radius if self.type == "dots" else 4
+            self.canvas.add(self.make_instruction(0, 4 / 2))
+            self.height = 4
         else:
             self.canvas.add(Color(rgba=(0, 0, 0, 1)))
             x = 0
             y = 0
             for i in range(self.amount):
-                self.canvas.add(self.make_instruction(x, y))
+                self.canvas.add(self.make_instruction(x, y + 4 / 2))
                 if self.type == "dots":
                     x += dot_spacing
                 else:
                     y += 2  # Todo: get proper value
             self.height = max(4, y)
 
-    def make_instruction(self, x=0, y=0):
+    def make_instruction(self, x=0, y: float=0):
         if self.type == "bars":
             line = Line(points=[x, y, x + self.width, y], width=bar_width)
             self.bind(width=lambda *args, self_=self: setattr(line, "points", [x, y, x + self_.width, y]))
@@ -245,4 +245,4 @@ class BarButton(RelativeLayout):  # And dots and flags
             self.bind(width=lambda *args, self_=self: setattr(line, "points", [x + self.width / 2, y, x + self.width, y]))
             return line
         elif self.type == "dots":
-            return Ellipse(pos=[x, y], size=[dot_radius * 2, dot_radius * 2])
+            return Ellipse(pos=[x, y - dot_radius], size=[dot_radius * 2, dot_radius * 2])

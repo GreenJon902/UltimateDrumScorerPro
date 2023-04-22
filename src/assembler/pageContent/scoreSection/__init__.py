@@ -200,6 +200,7 @@ class ScoreSection(PageContent):
         self.section_widths[index] = width
 
         self.update_bar_width(index)
+        self.update_top_dot_pos(index)
 
     def update_section_bars(self, index):
         group = self._make_bar_group_from_section(self.score[index])
