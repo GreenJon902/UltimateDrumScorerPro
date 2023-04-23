@@ -14,12 +14,15 @@ class Note(RelativeLayout):
     # same integer part.
     dot_offset_x: float = NumericProperty()
     dot_offset_y: float = NumericProperty()
+    preferred_height: float = NumericProperty()
     dot_offset: tuple[float, float] = ReferenceListProperty(dot_offset_x, dot_offset_y)
     name: str = StringProperty()
     color = ColorProperty(defaultvalue=(0, 0, 0, 1))
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)
+        self.height = self.preferred_height
+        self.canvas.opacity = 1
 
 
 notes: dict[float, type[Note]] = {}

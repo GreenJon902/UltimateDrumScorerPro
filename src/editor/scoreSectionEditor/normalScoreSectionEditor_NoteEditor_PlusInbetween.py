@@ -1,15 +1,19 @@
+import time
+
+from kivy import Logger
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Ellipse, Color, Line
+from kivy.graphics import Ellipse, Color, Line, InstructionGroup, Canvas, Translate, PushMatrix, PopMatrix
 from kivy.input import MotionEvent
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, OptionProperty
 from kivy.uix.relativelayout import RelativeLayout
 
+from argumentTrigger import ArgumentTrigger
 from assembler.pageContent.scoreSection import ScoreSection
 from betterSizedLabel import BetterSizedLabel
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
-from score import ScoreSectionSectionStorage, fix_and_get_normal_editor_note_ids
+from score import ScoreSectionSectionStorage
 from score.notes import notes, Note, dot_radius, dot_spacing, bar_width
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
@@ -18,22 +22,135 @@ Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor_NoteEditor
 
 # noinspection PyPep8Naming
 class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor_NoteEditor):
-    full_redraw = None
+    update = None
+    update_size = None
 
-    bar_holder: SelfSizingBoxLayout = ObjectProperty()
-    note_holder: SelfSizingBoxLayout = ObjectProperty()
-    plus_holder: SelfSizingBoxLayout = ObjectProperty()
-    cross_holder: SelfSizingBoxLayout = ObjectProperty()
+    head_translate: Translate
+    head_canvas: Canvas
+    head_canvas_container: Canvas
+    head_canvas_translate: Translate
 
     score_section_instance: ScoreSection
+    note_head_canvases: dict[int, list[Canvas]]  # For opacity
+
+    note_objects: dict[int, Note]
+    note_object_holder: SelfSizingBoxLayout
 
     def __init__(self, score_section_instance, **kwargs):
         self.score_section_instance = score_section_instance
-        self.full_redraw = Clock.create_trigger(self._full_redraw, -1)
+        self.note_head_canvases = {i: [] for i in range(len(notes))}
+        self.note_holder_canvas = Canvas()
+        self.update = ArgumentTrigger(self._update, -1, True)
+        self.update_size = Clock.create_trigger(self._update_size, -1)
+
+        self.head_translate = Translate()
+        self.head_canvas_container = Canvas()
+        self.head_canvas = Canvas()
+        self.head_canvas_translate = Translate()
+        self.head_canvas_container.add(PushMatrix())
+        self.head_canvas_container.add(self.head_canvas_translate)
+        self.head_canvas_container.add(self.head_canvas)
+        self.head_canvas_container.add(PopMatrix())
+
+        self.note_objects = {}
+        self.note_object_holder = SelfSizingBoxLayout(anchor="highest", orientation="vertical")
+        self.note_object_holder.bind(width=lambda _, value: (setattr(self.head_canvas_translate, "x",
+                                                                     value)))
+        for (note_id, note_type) in notes.items():
+            note: Note = note_type()
+            self.note_object_holder.add_widget(note)
+            self.note_objects[note_id] = note
+            note.opacity = 1
+
         NormalScoreSectionEditor_NoteEditor.__init__(self, **kwargs)
 
-        self.full_redraw()
+        for note in self.score_section_instance.noteHeightCalculator.note_objects.values():
+            note.fbind("y", self.update_size)
+        self.update_size()
 
+        self.score_section_instance.score.bind_all(self.update)
+        self.canvas.add(self.head_canvas_container)
+        self.update("all")
+
+    def _update_size(self, _):
+        pass
+
+    def _update(self, changes: list[tuple[tuple[any], dict[str, any]]]):
+        Logger.info(f"NSSE_NE_PlusInbetween: Updating {self} with {changes}...")
+        t = time.time()
+
+        used_note_ids = {note_id for section in self.score_section_instance.score for note_id in section.note_ids}
+        width = 0
+        note: Note
+        for i, note in self.note_objects.items():
+            if i in used_note_ids:
+                note.height = note.preferred_height
+                note.opacity = 1
+                if note.width > width:
+                    width = note.width
+            else:
+                note.height = 0
+                note.opacity = 0
+        self.head_translate.x = width
+
+        # TODO: optimize by skipping stuff that gets overwritten (e.g. add bar before full redraw)
+        for change in changes:
+            change = change[0]  # We don't care about kwargs
+            Logger.debug(f"NSSE_NE_PlusInbetween: Changing {change}")
+
+            if change[0] == "all" or (change[0] == "storage" and change[1] == "set"):
+                self.full_redraw()
+            elif change[0] == "storage" and change[1] == "insert":
+                self.add_section(change[2])
+                pass
+            #elif change[0] == "storage" and change[1] == "remove":
+            #    self.remove_section(change[2])
+            #    pass
+
+            #elif change[0] == "section" and change[1] == "note_ids":
+            #    self.update_section_notes(self.score.index(change[2]))
+            #    pass
+            #elif change[0] == "section" and (change[1] == "bars" or change[1] == "before_flags" or change[1] ==
+            #                                 "after_flags" or change[1] == "slanted_flags"):
+            #    self.update_section_bars(self.score.index(change[2]))
+            #    pass
+            #elif change[0] == "section" and change[1] == "dots":
+            #    self.update_section_dots(self.score.index(change[2]))
+            #    pass
+            else:
+                raise NotImplementedError(f"Score section doesn't know how to change {change}")
+
+        Logger.info(f"NSSE_NE_PlusInbetween: {time.time() - t}s elapsed!")
+
+    def full_redraw(self):
+        self.note_holder_canvas.clear()
+
+        for i in range(len(self.score_section_instance.score)):
+            self.add_section(i)
+
+    def add_section(self, index):
+        group = InstructionGroup()
+        for (note_id, note_object) in self.note_objects.items():
+            canvas = Canvas()
+            self.note_head_canvases[note_id].insert(index, canvas)
+            canvas.add(note_object.canvas)
+            group.add(canvas)
+        group.add(self.head_translate)
+
+        self.head_canvas.insert(index, group)
+        self.update_head_canvas_colors(index)
+
+    def update_head_canvas_colors(self, index):
+        for note_id in self.note_head_canvases:
+            if note_id in self.score_section_instance.score[index].note_ids:
+                self.note_head_canvases[note_id][index].opacity = 1
+            else:
+                self.note_head_canvases[note_id][index].opacity = 0.3
+
+
+
+
+    """
     def _full_redraw(self, _):
         # Notes --------------------------------------------------------------------------------------------------------
         note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.score)
@@ -114,7 +231,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             self.bar_holder.children[index].after_bars = self.score_section_instance.score[index].after_flags
         elif place == "full":
             self.score_section_instance.score[index].bars += d
-            self.bar_holder.children[index].bars = self.score_section_instance.score[index].bars
+            self.bar_holder.children[index].bars = self.score_section_instance.score[index].bars"""
 
 
 def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionStorage, note_id: int):
