@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 0
+start_location = 8
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -47,7 +47,7 @@ def update(_):
     elif n == 8:
         scoreSectionStorage[1].before_flags = 10
         scoreSectionStorage[1].after_flags = 10
-        scoreSectionStorage[1].slanted_flags = 10
+        scoreSectionStorage[-1].slanted_flags = 10
     elif n == 9:  # Dots
         scoreSectionStorage.dots_at_top = True
         scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0], dots=10)])
