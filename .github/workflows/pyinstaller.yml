@@ -34,8 +34,9 @@ jobs:
     - uses: actions/checkout@v3
       
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-linux@main
+      uses: GreenJon902/pyinstaller-action-linux@main
       with:
+        kivy: true
         path: .
   
     - uses: actions/upload-artifact@v3
