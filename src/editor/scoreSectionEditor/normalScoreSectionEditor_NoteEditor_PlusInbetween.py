@@ -2,18 +2,13 @@ import time
 
 from kivy import Logger
 from kivy.clock import Clock
-from kivy.core.window import Window
-from kivy.graphics import Ellipse, Color, Line, InstructionGroup, Canvas, Translate, PushMatrix, PopMatrix
-from kivy.input import MotionEvent
+from kivy.graphics import Ellipse, Line, InstructionGroup, Canvas, Translate, PushMatrix, PopMatrix
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty, OptionProperty
-from kivy.uix.relativelayout import RelativeLayout
 
 from argumentTrigger import ArgumentTrigger
 from assembler.pageContent.scoreSection import ScoreSection
-from betterSizedLabel import BetterSizedLabel
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
-from score import ScoreSectionSectionStorage, fix_and_get_normal_editor_note_ids
+from score import fix_and_get_normal_editor_note_ids
 from score.notes import notes, Note, dot_radius, dot_spacing, bar_width, flag_length, slanted_flag_length, \
     slanted_flag_height_offset, dot_head_spacing
 from selfSizingBoxLayout import SelfSizingBoxLayout
@@ -363,133 +358,3 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
         self.update_size()
 
-
-def note_clicked(note: Note, touch: MotionEvent, section: ScoreSectionSectionStorage, note_id: int):
-    if note.collide_point(*touch.pos):
-        if note_id in section.note_ids:
-            section.note_ids.remove(note_id)
-        else:
-            section.note_ids.append(note_id)
-
-        note.color[3] = 1 if note_id in section.note_ids else 0.1
-        return True
-
-
-class HoverButton(RelativeLayout):
-    mouse_over = BooleanProperty(defaultvalue=False)
-    custom_click_width = NumericProperty(defaultvalue=None, allownone=True)  # Width which is checked for mouse, None
-                                                                             # for inherit from widget
-
-    def __init__(self, **kwargs):
-        RelativeLayout.__init__(self, **kwargs)
-        Window.bind(mouse_pos=self.mouse_move)
-
-    def mouse_move(self, _, pos):
-        pos = self.to_widget(*pos, relative=True)
-        if self.collide_point(*pos):
-            self.mouse_over = True
-        else:
-            self.mouse_over = False
-
-
-def hover_button_clicked(button: HoverButton, touch: MotionEvent,
-                         callback: callable):
-    pos = button.to_local(*touch.pos)
-    if button.collide_point(*pos):
-        callback()
-        return True
-
-
-class Plus(HoverButton):
-    default_width: int = NumericProperty(defaultvalue=None)
-
-    def collide_point(self, x, y):
-        hw = (self.width if self.custom_click_width is None else self.custom_click_width) / 2
-        if -hw < x < hw and 0 < y < self.height:
-            return True
-        return False
-
-
-class Cross(HoverButton):
-    def collide_point(self, x, y):
-        if 0 < x < self.width and 0 < y < self.height:
-            return True
-        return False
-
-
-class BarConfigurer(RelativeLayout):  # Also handles flags and dots
-    dots_label: BetterSizedLabel = ObjectProperty()
-    before_bar_label: BetterSizedLabel = ObjectProperty()
-    after_bar_label: BetterSizedLabel = ObjectProperty()
-    full_bar_label: BetterSizedLabel = ObjectProperty()
-    dots: int = NumericProperty(0)
-    before_bars: int = NumericProperty(0)
-    after_bars: int = NumericProperty(0)
-    bars: int = NumericProperty(0)
-
-    editor: NormalScoreSectionEditor_NoteEditor_PlusInbetween
-
-    def __init__(self, editor, **kwargs):
-        self.editor = editor
-        RelativeLayout.__init__(self, **kwargs)
-
-    def on_touch_up(self, touch: MotionEvent):
-        x = touch.x - self.x
-        y = touch.y - self.y
-        is_add = touch.button == "left"
-        if 0 < x < self.width:
-            if self.dots_label.y < y < self.dots_label.top:
-                self.editor.bar_configure(self, "dots", is_add)
-            elif self.before_bar_label.y < y < self.before_bar_label.top:
-                self.editor.bar_configure(self, "before", is_add)
-            elif self.after_bar_label.y < y < self.after_bar_label.top:
-                self.editor.bar_configure(self, "after", is_add)
-            elif self.full_bar_label.y < y < self.full_bar_label.top:
-                self.editor.bar_configure(self, "full", is_add)
-
-
-class BarButton(RelativeLayout):  # And dots and flags
-    amount: int = NumericProperty()
-    type: str = OptionProperty("bars", options=("bars", "before_bars", "after_bars", "dots"))
-    update = None
-
-    def __init__(self, **kwargs):
-        self.update = Clock.create_trigger(self._update, -1)
-        RelativeLayout.__init__(self, **kwargs)
-        self.bind(amount=self.update)
-        self.update()
-
-    def _update(self, _):
-        self.canvas.clear()
-
-        if self.amount == 0:
-            self.canvas.add(Color(rgba=(0, 0, 0, 0.5)))
-            self.canvas.add(self.make_instruction(0, 4 / 2))
-            self.height = 4
-        else:
-            self.canvas.add(Color(rgba=(0, 0, 0, 1)))
-            x = 0
-            y = 0
-            for i in range(self.amount):
-                self.canvas.add(self.make_instruction(x, y + 4 / 2))
-                if self.type == "dots":
-                    x += dot_spacing
-                else:
-                    y += 2  # Todo: get proper value
-            self.height = max(4, y)
-
-    def make_instruction(self, x=0, y: float=0):
-        if self.type == "bars":
-            line = Line(points=[x, y, x + self.width, y], width=bar_width)
-            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x, y, x + self_.width, y]))
-            return line
-        elif self.type == "before_bars":
-            line = Line(points=[x, y, x + self.width / 2, y], width=bar_width)
-            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x, y, x + self.width / 2, y]))
-            return line
-        elif self.type == "after_bars":
-            line = Line(points=[x + self.width / 2, y, x + self.width, y], width=bar_width)
-            self.bind(width=lambda *args, self_=self: setattr(line, "points", [x + self.width / 2, y, x + self.width, y]))
-            return line
-        elif self.type == "dots":
-            return Ellipse(pos=[x, y - dot_radius], size=[dot_radius * 2, dot_radius * 2])
