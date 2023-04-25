@@ -8,7 +8,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 8
+start_location = 0
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -16,6 +16,7 @@ scoreSectionStorage = ScoreSectionStorage()
 
 def update(_):
     global n
+    print(n)
     if n == 0:  # Heads and stems
         scoreSectionStorage.set([ScoreSectionSectionStorage(note_ids=[0, 1, 2, 4]),
                                  ScoreSectionSectionStorage(note_ids=[0, 2, 4])])

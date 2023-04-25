@@ -15,7 +15,7 @@ from betterSizedLabel import BetterSizedLabel
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
 from score import ScoreSectionSectionStorage, fix_and_get_normal_editor_note_ids
 from score.notes import notes, Note, dot_radius, dot_spacing, bar_width, flag_length, slanted_flag_length, \
-    slanted_flag_height_offset
+    slanted_flag_height_offset, dot_head_spacing
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
 Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor_NoteEditor_PlusInbetween.kv")
@@ -50,7 +50,6 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
     def __init__(self, score_section_instance, **kwargs):
         self.score_section_instance = score_section_instance
         self.note_head_canvases = {i: [] for i in range(len(notes))}
-        self.note_holder_canvas = Canvas()
         self.update = ArgumentTrigger(self._update, -1, True)
         self.update_size = Clock.create_trigger(self._update_size, -1)
 
@@ -92,15 +91,25 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.slanted_bar_canvas_container.add(self.slanted_bar_canvas)
         self.slanted_bar_canvas_container.add(PopMatrix())
 
+        self.dots_canvas_container = Canvas()
+        self.dots_canvas = Canvas()
+        self.dots_canvas_translate = Translate()
+        self.dots_canvas_container.add(PushMatrix())
+        self.dots_canvas_container.add(self.dots_canvas_translate)
+        self.dots_canvas_container.add(self.dots_canvas)
+        self.dots_canvas_container.add(PopMatrix())
+
         self.section_translate = Translate()
         self.full_bar_line = Line(points=[0, 4/2, 0, 4/2], width=bar_width)
         self.before_bar_line = Line(points=[0, 4/2, flag_length, 4/2], width=bar_width)
         self.after_bar_line = Line(points=[0, 4/2, 0, 4/2], width=bar_width)
         self.slanted_bar_line = Line(points=[0, 0, slanted_flag_length, -slanted_flag_height_offset], width=bar_width)
+        self.dot = Ellipse(pos=[0, 0], size=[dot_radius * 2, dot_radius * 2])
         self.full_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.before_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.after_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.slanted_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
+        self.dots_translate = Translate(dot_spacing, 0, 0)  # Todo: Actual value
 
         self.note_objects = {}
         self.note_object_holder = SelfSizingBoxLayout(anchor="highest", orientation="vertical")
@@ -123,6 +132,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.canvas.add(self.before_bar_canvas_container)
         self.canvas.add(self.after_bar_canvas_container)
         self.canvas.add(self.slanted_bar_canvas_container)
+        self.canvas.add(self.dots_canvas_container)
         self.update("all")
 
     def _update_size(self, _):
@@ -130,14 +140,18 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         before_bar_amount = max(*(section.before_flags for section in self.score_section_instance.score), 2)
         after_bar_amount = max(*(section.after_flags for section in self.score_section_instance.score), 0)
 
-        self.full_bar_canvas_translate.y = self.note_object_holder.height
-        self.before_bar_canvas_translate.y = self.note_object_holder.height + full_bar_amount * 2
-        self.after_bar_canvas_translate.y = self.note_object_holder.height + (full_bar_amount + before_bar_amount) * 2
         self.slanted_bar_canvas_translate.x = self.section_translate.x * len(self.score_section_instance.score)
-        self.slanted_bar_canvas_translate.y = self.note_object_holder.height + \
-                                              (full_bar_amount + before_bar_amount + after_bar_amount) * 2 - \
-                                              (self.score_section_instance.score[-1].slanted_flags - 1) * 2
-        print(self.score_section_instance.score[-1].slanted_flags)
+
+        y = self.note_object_holder.height + dot_head_spacing
+        self.dots_canvas_translate.y = y
+        y += dot_radius * 2
+        self.full_bar_canvas_translate.y = y
+        y += full_bar_amount * 2
+        self.before_bar_canvas_translate.y = y
+        y += before_bar_amount * 2
+        self.after_bar_canvas_translate.y = y
+        y += after_bar_amount * 2 - (self.score_section_instance.score[-1].slanted_flags - 1) * 2
+        self.slanted_bar_canvas_translate.y = y
 
     def _update(self, changes: list[tuple[tuple[any], dict[str, any]]]):
         Logger.info(f"NSSE_NE_PlusInbetween: Updating {self} with {changes}...")
@@ -182,20 +196,20 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 self.update_section_after_bars(self.score_section_instance.score.index(change[2]))
             elif change[0] == "section" and (change[1] == "slanted_flags"):
                 self.update_section_slanted_bars()
-            #elif change[0] == "section" and change[1] == "dots":
-            #    self.update_section_dots(self.score.index(change[2]))
-            #    pass
+            elif change[0] == "section" and change[1] == "dots":
+                self.update_section_dots(self.score_section_instance.score.index(change[2]))
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 
         Logger.info(f"NSSE_NE_PlusInbetween: {time.time() - t}s elapsed!")
 
     def full_redraw(self):
-        self.note_holder_canvas.clear()
+        self.head_canvas.clear()
         self.full_bar_canvas.clear()
         self.before_bar_canvas.clear()
         self.after_bar_canvas.clear()
         self.slanted_bar_canvas.clear()
+        self.dots_canvas.clear()
         for note_id in self.note_head_canvases:
             self.note_head_canvases[note_id].clear()
 
@@ -220,20 +234,26 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.before_bar_canvas.insert(index, section_before_bar_canvas)
         section_after_bar_canvas = Canvas()
         self.after_bar_canvas.insert(index, section_after_bar_canvas)
+        section_dots_canvas = Canvas()
+        self.dots_canvas.insert(index, section_dots_canvas)
 
 
         self.update_head_canvas_colors(index)
         self.update_section_full_bars(index)
         self.update_section_before_bars(index)
         self.update_section_after_bars(index)
+        self.update_section_dots(index)
 
     def remove_section(self, index):
         self.head_canvas.remove(self.head_canvas.children[index])
         self.full_bar_canvas.remove(self.full_bar_canvas.children[index])
         self.before_bar_canvas.remove(self.before_bar_canvas.children[index])
         self.after_bar_canvas.remove(self.after_bar_canvas.children[index])
+        self.dots_canvas.remove(self.dots_canvas.children[index])
         for note_id in self.note_head_canvases:
             self.note_head_canvases[note_id].pop(index)
+
+        self.update_size()
 
     def update_head_canvas_colors(self, index):
         for note_id in self.note_head_canvases:
@@ -303,6 +323,27 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
         self.update_size()
 
+    def update_section_dots(self, index):
+        section_dots_canvas: Canvas = self.dots_canvas.children[index]
+        section_dots_canvas.clear()
+        section_dots_canvas.children.clear()
+
+        if self.score_section_instance.score[index].dots == 0:
+            section_dots_canvas.opacity = 0.3
+            section_dots_canvas.add(self.dot)
+            section_dots_canvas.add(self.section_translate)
+        else:
+            section_dots_canvas.opacity = 1
+            section_dots_canvas.add(PushMatrix())
+            for i in range(self.score_section_instance.score[index].dots):
+                section_dots_canvas.add(self.dot)
+                section_dots_canvas.add(self.dots_translate)
+                print(self.dots_translate.x)
+            section_dots_canvas.add(PopMatrix())
+            section_dots_canvas.add(self.section_translate)
+
+        self.update_size()
+
     def update_section_slanted_bars(self):
         section_slanted_bar_canvas: Canvas = self.slanted_bar_canvas
         section_slanted_bar_canvas.clear()
@@ -319,7 +360,6 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 section_slanted_bar_canvas.add(self.slanted_bar_line)
                 section_slanted_bar_canvas.add(self.slanted_bar_translate)
             section_slanted_bar_canvas.add(PopMatrix())
-            section_slanted_bar_canvas.add(self.section_translate)
 
         self.update_size()
 
