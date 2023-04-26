@@ -16,6 +16,52 @@ from selfSizingBoxLayout import SelfSizingBoxLayout
 Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor_NoteEditor_PlusInbetween.kv")
 
 
+class Drawer:
+    def __init__(self, item_translate, item, section_translate):
+        self.canvas_container = Canvas()
+        self.canvas = Canvas()
+        self.canvas_translate = Translate()
+        self.canvas_container.add(PushMatrix())
+        self.canvas_container.add(self.canvas_translate)
+        self.canvas_container.add(self.canvas)
+        self.canvas_container.add(PopMatrix())
+
+        self.item_translate = item_translate
+        self.item = item
+        self.section_translate = section_translate
+
+    def add_to(self, canvas):
+        canvas.add(self.canvas_container)
+
+    def new_section(self, index):
+        canvas = Canvas()
+        self.canvas.insert(index, canvas)
+
+    def update(self, index, amount):
+        section_before_bar_canvas: Canvas = self.canvas.children[index]
+        section_before_bar_canvas.clear()
+        section_before_bar_canvas.children.clear()
+
+        if amount == 0:
+            section_before_bar_canvas.opacity = 0.3
+            section_before_bar_canvas.add(self.item)
+            section_before_bar_canvas.add(self.section_translate)
+        else:
+            section_before_bar_canvas.opacity = 1
+            section_before_bar_canvas.add(PushMatrix())
+            for i in range(amount):
+                section_before_bar_canvas.add(self.item)
+                section_before_bar_canvas.add(self.item_translate)
+            section_before_bar_canvas.add(PopMatrix())
+            section_before_bar_canvas.add(self.section_translate)
+
+    def clear(self):
+        self.canvas.clear()
+
+    def remove(self, index):
+        self.canvas.remove(self.canvas.children[index])
+
+
 # noinspection PyPep8Naming
 class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor_NoteEditor):
     update = None
@@ -25,16 +71,6 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
     head_canvas: Canvas
     head_canvas_container: Canvas
     head_canvas_translate: Translate
-
-    full_bar_translate: Translate
-    full_bar_canvas: Canvas
-    full_bar_canvas_container: Canvas
-    full_bar_canvas_translate: Translate
-
-
-    full_bar_line: Line
-    before_bar_line: Line
-    after_bar_line: Line
 
     score_section_instance: ScoreSection
     note_head_canvases: dict[int, list[Canvas]]  # For opacity
@@ -54,46 +90,6 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.head_canvas_container.add(self.head_canvas)
         self.head_canvas_container.add(PopMatrix())
 
-        self.full_bar_canvas_container = Canvas()
-        self.full_bar_canvas = Canvas()
-        self.full_bar_canvas_translate = Translate()
-        self.full_bar_canvas_container.add(PushMatrix())
-        self.full_bar_canvas_container.add(self.full_bar_canvas_translate)
-        self.full_bar_canvas_container.add(self.full_bar_canvas)
-        self.full_bar_canvas_container.add(PopMatrix())
-
-        self.before_bar_canvas_container = Canvas()
-        self.before_bar_canvas = Canvas()
-        self.before_bar_canvas_translate = Translate()
-        self.before_bar_canvas_container.add(PushMatrix())
-        self.before_bar_canvas_container.add(self.before_bar_canvas_translate)
-        self.before_bar_canvas_container.add(self.before_bar_canvas)
-        self.before_bar_canvas_container.add(PopMatrix())
-
-        self.after_bar_canvas_container = Canvas()
-        self.after_bar_canvas = Canvas()
-        self.after_bar_canvas_translate = Translate()
-        self.after_bar_canvas_container.add(PushMatrix())
-        self.after_bar_canvas_container.add(self.after_bar_canvas_translate)
-        self.after_bar_canvas_container.add(self.after_bar_canvas)
-        self.after_bar_canvas_container.add(PopMatrix())
-
-        self.slanted_bar_canvas_container = Canvas()
-        self.slanted_bar_canvas = Canvas()
-        self.slanted_bar_canvas_translate = Translate()
-        self.slanted_bar_canvas_container.add(PushMatrix())
-        self.slanted_bar_canvas_container.add(self.slanted_bar_canvas_translate)
-        self.slanted_bar_canvas_container.add(self.slanted_bar_canvas)
-        self.slanted_bar_canvas_container.add(PopMatrix())
-
-        self.dots_canvas_container = Canvas()
-        self.dots_canvas = Canvas()
-        self.dots_canvas_translate = Translate()
-        self.dots_canvas_container.add(PushMatrix())
-        self.dots_canvas_container.add(self.dots_canvas_translate)
-        self.dots_canvas_container.add(self.dots_canvas)
-        self.dots_canvas_container.add(PopMatrix())
-
         self.section_translate = Translate()
         self.full_bar_line = Line(points=[0, 4/2, 0, 4/2], width=bar_width)
         self.before_bar_line = Line(points=[0, 4/2, flag_length, 4/2], width=bar_width)
@@ -105,6 +101,14 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.after_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.slanted_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.dots_translate = Translate(dot_spacing, 0, 0)  # Todo: Actual value
+
+
+        self.full_bar_drawer = Drawer(self.full_bar_translate, self.full_bar_line, self.section_translate)
+        self.before_bar_drawer = Drawer(self.before_bar_translate, self.before_bar_line, self.section_translate)
+        self.after_bar_drawer = Drawer(self.after_bar_translate, self.after_bar_line, self.section_translate)
+        self.slanted_bar_drawer = Drawer(self.slanted_bar_translate, self.slanted_bar_line, self.section_translate)
+        self.dots_drawer = Drawer(self.dots_translate, self.dot, self.section_translate)
+
 
         self.note_objects = {}
         self.note_object_holder = SelfSizingBoxLayout(anchor="highest", orientation="vertical")
@@ -123,11 +127,11 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.score_section_instance.score.bind_all(self.update)
         self.note_object_holder.bind(height=self.update_size)
         self.canvas.add(self.head_canvas_container)
-        self.canvas.add(self.full_bar_canvas_container)
-        self.canvas.add(self.before_bar_canvas_container)
-        self.canvas.add(self.after_bar_canvas_container)
-        self.canvas.add(self.slanted_bar_canvas_container)
-        self.canvas.add(self.dots_canvas_container)
+        self.full_bar_drawer.add_to(self.canvas)
+        self.before_bar_drawer.add_to(self.canvas)
+        self.after_bar_drawer.add_to(self.canvas)
+        self.slanted_bar_drawer.add_to(self.canvas)
+        self.dots_drawer.add_to(self.canvas)
         self.update("all")
 
     def _update_size(self, _):
@@ -135,18 +139,18 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         before_bar_amount = max(*(section.before_flags for section in self.score_section_instance.score), 2)
         after_bar_amount = max(*(section.after_flags for section in self.score_section_instance.score), 0)
 
-        self.slanted_bar_canvas_translate.x = self.section_translate.x * len(self.score_section_instance.score)
+        self.slanted_bar_drawer.canvas_translate.x = self.section_translate.x * len(self.score_section_instance.score)
 
         y = self.note_object_holder.height + dot_head_spacing
-        self.dots_canvas_translate.y = y
+        self.dots_drawer.canvas_translate.y = y
         y += dot_radius * 2
-        self.full_bar_canvas_translate.y = y
+        self.full_bar_drawer.canvas_translate.y = y
         y += full_bar_amount * 2
-        self.before_bar_canvas_translate.y = y
+        self.before_bar_drawer.canvas_translate.y = y
         y += before_bar_amount * 2
-        self.after_bar_canvas_translate.y = y
+        self.after_bar_drawer.canvas_translate.y = y
         y += after_bar_amount * 2 - (self.score_section_instance.score[-1].slanted_flags - 1) * 2
-        self.slanted_bar_canvas_translate.y = y
+        self.slanted_bar_drawer.canvas_translate.y = y
 
     def _update(self, changes: list[tuple[tuple[any], dict[str, any]]]):
         Logger.info(f"NSSE_NE_PlusInbetween: Updating {self} with {changes}...")
@@ -200,17 +204,18 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def full_redraw(self):
         self.head_canvas.clear()
-        self.full_bar_canvas.clear()
-        self.before_bar_canvas.clear()
-        self.after_bar_canvas.clear()
-        self.slanted_bar_canvas.clear()
-        self.dots_canvas.clear()
+        self.full_bar_drawer.clear()
+        self.before_bar_drawer.clear()
+        self.after_bar_drawer.clear()
+        self.slanted_bar_drawer.clear()
+        self.dots_drawer.clear()
         for note_id in self.note_head_canvases:
             self.note_head_canvases[note_id].clear()
 
         for i in range(len(self.score_section_instance.score)):
             self.add_section(i)
 
+        self.slanted_bar_drawer.new_section(0)
         self.update_section_slanted_bars()
 
     def add_section(self, index):
@@ -223,15 +228,10 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         head_group.add(self.section_translate)
         self.head_canvas.insert(index, head_group)
 
-        section_full_bar_canvas = Canvas()
-        self.full_bar_canvas.insert(index, section_full_bar_canvas)
-        section_before_bar_canvas = Canvas()
-        self.before_bar_canvas.insert(index, section_before_bar_canvas)
-        section_after_bar_canvas = Canvas()
-        self.after_bar_canvas.insert(index, section_after_bar_canvas)
-        section_dots_canvas = Canvas()
-        self.dots_canvas.insert(index, section_dots_canvas)
-
+        self.full_bar_drawer.new_section(index)
+        self.before_bar_drawer.new_section(index)
+        self.after_bar_drawer.new_section(index)
+        self.dots_drawer.new_section(index)
 
         self.update_head_canvas_colors(index)
         self.update_section_full_bars(index)
@@ -241,10 +241,10 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def remove_section(self, index):
         self.head_canvas.remove(self.head_canvas.children[index])
-        self.full_bar_canvas.remove(self.full_bar_canvas.children[index])
-        self.before_bar_canvas.remove(self.before_bar_canvas.children[index])
-        self.after_bar_canvas.remove(self.after_bar_canvas.children[index])
-        self.dots_canvas.remove(self.dots_canvas.children[index])
+        self.full_bar_drawer.remove(index)
+        self.before_bar_drawer.remove(index)
+        self.after_bar_drawer.remove(index)
+        self.dots_drawer.remove(index)
         for note_id in self.note_head_canvases:
             self.note_head_canvases[note_id].pop(index)
 
@@ -258,103 +258,21 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 self.note_head_canvases[note_id][index].opacity = 0.3
 
     def update_section_full_bars(self, index):
-        section_full_bar_canvas: Canvas = self.full_bar_canvas.children[index]
-        section_full_bar_canvas.clear()
-        section_full_bar_canvas.children.clear()  # For some reason there may sometimes still be content in here
-
-        if self.score_section_instance.score[index].bars == 0:
-            section_full_bar_canvas.opacity = 0.3
-            section_full_bar_canvas.add(self.full_bar_line)
-            section_full_bar_canvas.add(self.section_translate)
-        else:
-            section_full_bar_canvas.opacity = 1
-            section_full_bar_canvas.add(PushMatrix())
-            for i in range(self.score_section_instance.score[index].bars):
-                section_full_bar_canvas.add(self.full_bar_line)
-                section_full_bar_canvas.add(self.full_bar_translate)
-            section_full_bar_canvas.add(PopMatrix())
-            section_full_bar_canvas.add(self.section_translate)
-
+        self.full_bar_drawer.update(index, self.score_section_instance.score[index].bars)
         self.update_size()
 
-
     def update_section_before_bars(self, index):
-        section_before_bar_canvas: Canvas = self.before_bar_canvas.children[index]
-        section_before_bar_canvas.clear()
-        section_before_bar_canvas.children.clear()
-
-        if self.score_section_instance.score[index].before_flags == 0:
-            section_before_bar_canvas.opacity = 0.3
-            section_before_bar_canvas.add(self.before_bar_line)
-            section_before_bar_canvas.add(self.section_translate)
-        else:
-            section_before_bar_canvas.opacity = 1
-            section_before_bar_canvas.add(PushMatrix())
-            for i in range(self.score_section_instance.score[index].before_flags):
-                section_before_bar_canvas.add(self.before_bar_line)
-                section_before_bar_canvas.add(self.before_bar_translate)
-            section_before_bar_canvas.add(PopMatrix())
-            section_before_bar_canvas.add(self.section_translate)
-
+        self.before_bar_drawer.update(index, self.score_section_instance.score[index].before_flags)
         self.update_size()
 
     def update_section_after_bars(self, index):
-        section_after_bar_canvas: Canvas = self.after_bar_canvas.children[index]
-        section_after_bar_canvas.clear()
-        section_after_bar_canvas.children.clear()
-
-        if self.score_section_instance.score[index].after_flags == 0:
-            section_after_bar_canvas.opacity = 0.3
-            section_after_bar_canvas.add(self.after_bar_line)
-            section_after_bar_canvas.add(self.section_translate)
-        else:
-            section_after_bar_canvas.opacity = 1
-            section_after_bar_canvas.add(PushMatrix())
-            for i in range(self.score_section_instance.score[index].after_flags):
-                section_after_bar_canvas.add(self.after_bar_line)
-                section_after_bar_canvas.add(self.after_bar_translate)
-            section_after_bar_canvas.add(PopMatrix())
-            section_after_bar_canvas.add(self.section_translate)
-
+        self.after_bar_drawer.update(index, self.score_section_instance.score[index].after_flags)
         self.update_size()
 
     def update_section_dots(self, index):
-        section_dots_canvas: Canvas = self.dots_canvas.children[index]
-        section_dots_canvas.clear()
-        section_dots_canvas.children.clear()
-
-        if self.score_section_instance.score[index].dots == 0:
-            section_dots_canvas.opacity = 0.3
-            section_dots_canvas.add(self.dot)
-            section_dots_canvas.add(self.section_translate)
-        else:
-            section_dots_canvas.opacity = 1
-            section_dots_canvas.add(PushMatrix())
-            for i in range(self.score_section_instance.score[index].dots):
-                section_dots_canvas.add(self.dot)
-                section_dots_canvas.add(self.dots_translate)
-                print(self.dots_translate.x)
-            section_dots_canvas.add(PopMatrix())
-            section_dots_canvas.add(self.section_translate)
-
+        self.dots_drawer.update(index, self.score_section_instance.score[index].dots)
         self.update_size()
 
     def update_section_slanted_bars(self):
-        section_slanted_bar_canvas: Canvas = self.slanted_bar_canvas
-        section_slanted_bar_canvas.clear()
-        section_slanted_bar_canvas.children.clear()
-
-        if self.score_section_instance.score[-1].slanted_flags == 0:
-            section_slanted_bar_canvas.opacity = 0.3
-            section_slanted_bar_canvas.add(self.slanted_bar_line)
-            section_slanted_bar_canvas.add(self.section_translate)
-        else:
-            section_slanted_bar_canvas.opacity = 1
-            section_slanted_bar_canvas.add(PushMatrix())
-            for i in range(self.score_section_instance.score[-1].slanted_flags):
-                section_slanted_bar_canvas.add(self.slanted_bar_line)
-                section_slanted_bar_canvas.add(self.slanted_bar_translate)
-            section_slanted_bar_canvas.add(PopMatrix())
-
+        self.after_bar_drawer.update(0, self.score_section_instance.score[-1].after_flags)
         self.update_size()
-
