@@ -3,6 +3,7 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.metrics import mm
 from kivy.properties import ObjectProperty, OptionProperty, NumericProperty
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scatterlayout import ScatterLayout
@@ -10,7 +11,7 @@ from kivy.uix.tabbedpanel import TabbedPanelItem
 from kivy.uix.widget import Widget
 
 from assembler.pageContent.scoreSection import ScoreSection
-from score import fix_and_get_normal_editor_note_ids
+from score import fix_and_get_normal_editor_note_ids, ScoreSectionStorage
 from score.notes import notes
 from selfSizingBoxLayout import SelfSizingBoxLayout
 
@@ -100,6 +101,36 @@ class NormalScoreSectionEditor(TabbedPanelItem):
                                                                                    self.editor_holder.scale))
 
 
-
 class NoteNameLabel(Label):
     pass
+
+
+class NoteSelector(BoxLayout):
+    editor: NormalScoreSectionEditor = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        self.do_height = Clock.create_trigger(self._do_height, -1)
+
+        BoxLayout.__init__(self, **kwargs)
+        self.do_height()
+
+    def on_editor(self, _, value):
+        for note_id in notes.keys():
+            selector = NoteSelectorInside(note_id, value.score_section_instance.score)
+            selector.bind(height=self.do_height)
+            self.add_widget(selector)
+
+    def _do_height(self, _):
+        self.height = sum(child.height for child in self.children)
+
+
+class NoteSelectorInside(RelativeLayout):  # Class that goes inside
+    note_id: int = NumericProperty()
+    score_section: ScoreSectionStorage = ObjectProperty()
+
+    def __init__(self, note_id, score_section, **kwargs):
+        self.note_id = note_id
+        self.score_section = score_section
+        self.note_obj = notes[note_id]()
+
+        RelativeLayout.__init__(self, **kwargs)

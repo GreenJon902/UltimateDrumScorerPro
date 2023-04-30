@@ -2,6 +2,7 @@
 #:import Matrix kivy.graphics.transformation.Matrix
 
 #:set note_editor_background_color 1, 1, 1, 1
+#:set note_selector_background_color 0.1, 0.1, 0.1, 1
 #:set note_name_color 0, 0, 0, 1
 
 #:set editor_padding mm(5)
@@ -13,82 +14,130 @@
     label_holder: label_holder
     editor_holder: editor_holder
 
-    RelativeLayout:
-        BoxLayout:
-            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+    BoxLayout:
+        padding: editor_padding
+        spacing: editor_padding
 
-            size_hint: None, None
-            width: self.parent.width - editor_padding * 2
-            height: self.parent.height - editor_padding * 2
-
-            canvas.before:
-                Color:
-                    rgba: note_editor_background_color
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: mm(5), mm(5)
-
-                 # The scroll view stencil doesn't account for rounded part of rectangle
-                StencilPush
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: mm(5), mm(5)
-                StencilUse
-
-            canvas.after:
-                StencilUnUse
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: mm(5), mm(5)
-                StencilPop
-
+        RelativeLayout:
+            size_hint_x: 0.3
 
             ScrollView:
-                do_scroll_x: True
+                do_scroll_y: True
 
-                RelativeLayout:
-                    padding: editor_padding
-                    width: container.width + labels_and_notes_spacing * 2
-                    height: container.height + labels_and_notes_spacing * 2
-                    size_hint_x: None
+                canvas.before:
+                    Color:
+                        rgba: note_selector_background_color
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
 
-                    SelfSizingBoxLayout:  # Widgets are wrong way round because of some positioning thing i think?
-                        anchor: "lowest"
-                        id: container
+                    # The scroll view stencil doesn't account for rounded part of rectangle
+                    StencilPush
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
+                    StencilUse
+                canvas.after:
+                    StencilUnUse
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
+                    StencilPop
 
-                        RelativeLayout:
-                            size_hint: None, None
-                            size: editor_holder.size
+                NoteSelector:
+                    editor: root
+                    orientation: "vertical"
+                    size_hint: 1, None
 
-                            EditorHolder:
-                                id: editor_holder
 
+        RelativeLayout:
+            BoxLayout:
+                canvas.before:
+                    Color:
+                        rgba: note_editor_background_color
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
+
+                     # The scroll view stencil doesn't account for rounded part of rectangle
+                    StencilPush
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
+                    StencilUse
+
+                canvas.after:
+                    StencilUnUse
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: mm(5), mm(5)
+                    StencilPop
+
+
+                ScrollView:
+                    do_scroll_x: True
+
+                    RelativeLayout:
+                        padding: editor_padding
+                        width: container.width + labels_and_notes_spacing * 2
+                        height: container.height + labels_and_notes_spacing * 2
+                        size_hint_x: None
+
+                        SelfSizingBoxLayout:  # Widgets are wrong way round because of some positioning thing i think?
+                            anchor: "lowest"
+                            id: container
+
+                            RelativeLayout:
                                 size_hint: None, None
-                                pos: 0, 0
+                                size: editor_holder.size
 
-                                orientation: "horizontal"
+                                EditorHolder:
+                                    id: editor_holder
 
-                        Widget:
-                            width: labels_and_notes_spacing
+                                    size_hint: None, None
+                                    pos: 0, 0
 
-                        RelativeLayout:
-                            size_hint: None, None
-                            size: label_holder.size
+                                    orientation: "horizontal"
 
-                            SelfSizingBoxLayout:
-                                id: label_holder
-                                orientation: "vertical"
-                                anchor: "highest"
-                                y: editor_holder.bottom_note_y_offset * editor_holder.scale
+                            Widget:
+                                width: labels_and_notes_spacing
+
+                            RelativeLayout:
+                                size_hint: None, None
+                                size: label_holder.size
+
+                                SelfSizingBoxLayout:
+                                    id: label_holder
+                                    orientation: "vertical"
+                                    anchor: "highest"
+                                    y: editor_holder.bottom_note_y_offset * editor_holder.scale
 
 
 
 <ZoomedLayout>:
     scale: mm(1.25)
+    do_transform_x: False
 
 <NoteNameLabel>:
     width: self.texture_size[0]
     color: note_name_color
+
+<NoteSelectorInside>:
+    size_hint_y: None
+    height: text.texture_size[1]
+
+    BoxLayout:
+        orientation: "horizontal"
+
+        Label:
+            id: text
+            text: root.note_obj.name
+        CheckBox:
+            active: root.note_id in root.score_section.normal_editor_note_ids
+            on_active: root.score_section.normal_editor_note_ids.remove(root.note_id) if not self.active else root.score_section.normal_editor_note_ids.append(root.note_id)

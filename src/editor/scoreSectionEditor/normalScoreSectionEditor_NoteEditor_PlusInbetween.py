@@ -137,6 +137,8 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.update_size()
 
         self.score_section_instance.score.bind_all(self.update)
+        self.score_section_instance.score.bind(normal_editor_note_ids=lambda _, __: self.update("none"))  # Only need to
+                                                                                          # trigger update of note heads
         self.note_object_holder.bind(height=self.update_size)
         self.canvas.add(self.head_canvas_container)
         self.canvas.add(self.section_modifiers_canvas_container)
@@ -198,7 +200,10 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             change = change[0]  # We don't care about kwargs
             Logger.debug(f"NSSE_NE_PlusInbetween: Changing {change}")
 
-            if change[0] == "all" or (change[0] == "storage" and change[1] == "set"):
+            if change[0] == "none":  # Probably from need to update something else like note head opacities
+                pass
+
+            elif change[0] == "all" or (change[0] == "storage" and change[1] == "set"):
                 self.full_redraw()
             elif change[0] == "storage" and change[1] == "insert":
                 self.add_section(change[2])

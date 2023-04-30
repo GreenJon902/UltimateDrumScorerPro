@@ -39,6 +39,7 @@ class SelfSizingBoxLayout(Widget):
                 if child.width > self.width:
                     self.width = child.width
             self.height = y
+            print(1, self.width)
 
             # Calculate width first as might need that for x coords
             attr_name = self.attr_names_for_vertical[self.anchor]
