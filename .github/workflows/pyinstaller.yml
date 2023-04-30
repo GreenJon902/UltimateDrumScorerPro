@@ -6,42 +6,41 @@ on:
 
 jobs:
   build-windows:
-    
+
     name: Create executable for windows
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-      
+
     - name: Create executable
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: .
-  
+
     - uses: actions/upload-artifact@v3
       with:
         name: UDSP-windows
         path: dist/windows
         if-no-files-found: error
-        
-        
+
+
   build-linux:
-    
+
     name: Create executable for linux
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-      
+
     - name: Create executable
       uses: GreenJon902/pyinstaller-action-linux@main
       with:
         kivy: true
         path: .
-  
+
     - uses: actions/upload-artifact@v3
       with:
         name: UDSP-linux
         path: dist/linux
         if-no-files-found: error
-  
