@@ -152,7 +152,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
     def _update_size(self, _):
         full_bar_amount = max(*(section.bars for section in self.score_section_instance.score), 2)  # Grey bars
         before_bar_amount = max(*(section.before_flags for section in self.score_section_instance.score), 2)
-        after_bar_amount = max(*(section.after_flags for section in self.score_section_instance.score), 2)
+        after_bar_amount = max(*(section.after_flags for section in self.score_section_instance.score), 1)
 
         self.slanted_bar_drawer.canvas_translate.x = self.section_translate.x * len(self.score_section_instance.score)
         self.width = self.slanted_bar_drawer.canvas_translate.x + slanted_flag_length
@@ -167,9 +167,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.before_bar_drawer.canvas_translate.y = y
         y += before_bar_amount * 2
         self.after_bar_drawer.canvas_translate.y = y
+        self.height = y + max(after_bar_amount, 2) * 2
         y += after_bar_amount * 2
-        self.height = y
-        y -= (self.score_section_instance.score[-1].slanted_flags - 1) * 2
+        y -= max((self.score_section_instance.score[-1].slanted_flags - 1) * 2, 0)
         self.slanted_bar_drawer.canvas_translate.y = y
 
     def _update(self, changes: list[tuple[tuple[any], dict[str, any]]]):
@@ -266,6 +266,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.update_section_after_bars(index)
         self.update_section_dots(index)
 
+        if index >= len(self.score_section_instance.score):  # Last item so has slanted bars
+            self.update_section_slanted_bars()
+
     def remove_section(self, index):
         self.section_modifiers_canvas.remove(self.section_modifiers_canvas.children[index])
         self.head_canvas.remove(self.head_canvas.children[index])
@@ -277,6 +280,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             self.note_head_canvases[note_id].pop(index)
 
         self.update_size()
+
+        if index >= len(self.score_section_instance.score):  # Last item so has slanted bars
+            self.update_section_slanted_bars()
 
     def update_head_canvas_colors(self, index):
         for note_id in self.note_head_canvases:
@@ -302,7 +308,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.update_size()
 
     def update_section_slanted_bars(self):
-        self.after_bar_drawer.update(0, self.score_section_instance.score[-1].after_flags)
+        self.slanted_bar_drawer.update(0, self.score_section_instance.score[-1].slanted_flags)
         self.update_size()
 
     def on_touch_up(self, touch):

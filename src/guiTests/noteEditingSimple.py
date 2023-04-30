@@ -12,7 +12,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 0
+start_location = 6
 
 
 scoreSectionStorage = ScoreSectionStorage()
