@@ -4,6 +4,7 @@ from kivy import Logger
 from kivy.clock import Clock
 from kivy.graphics import Ellipse, Line, InstructionGroup, Canvas, Translate, PushMatrix, PopMatrix
 from kivy.lang import Builder
+from kivy.uix.widget import Widget
 
 from argumentTrigger import ArgumentTrigger
 from assembler.pageContent.scoreSection import ScoreSection
@@ -86,9 +87,17 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
         self.head_canvas_container = Canvas()
         self.head_canvas = Canvas()
+        self.head_canvas_translate = Translate()
         self.head_canvas_container.add(PushMatrix())
+        self.head_canvas_container.add(self.head_canvas_translate)
         self.head_canvas_container.add(self.head_canvas)
         self.head_canvas_container.add(PopMatrix())
+
+        self.section_modifiers_canvas_container = Canvas()
+        self.section_modifiers_canvas = Canvas()
+        self.section_modifiers_canvas_container.add(PushMatrix())
+        self.section_modifiers_canvas_container.add(self.section_modifiers_canvas)
+        self.section_modifiers_canvas_container.add(PopMatrix())
 
         self.section_translate = Translate()
         self.full_bar_line = Line(points=[0, 4/2, 0, 4/2], width=bar_width)
@@ -101,6 +110,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.after_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.slanted_bar_translate = Translate(0, 2, 0)  # Todo: Actual value
         self.dots_translate = Translate(dot_spacing, 0, 0)  # Todo: Actual value
+        self.section_modifier = SectionModifier()
 
 
         self.full_bar_drawer = Drawer(self.full_bar_translate, self.full_bar_line, self.section_translate)
@@ -127,12 +137,15 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.score_section_instance.score.bind_all(self.update)
         self.note_object_holder.bind(height=self.update_size)
         self.canvas.add(self.head_canvas_container)
+        self.canvas.add(self.section_modifiers_canvas_container)
         self.full_bar_drawer.add_to(self.canvas)
         self.before_bar_drawer.add_to(self.canvas)
         self.after_bar_drawer.add_to(self.canvas)
         self.slanted_bar_drawer.add_to(self.canvas)
         self.dots_drawer.add_to(self.canvas)
         self.update("all")
+
+        self.bottom_note_y_offset = 10  # TODO: Propper value for this
 
     def _update_size(self, _):
         full_bar_amount = max(*(section.bars for section in self.score_section_instance.score), 2)  # Grey bars
@@ -141,6 +154,8 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
         self.slanted_bar_drawer.canvas_translate.x = self.section_translate.x * len(self.score_section_instance.score)
 
+        y = self.section_modifier.height
+        self.head_canvas_translate.y = y
         y = self.note_object_holder.height + dot_head_spacing
         self.dots_drawer.canvas_translate.y = y
         y += dot_radius * 2
@@ -219,6 +234,12 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         self.update_section_slanted_bars()
 
     def add_section(self, index):
+        section_modifier_group = InstructionGroup()
+        section_modifier_group.add(self.section_modifier.canvas)
+        section_modifier_group.add(self.section_translate)
+
+        self.section_modifiers_canvas.insert(index, section_modifier_group)
+
         head_group = InstructionGroup()
         for (note_id, note_object) in self.note_objects.items():
             canvas = Canvas()
@@ -276,3 +297,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
     def update_section_slanted_bars(self):
         self.after_bar_drawer.update(0, self.score_section_instance.score[-1].after_flags)
         self.update_size()
+
+
+class SectionModifier(Widget):
+    pass

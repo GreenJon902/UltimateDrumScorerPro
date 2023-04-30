@@ -4,32 +4,14 @@
 #:set dot_y 1
 #:set bars_y 5
 
-<NormalScoreSectionEditor_NoteEditor_PlusInbetween>:
-    #size: container.size
 
-    #bar_holder: bar_holder
-    #note_holder: note_holder
-    #plus_holder: plus_holder
-    #cross_holder: cross_holder
+<SectionModifier>:  # Width set by parent
+    width: 5
+    height: 10
 
-<Plus>:  # Width set by parent
-    default_width: 2.5  # Width when nothing to set to
-    height: 5
     canvas:
         Color:
-            rgba: 0, 0, 0, (1 if self.mouse_over else 0.1)
-        Line:
-            points: 1.25, 0, 1.25, 5
-            width: st
-        Line:
-            points: 0, 2.5, 2.5, 2.5
-            width: st
-
-<Cross>:  # Width set by parent
-    height: 5
-    canvas:
-        Color:
-            rgba: 0, 0, 0, (1 if self.mouse_over else 0.1)
+            rgba: 0, 0, 0, 0.1
         Line:
             points: self.width / 2 - 2.5, 0, self.width / 2 + 2.5, 5  # We want to center the x
             width: st
@@ -37,41 +19,11 @@
             points: self.width / 2 - 2.5, 5, self.width / 2 + 2.5, 0
             width: st
 
-<BarConfigurer>:
-    bar_container: bar_container
-    dots_label: dots_label
-    before_bar_label: before_bar_label
-    after_bar_label: after_bar_label
-    full_bar_label: full_bar_label
-
-    height: bar_container.height
-    RelativeLayout:
-        id: bar_container
-        size_hint: None, None
-        width: root.width
-        height: full_bar_label.top
-
-        BarButton:
-            id: dots_label
-            amount: root.dots
-            y: dot_y
-            size_hint: 1, None
-            type: "dots"
-        BarButton:
-            id: before_bar_label
-            amount: root.before_bars
-            y: bars_y
-            size_hint: 1, None
-            type: "before_bars"
-        BarButton:
-            id: after_bar_label
-            amount: root.after_bars
-            y: before_bar_label.top
-            size_hint: 1, None
-            type: "after_bars"
-        BarButton:
-            id: full_bar_label
-            amount: root.bars
-            y: after_bar_label.top
-            size_hint: 1, None
-            type: "bars"
+        Color:
+            rgba: 0, 0, 0, 0.1
+        Line:
+            points: 2.5, 5, 2.5, 10
+            width: st
+        Line:
+            points: 0, 7.5, 5, 7.5
+            width: st
