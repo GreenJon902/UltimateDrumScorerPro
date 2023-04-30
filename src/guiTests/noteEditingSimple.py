@@ -1,3 +1,7 @@
+import os
+
+os.environ["KCFG_INPUT_MOUSE"] = "mouse,multitouch_on_demand"
+
 import kivy.base
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button

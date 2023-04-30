@@ -39,6 +39,17 @@ class ScoreSectionSectionStorage(EventDispatcher):
             for binding in self.binding_groups[callback]:
                 self.funbind(binding[0], binding[1])
 
+    def copy(self):
+        return ScoreSectionSectionStorage(
+            decoration_id=self.decoration_id,
+            bars=self.bars,
+            before_flags=self.before_flags,
+            after_flags=self.after_flags,
+            slanted_flags=self.slanted_flags,
+            dots=self.dots,
+            note_ids=self.note_ids.copy(),
+        )
+
 
 class ScoreSectionStorage(EventDispatcher):
     _sections: list[ScoreSectionSectionStorage]  # Protect because need to be bound
