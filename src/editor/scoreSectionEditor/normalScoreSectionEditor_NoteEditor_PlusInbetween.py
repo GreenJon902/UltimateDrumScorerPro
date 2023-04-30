@@ -317,7 +317,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         is_add = touch.button == "left"
 
         if not 0 < x < self.width - slanted_flag_length:
-            return  # TODO: Slanted bar modification
+            if x < self.width:  # In slanted bar area
+                self.score_section_instance.score[-1].slanted_flags += 1 if is_add else -1
+            return
 
         if y < 0:
             return
