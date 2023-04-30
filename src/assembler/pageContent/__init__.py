@@ -9,6 +9,9 @@ from kivy.input import MotionEvent
 from kivy.lang import Builder
 from kivy.uix.relativelayout import RelativeLayout
 
+# noinspection PyUnresolvedReferences
+from betterSizedLabel import BetterSizedLabel
+
 if typing.TYPE_CHECKING:
     from editor import Editor
 
