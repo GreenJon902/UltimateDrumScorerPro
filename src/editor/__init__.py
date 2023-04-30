@@ -19,10 +19,10 @@ class Editor(RelativeLayout):
 
     def select(self, obj):
         print(f"Selecting {obj}")
+        self.clear_widgets()
 
         self.selected = obj
         if obj is None:
-            self.clear_widgets()
             self.opened_height = self.size_hint_y
             self.size_hint_y = 0  # Unselected so hide
             self.height = 0
