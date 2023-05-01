@@ -127,8 +127,6 @@ class ScoreSection(PageContent):
         else:
             raise NotImplementedError()
 
-        print(self.size)
-
         self.bar_canvas_translate.y = note_head_height + max_bar_height + top_dot_height
         self.bar_canvas_translate.flag_update()
 

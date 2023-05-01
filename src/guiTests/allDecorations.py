@@ -48,7 +48,6 @@ container = StackLayout(spacing=container_spacing, size_hint_x=None)
 container.width = sum([decorations[decoration_id]().width + container_spacing for decoration_id in decoration_ids])
 for scoreSection in scoreSections:
     container.add_widget(scoreSection)
-print(container.width)
 
 container2 = MyBoxLayout(spacing=10, size=(10000, 210), pos=(100, -100))
 container2.add_widget(container)
