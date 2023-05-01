@@ -7,13 +7,6 @@ from kivy.tools.packaging.pyinstaller_hooks import get_deps_minimal, get_deps_al
 
 a = Analysis(
     ['src/UltimateDrumScorerPro.py'],
-    pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
-    hookspath=[],
-    runtime_hooks=[],
-    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
