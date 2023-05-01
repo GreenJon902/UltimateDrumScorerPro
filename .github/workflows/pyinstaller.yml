@@ -37,6 +37,7 @@ jobs:
       uses: GreenJon902/pyinstaller-action-linux@python3.10
       with:
         path: .
+        kivy: true
 
     - uses: actions/upload-artifact@v3
       with:
