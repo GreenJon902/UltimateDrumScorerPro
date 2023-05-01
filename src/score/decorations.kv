@@ -73,4 +73,97 @@
                 ellipse: 0.45, 2.5, 3, 2, 130, 270
                 width: st
 
-#:set decorations {0: "Rest1", 1: "Rest2", 2: "Rest4"}
+<BarSeparator@Decoration>:
+    width: 0
+    min_height: 5
+
+    canvas:
+        Color:
+            rgba: root.color
+        Line:
+            points: 0, 0, 0, self.height
+            width: st
+
+<SectionStart@Decoration>:
+    width: 2
+    min_height: 7
+
+    canvas:
+        Color:
+            rgba: root.color
+        Line:
+            points: 0, 0, 0, self.height
+            width: st
+        Ellipse:
+            pos: 1, self.height / 2 + 2
+            size: 1, 1
+        Ellipse:
+            pos: 1, self.height / 2 - 3
+            size: 1, 1
+
+<SectionEnd@Decoration>:
+    width: 2
+    min_height: 7
+
+    canvas:
+        Color:
+            rgba: root.color
+        Line:
+            points: 2, 0, 2, self.height
+            width: st
+        Ellipse:
+            pos: 0, self.height / 2 + 2
+            size: 1, 1
+        Ellipse:
+            pos: 0, self.height / 2 - 3
+            size: 1, 1
+
+<RepeatedSectionStart@Decoration>:
+    width: 3
+    min_height: 15
+
+    canvas:
+        Color:
+            rgba: root.color
+        Line:
+            points: 3, -1.5, 0, 0, 0, self.height, 3, self.height + 1.5
+            width: st
+        Line:
+            points: 1, self.height / 2 - 4, 1, self.height / 2 + 4
+            width: st
+        Ellipse:
+            pos: 2, self.height / 2 + 2
+            size: 1, 1
+        Ellipse:
+            pos: 2, self.height / 2 - 3
+            size: 1, 1
+
+<RepeatedSectionStop@Decoration>:
+    width: 3
+    min_height: 15
+
+    canvas:
+        PushMatrix
+        Scale:  # Ye so i didnt wanna change the points so you get this instead :)
+            xyz: -1, 1, 1
+        Translate:
+            xyz: -3, 0, 0
+
+        Color:
+            rgba: root.color
+        Line:
+            points: 3, -1.5, 0, 0, 0, self.height, 3, self.height + 1.5
+            width: st
+        Line:
+            points: 1, self.height / 2 - 4, 1, self.height / 2 + 4
+            width: st
+        Ellipse:
+            pos: 2, self.height / 2 + 2
+            size: 1, 1
+        Ellipse:
+            pos: 2, self.height / 2 - 3
+            size: 1, 1
+
+        PopMatrix
+
+#:set decorations {0: "Rest1", 1: "Rest2", 2: "Rest4", 3: "BarSeparator", 4: "SectionStart", 5: "SectionEnd", 6: "RepeatedSectionStart", 7: "RepeatedSectionStop"}
