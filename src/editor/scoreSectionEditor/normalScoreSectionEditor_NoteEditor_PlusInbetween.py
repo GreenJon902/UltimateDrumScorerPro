@@ -353,6 +353,8 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def handle_section_modifier_button(self, index, button):
         if button == 0:  # Remove
+            if len(self.score_section_instance.score) == 1:
+                return  # Don't delete last section section
             self.score_section_instance.score.pop(index)
         else:  # Add
             self.score_section_instance.score.insert(index + 1, self.score_section_instance.score[index].copy())
@@ -363,8 +365,6 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
             if ry < note.height:
                 if nid in self.score_section_instance.score[index].note_ids:
-                    if len(self.score_section_instance.score) == 1:
-                        return  # Don't delete last section section
                     self.score_section_instance.score[index].note_ids.remove(nid)
                 else:
                     self.score_section_instance.score[index].note_ids.append(nid)
