@@ -34,7 +34,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Create executable
-      uses: JackMcKew/pyinstaller-action-linux@python3.10
+      uses: GreenJon902/pyinstaller-action-linux@python3.10
       with:
         path: .
 
