@@ -12,7 +12,7 @@ from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
 
 n = 0
-start_location = 6
+start_location = 20
 
 
 scoreSectionStorage = ScoreSectionStorage()
@@ -82,6 +82,12 @@ def update(_):
                                  ScoreSectionSectionStorage(note_ids=[0], bars=2, after_flags=1)])
     elif n == 19:
         scoreSectionStorage.remove(scoreSectionStorage[0])
+    elif n == 20:
+        scoreSectionStorage.set([ScoreSectionSectionStorage(decoration_id=0)])
+    elif n == 21:
+        scoreSectionStorage.insert(0, ScoreSectionSectionStorage(note_ids=[0]))
+    elif n == 22:
+        scoreSectionStorage[1].note_ids = [0, 1, 2]
     else:
         print("No more changes to make!!")
     n += 1

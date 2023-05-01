@@ -10,6 +10,7 @@ from argumentTrigger import ArgumentTrigger
 from assembler.pageContent import PageContent
 from assembler.pageContent.scoreSection.noteHeightCalculator import NoteHeightCalculator
 from score import ScoreSectionStorage, ScoreSectionSectionStorage
+from score.decorations import decorations, Decoration
 from score.notes import *
 
 
@@ -27,7 +28,7 @@ class ScoreSection(PageContent):
     stem_top: float = NumericProperty()
     section_widths: list[float] = ListProperty()
 
-    head_canvas: Canvas  # Contains stems
+    head_canvas: Canvas  # Contains stems and decorations
     head_canvas_container: Canvas
     head_canvas_translate: Translate
 
@@ -45,11 +46,14 @@ class ScoreSection(PageContent):
     update_size = None
 
     noteHeightCalculator: NoteHeightCalculator
+    decoration_objects: dict[int, Decoration]
 
     def __init__(self, *args, **kwargs):
         self.update = ArgumentTrigger(self._update, -1, True)
         self.update_size = Clock.create_trigger(self._update_size, -1)
         self.noteHeightCalculator = NoteHeightCalculator()
+
+        self.decoration_objects = {did: d() for (did, d) in decorations.items()}
 
         self.head_canvas_container = Canvas()
         self.head_canvas = Canvas()
@@ -92,6 +96,16 @@ class ScoreSection(PageContent):
     def _update_size(self, _):
         self.width = sum(self.section_widths)
         lowest_note_y = min(note.y for note in self.noteHeightCalculator.note_objects.values())
+
+        used_decorations = {section.decoration_id for section in self.score}
+        if None in used_decorations:
+            used_decorations.remove(None)
+        for did in used_decorations:
+            self.decoration_objects[did].height = -lowest_note_y  # This may be reversed due to min_height
+            self.decoration_objects[did].top = 0
+        note_head_height = max(lowest_note_y, max((self.decoration_objects[did].height for did in used_decorations),
+                                                  default=0))
+
         max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags, section.slanted_flags))
                                for section in self.score), default=0) - 1) * bar_height
         if max_bar_height < 0:
@@ -100,20 +114,20 @@ class ScoreSection(PageContent):
             top_dot_height = (dot_radius * 2 + dot_head_spacing + bar_dot_spacing)
         else:
             top_dot_height = 0
-        self.height = -lowest_note_y + max_bar_height + top_dot_height
+        self.height = -note_head_height + max_bar_height + top_dot_height
 
-        self.head_canvas_translate.y = -lowest_note_y
+        self.head_canvas_translate.y = -note_head_height
         self.head_canvas_translate.flag_update()
-        self.stem_top = self.height + lowest_note_y  # Cause its being translated by lowest y
+        self.stem_top = self.height + note_head_height  # Cause its being translated by lowest y
 
         if self.score.dots_at_top:
             self.dot_canvas_translate.x = top_dot_stem_distance
-            self.dot_canvas_translate.y = -lowest_note_y + dot_head_spacing
+            self.dot_canvas_translate.y = -note_head_height + dot_head_spacing
             self.dot_canvas_translate.flag_update()
         else:
             raise NotImplementedError()
 
-        self.bar_canvas_translate.y = -lowest_note_y + max_bar_height + top_dot_height
+        self.bar_canvas_translate.y = -note_head_height + max_bar_height + top_dot_height
         self.bar_canvas_translate.flag_update()
 
     def on_score(self, _, value):
@@ -262,8 +276,13 @@ class ScoreSection(PageContent):
         self.noteHeightCalculator.update()
 
         group = InstructionGroup()
-
         width = 0
+
+        if section.decoration_id is not None:
+            group.add(self.decoration_objects[section.decoration_id].canvas)
+            group.add(Translate(self.decoration_objects[section.decoration_id].width, 0, 0))
+            width += self.decoration_objects[section.decoration_id].width
+
         if len(section.note_ids) != 0:
             # Heads ------------------------------------------
             note_widths: dict[float, list[Note]] = {}
@@ -293,7 +312,7 @@ class ScoreSection(PageContent):
             group.add(stem)
 
             # Return info ------------------------------------------
-            width = max_width
+            width += max_width
 
         return group, width
 

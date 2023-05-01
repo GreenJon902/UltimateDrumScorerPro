@@ -1,0 +1,35 @@
+#:kivy 2.1.0
+#:include score/scoreSettings.kv
+
+<Decoration>:
+    size_hint: None, None
+
+    canvas.before:
+        Color:
+            rgba: 1, 0, 0, 0#.2
+        Rectangle:
+            size: self.size
+
+<Rest1@Decoration>:
+    width: 5
+    min_height: 10
+
+    RelativeLayout:
+        size_hint_y: None
+        height: 10
+        center_y: root.height / 2
+
+        canvas:
+            Color:
+                rgba: root.color
+            Line:
+                points: 0, 10, 5, 7.5, 1, 5
+                width: st
+            Line:
+                points: 4, 8, 0, 5.5, 5, 2.5, 2, 2
+                width: st
+            Line:
+                ellipse: 0, 0, 5, 2, -10, -270
+                width: st
+
+#:set decorations {0: "Rest1"}

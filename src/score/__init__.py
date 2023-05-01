@@ -16,6 +16,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
     binding_groups: dict[callable, list[tuple[str, callable]]]
     def __init__(self, **kwargs):
         self.binding_groups = {}
+        kwargs.setdefault("decoration_id", None)  # Idk why but this is necessary
         EventDispatcher.__init__(self, **kwargs)
 
     def bind_all(self, callback):

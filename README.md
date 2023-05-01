@@ -25,3 +25,7 @@ I also already have a text editor which supports font sizes and configurable mar
 #### Other editors
 I plan to make one like the editor shown above, except instead of pluses, it has an empty column inbetween.  
 I also intend on making on similar to your more standard music program where it handles bars, flags and dots for you (e.g. [Groove Scribe](https://www.mikeslessons.com/groove/)).
+
+
+# Notes on Internals
+A crotchet rest is called a rest1, a quaver rest is called a rest2, a semi-quaver rest is called a rest4, etc. (The number is the denominator of a fraction of a beat, e.g. 1/1, 1/2, 1/4)
