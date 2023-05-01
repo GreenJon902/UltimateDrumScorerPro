@@ -7,7 +7,6 @@ from kivy.lang import Builder
 from kivy.uix.widget import Widget
 
 from argumentTrigger import ArgumentTrigger
-from assembler.pageContent.scoreSection import ScoreSection
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
 from score import fix_and_get_normal_editor_note_ids
 from score.notes import notes, Note, dot_radius, dot_spacing, bar_width, flag_length, slanted_flag_length, \
@@ -74,15 +73,15 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
     head_canvas_container: Canvas
     head_canvas_translate: Translate
 
-    score_section_instance: ScoreSection
     note_head_canvases: dict[int, list[Canvas]]  # For opacity
+    decoration_colors: list[Color]  # For opacity
 
     note_objects: dict[int, Note]
     note_object_holder: SelfSizingBoxLayout
 
     def __init__(self, score_section_instance, **kwargs):
-        self.score_section_instance = score_section_instance
         self.note_head_canvases = {i: [] for i in range(len(notes))}
+        self.decoration_colors = []
         self.update = ArgumentTrigger(self._update, -1, True)
         self.update_size = Clock.create_trigger(self._update_size, -1)
 
@@ -130,7 +129,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             self.note_objects[note_id] = note
             note.opacity = 1
 
-        NormalScoreSectionEditor_NoteEditor.__init__(self, **kwargs)
+        NormalScoreSectionEditor_NoteEditor.__init__(self, score_section_instance, **kwargs)
 
         for note in self.score_section_instance.noteHeightCalculator.note_objects.values():
             note.fbind("y", self.update_size)
@@ -222,6 +221,8 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 self.update_section_slanted_bars()
             elif change[0] == "section" and change[1] == "dots":
                 self.update_section_dots(self.score_section_instance.score.index(change[2]))
+            elif change[0] == "section" and change[1] == "decoration_id":
+                pass  # We don't care about this here
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 
@@ -229,6 +230,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def full_redraw(self):
         self.section_modifiers_canvas.clear()
+        self.decoration_colors.clear()
         self.head_canvas.clear()
         self.full_bar_drawer.clear()
         self.before_bar_drawer.clear()
@@ -246,6 +248,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def add_section(self, index):
         section_modifier_group = InstructionGroup()
+        decoration_color = Color(rgba=(0, 0, 0, 0.1))
+        section_modifier_group.add(decoration_color)
+        self.decoration_colors.insert(index, decoration_color)
         section_modifier_group.add(self.section_modifier.canvas)
         section_modifier_group.add(self.section_translate)
 
@@ -276,6 +281,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
 
     def remove_section(self, index):
         self.section_modifiers_canvas.remove(self.section_modifiers_canvas.children[index])
+        self.decoration_colors.pop(index)
         self.head_canvas.remove(self.head_canvas.children[index])
         self.full_bar_drawer.remove(index)
         self.before_bar_drawer.remove(index)
@@ -331,7 +337,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
         elif y < self.section_modifier.height:  # Section Modifiers
             index = x // self.section_translate.x
             button = y // 5
-            self.handle_section_modifier_button(int(index), button)
+            self.handle_section_modifier_button(int(index), button)  # Also does decorations
         elif y < self.dots_drawer.canvas_translate.y:  # Note heads
             index = x // self.section_translate.x
             ry = y - self.section_modifier.height
@@ -352,7 +358,15 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             return
 
     def handle_section_modifier_button(self, index, button):
-        if button == 0:  # Remove
+        if button == 0:  # Decorations
+            if self.current_decoration_editing_index is not None:
+                self.decoration_colors[self.current_decoration_editing_index].rgba = 0, 0, 0, 0.1
+            if self.current_decoration_editing_index == index:
+                self.current_decoration_editing_index = None
+            else:
+                self.current_decoration_editing_index = index
+                self.decoration_colors[index].rgba = 0, 0, 0, 1
+        elif button == 1:  # Remove
             if len(self.score_section_instance.score) == 1:
                 return  # Don't delete last section section
             self.score_section_instance.score.pop(index)

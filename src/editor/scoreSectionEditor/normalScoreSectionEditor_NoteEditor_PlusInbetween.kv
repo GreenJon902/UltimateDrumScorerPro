@@ -7,9 +7,28 @@
 
 <SectionModifier>:  # Width set by parent
     width: 5
-    height: 10
+    height: 16
 
     canvas:
+        PushMatrix
+
+        # Color for decoration button is set by parent.
+        Line: # This is supposed to be a tree
+            points: self.width / 2 - 1, 0, self.width / 2, 3, self.width / 2 + 1, 0  # We want to center the x
+            width: st
+        Ellipse:
+            pos: self.width / 2 - 1.5, 2
+            size: 3, 3
+        Ellipse:
+            pos: self.width / 2 - 2.5, 1
+            size: 3, 3
+        Ellipse:
+            pos: self.width / 2 - 0.5, 1
+            size: 3, 3
+
+        Translate:
+            y:5
+
         Color:
             rgba: 0, 0, 0, 0.1
         Line:
@@ -19,11 +38,16 @@
             points: self.width / 2 - 2.5, 5, self.width / 2 + 2.5, 0
             width: st
 
+        Translate:
+            y: 5
+
         Color:
             rgba: 0, 0, 0, 0.1
         Line:
-            points: 2.5, 5, 2.5, 10
+            points: 2.5, 0, 2.5, 5
             width: st
         Line:
-            points: 0, 7.5, 5, 7.5
+            points: 0, 2.5, 5, 2.5
             width: st
+
+        PopMatrix

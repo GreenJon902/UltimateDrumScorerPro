@@ -158,7 +158,7 @@ class ScoreSection(PageContent):
                 self.remove_section(change[2])
                 pass
 
-            elif change[0] == "section" and change[1] == "note_ids":
+            elif change[0] == "section" and (change[1] == "note_ids" or change[1] == "decoration_id"):
                 self.update_section_notes(self.score.index(change[2]))
                 pass
             elif change[0] == "section" and (change[1] == "bars" or change[1] == "before_flags" or change[1] ==
@@ -168,6 +168,7 @@ class ScoreSection(PageContent):
             elif change[0] == "section" and change[1] == "dots":
                 self.update_section_dots(self.score.index(change[2]))
                 pass
+
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 
