@@ -11,7 +11,6 @@ class Decoration(RelativeLayout):
     min_height: int = NumericProperty()
 
     def __init__(self, **kwargs):
-        print("sup")
         RelativeLayout.__init__(self, **kwargs)
         self.height = self.min_height
         self.canvas.opacity = 1

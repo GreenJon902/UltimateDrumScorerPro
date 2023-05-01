@@ -6,7 +6,7 @@
 
     canvas.before:
         Color:
-            rgba: 1, 0, 0, 0#.2
+            rgba: 1, 0, 0, 0.2
         Rectangle:
             size: self.size
 
@@ -16,7 +16,7 @@
 
     RelativeLayout:
         size_hint_y: None
-        height: 10
+        height: root.min_height
         center_y: root.height / 2
 
         canvas:
@@ -32,4 +32,45 @@
                 ellipse: 0, 0, 5, 2, -10, -270
                 width: st
 
-#:set decorations {0: "Rest1"}
+<Rest2@Decoration>:  # TODO: Find a better system for making all rests (not1 beat ones) into one widget
+    width: 3
+    min_height: 5
+
+    RelativeLayout:
+        size_hint_y: None
+        height: root.min_height
+        center_y: root.height / 2
+
+        canvas:
+            Color:
+                rgba: root.color
+            Line:
+                points: 1, 0, 3, 5
+                width: st
+            Line:
+                ellipse: 0, 4, 3, 2, 90, 270
+                width: st
+
+<Rest4@Decoration>:  # TODO: Find a better system for making all rests (not1 beat ones) into one widget
+    width: 4
+    min_height: 5
+
+    RelativeLayout:
+        size_hint_y: None
+        height: root.min_height
+        center_y: root.height / 2
+
+        canvas:
+            Color:
+                rgba: root.color
+            Line:
+                points: 2, 0, 4, 5
+                width: st
+            Line:
+                ellipse: 1, 4, 3, 2, 90, 270
+                width: st
+            Line:
+                ellipse: 0.45, 2.5, 3, 2, 130, 270
+                width: st
+
+#:set decorations {0: "Rest1", 1: "Rest2", 2: "Rest4"}
