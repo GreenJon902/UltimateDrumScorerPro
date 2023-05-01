@@ -23,3 +23,23 @@ jobs:
         name: UDSP-windows
         path: dist/windows
         if-no-files-found: error
+        
+
+  build-linux:
+
+    name: Create executable for linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create executable
+      uses: JackMcKew/pyinstaller-action-linux@python3.10
+      with:
+        path: .
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: UDSP-linux
+        path: dist/linux
+        if-no-files-found: error
