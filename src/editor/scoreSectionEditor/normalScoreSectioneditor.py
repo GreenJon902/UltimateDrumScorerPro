@@ -1,3 +1,5 @@
+from typing import Optional
+
 from kivy import Logger
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -21,6 +23,18 @@ Builder.load_file("editor/scoreSectionEditor/normalScoreSectionEditor.kv")
 # noinspection PyPep8Naming
 class NormalScoreSectionEditor_NoteEditor(RelativeLayout):
     bottom_note_y_offset: int = NumericProperty()
+    current_decoration_editing_index: Optional[int] = NumericProperty(allownone=True, defaultvalue=None)
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("current_decoration_editing_index", None)  # For some reason this is necessary
+        RelativeLayout.__init__(self, **kwargs)
+
+
+class AuxiliarySelector(RelativeLayout):
+    def do_layout(self, *args):
+        self.height = self.children[0].height if len(self.children) > 0 else 0
+        RelativeLayout.do_layout(self, *args)
+        print(self.size, self.children, self.children[0].height if len(self.children) > 0 else None)
 
 
 class ZoomedLayout(ScatterLayout):
@@ -69,9 +83,13 @@ class NormalScoreSectionEditor(TabbedPanelItem):
     label_holder: SelfSizingBoxLayout = ObjectProperty()
     editor_holder: EditorHolder = ObjectProperty()
     editor: NormalScoreSectionEditor_NoteEditor = ObjectProperty()
+    auxiliary_selector: AuxiliarySelector = ObjectProperty()
+
+    note_selector: "NoteSelector"
 
     def __init__(self, score_section_instance, **kwargs):
         self.score_section_instance = score_section_instance
+        self.note_selector = NoteSelector()
         self.trigger_update_labels = Clock.create_trigger(self._update_labels, -1)
 
         TabbedPanelItem.__init__(self, **kwargs)
@@ -80,14 +98,17 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         self.score_section_instance.score.bind_all(self.trigger_update_labels)
         self.trigger_update_labels()
 
-        Clock.schedule_once(self.do_editor, -1)
+        Clock.schedule_once(self.late_setup, -1)
 
 
-    def do_editor(self, *args):
+    def late_setup(self, *args):  # Set up stuff once all the properties are filled
         if self.editor is not None:
             self.editor_holder.set_editor(self.editor)
         else:
             Logger.warning("NormalScoreSectionEditor: No editor supplied")
+        self.note_selector.editor = self.editor
+        self.auxiliary_selector.add_widget(self.note_selector)
+        print(self.note_selector.height, self.children)
 
     def _update_labels(self, *args):
         note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.score)
@@ -117,14 +138,15 @@ class NoteSelector(BoxLayout):
     def on_editor(self, _, value):
         for note_id in notes.keys():
             selector = NoteSelectorInside(note_id, value.score_section_instance.score)
-            selector.bind(height=self.do_height)
+            selector.bind(size=self.do_height)
             self.add_widget(selector)
+        self.do_height()
 
     def _do_height(self, _):
         self.height = sum(child.height for child in self.children)
 
 
-class NoteSelectorInside(RelativeLayout):  # Class that goes inside
+class NoteSelectorInside(RelativeLayout):  # Class that goes inside note selector
     note_id: int = NumericProperty()
     score_section: ScoreSectionStorage = ObjectProperty()
 

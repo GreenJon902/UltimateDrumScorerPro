@@ -13,6 +13,7 @@
 
     label_holder: label_holder
     editor_holder: editor_holder
+    auxiliary_selector: auxiliary_selector
 
     BoxLayout:
         padding: editor_padding
@@ -47,9 +48,8 @@
                         radius: mm(5), mm(5)
                     StencilPop
 
-                NoteSelector:
-                    editor: root
-                    orientation: "vertical"
+                AuxiliarySelector:
+                    id: auxiliary_selector
                     size_hint: 1, None
 
 
@@ -127,6 +127,10 @@
 <NoteNameLabel>:
     width: self.texture_size[0]
     color: note_name_color
+
+<NoteSelector>:
+    orientation: "vertical"
+    size_hint_y: None
 
 <NoteSelectorInside>:
     size_hint_y: None
