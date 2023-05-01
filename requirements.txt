@@ -1,7 +1,7 @@
 Pillow
 docutils
 pygments
-pypiwin32
+pypiwin32==220
 
 Kivy==2.1.0
 PyInstaller==5.10.1
