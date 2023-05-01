@@ -103,8 +103,8 @@ class ScoreSection(PageContent):
         for did in used_decorations:
             self.decoration_objects[did].height = -lowest_note_y  # This may be reversed due to min_height
             self.decoration_objects[did].top = 0
-        note_head_height = max(lowest_note_y, max((self.decoration_objects[did].height for did in used_decorations),
-                                                  default=0))
+        note_head_height = max(-lowest_note_y, max((self.decoration_objects[did].height for did in used_decorations),
+                                                   default=0))
 
         max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags, section.slanted_flags))
                                for section in self.score), default=0) - 1) * bar_height
@@ -114,20 +114,22 @@ class ScoreSection(PageContent):
             top_dot_height = (dot_radius * 2 + dot_head_spacing + bar_dot_spacing)
         else:
             top_dot_height = 0
-        self.height = -note_head_height + max_bar_height + top_dot_height
+        self.height = note_head_height + max_bar_height + top_dot_height
 
-        self.head_canvas_translate.y = -note_head_height
+        self.head_canvas_translate.y = note_head_height
         self.head_canvas_translate.flag_update()
-        self.stem_top = self.height + note_head_height  # Cause its being translated by lowest y
+        self.stem_top = self.height - note_head_height  # Cause its being translated by lowest y
 
         if self.score.dots_at_top:
             self.dot_canvas_translate.x = top_dot_stem_distance
-            self.dot_canvas_translate.y = -note_head_height + dot_head_spacing
+            self.dot_canvas_translate.y = note_head_height + dot_head_spacing
             self.dot_canvas_translate.flag_update()
         else:
             raise NotImplementedError()
 
-        self.bar_canvas_translate.y = -note_head_height + max_bar_height + top_dot_height
+        print(self.size)
+
+        self.bar_canvas_translate.y = note_head_height + max_bar_height + top_dot_height
         self.bar_canvas_translate.flag_update()
 
     def on_score(self, _, value):
