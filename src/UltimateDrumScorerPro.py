@@ -7,6 +7,16 @@ def run():
     os.environ["APPVERSION"] = "v3.2"
     os.environ["SHORT_APPNAME"] = "UDSP"
 
+    print(f"""
+Welcome to {os.environ["APPNAME"]} ({os.environ["APPVERSION"]}), or {os.environ["SHORT_APPNAME"]} for short. 
+ 0/     |  |  +---  |   |   +--+
+/|      +--+  +--   |   |   |  |
+/ \\     |  |  +---  +-  +-  +--+
+    By {os.environ["APPAUTHOR"]}
+""")
+
+
+
     # ==================================================================================================================
 
     print("Setting up kivy...")
