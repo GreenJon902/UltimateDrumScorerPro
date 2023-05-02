@@ -4,7 +4,7 @@ from kivy import Logger
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.metrics import mm
-from kivy.properties import ObjectProperty, OptionProperty, NumericProperty
+from kivy.properties import ObjectProperty, OptionProperty, NumericProperty, BooleanProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.label import Label
@@ -88,15 +88,27 @@ class NormalScoreSectionEditor(TabbedPanelItem):
     editor_holder: EditorHolder = ObjectProperty()
     editor: NormalScoreSectionEditor_NoteEditor = ObjectProperty()
     auxiliary_selector: AuxiliarySelector = ObjectProperty()
+    editing_spacing: bool = BooleanProperty(defaultvalue=False)
+    editing_spacing_state: str = OptionProperty("what", options=["what", "equal_spacing_size", "dynamic_spacing_size"])
+    # What is choosing how to edit spacing, equal_spacing means everything is the same, dynamic_spacing means
+    # based off the rhythm
 
     note_selector: "NoteSelector"
     decoration_selector: "DecorationSelector"
+    editing_spacing_method_selector: "EditingSpacingMethodSelector"
+    equal_spacing_size_selector: "SpacingSliderAndExitButtons"
+
+    update_auxiliary_selector_contents = None
 
     def __init__(self, score_section_instance, **kwargs):
         self.score_section_instance = score_section_instance
         self.note_selector = NoteSelector()
         self.decoration_selector = DecorationSelector()
+        self.editing_spacing_method_selector = EditingSpacingMethodSelector()
+        self.equal_spacing_size_selector = SpacingSliderAndExitButtons(
+            change_callback=lambda _, x: self.set_spacings("equal", x), max=10)
         self.trigger_update_labels = Clock.create_trigger(self._update_labels, -1)
+        self.update_auxiliary_selector_contents = Clock.create_trigger(self._update_auxiliary_selector_contents, -1)
 
         TabbedPanelItem.__init__(self, **kwargs)
 
@@ -107,6 +119,13 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         Clock.schedule_once(self.late_setup, -1)
 
 
+    def set_spacings(self, type_, value):
+        if type_ == "equal":
+            for section in self.score_section_instance.score:
+                section.custom_width = value
+        else:
+            raise NotImplementedError()
+
     def late_setup(self, *args):  # Set up stuff once all the properties are filled
         if self.editor is not None:
             self.editor_holder.set_editor(self.editor)
@@ -114,16 +133,34 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             Logger.warning("NormalScoreSectionEditor: No editor supplied")
         self.note_selector.editor = self.editor
         self.decoration_selector.editor = self.editor
+        self.editing_spacing_method_selector.normal_editor = self
         self.auxiliary_selector.add_widget(self.note_selector)
 
-        self.editor.bind(current_decoration_editing_index=self.on_current_decoration_editing_index)
+        self.editor.bind(current_decoration_editing_index=self.update_auxiliary_selector_contents)
+        self.bind(editing_spacing_state=self.update_auxiliary_selector_contents)
 
-    def on_current_decoration_editing_index(self, _, value):
+    def on_editing_spacing(self, _, value):
+        if value:
+            self.editing_spacing_state = "what"  # Reset this value
+        self.update_auxiliary_selector_contents()
+
+    def _update_auxiliary_selector_contents(self, _):
         self.auxiliary_selector.clear_widgets()
-        if value is None:
-            self.auxiliary_selector.add_widget(self.note_selector)
+
+        if self.editing_spacing:
+            if self.editing_spacing_state == "what":
+                self.editing_spacing_method_selector.height = self.auxiliary_selector.parent.height
+                self.auxiliary_selector.add_widget(self.editing_spacing_method_selector)
+            elif self.editing_spacing_state == "equal_spacing_size":
+                self.equal_spacing_size_selector.height = self.auxiliary_selector.parent.height
+                self.auxiliary_selector.add_widget(self.equal_spacing_size_selector)
+            elif self.editing_spacing_state == "dynamic_spacing_size":
+                raise NotImplementedError()
         else:
-            self.auxiliary_selector.add_widget(self.decoration_selector)
+            if self.editor.current_decoration_editing_index is None:
+                self.auxiliary_selector.add_widget(self.note_selector)
+            else:
+                self.auxiliary_selector.add_widget(self.decoration_selector)
 
     def _update_labels(self, *args):
         note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.score)
@@ -135,6 +172,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
             note = note_type()
             self.label_holder.add_widget(NoteNameLabel(text=str(note.name), height=note.height *
                                                                                    self.editor_holder.scale))
+
 
 
 class NoteNameLabel(Label):
@@ -226,3 +264,13 @@ class DecorationSelectorInside(RelativeLayout):
 
     def on_container(self, _, value):
         value.add_widget(self.decoration_obj)
+
+
+class EditingSpacingMethodSelector(RelativeLayout):
+    normal_editor: NormalScoreSectionEditor = ObjectProperty()
+
+
+class SpacingSliderAndExitButtons(RelativeLayout):
+    change_callback: callable = ObjectProperty()
+    min: int = NumericProperty()
+    max: int = NumericProperty()

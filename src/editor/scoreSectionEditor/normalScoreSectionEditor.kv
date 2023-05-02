@@ -19,11 +19,14 @@
         padding: editor_padding
         spacing: editor_padding
 
-        RelativeLayout:
+        BoxLayout:
             size_hint_x: 0.3
+            orientation: "vertical"
+            spacing: editor_padding
 
             ScrollView:
                 do_scroll_y: True
+                always_overscroll: False
 
                 canvas.before:
                     Color:
@@ -51,6 +54,22 @@
                 AuxiliarySelector:
                     id: auxiliary_selector
                     size_hint: 1, None
+
+            BoxLayout:
+                size_hint_y: 0.2
+
+                orientation: "horizontal"
+                ToggleButton:
+                    text: "Content"
+                    group: "EditorType"
+                    state: "down"  # This is default option so is down
+                    allow_no_selection: False
+                ToggleButton:
+                    text: "Spacing"
+                    group: "EditorType"
+                    allow_no_selection: False
+                    on_state: root.editing_spacing = self.state == "down"  # One has to be on and mutually exclusive
+                                                                           # so only have to bind to one.
 
 
         RelativeLayout:
@@ -172,3 +191,37 @@
             id: checkbox
             group: "DecorationType"
             on_active: root.click_callback(root.decoration_id, self.active)
+
+
+<EditingSpacingMethodSelector>:
+    BoxLayout:
+        padding: mm(5)
+        spacing: mm(5)
+        orientation: "vertical"
+
+        Button:
+            text: "Set all"
+            on_release: root.normal_editor.editing_spacing_state = "equal_spacing_size"
+
+        Button:
+            text: "Dynamically set all"
+            on_release: root.normal_editor.editing_spacing_state = "dynamic_spacing_size"
+
+<SpacingSliderAndExitButtons>:
+    BoxLayout:
+        padding: mm(5)
+        spacing: mm(5)
+        orientation: "vertical"
+
+        Slider:
+            on_value: root.change_callback(self, self.value)
+            min: root.min
+            max: root.max
+
+        Button:
+            text: "Done"
+            on_release: root.normal_editor.editing_spacing_state = "dynamic_spacing_size"
+
+        Button:
+            text: "Cancel"
+            on_release: root.normal_editor.editing_spacing_state = "what"
