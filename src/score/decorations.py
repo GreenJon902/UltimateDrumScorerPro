@@ -9,6 +9,7 @@ Builder.load_file("score/decorations.kv")
 class Decoration(RelativeLayout):
     color = ColorProperty(defaultvalue=(0, 0, 0, 1))
     min_height: int = NumericProperty()
+    container_height: int = NumericProperty()  # Height of container, e.g. the entire score
 
     def __init__(self, **kwargs):
         RelativeLayout.__init__(self, **kwargs)

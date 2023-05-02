@@ -130,6 +130,9 @@ class ScoreSection(PageContent):
         self.bar_canvas_translate.y = note_head_height + max_bar_height + top_dot_height
         self.bar_canvas_translate.flag_update()
 
+        for did in self.decoration_objects:
+            self.decoration_objects[did].container_height = self.height  # This may be reversed due to min_height
+
     def on_score(self, _, value):
         if self._old_score is not None:
             self._old_score.unbind_all(self.update)

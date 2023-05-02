@@ -81,7 +81,7 @@
         Color:
             rgba: root.color
         Line:
-            points: 0, 0, 0, self.height
+            points: 0, 0, 0, self.container_height
             width: st
 
 <SectionStart@Decoration>:
@@ -92,13 +92,13 @@
         Color:
             rgba: root.color
         Line:
-            points: 0, 0, 0, self.height
+            points: 0, 0, 0, self.container_height
             width: st
         Ellipse:
-            pos: 1, self.height / 2 + 2
+            pos: 1, self.container_height / 2 + 2
             size: 1, 1
         Ellipse:
-            pos: 1, self.height / 2 - 3
+            pos: 1, self.container_height / 2 - 3
             size: 1, 1
 
 <SectionEnd@Decoration>:
@@ -109,13 +109,13 @@
         Color:
             rgba: root.color
         Line:
-            points: 2, 0, 2, self.height
+            points: 2, 0, 2, self.container_height
             width: st
         Ellipse:
-            pos: 0, self.height / 2 + 2
+            pos: 0, self.container_height / 2 + 2
             size: 1, 1
         Ellipse:
-            pos: 0, self.height / 2 - 3
+            pos: 0, self.container_height / 2 - 3
             size: 1, 1
 
 <RepeatedSectionStart@Decoration>:
@@ -126,16 +126,16 @@
         Color:
             rgba: root.color
         Line:
-            points: 3, -1.5, 0, 0, 0, self.height, 3, self.height + 1.5
+            points: 3, -1.5, 0, 0, 0, self.container_height, 3, self.container_height + 1.5
             width: st
         Line:
-            points: 1, self.height / 2 - 4, 1, self.height / 2 + 4
+            points: 1, self.container_height / 2 - 4, 1, self.container_height / 2 + 4
             width: st
         Ellipse:
-            pos: 2, self.height / 2 + 2
+            pos: 2, self.container_height / 2 + 2
             size: 1, 1
         Ellipse:
-            pos: 2, self.height / 2 - 3
+            pos: 2, self.container_height / 2 - 3
             size: 1, 1
 
 <RepeatedSectionStop@Decoration>:
@@ -152,16 +152,16 @@
         Color:
             rgba: root.color
         Line:
-            points: 3, -1.5, 0, 0, 0, self.height, 3, self.height + 1.5
+            points: 3, -1.5, 0, 0, 0, self.container_height, 3, self.container_height + 1.5
             width: st
         Line:
-            points: 1, self.height / 2 - 4, 1, self.height / 2 + 4
+            points: 1, self.container_height / 2 - 4, 1, self.container_height / 2 + 4
             width: st
         Ellipse:
-            pos: 2, self.height / 2 + 2
+            pos: 2, self.container_height / 2 + 2
             size: 1, 1
         Ellipse:
-            pos: 2, self.height / 2 - 3
+            pos: 2, self.container_height / 2 - 3
             size: 1, 1
 
         PopMatrix
