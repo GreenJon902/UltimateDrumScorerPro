@@ -221,8 +221,9 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 self.update_section_slanted_bars()
             elif change[0] == "section" and change[1] == "dots":
                 self.update_section_dots(self.score_section_instance.score.index(change[2]))
-            elif change[0] == "section" and change[1] == "decoration_id":
-                pass  # We don't care about this here
+
+            elif change[0] == "section" and (change[1] == "decoration_id" or change[1] == "custom_width"):
+                pass  # We don't care about these here
             else:
                 raise NotImplementedError(f"Score section doesn't know how to change {change}")
 

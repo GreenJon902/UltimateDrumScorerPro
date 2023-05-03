@@ -161,7 +161,8 @@ class ScoreSection(PageContent):
                 self.remove_section(change[2])
                 pass
 
-            elif change[0] == "section" and (change[1] == "note_ids" or change[1] == "decoration_id"):
+            elif change[0] == "section" and (change[1] == "note_ids" or change[1] == "decoration_id"
+                                             or change[1] == "custom_width"):
                 self.update_section_notes(self.score.index(change[2]))
                 pass
             elif change[0] == "section" and (change[1] == "bars" or change[1] == "before_flags" or change[1] ==
@@ -317,6 +318,10 @@ class ScoreSection(PageContent):
 
             # Return info ------------------------------------------
             width += max_width
+
+        if section.custom_width != 0:
+            width += section.custom_width
+            group.add(Translate(section.custom_width, 0, 0))
 
         return group, width
 

@@ -12,6 +12,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
     slanted_flags: int = BoundedNumericProperty(0, min=0, errorvalue=0)
     dots: int = BoundedNumericProperty(0, min=0, errorvalue=0)
     note_ids: list[int] = ListProperty(defalutvalue=[])
+    custom_width: float = NumericProperty()  # Appends an amount on top of the width this item already has
 
     binding_groups: dict[callable, list[tuple[str, callable]]]
     def __init__(self, **kwargs):
@@ -28,7 +29,8 @@ class ScoreSectionSectionStorage(EventDispatcher):
                 ("after_flags", lambda *_: callback("section", "after_flags", self)),
                 ("slanted_flags", lambda *_: callback("section", "slanted_flags", self)),
                 ("note_ids", lambda *_: callback("section", "note_ids", self)),
-                ("dots", lambda *_: callback("section", "dots", self))
+                ("dots", lambda *_: callback("section", "dots", self)),
+                ("custom_width", lambda *_: callback("section", "custom_width", self))
             ]
             self.binding_groups[callable] = binding_group
             for binding in binding_group:
@@ -49,6 +51,7 @@ class ScoreSectionSectionStorage(EventDispatcher):
             slanted_flags=self.slanted_flags,
             dots=self.dots,
             note_ids=self.note_ids.copy(),
+            custom_width=self.custom_width,
         )
 
 

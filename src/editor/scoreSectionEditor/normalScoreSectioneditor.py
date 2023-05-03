@@ -134,6 +134,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
         self.note_selector.editor = self.editor
         self.decoration_selector.editor = self.editor
         self.editing_spacing_method_selector.normal_editor = self
+        self.equal_spacing_size_selector.normal_editor = self
         self.auxiliary_selector.add_widget(self.note_selector)
 
         self.editor.bind(current_decoration_editing_index=self.update_auxiliary_selector_contents)
@@ -274,3 +275,4 @@ class SpacingSliderAndExitButtons(RelativeLayout):
     change_callback: callable = ObjectProperty()
     min: int = NumericProperty()
     max: int = NumericProperty()
+    normal_editor: NormalScoreSectionEditor = ObjectProperty()
