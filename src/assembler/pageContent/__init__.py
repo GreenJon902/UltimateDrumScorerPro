@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import typing
+from typing import Union
 
 from kivy import metrics
 from kivy.core.window import Window
@@ -11,6 +12,8 @@ from kivy.uix.relativelayout import RelativeLayout
 
 # noinspection PyUnresolvedReferences
 from betterSizedLabel import BetterSizedLabel
+from score.storage import ScoreStorageItem
+from score.storage.positionable import Positionable
 
 if typing.TYPE_CHECKING:
     from editor import Editor
@@ -19,11 +22,16 @@ Builder.load_file("assembler/pageContent/pageContent.kv")
 
 
 class PageContent(RelativeLayout):
+    storage: Union[ScoreStorageItem, Positionable]
     editor: Editor
 
-    def __init__(self, editor, **kwargs):
+    def __init__(self, storage, editor, **kwargs):
+        self.storage = storage
         self.editor = editor
         RelativeLayout.__init__(self, **kwargs)
+        self.pos = self.storage.pos
+        self.storage.bind(pos=lambda _, value: setattr(self, "pos", value))
+        self.bind(pos=lambda _, value: setattr(self.storage, "pos", value))
 
 
     def on_touch_down(self, touch: MotionEvent):

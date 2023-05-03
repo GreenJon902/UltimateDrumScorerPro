@@ -3,31 +3,35 @@ from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 
 from assembler import Assembler
-from assembler.pageContent.scoreSection import ScoreSection
-from assembler.pageContent.text import Text
 from editor import Editor
-from score import ScoreSectionStorage, ScoreSectionSectionStorage
+from score import ScoreSectionStorage, ScoreSectionSectionStorage, TextStorage
+from score.scoreFileHandling import saveScoreToFile
 
 
 class UltimateDrumScorerProApp(App):
-    def __init__(self):
+    score: list[ScoreSectionStorage]
+    score_path: str
+
+    def __init__(self, score_path="./testing.udsp"):
         App.__init__(self)
+        self.score_path = score_path  # TODO: Make this not a horrible system
 
     def build(self):
         boxLayout = BoxLayout(orientation="vertical")
         editor = Editor()
-        boxLayout.add_widget(Assembler(
-               [
-                   [
-                       Text(editor, pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
-                       ScoreSection(editor, pos=(210 / 2, 297 / 2), score=ScoreSectionStorage([
-                           ScoreSectionSectionStorage(note_ids=[0, 1]),
-                           ScoreSectionSectionStorage(note_ids=[0])
-                       ], normal_editor_note_ids=[0, 1, 6, 8])),
-                   ]
-               ]
-            )
-        )
+
+        #if self.score_path is None:
+        self.score = [
+            TextStorage(pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
+            ScoreSectionStorage([
+                ScoreSectionSectionStorage(note_ids=[0, 1]),
+                ScoreSectionSectionStorage(note_ids=[0])
+            ], pos=(210 / 2, 297 / 2), normal_editor_note_ids=[0, 1, 6, 8])
+        ]
+        #else:
+        #    score = readScoreFromFile()
+
+        boxLayout.add_widget(Assembler(editor, [self.score]))
         boxLayout.add_widget(editor)
         Window.bind(size=lambda _, size: self.update_size(boxLayout, size))
 
@@ -35,3 +39,6 @@ class UltimateDrumScorerProApp(App):
 
     def update_size(self, widget, size):
         widget.size = size
+
+    def on_stop(self):
+        saveScoreToFile(self.score_path, self.score)

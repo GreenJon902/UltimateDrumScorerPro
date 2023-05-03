@@ -1,15 +1,13 @@
 from kivy.core.image import Texture
 from kivy.core.image import Texture
-from kivy.properties import StringProperty, ObjectProperty, NumericProperty, BooleanProperty
+from kivy.properties import ObjectProperty
 
 from assembler.pageContent import PageContent
 from markdownLabel import CoreMarkdownLabel
+from score import TextStorage
 
 
 class Text(PageContent):
-    text: str = StringProperty(defaultvalue="Text")
-    font_size: float = NumericProperty(defaultvalue=10)  # height of small characters in mm
-    do_markup: bool = BooleanProperty(defaultvalue=True)  # height of small characters in mm
-
+    storage: TextStorage
     label: CoreMarkdownLabel = ObjectProperty()
     texture: Texture = ObjectProperty()

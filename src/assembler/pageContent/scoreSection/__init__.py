@@ -4,7 +4,7 @@ from typing import Optional
 from kivy import Logger
 from kivy.clock import Clock
 from kivy.graphics import Line, Canvas, PushMatrix, PopMatrix, Translate, InstructionGroup, Color, Ellipse
-from kivy.properties import ObjectProperty, ListProperty
+from kivy.properties import ListProperty
 
 from argumentTrigger import ArgumentTrigger
 from assembler.pageContent import PageContent
@@ -23,7 +23,7 @@ def set_points(obj: Line, points):
 
 
 class ScoreSection(PageContent):
-    score: ScoreSectionStorage = ObjectProperty(defaultvalue=ScoreSectionStorage())
+    storage: ScoreSectionStorage
     _old_score: Optional[ScoreSectionStorage] = None
     stem_top: float = NumericProperty()
     section_widths: list[float] = ListProperty()
@@ -88,16 +88,19 @@ class ScoreSection(PageContent):
             note.fbind("y", self.update_size)
         self.update_size()
 
+        self.storage.bind_all(self.update)
+        self.noteHeightCalculator.scoreSectionStorage = self.storage
+        self.update("all")
+
         self.canvas.add(self.head_canvas_container)
         self.canvas.add(self.bar_canvas_container)
         self.canvas.add(self.dot_canvas_container)
-        self.on_score(self, self.score)
 
     def _update_size(self, _):
         self.width = sum(self.section_widths)
         lowest_note_y = min(note.y for note in self.noteHeightCalculator.note_objects.values())
 
-        used_decorations = {section.decoration_id for section in self.score}
+        used_decorations = {section.decoration_id for section in self.storage}
         if None in used_decorations:
             used_decorations.remove(None)
         for did in used_decorations:
@@ -107,10 +110,10 @@ class ScoreSection(PageContent):
                                                    default=0))
 
         max_bar_height = (max(((section.bars + max(section.before_flags, section.after_flags, section.slanted_flags))
-                               for section in self.score), default=0) - 1) * bar_height
+                               for section in self.storage), default=0) - 1) * bar_height
         if max_bar_height < 0:
             max_bar_height = 0
-        if self.score.dots_at_top and any(section.dots for section in self.score):  # Checks if there are dots present
+        if self.storage.dots_at_top and any(section.dots for section in self.storage):  # Checks if there are dots present
             top_dot_height = (dot_radius * 2 + dot_head_spacing + bar_dot_spacing)
         else:
             top_dot_height = 0
@@ -120,7 +123,7 @@ class ScoreSection(PageContent):
         self.head_canvas_translate.flag_update()
         self.stem_top = self.height - note_head_height  # Cause its being translated by lowest y
 
-        if self.score.dots_at_top:
+        if self.storage.dots_at_top:
             self.dot_canvas_translate.x = top_dot_stem_distance
             self.dot_canvas_translate.y = note_head_height + dot_head_spacing
             self.dot_canvas_translate.flag_update()
@@ -133,15 +136,6 @@ class ScoreSection(PageContent):
         for did in self.decoration_objects:
             self.decoration_objects[did].container_height = self.height  # This may be reversed due to min_height
 
-    def on_score(self, _, value):
-        if self._old_score is not None:
-            self._old_score.unbind_all(self.update)
-
-        self._old_score = value
-        value.bind_all(self.update)
-        self.noteHeightCalculator.score = value
-
-        self.update("all")
 
     def _update(self, changes: list[tuple[tuple[any], dict[str, any]]]):
         Logger.info(f"ScoreSection: Updating {self} with {changes}...")
@@ -163,14 +157,14 @@ class ScoreSection(PageContent):
 
             elif change[0] == "section" and (change[1] == "note_ids" or change[1] == "decoration_id"
                                              or change[1] == "custom_width"):
-                self.update_section_notes(self.score.index(change[2]))
+                self.update_section_notes(self.storage.index(change[2]))
                 pass
             elif change[0] == "section" and (change[1] == "bars" or change[1] == "before_flags" or change[1] ==
                                              "after_flags" or change[1] == "slanted_flags"):
-                self.update_section_bars(self.score.index(change[2]))
+                self.update_section_bars(self.storage.index(change[2]))
                 pass
             elif change[0] == "section" and change[1] == "dots":
-                self.update_section_dots(self.score.index(change[2]))
+                self.update_section_dots(self.storage.index(change[2]))
                 pass
 
             else:
@@ -184,20 +178,20 @@ class ScoreSection(PageContent):
         self.section_widths.clear()
         self.bar_canvas.clear()
         self.dot_canvas.clear()
-        for i in range(len(self.score)):
+        for i in range(len(self.storage)):
             self.add_section(i)
 
     def add_section(self, index):
-        head_group, width = self._make_head_group_from_section(self.score[index])
+        head_group, width = self._make_head_group_from_section(self.storage[index])
         self.head_canvas.insert(index, head_group)
         self.section_widths.insert(index, width)
 
-        bar_group = self._make_bar_group_from_section(self.score[index])
+        bar_group = self._make_bar_group_from_section(self.storage[index])
         self.bar_canvas.insert(index, bar_group)
         self.update_bar_width(index)
 
-        if self.score.dots_at_top:
-            dot_group = self._make_top_dot_group_from_section(self.score[index])
+        if self.storage.dots_at_top:
+            dot_group = self._make_top_dot_group_from_section(self.storage[index])
             self.dot_canvas.insert(index, dot_group)
             self.update_top_dot_pos(index)
         else:
@@ -212,7 +206,7 @@ class ScoreSection(PageContent):
         self.update_size()
 
     def update_section_notes(self, index):
-        group, width = self._make_head_group_from_section(self.score[index])
+        group, width = self._make_head_group_from_section(self.storage[index])
         self.head_canvas.children[index].children = group.children  # For some reason we can't change the child, only
                                                                     # the child's children
         self.head_canvas.children[index].flag_update()
@@ -222,7 +216,7 @@ class ScoreSection(PageContent):
         self.update_top_dot_pos(index)
 
     def update_section_bars(self, index):
-        group = self._make_bar_group_from_section(self.score[index])
+        group = self._make_bar_group_from_section(self.storage[index])
         self.bar_canvas.children[index].children = group.children  # For some reason we can't change the child, only
                                                                    # the child's children
         self.bar_canvas.flag_update()
@@ -231,8 +225,8 @@ class ScoreSection(PageContent):
         self.update_size()
 
     def update_section_dots(self, index):
-        if self.score.dots_at_top:
-            group = self._make_top_dot_group_from_section(self.score[index])
+        if self.storage.dots_at_top:
+            group = self._make_top_dot_group_from_section(self.storage[index])
             self.dot_canvas.children[index].children = group.children  # For some reason we can't change the child, only
                                                                        # the child's children
             self.dot_canvas.flag_update()

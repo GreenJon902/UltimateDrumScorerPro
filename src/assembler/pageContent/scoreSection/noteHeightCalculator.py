@@ -10,21 +10,21 @@ from score.notes import notes, missing_major_note_level_height
 class NoteHeightCalculator:  # Stores an instance of each note at the correct height depending on the given score
     note_objects: dict[int, Note]
     update = None
-    score: ScoreSectionStorage
+    scoreSectionStorage: ScoreSectionStorage
     _last_used_note_ids = None
 
-    def __init__(self, score=None):
-        self.score = score
+    def __init__(self, scoreSectionStorage=None):
+        self.scoreSectionStorage = scoreSectionStorage
 
         self.note_objects = {note_id: note_type() for note_id, note_type in notes.items()}
         self.update = Clock.create_trigger(self.update_, -1)
 
     def update_(self, _):
-        if self.score is None:
+        if self.scoreSectionStorage is None:
             Logger.warning(f"NoteHeightCalculator: Tried to update but {self} has no score")
             return
 
-        used_note_ids = {note_id for section in self.score for note_id in section.note_ids}  # Ids actually in score
+        used_note_ids = {note_id for section in self.scoreSectionStorage for note_id in section.note_ids}  # Ids actually in score
         if self._last_used_note_ids == used_note_ids:
             return
         self._last_used_note_ids = used_note_ids

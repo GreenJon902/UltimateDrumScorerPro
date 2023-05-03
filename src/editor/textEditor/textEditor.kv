@@ -35,7 +35,7 @@
         RelativeLayout:
             RoundedTextInput:
                 id: text_input
-                text: root.text_instance.text
+                text: root.text_instance.storage.text
                 radius: text_input_radius
                 hint_text: "Enter your message here..."
 
@@ -80,8 +80,8 @@
                 max: font_size_max
                 step: font_size_step
 
-                value: root.text_instance.font_size
-                on_value: root.text_instance.font_size = self.value
+                value: root.text_instance.storage.font_size
+                on_value: root.text_instance.storage.font_size = self.value
 
             Label:
                 id: font_size_label

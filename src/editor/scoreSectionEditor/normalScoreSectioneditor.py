@@ -112,8 +112,8 @@ class NormalScoreSectionEditor(TabbedPanelItem):
 
         TabbedPanelItem.__init__(self, **kwargs)
 
-        self.score_section_instance.score.bind(normal_editor_note_ids=self.trigger_update_labels)
-        self.score_section_instance.score.bind_all(self.trigger_update_labels)
+        self.score_section_instance.storage.bind(normal_editor_note_ids=self.trigger_update_labels)
+        self.score_section_instance.storage.bind_all(self.trigger_update_labels)
         self.trigger_update_labels()
 
         Clock.schedule_once(self.late_setup, -1)
@@ -121,7 +121,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
 
     def set_spacings(self, type_, value):
         if type_ == "equal":
-            for section in self.score_section_instance.score:
+            for section in self.score_section_instance.storage:
                 section.custom_width = value
         else:
             raise NotImplementedError()
@@ -164,7 +164,7 @@ class NormalScoreSectionEditor(TabbedPanelItem):
                 self.auxiliary_selector.add_widget(self.decoration_selector)
 
     def _update_labels(self, *args):
-        note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.score)
+        note_ids = fix_and_get_normal_editor_note_ids(self.score_section_instance.storage)
         ordered_note_types = sorted([notes[note_id] for note_id in note_ids], key=lambda x: x().note_level,
                                     reverse=True)  # Reverse cause of how they get added
 
@@ -197,7 +197,7 @@ class Selector(BoxLayout):
 class NoteSelector(Selector):
     def on_editor(self, _, value):
         for note_id in notes.keys():
-            selector = NoteSelectorInside(note_id, value.score_section_instance.score)
+            selector = NoteSelectorInside(note_id, value.score_section_instance.storage)
             selector.bind(size=self.do_height)
             self.add_widget(selector)
         self.do_height()
@@ -232,7 +232,7 @@ class DecorationSelector(Selector):
     def on_parent(self, _, __):
         index = self.editor.current_decoration_editing_index
         if index is not None:
-            did = self.editor.score_section_instance.score[index].decoration_id
+            did = self.editor.score_section_instance.storage[index].decoration_id
             if did is None:
                 for inside in self.insides.values():
                     inside.checkbox.active = False
@@ -242,11 +242,11 @@ class DecorationSelector(Selector):
     def on_click(self, decoration_id, state):
         #  If state is true then we set it regardless, if it is false and the ids are equal then set it to none
         if state:
-            self.editor.score_section_instance.score[self.editor.current_decoration_editing_index].decoration_id = \
+            self.editor.score_section_instance.storage[self.editor.current_decoration_editing_index].decoration_id = \
                 decoration_id
-        elif decoration_id == self.editor.score_section_instance.score[self.editor.current_decoration_editing_index]\
+        elif decoration_id == self.editor.score_section_instance.storage[self.editor.current_decoration_editing_index]\
                 .decoration_id:
-            self.editor.score_section_instance.score[self.editor.current_decoration_editing_index].decoration_id = None
+            self.editor.score_section_instance.storage[self.editor.current_decoration_editing_index].decoration_id = None
 
 
 class DecorationSelectorInside(RelativeLayout):

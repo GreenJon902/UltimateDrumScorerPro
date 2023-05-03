@@ -34,26 +34,27 @@ class TextEditor(RelativeLayout):
         self.md_icon.bind(pos=self.do_md_tooltip_pos)
 
     def set_text(self, _, value):
-        self.text_instance.text = value
+        self.text_instance.storage.text = value
 
     def on_md_icon(self, _, value):
         if value is not None:
-            self.text_instance.bind(do_markup=self.do_md_icon_color)
+            self.text_instance.storage.bind(do_markup=self.do_md_icon_color)
             self.md_icon.bind(enabled_color=self.do_md_icon_color, disabled_color=self.do_md_icon_color)
 
 
     def do_md_icon_color(self, *_):
         color = (
-            (self.md_icon.enabled_hover_color if self.text_instance.do_markup else self.md_icon.disabled_hover_color)
+            (self.md_icon.enabled_hover_color if self.text_instance.storage.do_markup else
+                self.md_icon.disabled_hover_color)
             if self.md_icon_hovered else
-            (self.md_icon.enabled_color if self.text_instance.do_markup else self.md_icon.disabled_color))
+            (self.md_icon.enabled_color if self.text_instance.storage.do_markup else self.md_icon.disabled_color))
         if color is None:
             color = (1, 0, 0, 1)  # Just a placeholder
         self.md_icon.color = color
 
     def md_clicked(self, touch: MotionEvent):
         if touch is not None and self.md_icon.collide_point(touch.x, touch.y):
-            self.text_instance.do_markup = not self.text_instance.do_markup
+            self.text_instance.storage.do_markup = not self.text_instance.storage.do_markup
 
 
     def on_mouse_pos(self, _, value):
