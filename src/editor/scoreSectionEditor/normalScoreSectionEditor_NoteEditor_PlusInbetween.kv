@@ -51,3 +51,48 @@
             width: st
 
         PopMatrix
+
+
+<Selector>:
+    orientation: "vertical"
+    size_hint_y: None
+
+<NoteSelectorInside>:
+    size_hint_y: None
+    height: text.texture_size[1]
+
+    BoxLayout:
+        orientation: "horizontal"
+
+        Label:
+            id: text
+            text: root.note_obj.name
+        CheckBox:
+            active: root.note_id in root.score_section.normal_editor_note_ids
+            on_active: root.score_section.normal_editor_note_ids.remove(root.note_id) if not self.active else root.score_section.normal_editor_note_ids.append(root.note_id)
+
+<DecorationSelector>:
+    padding: mm(2), mm(0), mm(2), -mm(8)
+    spacing: mm(2)
+
+<DecorationSelectorInside>:
+    size_hint_y: None
+    height: self.decoration_obj.min_height * mm(1.25)
+    container: container
+    checkbox: checkbox
+
+    BoxLayout:
+        orientation: "horizontal"
+
+        RelativeLayout:
+            canvas.before:
+                PushMatrix
+                Scale:
+                    xyz: mm(1.25), mm(1.25), 1
+            canvas.after:
+                PopMatrix
+            id: container
+        CheckBox:
+            id: checkbox
+            group: "DecorationType"
+            on_active: root.click_callback(root.decoration_id, self.active)

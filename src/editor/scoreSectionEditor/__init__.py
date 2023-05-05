@@ -1,11 +1,12 @@
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import ColorProperty
-from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
+from kivy.uix.tabbedpanel import TabbedPanel
 
 from assembler.pageContent.scoreSection import ScoreSection
 from editor.scoreSectionEditor.normalScoreSectionEditor_NoteEditor_PlusInbetween import \
     NormalScoreSectionEditor_NoteEditor_PlusInbetween
+from editor.scoreSectionEditor.normalScoreSectionEditor_SpacingEditor import NormalScoreSectionEditor_SpacingEditor
 from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor
 
 Builder.load_file("editor/scoreSectionEditor/scoreSectionEditor.kv")
@@ -25,6 +26,9 @@ class ScoreSectionEditor(TabbedPanel):
 
         self.add_widget(
             NormalScoreSectionEditor(score_section_instance,
-                                     editor=NormalScoreSectionEditor_NoteEditor_PlusInbetween(score_section_instance)
-                                     ))  # TODO: Load these from a settings system
-        self.add_widget(TabbedPanelItem(text="Spacing"))
+                                     editor=NormalScoreSectionEditor_NoteEditor_PlusInbetween(score_section_instance),
+                                     text="Normal Editor"))  # TODO: Load these from a settings system
+        self.add_widget(
+            NormalScoreSectionEditor(score_section_instance,
+                                     editor=NormalScoreSectionEditor_SpacingEditor(score_section_instance),
+                                     text="Spacing"))

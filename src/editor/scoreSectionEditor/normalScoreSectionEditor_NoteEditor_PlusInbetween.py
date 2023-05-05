@@ -1,14 +1,20 @@
 import time
+from typing import Optional
 
 from kivy import Logger
 from kivy.clock import Clock
 from kivy.graphics import Ellipse, Line, InstructionGroup, Canvas, Translate, PushMatrix, PopMatrix, Color
 from kivy.lang import Builder
+from kivy.properties import NumericProperty, ObjectProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 
 from argumentTrigger import ArgumentTrigger
-from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_NoteEditor
-from score import fix_and_get_normal_editor_note_ids
+from editor.scoreSectionEditor.normalScoreSectioneditor import NormalScoreSectionEditor_Editor, AuxiliarySelector
+from score import fix_and_get_normal_editor_note_ids, Decoration, ScoreSectionStorage
+from score.decorations import decorations
 from score.notes import notes, Note, dot_radius, dot_spacing, bar_width, flag_length, slanted_flag_length, \
     slanted_flag_height_offset, dot_head_spacing
 from selfSizingBoxLayout import SelfSizingBoxLayout
@@ -64,7 +70,7 @@ class Drawer:
 
 
 # noinspection PyPep8Naming
-class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor_NoteEditor):
+class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor_Editor):
     update = None
     update_size = None
 
@@ -129,7 +135,7 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
             self.note_objects[note_id] = note
             note.opacity = 1
 
-        NormalScoreSectionEditor_NoteEditor.__init__(self, score_section_instance, **kwargs)
+        NormalScoreSectionEditor_Editor.__init__(self, score_section_instance, **kwargs)
 
         for note in self.score_section_instance.noteHeightCalculator.note_objects.values():
             note.fbind("y", self.update_size)
@@ -388,5 +394,121 @@ class NormalScoreSectionEditor_NoteEditor_PlusInbetween(NormalScoreSectionEditor
                 ry -= note.height
 
 
+
+    current_decoration_editing_index: Optional[int] = NumericProperty(allownone=True, defaultvalue=None)
+
+    note_selector: "NoteSelector"
+    decoration_selector: "DecorationSelector"
+    auxiliary_selector: AuxiliarySelector
+
+    def auxiliary_selector_setup(self, auxiliary_selector: AuxiliarySelector):
+        self.auxiliary_selector = auxiliary_selector
+        self.note_selector = NoteSelector()
+        self.decoration_selector = DecorationSelector()
+
+        self.note_selector.note_editor = self
+        self.decoration_selector.note_editor = self
+        auxiliary_selector.add_widget(self.note_selector)
+
+        self.bind(current_decoration_editing_index=self.update_auxiliary_selector_contents)
+
+    def _update_auxiliary_selector_contents(self, _):
+        self.auxiliary_selector.clear_widgets()
+
+        if self.current_decoration_editing_index is None:
+            self.auxiliary_selector.add_widget(self.note_selector)
+        else:
+            self.auxiliary_selector.add_widget(self.decoration_selector)
+
+
+
+
 class SectionModifier(Widget):
     pass
+
+
+class Selector(BoxLayout):
+    note_editor: "NormalScoreSectionEditor_NoteEditor_PlusInbetween" = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        self.do_height = Clock.create_trigger(self._do_height, -1)
+
+        BoxLayout.__init__(self, **kwargs)
+        self.do_height()
+
+
+    def _do_height(self, _):
+        self.height = sum(child.height for child in self.children)
+
+
+class NoteSelector(Selector):
+    def on_note_editor(self, _, value):
+        for note_id in notes.keys():
+            selector = NoteSelectorInside(note_id, value.score_section_instance.storage)
+            selector.bind(size=self.do_height)
+            self.add_widget(selector)
+        self.do_height()
+
+
+class NoteSelectorInside(RelativeLayout):  # Class that goes inside note selector
+    note_id: int
+    score_section: ScoreSectionStorage
+    note_obj: Note
+
+    def __init__(self, note_id, score_section, **kwargs):
+        self.note_id = note_id
+        self.score_section = score_section
+        self.note_obj = notes[note_id]()
+
+        RelativeLayout.__init__(self, **kwargs)
+
+
+class DecorationSelector(Selector):
+    insides: dict[int, "DecorationSelectorInside"]
+
+    def __init__(self, **kwargs):
+        self.insides = {}
+
+        Selector.__init__(self, **kwargs)
+        for decoration_id in decorations.keys():
+            selector = DecorationSelectorInside(decoration_id, self.on_click)
+            selector.bind(size=self.do_height)
+            self.add_widget(selector)
+            self.insides[decoration_id] = selector
+
+    def on_parent(self, _, __):
+        index = self.note_editor.current_decoration_editing_index
+        if index is not None:
+            did = self.note_editor.score_section_instance.storage[index].decoration_id
+            if did is None:
+                for inside in self.insides.values():
+                    inside.checkbox.active = False
+            else:
+                self.insides[did].checkbox.active = True
+
+    def on_click(self, decoration_id, state):
+        #  If state is true then we set it regardless, if it is false and the ids are equal then set it to none
+        if state:
+            self.note_editor.score_section_instance.storage[self.note_editor.current_decoration_editing_index].decoration_id = \
+                decoration_id
+        elif decoration_id == self.note_editor.score_section_instance.storage[self.note_editor.current_decoration_editing_index] \
+                .decoration_id:
+            self.note_editor.score_section_instance.storage[self.note_editor.current_decoration_editing_index].decoration_id = None
+
+
+class DecorationSelectorInside(RelativeLayout):
+    decoration_id: int
+    decoration_obj: Decoration
+    click_callback: callable
+    container: RelativeLayout = ObjectProperty()
+    checkbox: CheckBox = ObjectProperty()
+
+    def __init__(self, decoration_id, click_callback, **kwargs):
+        self.decoration_id = decoration_id
+        self.decoration_obj = decorations[decoration_id](color=(1, 1, 1, 1))
+        self.click_callback = click_callback
+
+        RelativeLayout.__init__(self, **kwargs)
+
+    def on_container(self, _, value):
+        value.add_widget(self.decoration_obj)
