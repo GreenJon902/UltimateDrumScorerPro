@@ -4,12 +4,12 @@ from kivy.uix.boxlayout import BoxLayout
 
 from assembler import Assembler
 from editor import Editor
-from score import ScoreSectionStorage, ScoreSectionSectionStorage, TextStorage
-from score.scoreFileHandling import saveScoreToFile
+from score import ScoreSectionStorage, ScoreSectionSectionStorage, TextStorage, ScoreStorageItem
+from score.scoreFileHandling import saveScoreToFile, readScoreFromFile
 
 
 class UltimateDrumScorerProApp(App):
-    score: list[ScoreSectionStorage]
+    score: list[ScoreStorageItem]
     score_path: str
 
     def __init__(self, score_path="./testing.udsp"):
@@ -20,16 +20,16 @@ class UltimateDrumScorerProApp(App):
         boxLayout = BoxLayout(orientation="vertical")
         editor = Editor()
 
-        #if self.score_path is None:
-        self.score = [
-            TextStorage(pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
-            ScoreSectionStorage([
-                ScoreSectionSectionStorage(note_ids=[0, 1]),
-                ScoreSectionSectionStorage(note_ids=[0])
-            ], pos=(210 / 2, 297 / 2), normal_editor_note_ids=[0, 1, 6, 8])
-        ]
-        #else:
-        #    score = readScoreFromFile()
+        if self.score_path is None and True:
+            self.score = [
+                TextStorage(pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
+                ScoreSectionStorage([
+                    ScoreSectionSectionStorage(note_ids=[0, 1]),
+                    ScoreSectionSectionStorage(note_ids=[0])
+                ], pos=(210 / 2, 297 / 2), normal_editor_note_ids=[0, 1, 6, 8])
+            ]
+        else:
+            self.score = readScoreFromFile(self.score_path)
 
         boxLayout.add_widget(Assembler(editor, [self.score]))
         boxLayout.add_widget(editor)

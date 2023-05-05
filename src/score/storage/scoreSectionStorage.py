@@ -54,6 +54,23 @@ class ScoreSectionSectionStorage(ScoreStorageItem):
             custom_width=self.custom_width,
         )
 
+    def serialize(self) -> dict:
+        return {
+            "decoration_id": self.decoration_id,
+            "bars": self.bars,
+            "before_flags": self.before_flags,
+            "after_flags": self.after_flags,
+            "slanted_flags": self.slanted_flags,
+            "dots": self.dots,
+            "note_ids": self.note_ids,
+            "custom_width": self.custom_width
+        }
+
+    @staticmethod
+    def deserialize(serialized: dict[str, any]) -> "ScoreSectionSectionStorage":
+        return ScoreSectionSectionStorage(**serialized)
+
+
 
 class ScoreSectionStorage(ScoreStorageItem, Positionable):
     _sections: list[ScoreSectionSectionStorage]  # Protect because need to be bound
@@ -142,8 +159,24 @@ class ScoreSectionStorage(ScoreStorageItem, Positionable):
         return self._sections[index]
 
 
+    def serialize(self) -> dict[str, any]:
+        return {
+            "sections": [section.serialize() for section in self._sections],
+            "normal_editor_note_ids": self.normal_editor_note_ids,
+            "pos": self.pos
+        }
+
+    @staticmethod
+    def deserialize(serialized: dict[str, any]) -> "ScoreSectionStorage":
+        sections = [ScoreSectionSectionStorage.deserialize(serialized_section)
+                        for serialized_section in serialized.pop("sections", [])]
+        return ScoreSectionStorage(sections, **serialized)
+
     # Editor Settings
     normal_editor_note_ids: list[int] = ListProperty()
+
+
+
 
 
 class SectionIterator:
