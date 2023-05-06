@@ -1,0 +1,120 @@
+#:kivy 2.1.0
+
+#:set first_spacing mm(5)
+#:set text_input_radius mm(5), mm(5)
+#:set font_size_picker_area_radius mm(5), mm(5)
+#:set font_size_picker_label_size mm(10)
+#:set md_icon_width mm(10)
+#:set md_icon_padding mm(2.5)
+#:set md_icon_tooltip_width mm(50)
+#:set md_icon_tooltip_arrow_height mm(3)
+#:set md_icon_tooltip_arrow_width mm(6)
+#:set md_icon_tooltip_text_padding mm(2), mm(2)
+#:set md_icon_tooltip_radius mm(2), mm(2)
+
+#:set font_size_picker_area_background (0.1, 0.1, 0.1, 1)
+#:set md_icon_enabled_color (0, 0, 0, 1)
+#:set md_icon_enabled_hover_color (0.25, 0.25, 0.25, 1)
+#:set md_icon_disabled_color (0.9, 0.9, 0.9, 1)
+#:set md_icon_disabled_hover_color (0.7, 0.7, 0.7, 1)
+#:set md_icon_tooltip_background (0, 0, 0, 1)
+
+#:set font_size_min 1
+#:set font_size_max 50
+#:set font_size_step 1
+
+
+<TextEditor>:
+    md_icon: md_icon
+
+    BoxLayout:
+        orientation: "horizontal"
+        padding: first_spacing
+        spacing: first_spacing
+
+        RelativeLayout:
+            RoundedTextInput:
+                id: text_input
+                text: root.text_instance.storage.text
+                radius: text_input_radius
+                hint_text: "Enter your message here..."
+
+                on_text: root.set_text(*args)
+
+            Image:
+                id: md_icon
+
+                source: "mdIcon.png"
+                size_hint: None, None
+                width: md_icon_width
+                height: self.width / self.image_ratio
+
+                right: self.parent.width - md_icon_padding
+                y: md_icon_padding
+
+                on_touch_up: root.md_clicked(args[1])
+                enabled_color:  md_icon_enabled_color
+                enabled_hover_color:  md_icon_enabled_hover_color
+                disabled_color: md_icon_disabled_color
+                disabled_hover_color: md_icon_disabled_hover_color
+
+        BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: font_size_picker_area_background
+
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: font_size_picker_area_radius
+
+            orientation: "vertical"
+
+            size_hint_x: None
+            width: font_size_slider.width
+
+            Slider:
+                id: font_size_slider
+                orientation: "vertical"
+                min: font_size_min
+                max: font_size_max
+                step: font_size_step
+
+                value: root.text_instance.storage.font_size
+                on_value: root.text_instance.storage.font_size = self.value
+
+            Label:
+                id: font_size_label
+                font_size: font_size_picker_label_size
+                size_hint: 1, None
+                height: self.texture_size[1]
+
+                text: str(font_size_slider.value)
+                text_size_x: self.width
+
+
+<MdTooltip>:
+    size_hint: None, None
+    size: text.size[0], text.size[1] + md_icon_tooltip_arrow_height
+
+    background_image: "transparent.png"
+    arrow_image: "transparent.png"
+
+    canvas.before:
+        Color:
+            rgba: md_icon_tooltip_background
+        RoundedRectangle:
+            pos: self.pos[0], self.pos[1] + md_icon_tooltip_arrow_height
+            size: self.size[0], self.size[1] - md_icon_tooltip_arrow_height
+            radius: md_icon_tooltip_radius
+        Triangle:
+            points: [self.center_x, self.y, self.center_x - md_icon_tooltip_arrow_width / 2, self.y + md_icon_tooltip_arrow_height, self.center_x + md_icon_tooltip_arrow_width / 2, self.y + md_icon_tooltip_arrow_height]
+
+    Label:
+        id: text
+        text: "Markdown is a way of formatting text, at the moment you can use **bold**, *italics*, _italics_, ~~strikethrough~~, __underlines__ or colors (&#aaffaa)!"
+        size_hint: None, None
+        size: self.texture_size
+        text_size: md_icon_tooltip_width, None
+        padding: md_icon_tooltip_text_padding
+

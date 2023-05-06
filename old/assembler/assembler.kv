@@ -1,0 +1,85 @@
+#:kivy 2.1.0
+
+#:set zoom_min 0.1
+#:set zoom_max 10
+#:set zoom_slider_width mm(50)
+#:set zoom_slider_height mm(15)
+#:set reset_zoom_button_width mm(10)
+#:set reset_zoom_button_height mm(10)
+#:set reset_zoom_button_wall_spacing mm(3)
+#:set zoom_background_radius [(mm(5), mm(5)), (0, 0), (0, 0), (0, 0)]
+
+#:set assembler_background (0.1, 0.1, 0.1, 1)
+#:set page_background (1, 1, 1, 1)
+#:set zoom_background (0.2, 0.2, 0.2, 1)
+#:set reset_zoom_button_color (0.8, 0.8, 0.8, 1)
+
+
+<Assembler>:
+    canvas.before:
+        StencilPush
+        Rectangle:
+            size: self.size
+        StencilUse
+
+        Color:
+            rgba: assembler_background
+        Rectangle:
+            size: self.size
+
+    canvas.after:
+        StencilUnUse
+        Rectangle: # has to be re-drawn
+            size: self.size
+        StencilPop
+
+
+<Page>:
+    canvas.before:
+        Color:
+            rgba: page_background
+        Rectangle:
+            size: self.size
+
+
+<PageHolder>:
+    FloatLayout:
+        canvas.before:
+            Color:
+                rgba: zoom_background
+            RoundedRectangle:
+                pos: self.width - reset_zoom_button_wall_spacing - reset_zoom_button_width - zoom_slider_width, 0
+                size: self.width - (self.width - reset_zoom_button_wall_spacing - reset_zoom_button_width - zoom_slider_width), zoom_slider_height
+                radius: zoom_background_radius
+
+        Image:
+            id: reset_zoom_button
+            size_hint: None, None
+
+            width: reset_zoom_button_width
+            height: reset_zoom_button_height
+            right: root.width - reset_zoom_button_wall_spacing
+            center_y: zoom_slider.center_y
+
+            source: "resetZoom.png"
+            keep_ratio: False
+            allow_stretch: True
+
+            color: reset_zoom_button_color
+
+            on_touch_up: if self.collide_point(args[1].x, args[1].y): zoom_slider.value = 1
+
+        Slider:
+            id: zoom_slider
+
+            size_hint: None, None
+            width: zoom_slider_width
+            height: zoom_slider_height
+
+            min: zoom_min
+            max: zoom_max
+
+            value: 1
+            on_value: root.zoom = self.value
+
+            right: reset_zoom_button.x

@@ -1,0 +1,98 @@
+#:set bar_edge_padding 0.5
+#:set half_bar_edge_padding 1
+
+#:set dot_y 1
+#:set bars_y 5
+
+
+<SectionModifier>:  # Width set by parent
+    width: 5
+    height: 16
+
+    canvas:
+        PushMatrix
+
+        # Color for decoration button is set by parent.
+        Line: # This is supposed to be a tree
+            points: self.width / 2 - 1, 0, self.width / 2, 3, self.width / 2 + 1, 0  # We want to center the x
+            width: st
+        Ellipse:
+            pos: self.width / 2 - 1.5, 2
+            size: 3, 3
+        Ellipse:
+            pos: self.width / 2 - 2.5, 1
+            size: 3, 3
+        Ellipse:
+            pos: self.width / 2 - 0.5, 1
+            size: 3, 3
+
+        Translate:
+            y:5
+
+        Color:
+            rgba: 0, 0, 0, 0.1
+        Line:
+            points: self.width / 2 - 2.5, 0, self.width / 2 + 2.5, 5  # We want to center the x
+            width: st
+        Line:
+            points: self.width / 2 - 2.5, 5, self.width / 2 + 2.5, 0
+            width: st
+
+        Translate:
+            y: 5
+
+        Color:
+            rgba: 0, 0, 0, 0.1
+        Line:
+            points: 2.5, 0, 2.5, 5
+            width: st
+        Line:
+            points: 0, 2.5, 5, 2.5
+            width: st
+
+        PopMatrix
+
+
+<Selector>:
+    orientation: "vertical"
+    size_hint_y: None
+
+<NoteSelectorInside>:
+    size_hint_y: None
+    height: text.texture_size[1]
+
+    BoxLayout:
+        orientation: "horizontal"
+
+        Label:
+            id: text
+            text: root.note_obj.name
+        CheckBox:
+            active: root.note_id in root.score_section.normal_editor_note_ids
+            on_active: root.score_section.normal_editor_note_ids.remove(root.note_id) if not self.active else root.score_section.normal_editor_note_ids.append(root.note_id)
+
+<DecorationSelector>:
+    padding: mm(2), mm(0), mm(2), -mm(8)
+    spacing: mm(2)
+
+<DecorationSelectorInside>:
+    size_hint_y: None
+    height: self.decoration_obj.min_height * mm(1.25)
+    container: container
+    checkbox: checkbox
+
+    BoxLayout:
+        orientation: "horizontal"
+
+        RelativeLayout:
+            canvas.before:
+                PushMatrix
+                Scale:
+                    xyz: mm(1.25), mm(1.25), 1
+            canvas.after:
+                PopMatrix
+            id: container
+        CheckBox:
+            id: checkbox
+            group: "DecorationType"
+            on_active: root.click_callback(root.decoration_id, self.active)

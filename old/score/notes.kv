@@ -1,0 +1,182 @@
+#:kivy 2.1.0
+#:include score/scoreSettings.kv
+
+<Note>:
+    size_hint: None, None
+
+    canvas.before:
+        Color:
+            rgba: 1, 0, 0, 0#.2
+        Rectangle:
+            size: self.size
+
+
+<KickNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 1
+    stem_connection_offset: self.preferred_height
+    dot_offset: 7, 1.5
+    name: "Kick"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            points: 0, 0, 7.5, 5
+            width: st
+
+
+<SnareNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 2
+    stem_connection_offset: self.preferred_height
+    dot_offset: 7, 1.5
+    name: "Snare"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            points: 0, 0, 7.5, 5
+            width: st
+
+<TomOneNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 2.2
+    stem_connection_offset: self.preferred_height / 2
+    dot_offset: 7.5, 0
+    name: "High Rack"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            ellipse: (0, 0, root.width, root.preferred_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomTwoNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 2.1
+    stem_connection_offset: self.preferred_height / 2
+    dot_offset: 7.5, 0
+    name: "Low Rack"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            ellipse: (0, 0, root.width, root.preferred_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomThreeNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 1.2
+    stem_connection_offset: self.preferred_height / 2
+    dot_offset: 7.5, 0
+    name: "High Floor"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            ellipse: (0, 0, root.width, root.preferred_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<TomFourNote@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 1.1
+    stem_connection_offset: self.preferred_height / 2
+    dot_offset: 7.5, 0
+    name: "Low Floor"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            ellipse: (0, 0, root.width, root.preferred_height)
+            width: st
+        Line:
+            points:  1.5, 2, 6, 3
+            width: st
+
+<HiHat@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 3
+    stem_connection_offset: self.preferred_height
+    dot_offset: 7.5, 0
+    name: "Hi-Hat"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            points: 0, 0, self.width, self.preferred_height
+            width: st
+        Line:
+            points:  self.width, 0, 0, self.preferred_height
+            width: st
+
+<Ride@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 3.1
+    stem_connection_offset: self.preferred_height
+    dot_offset: 7.5, 0
+    name: "Ride"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            points: 0, 0, self.width, self.preferred_height
+            width: st
+        Line:
+            points:  self.width, 0, 0, self.preferred_height
+            width: st
+        Line:
+            points:  0, self.preferred_height / 2, self.width, self.preferred_height / 2
+            width: st
+
+<Crash@Note>:
+    width: 7.5
+    preferred_height: 5
+    note_level: 3.2
+    stem_connection_offset: self.preferred_height
+    dot_offset: 7.5, 0
+    name: "Crash"
+
+    canvas:
+        Color:
+            rgba: self.color
+        Line:
+            points: 0, 0, self.width, self.preferred_height
+            width: st
+        Line:
+            points:  self.width, 0, 0, self.preferred_height
+            width: st
+        Line:
+            points:  0, self.preferred_height / 2, self.width, self.preferred_height / 2
+            width: st
+        Line:
+            points:  self.width / 2, 0, self.width / 2, self.preferred_height
+            width: st
+
+#:set notes {0: "KickNote", 1: "SnareNote", 2: "TomOneNote", 3: "TomTwoNote", 4: "TomThreeNote", 5: "TomFourNote", 6: "HiHat", 7: "Ride", 8: "Crash"}
+#:set missing_major_note_level_height 5
+#:set bar_height 2
