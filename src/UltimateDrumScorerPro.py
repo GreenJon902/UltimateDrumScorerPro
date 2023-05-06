@@ -30,8 +30,8 @@ Welcome to {os.environ["APPNAME"]} ({os.environ["APPVERSION"]}), or {os.environ[
     if hasattr(sys, '_MEIPASS'):
         resource_add_path(os.path.join(sys._MEIPASS))
 
-    from kivy.lang.builder import Builder
-    Builder.load_file("misc.kv")
+    from kv import check_kv
+    check_kv()
 
     # ==================================================================================================================
 

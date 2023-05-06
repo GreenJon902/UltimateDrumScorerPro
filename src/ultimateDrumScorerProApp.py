@@ -1,9 +1,8 @@
+from assembler import Assembler
+from editor import Editor
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
-
-from assembler import Assembler
-from editor import Editor
 from score import ScoreSectionStorage, ScoreSectionSectionStorage, TextStorage, ScoreStorageItem
 from score.scoreFileHandling import saveScoreToFile, readScoreFromFile
 
