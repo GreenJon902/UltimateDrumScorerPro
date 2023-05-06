@@ -6,6 +6,8 @@ Hi there! I doubt anyone will but if you want to contribute then great. Please k
 ├─ **_.github_, _images_, README.md, CONTRIBUTING.md** - Stuff for GitHub  
 ├─ **UDSP.spec** - For PYInstaller - compilation to executables  
 └─ **_src_** - For PYInstaller - compilation to executables  
+&emsp;&ensp;├─ **UltimateDrumScorerPro.py** - The main entrance script  
+&emsp;&ensp;├─ **_kv_** - Loads kv lang, all .kv go in here  
 &emsp;&ensp;├─ **_renderer_** - Tools to render the forms of a score items  
 &emsp;&ensp;│ &ensp;└─ **_component_**  - The renders for parts of score items  
 &emsp;&ensp;└─ **_tests_**  - Scripts to test various widgets and UIs.
