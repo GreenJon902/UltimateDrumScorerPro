@@ -7,6 +7,7 @@ Hi there! I doubt anyone will but if you want to contribute then great. Please k
 ├─ **UDSP.spec** - For PYInstaller - compilation to executables  
 └─ **_src_** - For PYInstaller - compilation to executables  
 &emsp;&ensp;├─ **UltimateDrumScorerPro.py** - The main entrance script  
+&emsp;&ensp;├─ **_images_** - Contains any and all images used by the program  
 &emsp;&ensp;├─ **_kv_** - Loads kv lang, all .kv go in here  
 &emsp;&ensp;├─ **_renderer_** - Tools to render the forms of a score items  
 &emsp;&ensp;│ &ensp;└─ **_component_**  - The renders for parts of score items  
