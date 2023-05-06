@@ -1,3 +1,5 @@
+import os
+
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
@@ -20,7 +22,7 @@ class UltimateDrumScorerProApp(App):
         boxLayout = BoxLayout(orientation="vertical")
         editor = Editor()
 
-        if self.score_path is None and True:
+        if self.score_path is None and not os.path.exists(self.score_path) and True:
             self.score = [
                 TextStorage(pos=(0, 0), text="*hi* **how** __are__ _you_ ~~today~~"),
                 ScoreSectionStorage([
