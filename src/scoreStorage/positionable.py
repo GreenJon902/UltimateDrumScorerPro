@@ -9,3 +9,6 @@ class Positionable:
     x: int = NumericProperty(0)
     y: int = NumericProperty(0)
     pos: list[int] = ReferenceListProperty(x, y)
+
+
+__all__ = ["Positionable"]

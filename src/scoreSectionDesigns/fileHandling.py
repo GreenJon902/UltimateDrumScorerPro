@@ -25,3 +25,6 @@ def read_design_from(path: str, type_: type(Design)) -> tuple[int, Design]:
 
     print(f"Finished, read {design}")
     return nid, design
+
+
+__all__ = ["read_design_from"]

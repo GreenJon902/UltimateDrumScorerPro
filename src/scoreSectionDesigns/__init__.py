@@ -32,9 +32,4 @@ class Design(Widget):
         return canvas
 
 
-if __name__ == "__main__":
-    from notes import check_notes
-    check_notes()
-
-    from kivy.clock import Clock
-    Clock.tick()
+__all__ = ["read_design_from", "Design"]

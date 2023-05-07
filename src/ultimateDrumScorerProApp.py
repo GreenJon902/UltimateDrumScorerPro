@@ -39,3 +39,6 @@ class UltimateDrumScorerProApp(App):
 
     def on_stop(self):
         saveScoreToFile(self.score_path, self.score)
+
+
+__all__ = ["UltimateDrumScorerProApp"]

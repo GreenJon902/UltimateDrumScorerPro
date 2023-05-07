@@ -32,3 +32,6 @@ class Decoration(RelativeLayout):
     def on_min_height(self, _, value):
         if self.height < value:
             self.height = value
+
+
+__all__ = ["Decoration"]

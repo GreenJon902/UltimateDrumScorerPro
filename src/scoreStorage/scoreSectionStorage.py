@@ -202,3 +202,6 @@ def fix_and_get_normal_editor_note_ids(score):
     note_ids.update({note_id for section in score for note_id in section.note_ids})
     score.normal_editor_note_ids = note_ids
     return note_ids
+
+
+__all__ = ["fix_and_get_normal_editor_note_ids", "ScoreSectionStorage", "ScoreSectionSectionStorage"]

@@ -35,3 +35,6 @@ def saveScoreToFile(path: str, score: list[ScoreStorageItem]):
     with open(path, 'w') as f:
         json.dump(serialized, f, indent=4)
     print(f"Finished, wrote {serialized}")
+
+
+__all__ = ["saveScoreToFile", "readScoreFromFile"]

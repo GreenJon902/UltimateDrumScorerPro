@@ -5,7 +5,7 @@ class ArgumentTrigger:  # Like a kivy clock trigger, but it takes arguments. Cal
     callback: callable
     timeout: int
     give_combined: bool
-    arg_list: list[tuple[tuple[any], dict[str, any]]]
+    arg_list: list[tuple[tuple[any, ...], dict[str, any]]]
     kivy_trigger = None
 
     def __init__(self, callback, timeout, give_combined=False):
@@ -31,3 +31,6 @@ class ArgumentTrigger:  # Like a kivy clock trigger, but it takes arguments. Cal
             for arguments in self.arg_list:
                 self.callback(arguments)
             self.arg_list.clear()
+
+
+__all__ = ["ArgumentTrigger"]

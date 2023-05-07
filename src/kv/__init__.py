@@ -20,3 +20,6 @@ def check_kv():
                 Logger.debug(f"[UDSP] Loading {file}")
                 Builder.load_file(f"kv/{file}")
         kv_loaded = True
+
+
+__all__ = ["check_kv"]  # Can't have settings due to kv needing to be loaded first

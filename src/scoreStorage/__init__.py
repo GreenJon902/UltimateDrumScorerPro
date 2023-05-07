@@ -1,7 +1,5 @@
 from kivy.event import EventDispatcher
 
-from fileHandling import saveScoreToFile, readScoreFromFile
-
 
 class ScoreStorageItemMetaclass(type):
     def __init__(cls, name, bases, attrs):
@@ -14,6 +12,9 @@ ScoreStorageItemBase = ScoreStorageItemMetaclass('ScoreStorageItemBase', (EventD
 
 
 class ScoreStorageItem(ScoreStorageItemBase):
+    def __init__(self, **kwargs):
+        ScoreStorageItemBase.__init__(self, **kwargs)
+
     def serialize(self) -> dict[str, any]:
         raise NotImplementedError()
 
@@ -21,3 +22,5 @@ class ScoreStorageItem(ScoreStorageItemBase):
     def deserialize(serialized: dict[str, any]) -> "ScoreStorageItem":
         raise NotImplementedError()
 
+
+__all__ = ["ScoreStorageItem", "storage_item_types"]

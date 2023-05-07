@@ -1,6 +1,6 @@
 import os
-from logging import Logger
 
+from kivy import Logger
 from kivy.properties import NumericProperty, ReferenceListProperty, StringProperty
 
 from kv import check_kv
@@ -37,3 +37,6 @@ def check_notes():
                 Logger.warning(f"[Notes] Already has note for id {nid}, {notes[nid]} {note}")
             notes[nid] = note
         notes_loaded = True
+
+
+__all__ = ["Note", "check_notes", "notes"]
