@@ -2,7 +2,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro/badge)](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro)
 
 _Hey, this app is in the very early stages of development! It is a program to write drum notes in a way I find easier to read._  
-_A this time I am doing some major refactoring so half of the project may not exists where it should, check the last commit before I started this to see it in a working state - https://github.com/GreenJon902/UltimateDrumScorerPro/tree/4deebb564bcb6be1d1000d86bff0fbae539988a9
+_A this time I am doing some major refactoring so half of the project may not exists where it should, check the last commit before I started this to see it in a working state - https://github.com/GreenJon902/UltimateDrumScorerPro/tree/4deebb564bcb6be1d1000d86bff0fbae539988a9_
 
 The art style is made to look a lot more simplistic and less cluttered than your standard score with staff lines and all that. It also uses many more symbols for different notes, e.g. toms and snares look different.  
 Everything is drawn as lines, as if it were a pencil.
