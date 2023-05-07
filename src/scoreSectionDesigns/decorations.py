@@ -1,16 +1,15 @@
-from kivy.factory import Factory
-from kivy.lang import Builder, global_idmap
-from kivy.properties import NumericProperty, ColorProperty
+from kivy.properties import NumericProperty
 from kivy.uix.relativelayout import RelativeLayout
 
-Builder.load_file("score/decorations.kv")
+from kv import check_kv
+
+check_kv()
 
 
 class Decoration(RelativeLayout):
-    color = ColorProperty(defaultvalue=(0, 0, 0, 1))
     min_height: int = NumericProperty()
     container_height: int = NumericProperty(allownone=True, defualtvalue=None)  # Height of container, e.g. the
-                                                                                # entire score
+                                                                                # entire scoreStorage
     _container_height: float = NumericProperty()
 
     def __init__(self, **kwargs):
@@ -33,8 +32,3 @@ class Decoration(RelativeLayout):
     def on_min_height(self, _, value):
         if self.height < value:
             self.height = value
-
-
-decorations: dict[int, type[Decoration]] = {}
-for (id, decoration_name) in global_idmap["decorations"].items():
-    decorations[id] = Factory.get(decoration_name)

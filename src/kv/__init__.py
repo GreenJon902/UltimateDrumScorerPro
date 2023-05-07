@@ -15,7 +15,7 @@ def check_kv():
 
     if not kv_loaded:
         Logger.info("[UDSP] Loading .kv files...")
-        for file in os.listdir():
+        for file in os.listdir("kv"):
             if "." in file and file.split(".")[1] == "kv":
                 Logger.debug(f"[UDSP] Loading {file}")
                 Builder.load_file(f"kv/{file}")

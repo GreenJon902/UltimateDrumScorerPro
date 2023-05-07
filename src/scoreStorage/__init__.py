@@ -1,5 +1,7 @@
 from kivy.event import EventDispatcher
 
+from fileHandling import saveScoreToFile, readScoreFromFile
+
 
 class ScoreStorageItemMetaclass(type):
     def __init__(cls, name, bases, attrs):

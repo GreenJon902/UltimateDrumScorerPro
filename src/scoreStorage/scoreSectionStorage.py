@@ -1,7 +1,7 @@
 from kivy.properties import ListProperty, NumericProperty, BooleanProperty, BoundedNumericProperty
 
-from score import ScoreStorageItem
-from score.storage.positionable import Positionable
+from scoreStorage import ScoreStorageItem
+from scoreStorage.positionable import Positionable
 
 
 class ScoreSectionSectionStorage(ScoreStorageItem):

@@ -1,6 +1,6 @@
 import json
 
-from score import ScoreStorageItem, storage_item_types
+from scoreStorage import ScoreStorageItem, storage_item_types
 
 
 def readScoreFromFile(path: str) -> list[ScoreStorageItem]:

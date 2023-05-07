@@ -6,7 +6,7 @@ from score import Note, ScoreSectionStorage
 from score.notes import notes, missing_major_note_level_height
 
 
-class NoteHeightCalculator:  # Stores an instance of each note at the correct height depending on the given score
+class NoteHeightCalculator:  # Stores an instance of each note at the correct height depending on the given scoreStorage
     note_objects: dict[int, Note]
     update = None
     scoreSectionStorage: ScoreSectionStorage
@@ -23,7 +23,7 @@ class NoteHeightCalculator:  # Stores an instance of each note at the correct he
             Logger.warning(f"NoteHeightCalculator: Tried to update but {self} has no score")
             return
 
-        used_note_ids = {note_id for section in self.scoreSectionStorage for note_id in section.note_ids}  # Ids actually in score
+        used_note_ids = {note_id for section in self.scoreSectionStorage for note_id in section.note_ids}  # Ids actually in scoreStorage
         if self._last_used_note_ids == used_note_ids:
             return
         self._last_used_note_ids = used_note_ids

@@ -1,0 +1,19 @@
+{
+  "id": 0,
+  "name": "Kick",
+
+  "width": 7.5,
+  "height": 5,
+  "note_level": 1,
+  "stem_connection_offset": 5,
+  "dot_offset_x": 7,
+  "dot_offset_y": 1.5,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "points": [0, 0, 7.5, 5],
+      "width": "{st}"
+    }
+  ]
+}
