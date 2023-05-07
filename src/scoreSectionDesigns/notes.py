@@ -30,6 +30,7 @@ def check_notes():
     global notes_loaded
 
     if not notes_loaded:
+        Logger.info("[UDSP] Loading note files...")
         for note_path in os.listdir("designs/notes"):
             nid, note = read_design_from(os.path.join("designs/notes", note_path), Note)
             if nid in notes:
