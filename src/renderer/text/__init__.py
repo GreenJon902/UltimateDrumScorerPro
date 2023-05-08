@@ -1,3 +1,4 @@
+from kivy import Logger
 from kivy.properties import ListProperty, ObjectProperty
 
 from renderer import Renderer
@@ -37,6 +38,8 @@ class TextRenderer(Renderer):
                 self.size = self.renderer.size
                 self.canvas.clear()
                 self.canvas.add(self.renderer.canvas)
+            else:
+                Logger.warning("[TextRenderer] No renderer supplied")
 
 
 
