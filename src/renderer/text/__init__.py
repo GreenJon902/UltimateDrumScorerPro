@@ -1,5 +1,3 @@
-import kivy.base
-from kivy.clock import Clock
 from kivy.properties import ListProperty, ObjectProperty
 
 from renderer import Renderer
@@ -64,13 +62,3 @@ class TextRenderer(Renderer):
 
 
 __all__ = ["TextRenderer"]
-
-
-if __name__ == "__main__":  # Just to test that its basic functions work
-    storage = TextStorage(text="*hi* **how** __are__ _you_ &#aaffaa~~today~~")
-    text_renderer = TextRenderer(storage, formatters=[Text_MarkdownFormatter(), Text_ColorFormatter()])
-    # noinspection PyProtectedMember
-    Clock.schedule_once(lambda _: print(text_renderer._formatted_text), 0)
-    Clock.schedule_once(lambda _: setattr(text_renderer, "renderer", Text_NormalRenderer()), 0)  # Avoid SIGSEGV
-    kivy.base.runTouchApp(text_renderer)
-

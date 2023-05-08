@@ -39,8 +39,7 @@ with design_holder.canvas:
     design.draw()
 
 root = ScatterPlane(scale=(metrics.mm(10) / 10), size=(mm(10), mm(10)), size_hint=(None, None))
-root.set_center_x(100)
-root.set_center_y(100)
+root.pos = 0, 0
 root.add_widget(design_holder)
 
 kivy.base.runTouchApp(root)
