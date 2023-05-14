@@ -45,3 +45,6 @@ class Text_NormalRenderer(Text_RendererBase):
 
     def get_label_size(self):
         return self.label.texture.size
+
+
+__all__ = ["Text_NormalRenderer"]

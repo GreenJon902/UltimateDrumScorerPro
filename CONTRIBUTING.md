@@ -10,10 +10,11 @@ Component - part of an item (e.g. a score section has bars and note heads which 
 Score section - Actual drum notation  
 Score section section - A point in time for a score section (all the beats that are played at the same time)  
 Bar - A full line between score section sections  
-Bar - Depending on the context, bar can also mean everything that goes into rythem (bars, half bars, slanted bars, dots) at the same time  
+Bar - Depending on the context, bar can also mean all types of bars (bars, half bars, slanted bars) at the same time  
 Half bar - The smaller bar that exists when note lengths aren't equal. Can be before or after  
 Slanted bar - The bar that is at an angle for score section sections that aren't attached to anything else  
 Dots - Same as in music  
+Decoration - A symbol that is not a note but exists in the score (like a repeat mark)  
 Storage - Should be last word, means it's savable and should be in scoreStorage  
 
 ###### Abbreviations
@@ -36,8 +37,8 @@ Some helpful information on the internals of how this project is played out.
 &emsp;&ensp;├─ **_kv_** - Loads kv lang, all .kv go in here  
 &emsp;&ensp;├─ **_renderer_** - Tools to render the forms of a score items.  
 &emsp;&ensp;│ &ensp;└─ **_(item_type)_**  
-&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **README.md** - Gives information about that specific renderer and the component's APIs.
-&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **\_\_init\_\_.py** - File that links together this item type's components (as there can be multiple compnents for the same part (e.g. correctly rendered bars and bars rendered for editing)). This should still work if a component is missing (set to None)  
+&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **README.md** - Gives information about that specific renderer and the component's APIs.  
+&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **\_\_init\_\_.py** - File that links together this item type's components (as there can be multiple compnents for the same part (e.g. correctly rendered bars and bars rendered for editing)). This should still work if a component is missing (set to None). These should also correctly set their own size.  
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type).py** - These have no concept for scoreStorage, editing, etc. They exist purely to store data and modify it through an api which supplies the needed information  
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type)Base.py** - Like an interface or ABC: it holds a set of functions that other components can implement or override.
 &emsp;&ensp;└─ **_tools_** - Scripts to test various widgets and UIs.  

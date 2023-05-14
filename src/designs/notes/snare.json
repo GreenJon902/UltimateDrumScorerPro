@@ -1,0 +1,19 @@
+{
+  "id": 1,
+  "name": "Snare",
+
+  "width": 7.5,
+  "height": 5,
+  "note_level": 2,
+  "stem_connection_offset": 5,
+  "dot_offset_x": 7,
+  "dot_offset_y": 1.5,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "points": [0, 0, 7.5, 5],
+      "width": "{st}"
+    }
+  ]
+}

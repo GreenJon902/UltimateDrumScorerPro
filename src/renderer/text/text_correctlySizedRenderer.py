@@ -21,3 +21,6 @@ class Text_CorrectlySizedRenderer(Text_NormalRenderer):
         size = Text_NormalRenderer.get_label_size(self)
         zoom_amount = self.get_zoom_amount()
         return size[0] / zoom_amount, size[1] / zoom_amount
+
+
+__all__ = ["Text_CorrectlySizedRenderer"]

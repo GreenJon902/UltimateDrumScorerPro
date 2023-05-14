@@ -24,6 +24,7 @@ class Note(Design):
 
 notes_loaded = False
 notes: dict[int, Note] = {}
+note_ids_at_level: dict[float, list[int]] = {}
 
 
 def check_notes():
@@ -36,6 +37,9 @@ def check_notes():
             if nid in notes:
                 Logger.warning(f"[Notes] Already has note for id {nid}, {notes[nid]} {note}")
             notes[nid] = note
+            if note.note_level not in note_ids_at_level:
+                note_ids_at_level[note.note_level] = list()
+            note_ids_at_level[note.note_level].append(nid)
         notes_loaded = True
 
 

@@ -1,5 +1,5 @@
 # Usage
-TextRenderer will draw text to a page and supports formatting.
+TextRenderer will draw text to a page and supports formatting.  
 It can take any amount of formatters which are ordered. It can also take a renderer which will do the drawing of the text.
 
 # Component APIs

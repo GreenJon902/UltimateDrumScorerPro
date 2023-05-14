@@ -13,8 +13,9 @@ from scoreStorage.textStorage import TextStorage
 class TextRenderer(Renderer):
     storage: TextStorage
 
+    renderer: Text_RendererBase = ObjectProperty(allownone=True)
+
     formatters: list[Text_FormatterBase] = ListProperty()
-    renderer: Text_RendererBase = ObjectProperty()
     _formatted_text: str
 
     def __init__(self, *args, **kwargs):
