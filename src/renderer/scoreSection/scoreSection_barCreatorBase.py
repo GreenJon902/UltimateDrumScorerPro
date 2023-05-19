@@ -2,7 +2,12 @@ from kivy.graphics import InstructionGroup
 
 
 class ScoreSection_BarCreatorBase:
-    def create(self, note_ids) -> tuple[InstructionGroup, int, int]:
+    color: tuple[float, float, float, float]
+
+    def __init__(self, color):
+        self.color = color
+
+    def create(self, bars, before_bars, after_bars) -> tuple[InstructionGroup, int, int]:
         raise NotImplementedError()
 
 

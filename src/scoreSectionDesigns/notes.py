@@ -43,4 +43,4 @@ def check_notes():
         notes_loaded = True
 
 
-__all__ = ["Note", "check_notes", "notes"]
+__all__ = ["Note", "check_notes", "notes", "note_ids_at_level"]

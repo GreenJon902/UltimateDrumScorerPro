@@ -12,10 +12,14 @@ Score section section - A point in time for a score section (all the beats that 
 Bar - A full line between score section sections  
 Bar - Depending on the context, bar can also mean all types of bars (bars, half bars, slanted bars) at the same time  
 Half bar - The smaller bar that exists when note lengths aren't equal. Can be before or after  
+Before bar / After bar - Shortened version of before half bar or after half bar.  
 Slanted bar - The bar that is at an angle for score section sections that aren't attached to anything else  
 Dots - Same as in music  
 Decoration - A symbol that is not a note but exists in the score (like a repeat mark)  
 Storage - Should be last word, means it's savable and should be in scoreStorage  
+Note level - The system to position notes relative to other notes.
+Major note level - The integer part of a note level. Two notes with different major levels will be on different lines.  
+Minor note level - The decimal part of a note level. This only effects anything when two notes have the same note level in the same Score section section.  
 
 ###### Abbreviations
 nid - Short for note id  

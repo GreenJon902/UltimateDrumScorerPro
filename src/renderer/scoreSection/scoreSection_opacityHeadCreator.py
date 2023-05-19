@@ -8,7 +8,7 @@ from scoreSectionDesigns.notes import notes, check_notes, note_ids_at_level
 check_notes()
 
 
-class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):
+class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: update this to the new note level system
     def create(self, present_note_ids, existent_notes_ids):
         group = InstructionGroup()
         group.add(PushMatrix())

@@ -12,7 +12,7 @@ class ScoreSection_NormalDotCreator(ScoreSection_DotCreatorBase):
     def create(self, dots) -> tuple[InstructionGroup, int, int]:
         group = InstructionGroup()
         group.add(PushMatrix())
-        group.add(Color(*self.color))
+        group.add(Color(rgba=self.color))
 
         width = 0
         height = dot_radius * 2
