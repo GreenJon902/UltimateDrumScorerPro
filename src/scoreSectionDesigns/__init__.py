@@ -18,17 +18,18 @@ class Design(Widget):
         self.instructions = instructions
         Widget.__init__(self, **kwargs)
 
-    def draw(self):
-        color = Color(rgba=self.color)
-        self.bind(color=lambda _, value: setattr(color, "rgba", value))
+    def draw(self, color=True):
+        if color:
+            color = Color(rgba=self.color)
+            self.bind(color=lambda _, value: setattr(color, "rgba", value))
         for instruction in self.instructions:
             instruction = instruction.replace("'{st}'", str(st))
             exec(instruction)
 
-    def make_canvas(self):
+    def make_canvas(self, color=True):
         canvas = Canvas()
         with canvas:
-            self.draw()
+            self.draw(color)
         return canvas
 
 

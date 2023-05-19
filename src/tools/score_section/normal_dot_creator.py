@@ -5,7 +5,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scatter import ScatterPlane
 from kivy.uix.widget import Widget
 
-from renderer.scoreSection.scoreSection_opacityHeadCreator import ScoreSection_OpacityHeadCreator
+from renderer.scoreSection.scoreSection_normalDotCreator import ScoreSection_NormalDotCreator
 
 Builder.load_string("""
 <ScatterPlane>:
@@ -29,7 +29,7 @@ class MyBoxLayout(BoxLayout):  # Allow no touch events through
 
 
 design_holder = Widget(size_hint=(None, None))
-g, w, h = ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0.2)).create([1], [0,1])
+g, w, h = ScoreSection_NormalDotCreator((0, 0, 0, 1)).create(7)
 print(f"Size: {w, h}")
 design_holder.canvas.add(g)
 design_holder.canvas.flag_update()
