@@ -8,6 +8,8 @@ from scoreSectionDesigns import Design, read_design_from
 
 check_kv()
 
+path = os.path.join(os.path.split(os.path.abspath(__file__))[0], "../designs/notes")
+
 
 class Note(Design):
     stem_connection_offset: float = NumericProperty()  # Offset from relative y=0 where stem connects
@@ -32,8 +34,8 @@ def check_notes():
 
     if not notes_loaded:
         Logger.info("[UDSP] Loading note files...")
-        for note_path in os.listdir("designs/notes"):
-            nid, note = read_design_from(os.path.join("designs/notes", note_path), Note)
+        for note_path in os.listdir(path):
+            nid, note = read_design_from(os.path.join(path, note_path), Note)
             if nid in notes:
                 Logger.warning(f"[Notes] Already has note for id {nid}, {notes[nid]} {note}")
             notes[nid] = note

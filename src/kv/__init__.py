@@ -4,7 +4,7 @@ from kivy import Logger
 from kivy.lang import Builder
 
 kv_loaded = False
-
+path = os.path.split(os.path.abspath(__file__))[0]
 
 def check_kv():
     """
@@ -15,10 +15,10 @@ def check_kv():
 
     if not kv_loaded:
         Logger.info("[UDSP] Loading .kv files...")
-        for file in os.listdir("kv"):
+        for file in os.listdir(path):
             if "." in file and file.split(".")[1] == "kv":
                 Logger.debug(f"[UDSP] Loading {file}")
-                Builder.load_file(f"kv/{file}")
+                Builder.load_file(f"{path}/{file}")
         kv_loaded = True
 
 
