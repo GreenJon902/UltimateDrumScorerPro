@@ -1,0 +1,34 @@
+{
+  "id": 8,
+  "name": "Crash",
+
+  "width": 7.5,
+  "height": 5,
+  "note_level": 3.2,
+  "stem_connection_offset": 5,
+  "dot_offset_x": 7.5,
+  "dot_offset_y": 0,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "points": [0, 0, 7.5, 5],
+      "width": "{st}"
+    },
+    {
+      "name": "Line",
+      "points": [7.5, 0, 0, 5],
+      "width": "{st}"
+    },
+    {
+      "name": "Line",
+      "points": [0, 2.5, 0, 2.5],
+      "width": "{st}"
+    },
+    {
+      "name": "Line",
+      "points": [3.75, 0, 3.75, 5],
+      "width": "{st}"
+    }
+  ]
+}

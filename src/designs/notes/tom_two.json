@@ -1,0 +1,24 @@
+{
+  "id": 3,
+  "name": "Low Rack",
+
+  "width": 7.5,
+  "height": 5,
+  "note_level": 2.1,
+  "stem_connection_offset": 2.5,
+  "dot_offset_x": 7.5,
+  "dot_offset_y": 0,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "ellipse": [0, 0, 7.5, 5],
+      "width": "{st}"
+    },
+    {
+      "name": "Line",
+      "points": [1.5, 2, 6, 3],
+      "width": "{st}"
+    }
+  ]
+}
