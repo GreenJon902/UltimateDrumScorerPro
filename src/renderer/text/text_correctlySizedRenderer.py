@@ -1,6 +1,6 @@
 from kivy.uix.widget import Widget
 
-from renderer.text import Text_NormalRenderer
+from renderer.text.text_normalRenderer import Text_NormalRenderer
 
 
 class Text_CorrectlySizedRenderer(Text_NormalRenderer):

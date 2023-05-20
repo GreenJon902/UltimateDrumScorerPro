@@ -1,11 +1,14 @@
 from kivy.clock import Clock
-from kivy.tests.common import GraphicUnitTest
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.scatter import Scatter
 
-from renderer.text import TextRenderer, Text_MarkdownFormatter, Text_ColorFormatter, Text_NormalRenderer
+from renderer.text import TextRenderer
+from renderer.text.text_colorFormatter import Text_ColorFormatter
 from renderer.text.text_correctlySizedRenderer import Text_CorrectlySizedRenderer
+from renderer.text.text_markdownFormatter import Text_MarkdownFormatter
+from renderer.text.text_normalRenderer import Text_NormalRenderer
 from scoreStorage.textStorage import TextStorage
+from tests.common import GraphicUnitTest
 
 
 class TextTestCases(GraphicUnitTest):
@@ -31,3 +34,6 @@ class TextTestCases(GraphicUnitTest):
         container.add_widget(scatter)
 
         self.render(container)
+
+
+__all__ = ["TextTestCases"]

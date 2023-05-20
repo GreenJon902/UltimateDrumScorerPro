@@ -9,6 +9,13 @@ check_notes()
 
 
 class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: update this to the new note level system
+    present_color: tuple[float, float, float, float]
+    absent_color: tuple[float, float, float, float]
+
+    def __init__(self, present_color, absent_color):
+        self.present_color = present_color
+        self.absent_color = absent_color
+
     def create(self, present_note_ids, existent_notes_ids):
         group = InstructionGroup()
         group.add(PushMatrix())

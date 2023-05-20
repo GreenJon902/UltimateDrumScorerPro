@@ -2,10 +2,7 @@ from kivy import Logger
 from kivy.properties import ListProperty, ObjectProperty
 
 from renderer import Renderer
-from renderer.text.text_colorFormatter import Text_ColorFormatter
 from renderer.text.text_formatterBase import Text_FormatterBase
-from renderer.text.text_markdownFormatter import Text_MarkdownFormatter
-from renderer.text.text_normalRenderer import Text_NormalRenderer
 from renderer.text.text_rendererBase import Text_RendererBase
 from scoreStorage.textStorage import TextStorage
 
