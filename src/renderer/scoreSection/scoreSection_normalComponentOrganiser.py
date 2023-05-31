@@ -20,6 +20,7 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         head_info = default(head_info, (InstructionGroup(), 0, 0))
         bar_info = default(bar_info, (InstructionGroup(), 0, 0))
         dot_info = default(dot_info, (InstructionGroup(), 0, 0))
+        stem_info = default(stem_info, (InstructionGroup(), 0))
 
         width = max(head_info[1], bar_info[1], dot_info[1])
         height = head_info[2] + bar_info[2] + dot_info[2]
@@ -39,11 +40,11 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         section_group.add(dot_info[0])
         section_group.add(PopMatrix())
 
-        section_group.add(Translate(0, dot_info[2]))
-
+        # Stems
         section_group.add(PushMatrix())
         section_group.add(Translate(width, 0))
-
+        section_group.add(self.to_top_translate)
+        section_group.add(stem_info[0])
 
         # Bars
         section_group.add(Translate(-bar_info[1], -bar_info[2]))

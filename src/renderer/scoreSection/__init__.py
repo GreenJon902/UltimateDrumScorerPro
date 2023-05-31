@@ -8,6 +8,7 @@ from renderer.scoreSection.scoreSection_barCreatorBase import ScoreSection_BarCr
 from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
 from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCreatorBase
 from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
+from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage
 
 
@@ -18,7 +19,7 @@ class ScoreSectionRenderer(Renderer):
 
     head_creator: ScoreSection_HeadCreatorBase = ObjectProperty(allownone=True)
     #decoration_creator = ObjectProperty(allownone=True)
-    #stem_creator = ObjectProperty(allownone=True)
+    stem_creator: ScoreSection_StemCreatorBase = ObjectProperty(allownone=True)
     bar_creator: ScoreSection_BarCreatorBase = ObjectProperty(allownone=True)
     dot_creator: ScoreSection_DotCreatorBase = ObjectProperty(allownone=True)
 
@@ -49,9 +50,13 @@ class ScoreSectionRenderer(Renderer):
                     head_info = self.do_head(i)
                     bar_info = self.do_bar(i)
                     dot_info = self.do_dot(i)
+                    stem_info = self.do_stem(i)
+
+                    self.update_stem_height(head_info, stem_info)
+
                     if self.component_organiser is not None:
-                        self.component_organiser.add_section(self.canvas, i, head_info=head_info, bar_info=bar_info,
-                                                             dot_info=dot_info)
+                        self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
+                                                             dot_info=dot_info, stem_info=stem_info)
                     else:
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
@@ -78,6 +83,16 @@ class ScoreSectionRenderer(Renderer):
         if self.dot_creator is None:
             return None
         return self.dot_creator.create(self.storage[index].dots)
+
+    def do_stem(self, index):
+        if self.stem_creator is None:
+            return None
+        return self.stem_creator.create()
+
+    def update_stem_height(self, head_info, stem_info):
+        if head_info is None or stem_info is None or self.stem_creator is None:
+            return
+        self.stem_creator.update_height(stem_info, head_info[3])
 
     def set_storage(self, storage):
         if self.storage is not None:
