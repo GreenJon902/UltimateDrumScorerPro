@@ -1,5 +1,7 @@
 import os
 
+from renderer.scoreSection.scoreSection_normalStemCreator import ScoreSection_NormalStemCreator
+
 os.environ["KCFG_KIVY_LOG_LEVEL"] = "debug"
 
 import kivy.base
@@ -30,7 +32,7 @@ storage = ScoreSectionStorage([
     ScoreSectionSectionStorage(note_ids=[2, 3]),
     ScoreSectionSectionStorage(note_ids=[5, 7, 1], before_flags=2, after_flags=3, bars=1),
     ScoreSectionSectionStorage(note_ids=[5, 6, 1], dots=4, bars=4),
-    ScoreSectionSectionStorage(note_ids=[], slanted_flags=2)
+    ScoreSectionSectionStorage(note_ids=[1], slanted_flags=2)
 ])
 
 renderer = ScoreSectionRenderer(storage, bar_creator=ScoreSection_NormalBarCreator((0, 0, 0, 1)),

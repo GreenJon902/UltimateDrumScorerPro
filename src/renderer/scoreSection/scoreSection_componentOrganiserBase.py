@@ -2,8 +2,9 @@ from kivy.graphics import InstructionGroup
 
 
 class ScoreSection_ComponentOrganiserBase:
+    group: InstructionGroup
 
-    def add_section(self, group: InstructionGroup, index, head_info=None, bar_info=None, dot_info=None):
+    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None):
         raise NotImplementedError()
 
     def setup(self, group: InstructionGroup):
@@ -11,6 +12,7 @@ class ScoreSection_ComponentOrganiserBase:
         Resets and setups the group for use in this component organiser type, this could be clearing it or adding
         certain transforms.
         """
+        self.group = group
         group.clear()
 
 
