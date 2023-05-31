@@ -1,3 +1,6 @@
+import time
+
+from kivy import Logger
 from kivy.properties import ObjectProperty
 
 from renderer import Renderer
@@ -28,7 +31,53 @@ class ScoreSectionRenderer(Renderer):
         self.dispatch_instruction("all")
 
     def process_instructions(self, instructions: list[tuple[tuple[any, ...], dict[str, any]]]):
-        commands = instructions[:][0][0]
+        Logger.info(f"ScoreSectionRenderer: Updating {self} with {instructions}...")
+        t = time.time()
+
+        for command in instructions:
+            command = command[0]
+            Logger.debug(f"ScoreSectionRenderer: Processing {command}...")
+
+            if command[0] == "all":
+                if self.component_organiser is not None:
+                    self.component_organiser.setup(self.canvas)
+                else:
+                    Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
+                                                                                   # rendering, which makes no sense
+
+                for i in range(len(self.storage)):
+                    head_info = self.do_head(i)
+                    bar_info = self.do_bar(i)
+                    dot_info = self.do_dot(i)
+                    if self.component_organiser is not None:
+                        self.component_organiser.add_section(self.canvas, i, head_info=head_info, bar_info=bar_info,
+                                                             dot_info=dot_info)
+                    else:
+                        Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
+                                                                                       # rendering, which makes no sense
+            else:
+                Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
+
+        Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
+
+    def do_head(self, index):
+        if self.head_creator is None:
+            return None
+        nids = set()
+        for section in self.storage:
+            nids.update(section.note_ids)
+        return self.head_creator.create(self.storage[index].note_ids, nids)
+
+    def do_bar(self, index):
+        if self.bar_creator is None:
+            return None
+        return self.bar_creator.create(self.storage[index].bars, self.storage[index].before_flags,
+                                       self.storage[index].after_flags)
+
+    def do_dot(self, index):
+        if self.dot_creator is None:
+            return None
+        return self.dot_creator.create(self.storage[index].dots)
 
     def set_storage(self, storage):
         if self.storage is not None:

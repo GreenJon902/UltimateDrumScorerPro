@@ -7,8 +7,9 @@ Please put anything that should be accessible in a \_\_all\_\_.
 ### Important naming stuff
 Item - part of a page (e.g. score section, text)  
 Component - part of an item (e.g. a score section has bars and note heads which are separate)  
-Score section - Actual drum notation  
+Score section - Actual drum notation
 Score section section - A point in time for a score section (all the beats that are played at the same time)  
+Section - Depending on the context this can be either a score section or a score section section.  
 Bar - A full line between score section sections  
 Bar - Depending on the context, bar can also mean all types of bars (bars, half bars, slanted bars) at the same time  
 Half bar - The smaller bar that exists when note lengths aren't equal. Can be before or after  
@@ -45,7 +46,8 @@ Some helpful information on the internals of how this project is played out.
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **\_\_init\_\_.py** - File that links together this item type's components (as there can be multiple compnents for the same part (e.g. correctly rendered bars and bars rendered for editing)). This should still work if a component is missing (set to None). These should also correctly set their own size.  
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type).py** - These have no concept for scoreStorage, editing, etc. They exist purely to store data and modify it through an api which supplies the needed information  
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type)Base.py** - Like an interface or ABC: it holds a set of functions that other components can implement or override.
-&emsp;&ensp;└─ **_tools_** - Scripts to test various widgets and UIs.  
+&emsp;&ensp;└─ **_tools_** - Scripts to set up and test various widgets and UIs during development.  
+&emsp;&ensp;└─ **_tests_** - Unit tests and stuff to make sure everything still works.  
 &emsp;&ensp;└─ **_scoreStorage_** - Tools for reading, writing and holding scores  
 &emsp;&ensp;└─ **_scoreSectionDesigns_** - Tools for loading and drawing **_notes_** and **_decorations_**  
 
@@ -58,6 +60,21 @@ check_notes()  # Ensures that the notes array has been filled.
 def foo():
     notes[0].draw()  # We can now use it.
 ```
+
+# Renderers
+A renderer's readme file should be formatted like this.
+```markdown
+# What does this do?
+A description of what the renderer is for.
+
+# Component Information
+### SpecificComponent
+Information about this component.
+
+### GroupOfComponent
+Information about different components that all act in a similar way.
+```
+Specific function information should go in docstrings, but only when required.
 
 ### Other small stuff
 TextStorage has do_formatting, so we don't have to recreate the text renderer pipeline, instead it can just toggle off.

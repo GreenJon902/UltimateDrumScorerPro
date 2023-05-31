@@ -9,7 +9,7 @@ from renderer.scoreSection.scoreSection_normalComponentOrganiser import ScoreSec
 from renderer.scoreSection.scoreSection_normalDotCreator import ScoreSection_NormalDotCreator
 from renderer.scoreSection.scoreSection_opacityHeadCreator import ScoreSection_OpacityHeadCreator
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage, ScoreSectionSectionStorage
-from tests.common import GraphicUnitTest, gen_organiser_parameters_recur
+from tests.common import GraphicUnitTest, gen_parameter_combo
 
 
 class ScoreSectionTestCases(GraphicUnitTest):
@@ -28,12 +28,12 @@ class ScoreSectionTestCases(GraphicUnitTest):
         self.do(lambda: ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0.2)).create([1], [0, 1]))
 
     @parameterized.expand([
-        *gen_organiser_parameters_recur([
-            [None, ScoreSection_NormalBarCreator],
-            [None, ScoreSection_NormalDotCreator],
+        *gen_parameter_combo([
+            [None, lambda: ScoreSection_NormalBarCreator((0, 0, 0, 1))],
+            [None, lambda: ScoreSection_NormalDotCreator((0, 0, 0, 1))],
             [None, lambda: ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0)),
              lambda: ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0.5))],
-            [None, ScoreSection_NormalComponentOrganiser]
+            [None, lambda: ScoreSection_NormalComponentOrganiser()]
         ])
     ])
     def test_whole(self, bar, dot, head, organiser):  # Just to demonstrate that any combination works
@@ -43,7 +43,14 @@ class ScoreSectionTestCases(GraphicUnitTest):
             ScoreSectionSectionStorage(note_ids=[5, 6, 1], dots=3, bars=4),
             ScoreSectionSectionStorage(note_ids=[], slanted_flags=2)
         ])
+
         print(bar, dot, head, organiser)
+        bar = bar() if bar is not None else None
+        dot = dot() if dot is not None else None
+        head = head() if head is not None else None
+        organiser = organiser() if organiser is not None else None
+        print(bar, dot, head, organiser)
+
         renderer = ScoreSectionRenderer(storage, bar_creator=bar, dot_creator=dot, head_creator=head,
                                         component_organiser=organiser)
         print("=>", renderer)

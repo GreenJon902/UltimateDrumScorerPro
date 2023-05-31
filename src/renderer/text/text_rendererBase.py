@@ -11,6 +11,9 @@ class Text_RendererBase:
         self.canvas = Canvas()
 
     def update(self, text, do_formatting, font_size):
+        """
+        :param do_formatting: Should kivy formatting be used.
+        """
         raise NotImplementedError()
 
 

@@ -1,4 +1,4 @@
-from kivy.graphics import InstructionGroup, PushMatrix, Color, Ellipse, PopMatrix
+from kivy.graphics import InstructionGroup, Color, Ellipse
 
 from kv import check_kv
 
@@ -11,7 +11,6 @@ from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCr
 class ScoreSection_NormalDotCreator(ScoreSection_DotCreatorBase):
     def create(self, dots) -> tuple[InstructionGroup, int, int]:
         group = InstructionGroup()
-        group.add(PushMatrix())
         group.add(Color(rgba=self.color))
 
         width = 0
@@ -22,7 +21,6 @@ class ScoreSection_NormalDotCreator(ScoreSection_DotCreatorBase):
         if dots > 0:
             width -= dot_spacing
 
-        group.add(PopMatrix())
         return group, width, height
 
 

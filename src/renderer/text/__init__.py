@@ -1,3 +1,5 @@
+import time
+
 from kivy import Logger
 from kivy.properties import ListProperty, ObjectProperty
 
@@ -22,22 +24,28 @@ class TextRenderer(Renderer):
         self.dispatch_instruction("all")
 
     def process_instructions(self, instructions: list[tuple[tuple[any, ...], dict[str, any]]]):
+        Logger.info(f"TextRenderer: Updating {self} with {instructions}...")
+        t = time.time()
         commands = instructions[:][0][0]
 
         fallthrough = False
         if "all" in commands:  # Imagine a switch statement but unlike python, THIS ONE HAS FALL THROUGH
             fallthrough = True
         if fallthrough or "reformat" in commands:
+            Logger.debug(f"TextRenderer: Reformatting...")
             self.reformat()
             fallthrough = True
         if fallthrough or "render" in commands:
+            Logger.debug(f"TextRenderer: Rendering...")
             if self.renderer is not None:
                 self.renderer.update(self._formatted_text, self.storage.do_formatting, self.storage.font_size)
                 self.size = self.renderer.size
                 self.canvas.clear()
                 self.canvas.add(self.renderer.canvas)
             else:
-                Logger.warning("[TextRenderer] No renderer supplied")
+                Logger.warning("TextRenderer: No renderer supplied")  # Warn as this doesn't make sense not to have
+
+        Logger.info(f"TextRenderer: {time.time() - t}s elapsed!")
 
 
 

@@ -5,7 +5,7 @@ from kivy.uix.scatter import ScatterPlane
 from kivy.uix.widget import Widget
 
 
-def gen_organiser_parameters_recur(possibilities):
+def gen_parameter_combo(possibilities):
     a = possibilities[0]
     ret = []
 
@@ -13,7 +13,7 @@ def gen_organiser_parameters_recur(possibilities):
         if len(possibilities) == 1:
             ret.append([b])
         else:
-            for p in gen_organiser_parameters_recur(possibilities[1:]):
+            for p in gen_parameter_combo(possibilities[1:]):
                 ret.append([b] + p)
 
     return ret

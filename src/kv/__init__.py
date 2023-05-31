@@ -6,14 +6,15 @@ from kivy.lang import Builder
 kv_loaded = False
 path = os.path.split(os.path.abspath(__file__))[0]
 
-def check_kv():
+
+def check_kv(force=False):
     """
     Checks whether .kv files have been loaded, if not then they are loaded.
     """
 
     global kv_loaded
 
-    if not kv_loaded:
+    if not kv_loaded or force:
         Logger.info("[UDSP] Loading .kv files...")
         for file in os.listdir(path):
             if "." in file and file.split(".")[1] == "kv":
