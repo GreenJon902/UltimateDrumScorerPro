@@ -18,6 +18,8 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         self.to_top_translate = Translate(0, 0)
 
     def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None):
+        return_instructions = []
+
         head_info = default(head_info, (InstructionGroup(), 0, 0))
         bar_info = default(bar_info, (InstructionGroup(), 0, 0))
         dot_info = default(dot_info, (InstructionGroup(), 0, 0))
@@ -28,6 +30,8 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         if height > self.to_top_translate.y:
             self.to_top_translate.y = height
+            for i, child in enumerate(self.group.children[1:len(self.group.children)-1]):
+                return_instructions.append((["update_stem_height", child.children[10], self.to_top_translate.y, i], {}))
 
         section_group = InstructionGroup()
 
@@ -59,11 +63,12 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         section_group.add(Translate(width + stem_info[1], 0))
         self.group.insert(index + 1, section_group)  # + 1 as push matrix
 
-        return_instruction = []
-        if width != bar_info[1]:
-            return_instruction.append((["update_bar_width", bar_info[0], width], {}))
 
-        return return_instruction
+        if width != bar_info[1]:
+            return_instructions.append((["update_bar_width", bar_info[0], width], {}))
+        return_instructions.append((["update_stem_height", stem_info[0], self.to_top_translate.y, index], {}))
+
+        return return_instructions
 
     def setup(self, group: InstructionGroup):
         group.clear()

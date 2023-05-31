@@ -20,9 +20,11 @@ class ScoreSection_NormalStemCreator(ScoreSection_StemCreatorBase):
 
         return group, width
 
-    def update_height(self, stem_info: tuple[InstructionGroup, int], note_info: tuple[float, int]):
-        y = -note_info[0] + notes[note_info[1]].stem_connection_offset
-        stem_info[0].children[2].points[3] = y  # Use index 2 as 0 is color, 1 is bind texture that happens
-                                                # automatically
+    def update_height(self, stem_group, overall_height,
+                      lowest_note_info):
+        y = -overall_height +lowest_note_info[0] + notes[lowest_note_info[1]].stem_connection_offset
+        print(y, overall_height, lowest_note_info)
+        stem_group.children[2].points[3] = y  # Use index 2 as 0 is color, 1 is bind texture that happens
+                                              # automatically
 
 __all__ = ["ScoreSection_NormalStemCreator"]

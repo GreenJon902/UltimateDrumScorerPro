@@ -14,7 +14,7 @@ class ScoreSection_StemCreatorBase:
     Updates this stems height based of the stem offset and y level of the note info given. Also takes the previous stem
     info
     """
-    def update_height(self, stem_info: tuple[InstructionGroup, int], note_info: tuple[float, int]):
+    def update_height(self, stem_group: InstructionGroup, overall_height: float, lowest_note_info: tuple[float, int]):
         raise NotImplementedError()
 
 

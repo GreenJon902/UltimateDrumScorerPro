@@ -16,7 +16,8 @@ Along with width and height, returns a third value which is the y level and note
 
 ### ComponentOrganiser
 Some functions may return new instructions for the ScoreSectionRenderer to process (like resizing bar now we know 
-correct width).
+correct width).  
+These may be update_bar_width(bar_group, width), or update_stem_height(...)
 
 ### NormalComponentOrganiser
 It structures the group like this:

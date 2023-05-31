@@ -23,7 +23,10 @@ class ScoreSectionRenderer(Renderer):
     bar_creator: ScoreSection_BarCreatorBase = ObjectProperty(allownone=True)
     dot_creator: ScoreSection_DotCreatorBase = ObjectProperty(allownone=True)
 
+    lowest_note_info: list[tuple[float, int]]
+
     def __init__(self, *args, **kwargs):
+        self.lowest_note_info = []
         Renderer.__init__(self, *args, **kwargs)
         self.bind(component_organiser=lambda _, __: self.dispatch_instruction("organiser"),
                   head_creator=lambda _, __: self.dispatch_instruction("heads"),
@@ -45,26 +48,28 @@ class ScoreSectionRenderer(Renderer):
                 else:
                     Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                    # rendering, which makes no sense
-
+                new_commands = list()
                 for i in range(len(self.storage)):
                     head_info = self.do_head(i)
+                    self.lowest_note_info.insert(i, head_info[3])
                     bar_info = self.do_bar(i)
                     dot_info = self.do_dot(i)
                     stem_info = self.do_stem(i)
 
-                    self.update_stem_height(head_info, stem_info)
-
                     if self.component_organiser is not None:
-                        new_commands = self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
-                                                                            dot_info=dot_info, stem_info=stem_info)
-                        Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
-                        instructions += new_commands
+                        new_commands += self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
+                                                                             dot_info=dot_info, stem_info=stem_info)
                     else:
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
+                Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
+                instructions += new_commands  # TODO: Remove duplicates
 
             elif command[0] == "update_bar_width":
                 self.update_bar_width(command[1], command[2])
+
+            elif command[0] == "update_stem_height":
+                self.update_stem_height(command[1], command[2], command[3])
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
@@ -95,10 +100,10 @@ class ScoreSectionRenderer(Renderer):
             return None
         return self.stem_creator.create()
 
-    def update_stem_height(self, head_info, stem_info):
-        if head_info is None or stem_info is None or self.stem_creator is None:
+    def update_stem_height(self, stem_group, overall_height, index):
+        if self.stem_creator is None:
             return
-        self.stem_creator.update_height(stem_info, head_info[3])
+        self.stem_creator.update_height(stem_group, overall_height, self.lowest_note_info[index])
 
     def update_bar_width(self, bar_group, width):
         if self.bar_creator is None:
