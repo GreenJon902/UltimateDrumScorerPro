@@ -4,7 +4,8 @@ from kivy.graphics import InstructionGroup
 class ScoreSection_ComponentOrganiserBase:
     group: InstructionGroup
 
-    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None):
+    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None) -> \
+            list[tuple[tuple[any, ...], dict[str, any]]]:
         raise NotImplementedError()
 
     def setup(self, group: InstructionGroup):

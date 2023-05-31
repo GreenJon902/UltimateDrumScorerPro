@@ -35,8 +35,8 @@ class ScoreSectionRenderer(Renderer):
         Logger.info(f"ScoreSectionRenderer: Updating {self} with {instructions}...")
         t = time.time()
 
-        for command in instructions:
-            command = command[0]
+        while len(instructions) > 0:  # Organiser adds new commands
+            command = instructions.pop(0)[0]
             Logger.debug(f"ScoreSectionRenderer: Processing {command}...")
 
             if command[0] == "all":
@@ -55,11 +55,17 @@ class ScoreSectionRenderer(Renderer):
                     self.update_stem_height(head_info, stem_info)
 
                     if self.component_organiser is not None:
-                        self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
-                                                             dot_info=dot_info, stem_info=stem_info)
+                        new_commands = self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
+                                                                            dot_info=dot_info, stem_info=stem_info)
+                        Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
+                        instructions += new_commands
                     else:
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
+
+            elif command[0] == "update_bar_width":
+                self.update_bar_width(command[1], command[2])
+
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 
@@ -93,6 +99,11 @@ class ScoreSectionRenderer(Renderer):
         if head_info is None or stem_info is None or self.stem_creator is None:
             return
         self.stem_creator.update_height(stem_info, head_info[3])
+
+    def update_bar_width(self, bar_group, width):
+        if self.bar_creator is None:
+            return
+        self.bar_creator.update_width(bar_group, width)
 
     def set_storage(self, storage):
         if self.storage is not None:

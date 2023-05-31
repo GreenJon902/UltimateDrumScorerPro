@@ -38,7 +38,6 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
                     lowest_info = height, nid
 
                 color = self.present_color if nid in present_note_ids else self.absent_color
-                print(color, nid)
                 if color[3] != 0:  # If we actually need to draw it
                     group.add(Color(rgba=color))
                     group.add(notes[nid].make_canvas(color=False))

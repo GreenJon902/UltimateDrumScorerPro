@@ -39,5 +39,20 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
         group.add(bar_group)
         return group, width, height
 
+    def update_width(self, bar_group: InstructionGroup, width: float):
+        print(bar_group.children)
+        after_bar_group = bar_group.children[1]
+        full_bar_group = bar_group.children[3]
+
+        for bar in after_bar_group.children:
+            if isinstance(bar, Line):
+                bar.points[0] = width - half_bar_length
+                bar.points[2] = width
+
+        for bar in full_bar_group.children:
+            if isinstance(bar, Line):
+                bar.points[2] = width
+
+
 
 __all__ = ["ScoreSection_NormalBarCreator"]

@@ -14,6 +14,10 @@ Returned width is minimum width as it will size to fit section section.
 ### HeadCreator
 Along with width and height, returns a third value which is the y level and note id of the lowest note.
 
+### ComponentOrganiser
+Some functions may return new instructions for the ScoreSectionRenderer to process (like resizing bar now we know 
+correct width).
+
 ### NormalComponentOrganiser
 It structures the group like this:
 ```
@@ -21,17 +25,19 @@ group
     - PushMatrix
     - InstructionGroup - Repeats for each section section
         - PushMatrix
-        - PushMatrix
         - Translate - Position Heads
         - InstructionGroup - Heads
-        - PopMatrix
         - Translate - Position Dots
         - InstructionGroup - Dots
-        - Translate - Position Bars
+        - PopMatrix
         - PushMatrix
+        - Translate - Position Stem
+        - PushMatrix
+        - Translate - Position Stem
+        - InstructionGroup - Stem
+        - PopMatrix
         - Translate - Position Bars
         - InstructionGroup - Bars
-        - PopMatrix
         - PopMatrix
         - Translate - Prepare for next group
     ...

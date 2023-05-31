@@ -1,5 +1,6 @@
 from kivy.graphics import InstructionGroup, Translate, PushMatrix, PopMatrix
 
+from kv.settings import bar_height
 from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
 
 
@@ -42,19 +43,27 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         # Stems
         section_group.add(PushMatrix())
-        section_group.add(Translate(width, 0))
         section_group.add(self.to_top_translate)
+        section_group.add(PushMatrix())
+        section_group.add(Translate(width, 0))
         section_group.add(stem_info[0])
 
         # Bars
-        section_group.add(Translate(-bar_info[1], -bar_info[2]))
+        section_group.add(PopMatrix())
+        section_group.add(Translate(0, -bar_info[2] + bar_height / 2))
         section_group.add(bar_info[0])
         section_group.add(PopMatrix())
 
 
         # Finishing
-        section_group.add(Translate(width, 0))
+        section_group.add(Translate(width + stem_info[1], 0))
         self.group.insert(index + 1, section_group)  # + 1 as push matrix
+
+        return_instruction = []
+        if width != bar_info[1]:
+            return_instruction.append((["update_bar_width", bar_info[0], width], {}))
+
+        return return_instruction
 
     def setup(self, group: InstructionGroup):
         group.clear()
