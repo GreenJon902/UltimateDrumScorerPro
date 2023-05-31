@@ -27,13 +27,14 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         section_group.add(Translate(0, head_info[2]))
 
+        section_group.add(dot_info[0])
+
+        section_group.add(Translate(0, dot_info[2]))
+
         section_group.add(PushMatrix())
         section_group.add(Translate(width - bar_info[1], 0))
         section_group.add(bar_info[0])
         section_group.add(PopMatrix())
-
-        section_group.add(Translate(0, bar_info[2]))
-        section_group.add(dot_info[0])
 
         section_group.add(PopMatrix())
         section_group.add(Translate(width, 0))  # X

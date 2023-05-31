@@ -16,9 +16,10 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
         width = 0 + (0 if before_bars < 0 else half_bar_length) + (0 if after_bars < 0 else half_bar_length)  # if not
                                                                                                         # updated later
         y = bar_height / 2
-        bar_group = InstructionGroup()
-        for bar in range(bars):
-            bar_group.add(Line(points=(0, y, width, y), width=st))
+
+        after_bar_group = InstructionGroup()
+        for bar in range(after_bars):
+            after_bar_group.add(Line(points=(width - half_bar_length, y, width, y), width=st))
             y += bar_height
 
         before_bar_group = InstructionGroup()
@@ -26,9 +27,9 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
             before_bar_group.add(Line(points=(0, y, half_bar_length, y), width=st))
             y += bar_height
 
-        after_bar_group = InstructionGroup()
-        for bar in range(after_bars):
-            after_bar_group.add(Line(points=(width - half_bar_length, y, width, y), width=st))
+        bar_group = InstructionGroup()
+        for bar in range(bars):
+            bar_group.add(Line(points=(0, y, width, y), width=st))
             y += bar_height
 
         height = y - bar_height / 2

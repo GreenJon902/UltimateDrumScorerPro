@@ -29,13 +29,13 @@ Builder.load_string("""
 storage = ScoreSectionStorage([
     ScoreSectionSectionStorage(note_ids=[2, 3]),
     ScoreSectionSectionStorage(note_ids=[5, 7, 1], before_flags=2, after_flags=3, bars=1),
-    ScoreSectionSectionStorage(note_ids=[5, 6, 1], dots=3, bars=4),
+    ScoreSectionSectionStorage(note_ids=[5, 6, 1], dots=4, bars=4),
     ScoreSectionSectionStorage(note_ids=[], slanted_flags=2)
 ])
 
 renderer = ScoreSectionRenderer(storage, bar_creator=ScoreSection_NormalBarCreator((0, 0, 0, 1)),
                                 dot_creator=ScoreSection_NormalDotCreator((0, 0, 0, 1)),
-                                head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0.1)),
+                                head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0)),
                                 component_organiser=ScoreSection_NormalComponentOrganiser())
 
 design_holder = Widget(size_hint=(None, None))
