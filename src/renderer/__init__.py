@@ -1,10 +1,10 @@
-from kivy.uix.widget import Widget
+from kivy.uix.relativelayout import RelativeLayout
 
 from argumentTrigger import ArgumentTrigger
 from scoreStorage import ScoreStorageItem
 
 
-class Renderer(Widget):
+class Renderer(RelativeLayout):
     storage: ScoreStorageItem
     _storage: ScoreStorageItem = None  # Only used by getters and setter
     dispatch_instruction: callable = None
@@ -12,7 +12,7 @@ class Renderer(Widget):
     def __init__(self, storage, **kwargs):
         self.dispatch_instruction = ArgumentTrigger(self.process_instructions, -1, give_combined=True)
 
-        Widget.__init__(self, **kwargs)
+        RelativeLayout.__init__(self, **kwargs)
         self.set_storage(storage)
 
     def process_instructions(self, instructions: list[tuple[tuple[any, ...], dict[str, any]]]):

@@ -1,5 +1,9 @@
 from kivy.graphics import InstructionGroup, Translate, PushMatrix, PopMatrix
 
+from kv import check_kv
+
+check_kv()
+
 from kv.settings import bar_height
 from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
 
@@ -11,11 +15,14 @@ def default(x, default_):  # Get instruction group from info with a default
 
 
 class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase):
+    parent_group: InstructionGroup
     to_top_translate: Translate  # Moves from y=0 to the top of the score section
+    widths: list[float]
 
     def __init__(self, *args, **kwargs):
-        ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
+        self.widths = []
         self.to_top_translate = Translate(0, 0)
+        ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
 
     def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None):
         return_instructions = []
@@ -30,7 +37,8 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         if height > self.to_top_translate.y:
             self.to_top_translate.y = height
-            for i, child in enumerate(self.group.children[1:len(self.group.children)-1]):
+            for i, child in enumerate(self.group.children):
+                print(self.group.children)
                 return_instructions.append((["update_stem_height", child.children[10], self.to_top_translate.y, i], {}))
 
         section_group = InstructionGroup()
@@ -61,21 +69,29 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         # Finishing
         section_group.add(Translate(width + stem_info[1], 0))
-        self.group.insert(index + 1, section_group)  # + 1 as push matrix
+        self.group.insert(index, section_group)
+        self.widths.insert(index, width)
 
 
         if width != bar_info[1]:
             return_instructions.append((["update_bar_width", bar_info[0], width + stem_info[1]], {}))
         return_instructions.append((["update_stem_height", stem_info[0], self.to_top_translate.y, index], {}))
+        return_instructions.append((["set_size", *self.get_size()], {}))
 
         return return_instructions
 
-    def setup(self, group: InstructionGroup):
-        group.clear()
-        group.add(PushMatrix())
-        group.add(PopMatrix())
+    def setup(self, parent_group: InstructionGroup):
+        parent_group.clear()
+        parent_group.add(PushMatrix())
+        group = InstructionGroup()
+        parent_group.add(group)
+        parent_group.add(PopMatrix())
 
+        self.parent_group = parent_group
         self.group = group
+
+    def get_size(self):
+        return sum(self.widths), self.to_top_translate.y
 
 
 __all__ = ["ScoreSection_NormalComponentOrganiser"]

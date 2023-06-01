@@ -71,6 +71,10 @@ class ScoreSectionRenderer(Renderer):
             elif command[0] == "update_stem_height":
                 self.update_stem_height(command[1], command[2], command[3])
 
+            elif command[0] == "set_size":
+                self.width = command[1]
+                self.height = command[2]
+
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 

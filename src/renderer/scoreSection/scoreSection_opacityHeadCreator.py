@@ -37,8 +37,6 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
                 if nid in present_note_ids and lowest_info is None:
                     lowest_info = height, nid
 
-                    print(lowest_info)
-
                 color = self.present_color if nid in present_note_ids else self.absent_color
                 if color[3] != 0:  # If we actually need to draw it
                     group.add(Color(rgba=color))
