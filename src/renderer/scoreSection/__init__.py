@@ -88,7 +88,7 @@ class ScoreSectionRenderer(Renderer):
         if self.bar_creator is None:
             return None
         return self.bar_creator.create(self.storage[index].bars, self.storage[index].before_flags,
-                                       self.storage[index].after_flags)
+                                       self.storage[index].after_flags, self.storage[index].slanted_flags)
 
     def do_dot(self, index):
         if self.dot_creator is None:

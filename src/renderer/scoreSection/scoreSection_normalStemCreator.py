@@ -22,8 +22,12 @@ class ScoreSection_NormalStemCreator(ScoreSection_StemCreatorBase):
 
     def update_height(self, stem_group, overall_height,
                       lowest_note_info):
-        y = -overall_height +lowest_note_info[0] + notes[lowest_note_info[1]].stem_connection_offset
-        print(y, overall_height, lowest_note_info)
+        if lowest_note_info is None:
+            y = 0
+            stem_group.children[0].a = 0
+        else:
+            y = -overall_height + lowest_note_info[0] + notes[lowest_note_info[1]].stem_connection_offset
+            stem_group.children[0].a = 1
         stem_group.children[2].points[3] = y  # Use index 2 as 0 is color, 1 is bind texture that happens
                                               # automatically
 

@@ -7,7 +7,7 @@ class ScoreSection_BarCreatorBase:
     def __init__(self, color):
         self.color = color
 
-    def create(self, bars, before_bars, after_bars) -> tuple[InstructionGroup, int, int]:
+    def create(self, bars, before_bars, after_bars, slanted_bars) -> tuple[InstructionGroup, int, int]:
         raise NotImplementedError()
 
     def update_width(self, bar_group: InstructionGroup, width: float):
