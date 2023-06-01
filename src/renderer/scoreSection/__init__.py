@@ -51,7 +51,7 @@ class ScoreSectionRenderer(Renderer):
                 new_commands = list()
                 for i in range(len(self.storage)):
                     head_info = self.do_head(i)
-                    self.lowest_note_info.insert(i, head_info[3])
+                    self.lowest_note_info.insert(i, head_info[3] if head_info is not None else None)
                     bar_info = self.do_bar(i)
                     dot_info = self.do_dot(i)
                     stem_info = self.do_stem(i)

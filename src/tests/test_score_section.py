@@ -14,12 +14,12 @@ from tests.common import GraphicUnitTest, gen_parameter_combo
 
 class ScoreSectionTestCases(GraphicUnitTest):
     def do(self, func: typing.Callable[[], tuple[Instruction, float, float]]):
-        g, w, h = func()
+        g, w, h, *_ = func()
         print(f"Size: {w, h}")
         self.scatter_render(g, w, h)
 
     def test_bars(self):
-        self.do(lambda: ScoreSection_NormalBarCreator((0, 0, 0, 1)).create(7, 5, 8))
+        self.do(lambda: ScoreSection_NormalBarCreator((0, 0, 0, 1)).create(7, 5, 8, 6))
 
     def test_dots(self):
         self.do(lambda: ScoreSection_NormalDotCreator((0, 0, 0, 1)).create(7))
