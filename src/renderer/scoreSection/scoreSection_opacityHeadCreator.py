@@ -43,7 +43,7 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
                     group.add(notes[nid].make_canvas(color=False))
                 group.add(Translate(0, notes[nid].height))
 
-                if notes[nid].width > width:
+                if notes[nid].width > width and nid in present_note_ids:
                     width = notes[nid].width
                 height += notes[nid].height
 

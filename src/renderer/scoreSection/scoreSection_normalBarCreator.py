@@ -13,8 +13,12 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
         group = InstructionGroup()
         group.add(Color(rgba=self.color))
 
-        width = 0 + (0 if before_bars <= 0 else half_bar_length) + (0 if after_bars <= 0 else half_bar_length)  # if not
-                                                                                                        # updated later
+        width = (0 +  # incase not updated later
+                 (0 if before_bars <= 0 else half_bar_length) +
+                 (0 if after_bars <= 0 else half_bar_length))
+        if slanted_bars > 0 and width < slanted_flag_length:
+            width = slanted_flag_length
+
         y = bar_height / 2
 
         if slanted_bars > 0:

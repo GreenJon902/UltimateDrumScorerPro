@@ -44,7 +44,7 @@ renderer = ScoreSectionRenderer(storage, bar_creator=ScoreSection_NormalBarCreat
 design_holder = Widget(size_hint=(None, None))
 design_holder.add_widget(renderer)
 design_holder.size = renderer.size
-renderer.bind(size=lambda value: setattr(design_holder, "size", value))
+renderer.bind(size=lambda _, value: setattr(design_holder, "size", value))
 
 root = ScatterPlane(scale=(metrics.mm(1)))
 root.pos = 0, 0
