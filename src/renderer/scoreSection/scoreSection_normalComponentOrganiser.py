@@ -54,7 +54,7 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         # Bars
         section_group.add(PopMatrix())
-        section_group.add(Translate(0, -bar_info[2] + bar_height / 2))
+        section_group.add(Translate(-stem_info[1] / 2, -bar_info[2] + bar_height / 2))
         section_group.add(bar_info[0])
         section_group.add(PopMatrix())
 
@@ -65,7 +65,7 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
 
         if width != bar_info[1]:
-            return_instructions.append((["update_bar_width", bar_info[0], width], {}))
+            return_instructions.append((["update_bar_width", bar_info[0], width + stem_info[1]], {}))
         return_instructions.append((["update_stem_height", stem_info[0], self.to_top_translate.y, index], {}))
 
         return return_instructions

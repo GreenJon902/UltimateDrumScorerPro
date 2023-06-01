@@ -44,4 +44,5 @@ group
     ...
     - PopMatrix
 ```
-
+Note that bars are updated to have the width + the stem width to ensure there are no artifacts where two lines join. 
+To make sure it fits, bars are then transformed by 1/2 of a stem width, so it is halfway inside the stem.
