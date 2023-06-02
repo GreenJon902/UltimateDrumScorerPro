@@ -23,7 +23,7 @@ class Design(Widget):
             color = Color(rgba=self.color)
             self.bind(color=lambda _, value: setattr(color, "rgba", value))
         for instruction in self.instructions:
-            instruction = instruction.replace("'{st}'", str(st))
+            instruction = instruction.replace("{st}", str(st))
             exec(instruction)
 
     def make_canvas(self, color=True):

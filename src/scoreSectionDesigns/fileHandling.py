@@ -17,7 +17,7 @@ def read_design_from(path: str, type_: type(Design)) -> tuple[int, Design]:
     instructions = []  # Factory.get(instr.pop("name"))(**instr) for instr in json_instructions
     for instr in json_instructions:
         name = instr.pop("name")
-        instructions.append(name + "(" + ", ".join(attr + "=" + repr(value) for attr, value in instr.items()) + ")")
+        instructions.append(name + "(" + ", ".join(attr + "=" + str(value) for attr, value in instr.items()) + ")")
 
     nid = serialized.pop("id")
     attributes = serialized
