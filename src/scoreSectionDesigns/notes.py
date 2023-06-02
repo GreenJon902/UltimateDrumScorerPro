@@ -14,14 +14,17 @@ path = os.path.join(os.path.split(os.path.abspath(__file__))[0], "../designs/not
 class Note(Design):
     stem_connection_offset: float = NumericProperty()  # Offset from relative y=0 where stem connects
     note_level: float = NumericProperty()  # The level upon which the note is drawn, the integer part will always affect
-    # the height, the decimal part is only used when there are two notes with the
-    # same integer part.
+                                           # the height, the decimal part is only used when there are two notes with the
+                                           # same integer part.
     dot_offset_x: float = NumericProperty()
     dot_offset_y: float = NumericProperty()
-
     dot_offset: tuple[float, float] = ReferenceListProperty(dot_offset_x, dot_offset_y)
+
     name: str = StringProperty()
 
+    width: float = NumericProperty()
+    height: float = NumericProperty()
+    size: tuple[float, float] = ReferenceListProperty(width, height)
 
 
 notes_loaded = False
