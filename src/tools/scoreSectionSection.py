@@ -1,5 +1,6 @@
 import os
 
+from renderer.scoreSection.scoreSection_normalDecorationCreator import ScoreSection_NormalDecorationCreator
 from renderer.scoreSection.scoreSection_normalStemCreator import ScoreSection_NormalStemCreator
 
 os.environ["KCFG_KIVY_LOG_LEVEL"] = "debug"
@@ -32,14 +33,15 @@ storage = ScoreSectionStorage([
     ScoreSectionSectionStorage(note_ids=[2, 3]),
     ScoreSectionSectionStorage(note_ids=[5, 7, 1], before_flags=2, after_flags=3, bars=1),
     ScoreSectionSectionStorage(note_ids=[5, 6, 1], dots=4, bars=4),
-    ScoreSectionSectionStorage(note_ids=[], slanted_flags=2)
+    ScoreSectionSectionStorage(note_ids=[], slanted_flags=2, decoration_id=0)
 ])
 
 renderer = ScoreSectionRenderer(storage, bar_creator=ScoreSection_NormalBarCreator((0, 0, 0, 1)),
                                 dot_creator=ScoreSection_NormalDotCreator((0, 0, 0, 1)),
                                 head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0)),
                                 component_organiser=ScoreSection_NormalComponentOrganiser(),
-                                stem_creator=ScoreSection_NormalStemCreator((0, 0, 0, 1)))
+                                stem_creator=ScoreSection_NormalStemCreator((0, 0, 0, 1)),
+                                decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)))
 
 design_holder = Widget(size_hint=(None, None))
 design_holder.add_widget(renderer)

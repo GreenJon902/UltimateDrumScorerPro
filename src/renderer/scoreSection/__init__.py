@@ -6,6 +6,7 @@ from kivy.properties import ObjectProperty
 from renderer import Renderer
 from renderer.scoreSection.scoreSection_barCreatorBase import ScoreSection_BarCreatorBase
 from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
+from renderer.scoreSection.scoreSection_decorationCreatorBase import ScoreSection_DecorationCreatorBase
 from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCreatorBase
 from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
 from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
@@ -18,7 +19,7 @@ class ScoreSectionRenderer(Renderer):
     component_organiser: ScoreSection_ComponentOrganiserBase = ObjectProperty(allownone=True)
 
     head_creator: ScoreSection_HeadCreatorBase = ObjectProperty(allownone=True)
-    #decoration_creator = ObjectProperty(allownone=True)
+    decoration_creator: ScoreSection_DecorationCreatorBase = ObjectProperty(allownone=True)
     stem_creator: ScoreSection_StemCreatorBase = ObjectProperty(allownone=True)
     bar_creator: ScoreSection_BarCreatorBase = ObjectProperty(allownone=True)
     dot_creator: ScoreSection_DotCreatorBase = ObjectProperty(allownone=True)
@@ -54,11 +55,13 @@ class ScoreSectionRenderer(Renderer):
                     self.lowest_note_info.insert(i, head_info[3] if head_info is not None else None)
                     bar_info = self.do_bar(i)
                     dot_info = self.do_dot(i)
-                    stem_info = self.do_stem(i)
+                    stem_info = self.do_stem()
+                    decoration_info = self.do_decoration(i)
 
                     if self.component_organiser is not None:
                         new_commands += self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
-                                                                             dot_info=dot_info, stem_info=stem_info)
+                                                                             dot_info=dot_info, stem_info=stem_info,
+                                                                             decoration_info=decoration_info)
                     else:
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
@@ -74,6 +77,9 @@ class ScoreSectionRenderer(Renderer):
             elif command[0] == "set_size":
                 self.width = command[1]
                 self.height = command[2]
+
+            elif command[0] == "update_decoration_height":
+                self.update_decoration_height(command[1], command[2], command[3], command[4])
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
@@ -99,10 +105,15 @@ class ScoreSectionRenderer(Renderer):
             return None
         return self.dot_creator.create(self.storage[index].dots)
 
-    def do_stem(self, index):
+    def do_stem(self):
         if self.stem_creator is None:
             return None
         return self.stem_creator.create()
+
+    def do_decoration(self, index):
+        if self.decoration_creator is None:
+            return None
+        return self.decoration_creator.create(self.storage[index].decoration_id)
 
     def update_stem_height(self, stem_group, overall_height, index):
         if self.stem_creator is None:
@@ -120,6 +131,11 @@ class ScoreSectionRenderer(Renderer):
         Renderer.set_storage(self, storage)
         self.storage.bind_all(self.process_instructions)
         self.dispatch_instruction("all")
+
+    def update_decoration_height(self, decoration_group, head_height, overall_height, index):
+        if self.decoration_creator is None:
+            return
+        self.decoration_creator.update_height(decoration_group, head_height, overall_height, self.storage[index].decoration_id)
 
 
 __all__ = ["ScoreSectionRenderer"]

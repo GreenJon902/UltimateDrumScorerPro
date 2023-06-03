@@ -1,7 +1,9 @@
+from scoreSectionDesigns.decorations import check_decorations, decorations
 from scoreSectionDesigns.notes import check_notes, notes
 from tests.common import GraphicUnitTest
 
 check_notes()
+check_decorations()
 
 
 class DesignRenderingTestCases(GraphicUnitTest):
@@ -15,6 +17,15 @@ for nid in notes:
     name = name.replace("-", "_")
     setattr(DesignRenderingTestCases, f"test_{name}",
             lambda self: DesignRenderingTestCases.scatter_render(self, notes[nid].make_canvas(), *notes[nid].size))
+
+for did in decorations:
+    decoration = decorations[did]
+    name = decoration.name.lower()
+    name = name.replace(" ", "_")
+    name = name.replace("-", "_")
+    setattr(DesignRenderingTestCases, f"test_{name}",
+            lambda self: DesignRenderingTestCases.scatter_render(self, decorations[did].make_canvas(),
+                                                                 decorations[did].width, decorations[did].min_height))
 
 
 __all__ = ["DesignRenderingTestCases"]

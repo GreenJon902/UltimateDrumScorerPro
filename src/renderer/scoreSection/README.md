@@ -14,6 +14,13 @@ Returned width is minimum width as it will size to fit section section.
 ### HeadCreator
 Along with width and height, returns a third value which is the y level and note id of the lowest note.
 
+### DecorationCreator
+Instead of height, it returns the minimum height. When height is updated, these may scale to be the full height or can
+ignore it (rests don't increase in height, but a bracket may).
+
+### NormalDecorationCreator
+The first draw of decorations is at min_height, this is then updated later in the update function.
+
 ### ComponentOrganiser
 Some functions may return new instructions for the ScoreSectionRenderer to process (like resizing bar now we know 
 correct width).  

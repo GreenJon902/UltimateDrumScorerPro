@@ -24,24 +24,30 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         self.to_top_translate = Translate(0, 0)
         ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
 
-    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None):
+    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None, decoration_info=None):
         return_instructions = []
 
         head_info = default(head_info, (InstructionGroup(), 0, 0))
         bar_info = default(bar_info, (InstructionGroup(), 0, 0))
         dot_info = default(dot_info, (InstructionGroup(), 0, 0))
         stem_info = default(stem_info, (InstructionGroup(), 0))
+        decoration_info = default(decoration_info, (InstructionGroup(), 0, 0))
 
-        width = max(head_info[1], bar_info[1], dot_info[1])
+        width = max(head_info[1], bar_info[1], dot_info[1]) + decoration_info[1]
         height = head_info[2] + bar_info[2] + dot_info[2]
+
+        if height < decoration_info[2]:
+            height = decoration_info[2]
 
         if height > self.to_top_translate.y:
             self.to_top_translate.y = height
             for i, child in enumerate(self.group.children):
-                print(self.group.children)
-                return_instructions.append((["update_stem_height", child.children[10], self.to_top_translate.y, i], {}))
+                return_instructions.append((["update_stem_height", child.children[11], self.to_top_translate.y, i], {}))
 
         section_group = InstructionGroup()
+
+        # Decorations
+        section_group.add(decoration_info[0])
 
         # Heads
         section_group.add(PushMatrix())
@@ -75,6 +81,9 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         if width != bar_info[1]:
             return_instructions.append((["update_bar_width", bar_info[0], width + stem_info[1]], {}))
+        if height != decoration_info[2]:
+            return_instructions.append((["update_decoration_height", decoration_info[0], head_info[2], height, index],
+                                        {}))
         return_instructions.append((["update_stem_height", stem_info[0], self.to_top_translate.y, index], {}))
         return_instructions.append((["set_size", *self.get_size()], {}))
 

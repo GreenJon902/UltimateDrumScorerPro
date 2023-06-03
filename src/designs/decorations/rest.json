@@ -1,0 +1,37 @@
+{
+  "id": 0,
+  "name": "Rest",
+
+  "width": 5,
+  "min_height": 10,
+
+  "update_info": [[1, "y"]],
+
+  "instructions": [
+    {
+      "name": "PushMatrix"
+    },
+    {
+      "name": "Translate",
+      "y": "eval{head_height}/2-5"
+    },
+    {
+      "name": "Line",
+      "points": [0, 10, 5, 7.5, 1, 5],
+      "width": "eval{st}"
+    },
+    {
+      "name": "Line",
+      "points": [4, 8, 0, 5.5, 5, 2.5, 2, 2],
+      "width": "eval{st}"
+    },
+    {
+      "name": "Line",
+      "ellipse": [0, 0, 5, 2, -10, -270],
+      "width": "eval{st}"
+    },
+    {
+      "name": "PopMatrix"
+    }
+  ]
+}

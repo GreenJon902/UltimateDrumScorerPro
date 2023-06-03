@@ -3,6 +3,44 @@ Hi there! I doubt anyone will but if you want to contribute then great. Please k
 
 Please put anything that should be accessible in a \_\_all\_\_.
 
+# Design Information
+### Heads
+| Name                   | Type  | Notes                                                                                                                                    |
+|------------------------|-------|------------------------------------------------------------------------------------------------------------------------------------------|
+| stem_connection_offset | float | Y coord of where note stem attaches to note head                                                                                         |
+| note_level             | float | See note level under [naming stuff](https://github.com/GreenJon902/UltimateDrumScorerPro/blob/v3/CONTRIBUTING.md#important-naming-stuff) |
+| dot_offset_x           | float | Where dots start generating                                                                                                              |
+| dot_offset_y           | float | Where dots start generating                                                                                                              |
+| name                   | str   | Name of the head                                                                                                                         |
+| width                  | float | Width of the head                                                                                                                        |
+| height                 | float | Height of the head                                                                                                                       |
+| instructions           | list  | See below                                                                                                                                |
+
+| Name         | Type                                           | Notes                                |
+|--------------|------------------------------------------------|--------------------------------------|
+| name         | str                                            | Name of the decoration               |
+| width        | float                                          | Width of the decoration              |
+| min_height   | float                                          | The minimum height of the decoration |
+| update_info  | Union[str, list[str, int, tuple[int, str...]]] | See below                            |
+| instructions | list                                           | See below                            |     
+
+update can be:
+- str - which can be
+  - "*" - Update everything
+  - "None" - Update nothing
+- list - which can contain
+  - str - The name of the attribute (e.g. points) or name of the instruction (e.g. line)
+  - int - The index of the instruction to update
+  - tuple - The int is the index, the strings are the names of the attributes
+
+### Instructions
+Runs kivy graphics instructions but kwargs are as json. 
+Name for name of instruction. 
+Args is list for anything that isn't a kwarg.
+Strings can be evaluated as python if it starts with `eval` (if you need to turn a str to an int). 
+Format values in by doing `{value_name}`, valid values are `st` (Standard line thickness) for heads, decorations have 
+`st`, `head_height` (height all the heads) and `height` (overall height of the entire score section). 
+
 # Notes on Internals
 ### Important naming stuff
 Item - part of a page (e.g. score section, text)  

@@ -13,17 +13,17 @@
     {
       "name": "Line",
       "points": [0, 0, 7.5, 5],
-      "width": "{st}"
+      "width": "eval{st}"
     },
     {
       "name": "Line",
       "points": [7.5, 0, 0, 5],
-      "width": "{st}"
+      "width": "eval{st}"
     },
     {
       "name": "Line",
       "points": [0, 2.5, 7.5, 2.5],
-      "width": "{st}"
+      "width": "eval{st}"
     }
   ]
 }

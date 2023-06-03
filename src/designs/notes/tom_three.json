@@ -13,12 +13,12 @@
     {
       "name": "Line",
       "ellipse": [0, 0, 7.5, 5],
-      "width": "{st}"
+      "width": "eval{st}"
     },
     {
       "name": "Line",
       "points": [1.5, 2, 6, 3],
-      "width": "{st}"
+      "width": "eval{st}"
     }
   ]
 }
