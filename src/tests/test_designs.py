@@ -24,7 +24,8 @@ for did in decorations:
     name = name.replace(" ", "_")
     name = name.replace("-", "_")
     setattr(DesignRenderingTestCases, f"test_{name}",
-            lambda self: DesignRenderingTestCases.scatter_render(self, decorations[did].make_canvas(),
+            lambda self: DesignRenderingTestCases.scatter_render(self, decorations[did].make_canvas(head_height=10,
+                                                                                                    height=10),
                                                                  decorations[did].width, decorations[did].min_height))
 
 
