@@ -1,13 +1,18 @@
 import kivy.base
-from assembler.pageContent.scoreSection import ScoreSection
 from kivy import metrics
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scatter import ScatterPlane
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
-from score import ScoreSectionStorage, ScoreSectionSectionStorage
-from score.decorations import decorations
+
+from renderer.scoreSection import ScoreSectionRenderer
+from renderer.scoreSection.scoreSection_normalComponentOrganiser import ScoreSection_NormalComponentOrganiser
+from renderer.scoreSection.scoreSection_normalDecorationCreator import ScoreSection_NormalDecorationCreator
+from scoreSectionDesigns.decorations import decorations, check_decorations
+from scoreStorage.scoreSectionStorage import ScoreSectionStorage, ScoreSectionSectionStorage
+
+check_decorations()
 
 min_decoration_id = 0
 max_decoration_id = len(decorations)
@@ -38,9 +43,10 @@ class MyBoxLayout(BoxLayout):  # Allow no touch events through
 
 scoreSections = list()
 for decoration in decoration_ids:
-    scoreSections.append(ScoreSection(None, score=ScoreSectionStorage([
+    scoreSections.append(ScoreSectionRenderer(ScoreSectionStorage([
         ScoreSectionSectionStorage(decoration_id=decoration),
-    ])))
+    ]), decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)),
+        component_organiser=ScoreSection_NormalComponentOrganiser(), size_hint=(None, None)))
 
 
 container = StackLayout(spacing=container_spacing, size_hint_x=None)
