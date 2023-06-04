@@ -14,15 +14,18 @@ path = os.path.join(os.path.split(os.path.abspath(__file__))[0], "../designs/dec
 
 def update(group, attrs, **kwargs):
     for kw, v in attrs.items():
-        print(group, attrs, kwargs, kw, v)
         v = format_value(v, **kwargs)
         setattr(group, kw, v)
 
 
-def index_of_next_child_of_type(before_index: int, group: InstructionGroup, name: str):  # Because sometimes bind
-                                                                                         # textures and stuff are added
+def index_of_next_child_of_type(before_index: int, group: InstructionGroup, name: str):
+    # Because sometimes bind textures and stuff are added
+
     i = before_index
-    while i < len(group.children) and type(group.children[i]).__name__ != name:
+    if type(group.children[i]).__name__ == name:  # Don't want one we currently at
+        i += 1
+
+    while type(group.children[i]).__name__ != name:
         i += 1
     return i
 

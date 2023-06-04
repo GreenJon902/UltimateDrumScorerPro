@@ -2,8 +2,8 @@ import kivy.base
 from kivy import metrics
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scatter import ScatterPlane
-from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
 
 from renderer.scoreSection import ScoreSectionRenderer
@@ -55,7 +55,7 @@ for decoration in decoration_ids:
         head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 0), (0, 0, 0, 0)), size_hint=(None, None)))
 
 
-container = StackLayout(spacing=container_spacing, size_hint_x=None)
+container = GridLayout(spacing=container_spacing, size_hint_x=1, cols=2)
 container.width = sum([decorations[decoration_id]().width + container_spacing for decoration_id in decoration_ids])
 for scoreSection in scoreSections:
     container.add_widget(scoreSection)
