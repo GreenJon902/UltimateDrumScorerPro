@@ -9,6 +9,7 @@ from kivy.uix.widget import Widget
 from renderer.scoreSection import ScoreSectionRenderer
 from renderer.scoreSection.scoreSection_normalComponentOrganiser import ScoreSection_NormalComponentOrganiser
 from renderer.scoreSection.scoreSection_normalDecorationCreator import ScoreSection_NormalDecorationCreator
+from renderer.scoreSection.scoreSection_opacityHeadCreator import ScoreSection_OpacityHeadCreator
 from scoreSectionDesigns.decorations import decorations, check_decorations
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage, ScoreSectionSectionStorage
 
@@ -22,13 +23,13 @@ container_spacing = 5
 
 
 Builder.load_string("""
-<BoxLayout>:
+<ScoreSectionRenderer>:
     canvas.before:
         Color:
             rgba: 1, 1, 1, 1
         Rectangle:
             pos: -2, -2
-            size: self.size
+            size: self.width + 4, self.height + 4
 """)
 
 
@@ -47,6 +48,11 @@ for decoration in decoration_ids:
         ScoreSectionSectionStorage(decoration_id=decoration),
     ]), decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)),
         component_organiser=ScoreSection_NormalComponentOrganiser(), size_hint=(None, None)))
+    scoreSections.append(ScoreSectionRenderer(ScoreSectionStorage([
+        ScoreSectionSectionStorage(decoration_id=decoration, note_ids=[1, 2, 3, 4]),
+    ]), decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)),
+        component_organiser=ScoreSection_NormalComponentOrganiser(),
+        head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 0), (0, 0, 0, 0)), size_hint=(None, None)))
 
 
 container = StackLayout(spacing=container_spacing, size_hint_x=None)

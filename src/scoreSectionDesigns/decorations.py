@@ -1,12 +1,10 @@
 import os
-from typing import Union
 
 from kivy import Logger
 from kivy.graphics import InstructionGroup
-from kivy.properties import NumericProperty, StringProperty, ObjectProperty
+from kivy.properties import NumericProperty, StringProperty
 
 from kv import check_kv
-from kv.settings import st
 from scoreSectionDesigns import read_design_from, Design, format_value
 
 check_kv()
@@ -35,49 +33,12 @@ class Decoration(Design):
 
     name: str = StringProperty()
 
-    update_info: Union[str, list[str, int, tuple[int, str, ...]]] = ObjectProperty()
-
     def update(self, group: InstructionGroup, **kwargs):
-        # Anyone trying to read this, im sorry, I really am. I tried my hardest :'( .  Wall have fun!! :)
+        ii = 0  # Graphics instruction index
+        for i, instruction in enumerate(self.instructions):
+            ii = index_of_next_child_of_type(ii, group, instruction[0])
+            update(group.children[ii], instruction[1], **kwargs)
 
-        kwargs.setdefault("st", str(st))
-
-        if self.update_info == "None":
-            return
-        elif self.update_info == "*":
-            ii = 0  # Graphics instruction index
-            for i, instruction in enumerate(self.instructions):
-                ii = index_of_next_child_of_type(ii, group, instruction[0])
-                update(group.children[ii], instruction[1], **kwargs)
-
-        else:  # List so we have to do this a bit more complicated
-            ii = 0  # Graphics instruction index
-            for i, instruction in enumerate(self.instructions):
-                name: str = instruction[0]
-                attrs: dict[str, any] = instruction[1]
-
-                if i in self.update_info or name in self.update_info:  # Index
-                    ii = index_of_next_child_of_type(ii, group, instruction[0])
-                    update(group.children[ii], attrs, **kwargs)
-                else:
-                    for kw, v in attrs.items():
-                        if kw in self.update_info:
-                            ii = index_of_next_child_of_type(ii, group, instruction[0])
-                            v = format_value(v, **kwargs)
-                            setattr(group.children[ii], kw, v)
-
-                    # Where we want specific attributes of a specific instruction (e.g. height of instruction 3)
-                    for item in self.update_info:
-                        if isinstance(item, tuple) or isinstance(item, list):  # JSON has no tuple so list too
-                            i2 = item[0]
-                            if i == i2:
-                                for attr_name in item[1:]:
-                                    if attr_name in attrs.keys():
-                                        v = attrs[attr_name]
-                                        v = format_value(v, **kwargs)
-
-                                        ii = index_of_next_child_of_type(ii, group, instruction[0])
-                                        setattr(group.children[ii], attr_name, v)
 
 
 decorations_loaded = False
