@@ -1,0 +1,45 @@
+
+{
+  "id": 5,
+  "name": "Repeated Section End",
+
+  "width": 3,
+  "min_height": 15,
+
+  "instructions": [
+    {
+      "name": "PushMatrix"
+    },
+    {
+      "name": "Scale",
+      "x": -1
+    },
+    {
+      "name": "Translate",
+      "x": -3
+    },
+    {
+      "name": "Line",
+      "points": "eval[3, -1.5, 0, 0, 0, {height}, 3, {height} + 1.5]",
+      "width": "eval{st}"
+    },
+    {
+      "name": "Line",
+      "points": "eval[1, {height} / 2 - 4, 1, {height} / 2 + 4]",
+      "width": "eval{st}"
+    },
+    {
+      "name": "Ellipse",
+      "pos": "eval[2, {head_height} / 2 + 2]",
+      "size": [1, 1]
+    },
+    {
+      "name": "Ellipse",
+      "pos": "eval[2, {head_height} / 2 - 3]",
+      "size": [1, 1]
+    },
+    {
+      "name": "PopMatrix"
+    }
+  ]
+}

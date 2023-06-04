@@ -1,0 +1,25 @@
+{
+  "id": 3,
+  "name": "Section End",
+
+  "width": 2,
+  "min_height": 7,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "points": "eval[2, 0, 2, {head_height}]",
+      "width": "eval{st}"
+    },
+    {
+      "name": "Ellipse",
+      "pos": "eval[0, {head_height} / 2 + 2]",
+      "size": [1, 1]
+    },
+    {
+      "name": "Ellipse",
+      "pos": "eval[0, {head_height} / 2 - 3]",
+      "size": [1, 1]
+    }
+  ]
+}

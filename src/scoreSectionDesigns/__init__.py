@@ -44,6 +44,11 @@ class Design(EventDispatcher):
                 y = attrs.pop("y", 0)
                 z = attrs.pop("z", 0)
                 Factory.get(instruction[0])(x, y, z, **attrs)
+            elif instruction[0] == "Scale":  # Waiting on https://github.com/kivy/kivy/pull/8270
+                x = attrs.pop("x", 1)
+                y = attrs.pop("y", 1)
+                z = attrs.pop("z", 1)
+                Factory.get(instruction[0])(x, y, z, **attrs)
             else:
                 Factory.get(instruction[0])(**attrs)
 

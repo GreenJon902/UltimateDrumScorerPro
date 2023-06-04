@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "name": "Bar Separator",
+
+  "width": 0.25,
+  "min_height": 5,
+
+  "instructions": [
+    {
+      "name": "Line",
+      "points": "eval[0, 0, 0, {height}]",
+      "width": "eval{st}"
+    }
+  ]
+}
