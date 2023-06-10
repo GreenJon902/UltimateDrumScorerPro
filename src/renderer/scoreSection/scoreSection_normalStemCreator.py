@@ -27,6 +27,7 @@ class ScoreSection_NormalStemCreator(ScoreSection_StemCreatorBase):
             stem_group.children[0].a = 0
         else:
             y = -overall_height + lowest_note_info[0] + notes[lowest_note_info[1]].stem_connection_offset
+            print(y)
             stem_group.children[0].a = 1
         stem_group.children[2].points[3] = y  # Use index 2 as 0 is color, 1 is bind texture that happens
                                               # automatically

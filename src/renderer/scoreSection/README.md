@@ -33,6 +33,7 @@ It structures the group like this:
 group
     - PushMatrix
     - InstructionGroup - Repeats for each section section
+        - InstructionGroup - Decorations
         - PushMatrix
         - Translate - Position Heads
         - InstructionGroup - Heads

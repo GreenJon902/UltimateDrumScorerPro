@@ -17,7 +17,19 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
         self.absent_color = absent_color
 
     def create(self, present_note_ids, existent_notes_ids):
+        if len(existent_notes_ids) == 0:
+            return None
+
         group = InstructionGroup()
+        info = self.update(present_note_ids, existent_notes_ids, group)
+        return info
+
+
+    def update(self, present_note_ids, existent_notes_ids, group):
+        if len(existent_notes_ids) == 0:
+            return None
+        print(present_note_ids, existent_notes_ids, group)
+        group.clear()
         group.add(PushMatrix())
 
         existent_notes_ids = sorted(existent_notes_ids, key=lambda nid: notes[nid].note_level)
@@ -49,8 +61,6 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
 
         group.add(PopMatrix())
         return group, width, height, lowest_info
-
-
 
 
 __all__ = ["ScoreSection_OpacityHeadCreator"]

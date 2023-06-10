@@ -43,6 +43,8 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
             self.to_top_translate.y = height
             for i, child in enumerate(self.group.children):
                 return_instructions.append((["update_stem_height", child.children[11], self.to_top_translate.y, i], {}))
+                return_instructions.append((["update_decoration_height", child.children[0], head_info[2],
+                                             self.to_top_translate.y, i], {}))
 
         section_group = InstructionGroup()
 
