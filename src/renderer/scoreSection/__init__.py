@@ -10,6 +10,7 @@ from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSecti
 from renderer.scoreSection.scoreSection_decorationCreatorBase import ScoreSection_DecorationCreatorBase
 from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCreatorBase
 from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
+from renderer.scoreSection.scoreSection_noteHeightCalculatorBase import ScoreSection_NoteHeightCalculatorBase
 from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage
 
@@ -19,6 +20,7 @@ class ScoreSectionRenderer(Renderer):
 
     component_organiser: ScoreSection_ComponentOrganiserBase = ObjectProperty(allownone=True)
 
+    note_height_calculator: ScoreSection_NoteHeightCalculatorBase = ObjectProperty(allownone=True)
     head_creator: ScoreSection_HeadCreatorBase = ObjectProperty(allownone=True)
     decoration_creator: ScoreSection_DecorationCreatorBase = ObjectProperty(allownone=True)
     stem_creator: ScoreSection_StemCreatorBase = ObjectProperty(allownone=True)
@@ -72,14 +74,12 @@ class ScoreSectionRenderer(Renderer):
                     else:
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
+                    self.update_stem_height(stem_info[0], i)
                 Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
                 instructions += new_commands  # TODO: Remove duplicates
 
             elif command[0] == "update_bar_width":
                 self.update_bar_width(command[1], command[2])
-
-            elif command[0] == "update_stem_height":
-                self.update_stem_height(command[1], command[2], command[3])
 
             elif command[0] == "set_size":
                 self.width = command[1]
@@ -113,6 +113,8 @@ class ScoreSectionRenderer(Renderer):
                         Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
                                                                                        # rendering, which makes no sense
 
+                    self.update_stem_height(stem_info[0], i)
+
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
@@ -134,7 +136,10 @@ class ScoreSectionRenderer(Renderer):
         if self.head_creator is None:
             return None
         self.check_existent_nids()
-        return self.head_creator.create(self.storage[index].note_ids, self.existent_nids)
+        if self.note_height_calculator is None:
+            return None
+        note_levels = self.note_height_calculator.get(self.existent_nids)
+        return self.head_creator.create(self.storage[index].note_ids, note_levels)
 
     def do_bar(self, index):
         if self.bar_creator is None:
@@ -157,10 +162,14 @@ class ScoreSectionRenderer(Renderer):
             return None
         return self.decoration_creator.create(self.storage[index].decoration_id)
 
-    def update_stem_height(self, stem_group, overall_height, index):
+    def update_stem_height(self, stem_group, index):
         if self.stem_creator is None:
             return
-        self.stem_creator.update_height(stem_group, overall_height, self.lowest_note_info[index])
+            self.check_existent_nids()
+        if self.note_height_calculator is None:
+            return None
+        note_heights = self.note_height_calculator.get(self.existent_nids)
+        self.stem_creator.update_height(stem_group, note_heights, self.storage[index].note_ids)
 
     def update_bar_width(self, bar_group, width):
         if self.bar_creator is None:
@@ -182,8 +191,12 @@ class ScoreSectionRenderer(Renderer):
     def update_heads(self):
         if self.head_creator is None:
             return
+        self.check_existent_nids()
+        if self.note_height_calculator is None:
+            return None
+        note_heights = self.note_height_calculator.get(self.existent_nids)
         for i in range(len(self.storage)):
-            head_info = self.head_creator.update(self.storage[i].note_ids, self.existent_nids, self.head_groups[i])
+            head_info = self.head_creator.update(self.storage[i].note_ids, note_heights, self.head_groups[i])
             lowest_note_info = head_info[3] if head_info is not None else None
             if lowest_note_info != self.lowest_note_info[i]:
                 self.lowest_note_info[i] = lowest_note_info

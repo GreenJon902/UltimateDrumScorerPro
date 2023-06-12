@@ -86,7 +86,6 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         if height != decoration_info[2]:
             return_instructions.append((["update_decoration_height", decoration_info[0], head_info[2], height, index],
                                         {}))
-        return_instructions.append((["update_stem_height", stem_info[0], self.to_top_translate.y, index], {}))
         return_instructions.append((["set_size", *self.get_size()], {}))
 
         return return_instructions

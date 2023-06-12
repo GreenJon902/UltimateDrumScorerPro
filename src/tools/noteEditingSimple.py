@@ -9,6 +9,7 @@ from renderer.scoreSection.scoreSection_normalBarCreator import ScoreSection_Nor
 from renderer.scoreSection.scoreSection_normalComponentOrganiser import ScoreSection_NormalComponentOrganiser
 from renderer.scoreSection.scoreSection_normalDecorationCreator import ScoreSection_NormalDecorationCreator
 from renderer.scoreSection.scoreSection_normalDotCreator import ScoreSection_NormalDotCreator
+from renderer.scoreSection.scoreSection_normalNoteHeightCalculator import ScoreSection_NormalNoteHeightCalculator
 from renderer.scoreSection.scoreSection_normalStemCreator import ScoreSection_NormalStemCreator
 from renderer.scoreSection.scoreSection_opacityHeadCreator import ScoreSection_OpacityHeadCreator
 from scoreStorage.scoreSectionStorage import ScoreSectionSectionStorage, ScoreSectionStorage
@@ -122,7 +123,8 @@ renderer = ScoreSectionRenderer(scoreSectionStorage, bar_creator=ScoreSection_No
                                 head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0)),
                                 component_organiser=ScoreSection_NormalComponentOrganiser(),
                                 stem_creator=ScoreSection_NormalStemCreator((0, 0, 0, 1)),
-                                decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)))
+                                decoration_creator=ScoreSection_NormalDecorationCreator((0, 0, 0, 1)),
+                                note_height_calculator=ScoreSection_NormalNoteHeightCalculator())
 
 
 root = ScatterPlane(scale=(metrics.mm(210) / 210))  # 210 is what we use in a normal page

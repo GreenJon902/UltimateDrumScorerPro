@@ -15,7 +15,7 @@ class ScoreSection_StemCreatorBase:
     info.
     If there is no lowest note then lowest_note_info should be None.
     """
-    def update_height(self, stem_group: InstructionGroup, overall_height: float, lowest_note_info: tuple[float, int]):
+    def update_height(self, stem_group: InstructionGroup, lowest_note_info: tuple[float, int]):
         raise NotImplementedError()
 
 

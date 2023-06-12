@@ -26,6 +26,7 @@ Some functions may return new instructions for the ScoreSectionRenderer to proce
 correct width).  
 These may be update_bar_width(bar_group, width), update_stem_height(stem_group, overall_height, index), or 
 set_size(width, height)
+This does not handle the height of stems.
 
 ### NormalComponentOrganiser
 It structures the group like this:

@@ -1,5 +1,3 @@
-from math import floor
-
 from kivy.graphics import Color, InstructionGroup, Translate, PushMatrix, PopMatrix
 
 from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
@@ -16,35 +14,22 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
         self.present_color = present_color
         self.absent_color = absent_color
 
-    def create(self, present_note_ids, existent_notes_ids):
-        if len(existent_notes_ids) == 0:
-            return None
-
+    def create(self, present_note_ids, note_heights):
         group = InstructionGroup()
-        info = self.update(present_note_ids, existent_notes_ids, group)
+        info = self.update(present_note_ids, note_heights, group)
         return info
 
 
-    def update(self, present_note_ids, existent_notes_ids, group):
-        if len(existent_notes_ids) == 0:
-            return None
-        print(present_note_ids, existent_notes_ids, group)
+    def update(self, present_note_ids, note_heights, group):
         group.clear()
         group.add(PushMatrix())
-
-        existent_notes_ids = sorted(existent_notes_ids, key=lambda nid: notes[nid].note_level)
-        highest_major_level = max(floor(notes[nid].note_level) for nid in notes.keys())
-        existent_note_levels = {notes[nid].note_level for nid in existent_notes_ids}
-
-        note_levels = set(range(floor(min(existent_note_levels)), highest_major_level + 1))
-        note_levels.update(existent_note_levels)
-        note_levels = sorted(list(note_levels))
 
         lowest_info = None
 
         width = 0
         height = 0
-        for note_level in note_levels:
+        y = 0
+        for (note_level, note_height) in note_heights:
             for nid in note_ids_at_level[note_level]:
                 if nid in present_note_ids and lowest_info is None:
                     lowest_info = height, nid
@@ -53,7 +38,8 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
                 if color[3] != 0:  # If we actually need to draw it
                     group.add(Color(rgba=color))
                     group.add(notes[nid].make_canvas(color=False))
-                group.add(Translate(0, notes[nid].height))
+                group.add(Translate(0, y))
+                y = note_height - y
 
                 if notes[nid].width > width and nid in present_note_ids:
                     width = notes[nid].width
