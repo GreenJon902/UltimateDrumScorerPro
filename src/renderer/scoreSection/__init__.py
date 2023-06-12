@@ -12,6 +12,7 @@ from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCr
 from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
 from renderer.scoreSection.scoreSection_noteHeightCalculatorBase import ScoreSection_NoteHeightCalculatorBase
 from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
+from scoreSectionDesigns.notes import notes
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage
 
 
@@ -165,11 +166,13 @@ class ScoreSectionRenderer(Renderer):
     def update_stem_height(self, stem_group, index):
         if self.stem_creator is None:
             return
-            self.check_existent_nids()
+        self.check_existent_nids()
         if self.note_height_calculator is None:
             return None
         note_heights = self.note_height_calculator.get(self.existent_nids)
-        self.stem_creator.update_height(stem_group, note_heights, self.storage[index].note_ids)
+        i = max(self.storage[index].note_ids, key=lambda x: notes[x].note_level)
+        print(note_heights, i)
+        self.stem_creator.update_height(stem_group, note_heights[i])
 
     def update_bar_width(self, bar_group, width):
         if self.bar_creator is None:
