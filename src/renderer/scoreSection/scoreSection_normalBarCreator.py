@@ -9,8 +9,9 @@ from kv.settings import st, half_bar_length, bar_height, slanted_flag_length, sl
 
 
 class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
-    def create(self, bars, before_bars, after_bars, slanted_bars) -> tuple[InstructionGroup, int, int]:
-        group = InstructionGroup()
+    def create(self, group, bars, before_bars, after_bars, slanted_bars):
+        if group is None:
+            group = InstructionGroup()
         group.add(Color(rgba=self.color))
 
         width = (0 +  # incase not updated later
@@ -51,7 +52,7 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
         group.add(bar_group)
         return group, width, height
 
-    def update_width(self, bar_group: InstructionGroup, width: float):
+    def update_width(self, bar_group, width):
         after_bar_group = bar_group.children[2]
         full_bar_group = bar_group.children[4]
 

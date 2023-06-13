@@ -1,19 +1,40 @@
+from __future__ import annotations
+
 import time
+import typing
 
 from kivy import Logger
 from kivy.graphics import InstructionGroup
 from kivy.properties import ObjectProperty
 
 from renderer import Renderer
-from renderer.scoreSection.scoreSection_barCreatorBase import ScoreSection_BarCreatorBase
-from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
-from renderer.scoreSection.scoreSection_decorationCreatorBase import ScoreSection_DecorationCreatorBase
-from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCreatorBase
-from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
-from renderer.scoreSection.scoreSection_noteHeightCalculatorBase import ScoreSection_NoteHeightCalculatorBase
-from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
-from scoreSectionDesigns.notes import notes
+
+if typing.TYPE_CHECKING:
+    from renderer.scoreSection.scoreSection_barCreatorBase import ScoreSection_BarCreatorBase
+    from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
+    from renderer.scoreSection.scoreSection_decorationCreatorBase import ScoreSection_DecorationCreatorBase
+    from renderer.scoreSection.scoreSection_dotCreatorBase import ScoreSection_DotCreatorBase
+    from renderer.scoreSection.scoreSection_headCreatorBase import ScoreSection_HeadCreatorBase
+    from renderer.scoreSection.scoreSection_noteHeightCalculatorBase import ScoreSection_NoteHeightCalculatorBase
+    from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
 from scoreStorage.scoreSectionStorage import ScoreSectionStorage
+
+
+class SectionSectionInfoHolder:
+    head_group: InstructionGroup
+    dot_group: InstructionGroup
+    bar_group: InstructionGroup
+    built_group: InstructionGroup
+    head_width: float
+    dot_width: float
+    dot_height: float
+    bar_width_min: float
+    bar_height: float
+    custom_width: float
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class ScoreSectionRenderer(Renderer):
@@ -28,15 +49,10 @@ class ScoreSectionRenderer(Renderer):
     bar_creator: ScoreSection_BarCreatorBase = ObjectProperty(allownone=True)
     dot_creator: ScoreSection_DotCreatorBase = ObjectProperty(allownone=True)
 
-    lowest_note_info: list[tuple[float, int]]
-    head_groups: list[InstructionGroup]
-
-    existent_nids = list[int]
+    ssihs: list[SectionSectionInfoHolder]
 
     def __init__(self, *args, **kwargs):
-        self.existent_nids = []
-        self.lowest_note_info = []
-        self.head_groups = []
+        self.ssihs = []
         Renderer.__init__(self, *args, **kwargs)
         self.bind(component_organiser=lambda _, __: self.dispatch_instruction("organiser"),
                   head_creator=lambda _, __: self.dispatch_instruction("heads"),
@@ -48,136 +64,67 @@ class ScoreSectionRenderer(Renderer):
         Logger.info(f"ScoreSectionRenderer: Updating {self} with {instructions}...")
         t = time.time()
 
+        existant_nids = set()
+        for section in self.storage:
+            existant_nids.update(section.note_ids)
+        note_level_info, head_height = self.note_height_calculator.get(existant_nids)
+
         while len(instructions) > 0:  # Organiser adds new commands
             command = instructions.pop(0)[0]
             Logger.debug(f"ScoreSectionRenderer: Processing {command}...")
 
-            if command[0] == "all":
-                if self.component_organiser is not None:
-                    self.component_organiser.setup(self.canvas)
-                else:
-                    Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
-                                                                                   # rendering, which makes no sense
-                new_commands = list()
+            if command[0] == "all" or (command[0] == "storage" and command[1] == "set"):
+                self.component_organiser.setup(self.canvas)
                 for i in range(len(self.storage)):
-                    head_info = self.do_head(i)
-                    self.lowest_note_info.insert(i, head_info[3] if head_info is not None else None)
-                    self.head_groups.insert(i, head_info[0] if head_info is not None else None)
-                    bar_info = self.do_bar(i)
-                    dot_info = self.do_dot(i)
-                    stem_info = self.do_stem()
-                    decoration_info = self.do_decoration(i)
+                    head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
+                    bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
+                                                                                   self.storage[i].before_flags,
+                                                                                   self.storage[i].after_flags,
+                                                                                   self.storage[i].slanted_flags)
+                    dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
+                    built_group = self.component_organiser.build(head_group, bar_group, dot_group)
+                    ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
+                                             bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
+                                             dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
+                                             custom_width=self.storage[i].custom_width,
+                                             built_group=built_group)
+                    self.component_organiser.parent_insert(self.canvas, i, built_group)
+                    self.ssihs.insert(i, ssih)
 
-                    if self.component_organiser is not None:
-                        new_commands += self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
-                                                                             dot_info=dot_info, stem_info=stem_info,
-                                                                             decoration_info=decoration_info)
-                    else:
-                        Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
-                                                                                       # rendering, which makes no sense
-                    self.update_stem_height(stem_info[0], i)
-                Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
-                instructions += new_commands  # TODO: Remove duplicates
+            elif command[0] == "storage" and command[1] == "insert":
+                i = command[2]
 
-            elif command[0] == "update_bar_width":
-                self.update_bar_width(command[1], command[2])
+                head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
+                bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
+                                                                               self.storage[i].before_flags,
+                                                                               self.storage[i].after_flags,
+                                                                               self.storage[i].slanted_flags)
+                dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
+                built_group = self.component_organiser.build(head_group, bar_group, dot_group)
+                ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
+                                                bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
+                                                dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
+                                                custom_width=self.storage[i].custom_width,
+                                                built_group=built_group)
+                self.component_organiser.parent_insert(self.canvas, i, built_group)
+                self.ssihs.insert(i, ssih)
 
-            elif command[0] == "set_size":
-                self.width = command[1]
-                self.height = command[2]
-
-            elif command[0] == "update_decoration_height":
-                self.update_decoration_height(command[1], command[2], command[3], command[4])
-
-            elif command[0] == "update_heads":
-                self.update_heads()
-
-            elif command[0] == "storage":
-                if command[1] == "insert":
-                    i = command[2]
-
-                    head_info = self.do_head(i)
-                    self.lowest_note_info.insert(i, head_info[3] if head_info is not None else None)
-                    self.head_groups.insert(i, head_info[0] if head_info is not None else None)
-                    bar_info = self.do_bar(i)
-                    dot_info = self.do_dot(i)
-                    stem_info = self.do_stem()
-                    decoration_info = self.do_decoration(i)
-
-                    if self.component_organiser is not None:
-                        new_commands = self.component_organiser.add_section(i, head_info=head_info, bar_info=bar_info,
-                                                                            dot_info=dot_info, stem_info=stem_info,
-                                                                            decoration_info=decoration_info)
-                        Logger.debug(f"ScoreSectionRenderer: Got new instructions: {new_commands}")
-                        instructions += new_commands  # TODO: Remove duplicates
-                    else:
-                        Logger.warning("ScoreSectionRenderer: No organiser supplied")  # Warn as no organiser means no
-                                                                                       # rendering, which makes no sense
-
-                    self.update_stem_height(stem_info[0], i)
+            elif command[0] == "section" and command[1] == "note_ids":
+                section = command[2]
+                i = self.storage.index(section)
+                head_group, head_width = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
+                                                                  self.storage[i].note_ids)
+                self.ssihs[i].head_width = head_width
 
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 
+        self.component_organiser.organise(self.ssihs, head_height)
+        #width, height = self.component_organiser.organise(self.ssihs, head_height)
+
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
-    def check_existent_nids(self):
-        nids = set()
-        for section in self.storage:
-            nids.update(section.note_ids)
-
-        difference = nids.symmetric_difference(self.existent_nids)
-        if len(difference) != 0:
-            self.existent_nids = nids
-
-            self.dispatch_instruction("update_heads")
-
-    def do_head(self, index):
-        if self.head_creator is None:
-            return None
-        self.check_existent_nids()
-        if self.note_height_calculator is None:
-            return None
-        note_levels = self.note_height_calculator.get(self.existent_nids)
-        return self.head_creator.create(self.storage[index].note_ids, note_levels)
-
-    def do_bar(self, index):
-        if self.bar_creator is None:
-            return None
-        return self.bar_creator.create(self.storage[index].bars, self.storage[index].before_flags,
-                                       self.storage[index].after_flags, self.storage[index].slanted_flags)
-
-    def do_dot(self, index):
-        if self.dot_creator is None:
-            return None
-        return self.dot_creator.create(self.storage[index].dots)
-
-    def do_stem(self):
-        if self.stem_creator is None:
-            return None
-        return self.stem_creator.create()
-
-    def do_decoration(self, index):
-        if self.decoration_creator is None:
-            return None
-        return self.decoration_creator.create(self.storage[index].decoration_id)
-
-    def update_stem_height(self, stem_group, index):
-        if self.stem_creator is None:
-            return
-        self.check_existent_nids()
-        if self.note_height_calculator is None:
-            return None
-        note_heights = self.note_height_calculator.get(self.existent_nids)
-        i = max(self.storage[index].note_ids, key=lambda x: notes[x].note_level)
-        print(note_heights, i)
-        self.stem_creator.update_height(stem_group, note_heights[i])
-
-    def update_bar_width(self, bar_group, width):
-        if self.bar_creator is None:
-            return
-        self.bar_creator.update_width(bar_group, width)
 
     def set_storage(self, storage):
         if self.storage is not None:
@@ -186,24 +133,6 @@ class ScoreSectionRenderer(Renderer):
         self.storage.bind_all(self.dispatch_instruction)
         self.dispatch_instruction("all")
 
-    def update_decoration_height(self, decoration_group, head_height, overall_height, index):
-        if self.decoration_creator is None:
-            return
-        self.decoration_creator.update_height(decoration_group, head_height, overall_height, self.storage[index].decoration_id)
-
-    def update_heads(self):
-        if self.head_creator is None:
-            return
-        self.check_existent_nids()
-        if self.note_height_calculator is None:
-            return None
-        note_heights = self.note_height_calculator.get(self.existent_nids)
-        for i in range(len(self.storage)):
-            head_info = self.head_creator.update(self.storage[i].note_ids, note_heights, self.head_groups[i])
-            lowest_note_info = head_info[3] if head_info is not None else None
-            if lowest_note_info != self.lowest_note_info[i]:
-                self.lowest_note_info[i] = lowest_note_info
-                self.update_stem_height()
 
 
-__all__ = ["ScoreSectionRenderer"]
+__all__ = ["ScoreSectionRenderer", "SectionSectionInfoHolder"]

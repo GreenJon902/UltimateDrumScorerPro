@@ -13,7 +13,6 @@ class ScoreSection_NormalNoteHeightCalculator(ScoreSection_NoteHeightCalculatorB
         note_levels = set(range(floor(min(existent_note_levels)), highest_major_level + 1))
         note_levels.update(existent_note_levels)
         note_levels = sorted(list(note_levels))
-        print(note_levels)
 
         note_heights = []
         y = 0
@@ -21,7 +20,7 @@ class ScoreSection_NormalNoteHeightCalculator(ScoreSection_NoteHeightCalculatorB
             for nid in note_ids_at_level[note_level]:
                 note_heights.append([note_level, y])
                 y += notes[nid].height
-        return note_heights
+        return note_heights, y
 
 
 __all__ = ["ScoreSection_NormalNoteHeightCalculator"]

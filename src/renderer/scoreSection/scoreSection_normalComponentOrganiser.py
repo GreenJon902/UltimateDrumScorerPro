@@ -15,14 +15,71 @@ def default(x, default_):  # Get instruction group from info with a default
 
 
 class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase):
-    parent_group: InstructionGroup
-    to_top_translate: Translate  # Moves from y=0 to the top of the score section
-    widths: list[float]
-
     def __init__(self, *args, **kwargs):
-        self.widths = []
-        self.to_top_translate = Translate(0, 0)
         ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
+
+    def build(self, head_group=None, bar_group=None, dot_group=None):
+        head_group = default(head_group, InstructionGroup())
+        bar_group = default(bar_group, InstructionGroup())
+        dot_group = default(dot_group, InstructionGroup())
+
+
+        section_group = InstructionGroup()
+
+        # Heads
+        g = InstructionGroup()
+        g.add(PushMatrix())
+        g.add(Translate())
+        g.add(head_group)
+        g.add(PopMatrix())
+        section_group.add(g)
+
+        # Dots
+        g = InstructionGroup()
+        g.add(PushMatrix())
+        g.add(Translate())
+        g.add(dot_group)
+        g.add(PopMatrix())
+        section_group.add(g)
+
+        # Bars
+        g = InstructionGroup()
+        g.add(PushMatrix())
+        g.add(Translate())
+        g.add(bar_group)
+        g.add(PopMatrix())
+        section_group.add(g)
+
+        # Translate
+        section_group.add(Translate())
+
+        return section_group
+
+    def parent_insert(self, group: InstructionGroup, index: int, built_group: InstructionGroup):
+        group.insert(index + 1, built_group)  # +1 because of PushMatrix()
+
+    def organise(self, ssihs, head_height):
+        heads = 0
+        dots = 1
+        bars = 2
+        ending_trans = 3
+
+        trans = 1
+
+        max_dot_height = max(ssihs, key=lambda x: x.dot_height).dot_height
+        max_bar_height = max(ssihs, key=lambda x: x.bar_height).bar_height
+
+        height = head_height + max_dot_height + max_bar_height
+
+        for ssih in ssihs:
+            width = max(ssih.head_width, ssih.dot_width, ssih.bar_width_min, ssih.custom_width)
+
+            ssih.built_group.children[heads].children[trans].x = width - ssih.head_width
+            ssih.built_group.children[dots].children[trans].y = head_height + max_dot_height - ssih.dot_height
+            ssih.built_group.children[bars].children[trans].y = height - ssih.bar_height
+
+            ssih.built_group.children[ending_trans].x = width
+
 
     def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None, decoration_info=None):
         return_instructions = []
@@ -54,7 +111,7 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         # Heads
         section_group.add(PushMatrix())
         section_group.add(Translate(width - head_info[1], 0))
-        section_group.add(head_info[0])
+        section_group.add(3)
 
         # Dots
         section_group.add(Translate(-(width - head_info[1]), head_info[2]))
@@ -93,12 +150,9 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
     def setup(self, parent_group: InstructionGroup):
         parent_group.clear()
         parent_group.add(PushMatrix())
-        group = InstructionGroup()
-        parent_group.add(group)
+        parent_group.add(Translate())  # Breaks otherwise
         parent_group.add(PopMatrix())
 
-        self.parent_group = parent_group
-        self.group = group
 
     def get_size(self):
         return sum(self.widths), self.to_top_translate.y

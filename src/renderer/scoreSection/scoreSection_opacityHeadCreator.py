@@ -14,39 +14,33 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
         self.present_color = present_color
         self.absent_color = absent_color
 
-    def create(self, present_note_ids, note_heights):
-        group = InstructionGroup()
-        info = self.update(present_note_ids, note_heights, group)
-        return info
+    def create(self, group, note_level_info, nids):
+        if group is None:
+            group = InstructionGroup()
 
-
-    def update(self, present_note_ids, note_heights, group):
         group.clear()
         group.add(PushMatrix())
 
-        lowest_info = None
-
         width = 0
-        height = 0
         y = 0
-        for (note_level, note_height) in note_heights:
+        for (note_level, note_height) in note_level_info:
             for nid in note_ids_at_level[note_level]:
-                if nid in present_note_ids and lowest_info is None:
-                    lowest_info = height, nid
 
-                color = self.present_color if nid in present_note_ids else self.absent_color
+                y = note_height - y
+                group.add(Translate(0, y))
+
+                color = self.present_color if nid in nids else self.absent_color
                 if color[3] != 0:  # If we actually need to draw it
                     group.add(Color(rgba=color))
                     group.add(notes[nid].make_canvas(color=False))
-                group.add(Translate(0, y))
-                y = note_height - y
 
-                if notes[nid].width > width and nid in present_note_ids:
+                if notes[nid].width > width and nid in nids:
                     width = notes[nid].width
-                height += notes[nid].height
 
         group.add(PopMatrix())
-        return group, width, height, lowest_info
+
+        return group, width
+
 
 
 __all__ = ["ScoreSection_OpacityHeadCreator"]
