@@ -6,6 +6,9 @@ from scoreSectionDesigns.notes import notes, note_ids_at_level
 
 class ScoreSection_NormalNoteHeightCalculator(ScoreSection_NoteHeightCalculatorBase):
     def get(self, existent_notes_ids):
+        if len(existent_notes_ids) == 0:
+            return [], 0
+
         existent_notes_ids = sorted(existent_notes_ids, key=lambda nid: notes[nid].note_level)
         highest_major_level = max(floor(notes[nid].note_level) for nid in notes.keys())
         existent_note_levels = {notes[nid].note_level for nid in existent_notes_ids}

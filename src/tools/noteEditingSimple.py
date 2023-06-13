@@ -25,6 +25,11 @@ Builder.load_string("""
 <ScoreSectionRenderer>:
     canvas.before:
         Color:
+            rgba: 0.7, 0.7, 0.7, 1
+        Rectangle:
+            pos: -1000, -1000
+            size: self.width + 2000, self.height + 2000
+        Color:
             rgba: 1, 1, 1, 1
         Rectangle:
             pos: -2, -2

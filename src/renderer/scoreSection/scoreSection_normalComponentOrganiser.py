@@ -58,6 +58,9 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
     def parent_insert(self, group: InstructionGroup, index: int, built_group: InstructionGroup):
         group.insert(index + 1, built_group)  # +1 because of PushMatrix()
 
+    def parent_remove(self, group: InstructionGroup, index: int):
+        group.remove(group.children[index + 1])  # +1 because of PushMatrix()
+
     def organise(self, ssihs, head_height):
         heads = 0
         dots = 1

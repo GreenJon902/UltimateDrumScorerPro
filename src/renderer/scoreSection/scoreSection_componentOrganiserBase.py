@@ -15,13 +15,19 @@ class ScoreSection_ComponentOrganiserBase:
 
     def build(self, head_group=None, bar_group=None, dot_group=None) -> InstructionGroup:
         """
-        Takes the arguments and lays them out ready to be organised
+        Takes the arguments and lays them out ready to be organised.
         """
         raise NotImplementedError()
 
     def parent_insert(self, group: InstructionGroup, index: int, built_group: InstructionGroup):
         """
-        Insert a built group into the parents canvas
+        Insert a built group into the parents canvas.
+        """
+        raise NotImplementedError()
+
+    def parent_remove(self, group: InstructionGroup, index: int, ):
+        """
+        Remove a built group from the parents canvas.
         """
         raise NotImplementedError()
 
