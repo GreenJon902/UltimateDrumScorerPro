@@ -7,7 +7,7 @@ class ScoreSection_StemCreatorBase:
     def __init__(self, color):
         self.color = color
 
-    def create(self) -> tuple[InstructionGroup, int]:
+    def create(self) -> InstructionGroup:
         raise NotImplementedError()
 
     """

@@ -13,7 +13,7 @@ class ScoreSection_ComponentOrganiserBase:
         """
         pass
 
-    def build(self, head_group=None, bar_group=None, dot_group=None) -> InstructionGroup:
+    def build(self, head_group=None, bar_group=None, dot_group=None, stem_group=None) -> InstructionGroup:
         """
         Takes the arguments and lays them out ready to be organised.
         """

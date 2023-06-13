@@ -4,7 +4,6 @@ from kv import check_kv
 
 check_kv()
 
-from kv.settings import bar_height
 from renderer.scoreSection.scoreSection_componentOrganiserBase import ScoreSection_ComponentOrganiserBase
 
 
@@ -18,10 +17,11 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
     def __init__(self, *args, **kwargs):
         ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
 
-    def build(self, head_group=None, bar_group=None, dot_group=None):
+    def build(self, head_group=None, bar_group=None, dot_group=None, stem_group=None):
         head_group = default(head_group, InstructionGroup())
         bar_group = default(bar_group, InstructionGroup())
         dot_group = default(dot_group, InstructionGroup())
+        stem_group = default(stem_group, InstructionGroup())
 
 
         section_group = InstructionGroup()
@@ -50,6 +50,14 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         g.add(PopMatrix())
         section_group.add(g)
 
+        # Stems
+        g = InstructionGroup()
+        g.add(PushMatrix())
+        g.add(Translate())
+        g.add(stem_group)
+        g.add(PopMatrix())
+        section_group.add(g)
+
         # Translate
         section_group.add(Translate())
 
@@ -65,7 +73,8 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         heads = 0
         dots = 1
         bars = 2
-        ending_trans = 3
+        stems = 3
+        ending_trans = 4
 
         trans = 1
 
@@ -83,77 +92,12 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
             ssih.built_group.children[heads].children[trans].x = width - ssih.head_width
             ssih.built_group.children[dots].children[trans].y = head_height + max_dot_height - ssih.dot_height
             ssih.built_group.children[bars].children[trans].y = height - ssih.bar_height
+            ssih.built_group.children[stems].children[trans].x = width
+            ssih.built_group.children[stems].children[trans].y = height
 
             ssih.built_group.children[ending_trans].x = width
 
         return sum(section_widths), height, section_widths
-
-
-    def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None, decoration_info=None):
-        return_instructions = []
-
-        head_info = default(head_info, (InstructionGroup(), 0, 0))
-        bar_info = default(bar_info, (InstructionGroup(), 0, 0))
-        dot_info = default(dot_info, (InstructionGroup(), 0, 0))
-        stem_info = default(stem_info, (InstructionGroup(), 0))
-        decoration_info = default(decoration_info, (InstructionGroup(), 0, 0))
-
-        width = max(head_info[1], bar_info[1], dot_info[1]) + decoration_info[1]
-        height = head_info[2] + bar_info[2] + dot_info[2]
-
-        if height < decoration_info[2]:
-            height = decoration_info[2]
-
-        if height > self.to_top_translate.y:
-            self.to_top_translate.y = height
-            for i, child in enumerate(self.group.children):
-                return_instructions.append((["update_stem_height", child.children[11], self.to_top_translate.y, i], {}))
-                return_instructions.append((["update_decoration_height", child.children[0], head_info[2],
-                                             self.to_top_translate.y, i], {}))
-
-        section_group = InstructionGroup()
-
-        # Decorations
-        section_group.add(decoration_info[0])
-
-        # Heads
-        section_group.add(PushMatrix())
-        section_group.add(Translate(width - head_info[1], 0))
-        section_group.add(3)
-
-        # Dots
-        section_group.add(Translate(-(width - head_info[1]), head_info[2]))
-        section_group.add(dot_info[0])
-        section_group.add(PopMatrix())
-
-        # Stems
-        section_group.add(PushMatrix())
-        section_group.add(self.to_top_translate)
-        section_group.add(PushMatrix())
-        section_group.add(Translate(width, 0))
-        section_group.add(stem_info[0])
-
-        # Bars
-        section_group.add(PopMatrix())
-        section_group.add(Translate(-stem_info[1] / 2, -bar_info[2] + bar_height / 2))
-        section_group.add(bar_info[0])
-        section_group.add(PopMatrix())
-
-
-        # Finishing
-        section_group.add(Translate(width + stem_info[1], 0))
-        self.group.insert(index, section_group)
-        self.widths.insert(index, width)
-
-
-        if width != bar_info[1]:
-            return_instructions.append((["update_bar_width", bar_info[0], width + stem_info[1]], {}))
-        if height != decoration_info[2]:
-            return_instructions.append((["update_decoration_height", decoration_info[0], head_info[2], height, index],
-                                        {}))
-        return_instructions.append((["set_size", *self.get_size()], {}))
-
-        return return_instructions
 
     def setup(self, parent_group: InstructionGroup):
         parent_group.clear()

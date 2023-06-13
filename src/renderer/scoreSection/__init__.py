@@ -76,6 +76,7 @@ class ScoreSectionRenderer(Renderer):
 
             if command[0] == "all" or (command[0] == "storage" and command[1] == "set"):
                 self.component_organiser.setup(self.canvas)
+                self.ssihs.clear()
                 for i in range(len(self.storage)):
                     head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
                     bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
@@ -83,11 +84,13 @@ class ScoreSectionRenderer(Renderer):
                                                                                    self.storage[i].after_flags,
                                                                                    self.storage[i].slanted_flags)
                     dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
-                    built_group = self.component_organiser.build(head_group, bar_group, dot_group)
+                    stem_group = self.stem_creator.create()
+                    built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
                     ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
                                              bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
                                              dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
                                              custom_width=self.storage[i].custom_width,
+                                             stem_group=stem_group,
                                              built_group=built_group)
                     self.component_organiser.parent_insert(self.canvas, i, built_group)
                     self.ssihs.insert(i, ssih)
@@ -101,11 +104,13 @@ class ScoreSectionRenderer(Renderer):
                                                                                self.storage[i].after_flags,
                                                                                self.storage[i].slanted_flags)
                 dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
-                built_group = self.component_organiser.build(head_group, bar_group, dot_group)
+                stem_group = self.stem_creator.create()
+                built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
                 ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
                                                 bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
                                                 dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
                                                 custom_width=self.storage[i].custom_width,
+                                                stem_group=stem_group,
                                                 built_group=built_group)
                 self.component_organiser.parent_insert(self.canvas, i, built_group)
                 self.ssihs.insert(i, ssih)
@@ -128,7 +133,8 @@ class ScoreSectionRenderer(Renderer):
                                               command[1] == "slanted_flags"):
                 section = command[2]
                 i = self.storage.index(section)
-                bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
+                bar_group, bar_width_min, bar_height = self.bar_creator.create(self.ssihs[i].bar_group,
+                                                                               self.storage[i].bars,
                                                                                self.storage[i].before_flags,
                                                                                self.storage[i].after_flags,
                                                                                self.storage[i].slanted_flags)
