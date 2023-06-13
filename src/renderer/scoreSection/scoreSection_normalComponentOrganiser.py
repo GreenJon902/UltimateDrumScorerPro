@@ -71,14 +71,19 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
 
         height = head_height + max_dot_height + max_bar_height
 
+        section_widths = list()
+
         for ssih in ssihs:
             width = max(ssih.head_width, ssih.dot_width, ssih.bar_width_min, ssih.custom_width)
+            section_widths.append(width)
 
             ssih.built_group.children[heads].children[trans].x = width - ssih.head_width
             ssih.built_group.children[dots].children[trans].y = head_height + max_dot_height - ssih.dot_height
             ssih.built_group.children[bars].children[trans].y = height - ssih.bar_height
 
             ssih.built_group.children[ending_trans].x = width
+
+        return sum(section_widths), height, section_widths
 
 
     def add_section(self, index, head_info=None, bar_info=None, dot_info=None, stem_info=None, decoration_info=None):

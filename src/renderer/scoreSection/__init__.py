@@ -50,6 +50,7 @@ class ScoreSectionRenderer(Renderer):
     dot_creator: ScoreSection_DotCreatorBase = ObjectProperty(allownone=True)
 
     ssihs: list[SectionSectionInfoHolder]
+    _last_note_level_info = None
 
     def __init__(self, *args, **kwargs):
         self.ssihs = []
@@ -68,6 +69,15 @@ class ScoreSectionRenderer(Renderer):
         for section in self.storage:
             existant_nids.update(section.note_ids)
         note_level_info, head_height = self.note_height_calculator.get(existant_nids)
+
+        already_processed_heads = False
+        # Check none as if None then will probs get processed in all
+        if self._last_note_level_info is not None and note_level_info != self._last_note_level_info:
+            already_processed_heads = True
+            for i in range(len(self.storage)):
+                head_group, head_width = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
+                                                                  self.storage[i].note_ids)
+                self.ssihs[i].head_width = head_width
 
         while len(instructions) > 0:  # Organiser adds new commands
             command = instructions.pop(0)[0]
@@ -92,6 +102,9 @@ class ScoreSectionRenderer(Renderer):
                     self.ssihs.insert(i, ssih)
 
             elif command[0] == "storage" and command[1] == "insert":
+                if already_processed_heads:
+                    continue
+
                 i = command[2]
 
                 head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
@@ -110,19 +123,39 @@ class ScoreSectionRenderer(Renderer):
                 self.ssihs.insert(i, ssih)
 
             elif command[0] == "section" and command[1] == "note_ids":
+                if already_processed_heads:
+                    continue
+
                 section = command[2]
                 i = self.storage.index(section)
                 head_group, head_width = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
                                                                   self.storage[i].note_ids)
                 self.ssihs[i].head_width = head_width
 
+            elif command[0] == "section" and command[1] == "bars":
+                section = command[2]
+                i = self.storage.index(section)
+                bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
+                                                                               self.storage[i].before_flags,
+                                                                               self.storage[i].after_flags,
+                                                                               self.storage[i].slanted_flags)
+                self.ssihs[i].bar_width_min = bar_width_min
+                self.ssihs[i].bar_height = bar_height
+
+            elif command[0] == "section" and command[1] == "dots":
+                section = command[2]
+                i = self.storage.index(section)
+                dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
+                self.ssihs[i].dot_width = dot_width
+                self.ssihs[i].dot_height = dot_height
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 
-        self.component_organiser.organise(self.ssihs, head_height)
-        #width, height = self.component_organiser.organise(self.ssihs, head_height)
-
+        width, height, section_widths = self.component_organiser.organise(self.ssihs, head_height)
+        for i, section_width in enumerate(section_widths):
+            self.bar_creator.update_width(self.ssihs[i].bar_group, section_width)
+        #self.size = width, height
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
 

@@ -26,7 +26,7 @@ class ScoreSection_ComponentOrganiserBase:
         raise NotImplementedError()
 
     def organise(self, ssihs: list[SectionSectionInfoHolder], head_height: float) \
-            -> tuple[float, float]:
+            -> tuple[float, float, list[float]]:
         """
         Organises each item in ssihs with the given information, returns the width and height.
         """
