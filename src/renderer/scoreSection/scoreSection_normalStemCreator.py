@@ -2,7 +2,6 @@ from kivy.graphics import InstructionGroup, Color, Line
 
 from kv import check_kv
 from renderer.scoreSection.scoreSection_stemCreatorBase import ScoreSection_StemCreatorBase
-from scoreSectionDesigns.notes import notes
 
 check_kv()
 
@@ -19,12 +18,12 @@ class ScoreSection_NormalStemCreator(ScoreSection_StemCreatorBase):
 
         return group
 
-    def update_height(self, stem_group, lowest_note_info):
-        if lowest_note_info is None:
+    def update_height(self, stem_group, stem_connection_point, height, head_height):
+        if stem_connection_point is None:
             y = 0
             stem_group.children[0].a = 0
         else:
-            y = -lowest_note_info[1] + notes[lowest_note_info[0]].stem_connection_offset
+            y = -stem_connection_point - (height - head_height)
             stem_group.children[0].a = 1
         stem_group.children[2].points[3] = y  # Use index 2 as 0 is color, 1 is bind texture that happens
                                               # automatically

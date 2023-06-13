@@ -26,6 +26,8 @@ class SectionSectionInfoHolder:
     bar_group: InstructionGroup
     built_group: InstructionGroup
     head_width: float
+    stem_connection_point: float
+    stem_group: float
     dot_width: float
     dot_height: float
     bar_width_min: float
@@ -78,61 +80,28 @@ class ScoreSectionRenderer(Renderer):
                 self.component_organiser.setup(self.canvas)
                 self.ssihs.clear()
                 for i in range(len(self.storage)):
-                    head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
-                    bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
-                                                                                   self.storage[i].before_flags,
-                                                                                   self.storage[i].after_flags,
-                                                                                   self.storage[i].slanted_flags)
-                    dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
-                    stem_group = self.stem_creator.create()
-                    built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
-                    ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
-                                             bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
-                                             dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
-                                             custom_width=self.storage[i].custom_width,
-                                             stem_group=stem_group,
-                                             built_group=built_group)
-                    self.component_organiser.parent_insert(self.canvas, i, built_group)
-                    self.ssihs.insert(i, ssih)
+                    self.make_section_section(i, note_level_info)
 
             elif command[0] == "storage" and command[1] == "insert":
-                i = command[2]
-
-                head_group, head_width = self.head_creator.create(None, note_level_info, self.storage[i].note_ids)
-                bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
-                                                                               self.storage[i].before_flags,
-                                                                               self.storage[i].after_flags,
-                                                                               self.storage[i].slanted_flags)
-                dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
-                stem_group = self.stem_creator.create()
-                built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
-                ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
-                                                bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
-                                                dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
-                                                custom_width=self.storage[i].custom_width,
-                                                stem_group=stem_group,
-                                                built_group=built_group)
-                self.component_organiser.parent_insert(self.canvas, i, built_group)
-                self.ssihs.insert(i, ssih)
+                self.make_section_section(command[2], note_level_info)
 
             elif command[0] == "storage" and command[1] == "remove":
-                i = command[2]
-                self.component_organiser.parent_remove(self.canvas, i)
-                self.ssihs.pop(i)
+                self.component_organiser.parent_remove(self.canvas, command[2])
+                self.ssihs.pop(command[2])
 
             elif command[0] == "section" and command[1] == "note_ids":
                 section = command[2]
                 i = self.storage.index(section)
-                head_group, head_width = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
+                head_group, head_width, stem_connection_point = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
                                                                   self.storage[i].note_ids)
                 self.ssihs[i].head_width = head_width
+                self.ssihs[i].stem_connection_point = stem_connection_point
 
             elif command[0] == "section" and (command[1] == "bars" or
                                               command[1] == "before_flags" or
                                               command[1] == "after_flags" or
                                               command[1] == "slanted_flags"):
-                section = command[2]
-                i = self.storage.index(section)
+                i = self.storage.index(command[2])
                 bar_group, bar_width_min, bar_height = self.bar_creator.create(self.ssihs[i].bar_group,
                                                                                self.storage[i].bars,
                                                                                self.storage[i].before_flags,
@@ -142,8 +111,7 @@ class ScoreSectionRenderer(Renderer):
                 self.ssihs[i].bar_height = bar_height
 
             elif command[0] == "section" and command[1] == "dots":
-                section = command[2]
-                i = self.storage.index(section)
+                i = self.storage.index(command[2])
                 dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
                 self.ssihs[i].dot_width = dot_width
                 self.ssihs[i].dot_height = dot_height
@@ -154,16 +122,40 @@ class ScoreSectionRenderer(Renderer):
 
         if note_level_info != self._last_note_level_info:  # Do after so indexes of all ssihs are correct
             for i in range(len(self.storage)):
-                head_group, head_width = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
-                                                                  self.storage[i].note_ids)
+                head_group, head_width, stem_connection_point = self.head_creator.create(self.ssihs[i].head_group,
+                                                                                         note_level_info,
+                                                                                         self.storage[i].note_ids)
                 self.ssihs[i].head_width = head_width
+                self.ssihs[i].stem_connection_point = stem_connection_point
 
         width, height, section_widths = self.component_organiser.organise(self.ssihs, head_height)
         for i, section_width in enumerate(section_widths):
             self.bar_creator.update_width(self.ssihs[i].bar_group, section_width)
+        for ssih in self.ssihs:
+            self.stem_creator.update_height(ssih.stem_group, ssih.stem_connection_point, height, head_height)
         self.size = width, height
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
+
+    def make_section_section(self, i, note_level_info):
+        head_group, head_width, stem_connection_point = self.head_creator.create(None, note_level_info,
+                                                                                 self.storage[i].note_ids)
+        bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
+                                                                       self.storage[i].before_flags,
+                                                                       self.storage[i].after_flags,
+                                                                       self.storage[i].slanted_flags)
+        dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
+        stem_group = self.stem_creator.create()
+        built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
+        ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
+                                        stem_connection_point=stem_connection_point,
+                                        bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
+                                        dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
+                                        custom_width=self.storage[i].custom_width,
+                                        stem_group=stem_group,
+                                        built_group=built_group)
+        self.component_organiser.parent_insert(self.canvas, i, built_group)
+        self.ssihs.insert(i, ssih)
 
     def set_storage(self, storage):
         if self.storage is not None:
