@@ -92,69 +92,34 @@ class ScoreSectionRenderer(Renderer):
                 self.ssihs.pop(command[2])
 
             elif command[0] == "section" and command[1] == "note_ids":
-                section = command[2]
-                i = self.storage.index(section)
-                head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
-                                                                  self.storage[i].note_ids)
-                self.ssihs[i].head_width = head_width
-                self.ssihs[i].lowest_note_id = lowest_note_id
+                self.update_heads(self.storage.index(command[2]), note_level_info)
 
             elif command[0] == "section" and (command[1] == "bars" or
                                               command[1] == "before_flags" or
                                               command[1] == "after_flags" or
                                               command[1] == "slanted_flags"):
-                i = self.storage.index(command[2])
-                bar_group, bar_width_min, bar_height = self.bar_creator.create(self.ssihs[i].bar_group,
-                                                                               self.storage[i].bars,
-                                                                               self.storage[i].before_flags,
-                                                                               self.storage[i].after_flags,
-                                                                               self.storage[i].slanted_flags)
-                self.ssihs[i].bar_width_min = bar_width_min
-                self.ssihs[i].bar_height = bar_height
+                self.update_bars(self.storage.index(command[2]))
 
             elif command[0] == "section" and command[1] == "dots":
-                i = self.storage.index(command[2])
-                dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
-                self.ssihs[i].dot_width = dot_width
-                self.ssihs[i].dot_height = dot_height
+                self.update_dots(self.storage.index(command[2]))
 
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 
 
-        if note_level_info != self._last_note_level_info:  # Do after so indexes of all ssihs are correct
-            for i in range(len(self.storage)):
-                head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group,
-                                                                                  note_level_info,
-                                                                                  self.storage[i].note_ids)
-                self.ssihs[i].head_width = head_width
-                self.ssihs[i].lowest_note_id = lowest_note_id
+        self.check_heads(note_level_info)  # Do after so indexes of all ssihs are correct
 
         width, height, bar_widths = self.component_organiser.organise(self.ssihs, head_height)
-        for i, bar_width in enumerate(bar_widths):
-            self.bar_creator.update_width(self.ssihs[i].bar_group, bar_width)
-        for ssih in self.ssihs:
-            note_height = None
-            stem_connection_offset = None
-            if ssih.lowest_note_id is not None:
-                lowest_note_level = notes[ssih.lowest_note_id].note_level
-                for note_level, note_height in note_level_info:
-                    if note_level == lowest_note_level:
-                        break
-                stem_connection_offset = notes[ssih.lowest_note_id].stem_connection_offset
-            self.stem_creator.update_height(ssih.stem_group, note_height, stem_connection_offset, height, head_height)
+        self.update_bar_widths(bar_widths)
+        self.update_stem_heights(note_level_info, height, head_height)
         self.size = width, height
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
 
     def make_section_section(self, i, note_level_info):
-        head_group, head_width, lowest_note_id = self.head_creator.create(None, note_level_info,
-                                                                          self.storage[i].note_ids)
-        bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
-                                                                       self.storage[i].before_flags,
-                                                                       self.storage[i].after_flags,
-                                                                       self.storage[i].slanted_flags)
-        dot_group, dot_width, dot_height = self.dot_creator.create(None, self.storage[i].dots)
+        head_group, head_width, lowest_note_id = self.do_heads(i, note_level_info)
+        bar_group, bar_width_min, bar_height = self.do_bars(i)
+        dot_group, dot_width, dot_height = self.do_dots(i)
         stem_group = self.stem_creator.create()
         built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
         ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
@@ -174,6 +139,67 @@ class ScoreSectionRenderer(Renderer):
         self.storage.bind_all(self.dispatch_instruction)
         self.dispatch_instruction("all")
 
+    def do_heads(self, i, note_level_info, group=None):
+        head_group, head_width, lowest_note_id = self.head_creator.create(group, note_level_info,
+                                                                          self.storage[i].note_ids)
+        return head_group, head_width, lowest_note_id
+
+    def update_heads(self, i, note_level_info):
+        head_group, head_width, lowest_note_id = self.do_heads(i, note_level_info, self.ssihs[i].head_group)
+        self.ssihs[i].head_width = head_width
+        self.ssihs[i].lowest_note_id = lowest_note_id
+
+    def check_heads(self, note_level_info):
+        """
+        Checks whether head heights have changed and all heads need to be redrawn.
+        """
+        if note_level_info != self._last_note_level_info:
+            for i in range(len(self.storage)):
+                head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group,
+                                                                                  note_level_info,
+                                                                                  self.storage[i].note_ids)
+                self.ssihs[i].head_width = head_width
+                self.ssihs[i].lowest_note_id = lowest_note_id
+
+            self._last_note_level_info = note_level_info
+
+    def do_bars(self, i, group=None):
+        bar_group, bar_width_min, bar_height = self.bar_creator.create(group,
+                                                                       self.storage[i].bars,
+                                                                       self.storage[i].before_flags,
+                                                                       self.storage[i].after_flags,
+                                                                       self.storage[i].slanted_flags)
+        return bar_group, bar_width_min, bar_height
+
+    def update_bars(self, i):
+        bar_group, bar_width_min, bar_height = self.do_bars(i, self.ssihs[i].bar_group)
+        self.ssihs[i].bar_width_min = bar_width_min
+        self.ssihs[i].bar_height = bar_height
+
+    def update_bar_widths(self, bar_widths):
+        for i, bar_width in enumerate(bar_widths):
+            self.bar_creator.update_width(self.ssihs[i].bar_group, bar_width)
+
+    def do_dots(self, i, group=None):
+        dot_group, dot_width, dot_height = self.dot_creator.create(group, self.storage[i].dots)
+        return dot_group, dot_width, dot_height
+
+    def update_dots(self, i):
+        dot_group, dot_width, dot_height = self.do_dots(i, self.ssihs[i].dot_group)
+        self.ssihs[i].dot_width = dot_width
+        self.ssihs[i].dot_height = dot_height
+
+    def update_stem_heights(self, note_level_info, height, head_height):
+        for ssih in self.ssihs:
+            note_height = None
+            stem_connection_offset = None
+            if ssih.lowest_note_id is not None:
+                lowest_note_level = notes[ssih.lowest_note_id].note_level
+                for note_level, note_height in note_level_info:
+                    if note_level == lowest_note_level:
+                        break
+                stem_connection_offset = notes[ssih.lowest_note_id].stem_connection_offset
+            self.stem_creator.update_height(ssih.stem_group, note_height, stem_connection_offset, height, head_height)
 
 
 __all__ = ["ScoreSectionRenderer", "SectionSectionInfoHolder"]
