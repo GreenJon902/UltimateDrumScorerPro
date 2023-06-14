@@ -12,6 +12,8 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
     def create(self, group, bars, before_bars, after_bars, slanted_bars):
         if group is None:
             group = InstructionGroup()
+
+        group.clear()
         group.add(Color(rgba=self.color))
 
         width = (0 +  # incase not updated later
@@ -20,7 +22,7 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
         if slanted_bars > 0 and width < slanted_flag_length:
             width = slanted_flag_length
 
-        y = bar_height / 2
+        y = bar_height
 
         if slanted_bars > 0:
             y += slanted_flag_height_offset  # Slanted flags are taller than bars
@@ -44,7 +46,7 @@ class ScoreSection_NormalBarCreator(ScoreSection_BarCreatorBase):
             bar_group.add(Line(points=(0, y, width, y), width=st))
             y += bar_height
 
-        height = y - bar_height / 2
+        height = y - bar_height
 
         group.add(slanted_bar_group)
         group.add(after_bar_group)
