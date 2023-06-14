@@ -1,4 +1,4 @@
-def run():
+def setup():
     print("Starting...")
     import os
 
@@ -36,6 +36,7 @@ Welcome to {os.environ["APPNAME"]} ({os.environ["APPVERSION"]}), or {os.environ[
     # ==================================================================================================================
 
 
+def run():
     print("Starting...")
     from ultimateDrumScorerProApp import UltimateDrumScorerProApp
 
@@ -45,4 +46,6 @@ Welcome to {os.environ["APPNAME"]} ({os.environ["APPVERSION"]}), or {os.environ[
 
 
 if __name__ == '__main__':
-    run()
+    setup()
+    # noinspection PyUnresolvedReferences
+    import tools.noteEditingSimple  # run()
