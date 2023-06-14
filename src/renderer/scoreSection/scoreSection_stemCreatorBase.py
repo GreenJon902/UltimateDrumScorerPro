@@ -10,11 +10,10 @@ class ScoreSection_StemCreatorBase:
     def create(self) -> InstructionGroup:
         raise NotImplementedError()
 
-    def update_height(self, stem_group: InstructionGroup, stem_connection_point: float, height: float,
-                      head_height: float):
+    def update_height(self, stem_group: InstructionGroup, note_height: float, stem_connection_offset: float,
+                      height: float, head_height: float):
         """
-        Updates this stems height based of the given information. `stem_connection_point` doesn't specifically mean where
-        it connects, but where it would connect should it go all the way.
+        Updates this stems height based of the given information.
         """
         raise NotImplementedError()
 

@@ -23,12 +23,12 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
 
         width = 0
         y = 0
-        stem_connection_point = None
+        lowest_note_id = None
         for (note_level, note_height) in note_level_info:
             for nid in note_ids_at_level[note_level]:
-                if nid in nids and (stem_connection_point is None or
-                                    (note_height + notes[nid].stem_connection_offset) > stem_connection_point):
-                    stem_connection_point = (note_height + notes[nid].stem_connection_offset)
+                if nid in nids and (lowest_note_id is None or
+                                    notes[nid].note_level < notes[lowest_note_id].note_level):
+                    lowest_note_id = nid
 
                 group.add(Translate(0, note_height - y))
                 y = note_height
@@ -43,7 +43,7 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
 
         group.add(PopMatrix())
 
-        return group, width, stem_connection_point
+        return group, width, lowest_note_id
 
 
 __all__ = ["ScoreSection_OpacityHeadCreator"]

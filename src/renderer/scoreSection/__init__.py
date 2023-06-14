@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import time
 import typing
+from typing import Optional
 
 from kivy import Logger
 from kivy.graphics import InstructionGroup
 from kivy.properties import ObjectProperty
 
 from renderer import Renderer
+from scoreSectionDesigns.notes import notes
 
 if typing.TYPE_CHECKING:
     from renderer.scoreSection.scoreSection_barCreatorBase import ScoreSection_BarCreatorBase
@@ -25,9 +27,9 @@ class SectionSectionInfoHolder:
     dot_group: InstructionGroup
     bar_group: InstructionGroup
     built_group: InstructionGroup
+    stem_group: InstructionGroup
     head_width: float
-    stem_connection_point: float
-    stem_group: float
+    lowest_note_id: Optional[int]
     dot_width: float
     dot_height: float
     bar_width_min: float
@@ -92,10 +94,10 @@ class ScoreSectionRenderer(Renderer):
             elif command[0] == "section" and command[1] == "note_ids":
                 section = command[2]
                 i = self.storage.index(section)
-                head_group, head_width, stem_connection_point = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
+                head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group, note_level_info,
                                                                   self.storage[i].note_ids)
                 self.ssihs[i].head_width = head_width
-                self.ssihs[i].stem_connection_point = stem_connection_point
+                self.ssihs[i].lowest_note_id = lowest_note_id
 
             elif command[0] == "section" and (command[1] == "bars" or
                                               command[1] == "before_flags" or
@@ -122,24 +124,32 @@ class ScoreSectionRenderer(Renderer):
 
         if note_level_info != self._last_note_level_info:  # Do after so indexes of all ssihs are correct
             for i in range(len(self.storage)):
-                head_group, head_width, stem_connection_point = self.head_creator.create(self.ssihs[i].head_group,
-                                                                                         note_level_info,
-                                                                                         self.storage[i].note_ids)
+                head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group,
+                                                                                  note_level_info,
+                                                                                  self.storage[i].note_ids)
                 self.ssihs[i].head_width = head_width
-                self.ssihs[i].stem_connection_point = stem_connection_point
+                self.ssihs[i].lowest_note_id = lowest_note_id
 
-        width, height, section_widths = self.component_organiser.organise(self.ssihs, head_height)
-        for i, section_width in enumerate(section_widths):
-            self.bar_creator.update_width(self.ssihs[i].bar_group, section_width)
+        width, height, bar_widths = self.component_organiser.organise(self.ssihs, head_height)
+        for i, bar_width in enumerate(bar_widths):
+            self.bar_creator.update_width(self.ssihs[i].bar_group, bar_width)
         for ssih in self.ssihs:
-            self.stem_creator.update_height(ssih.stem_group, ssih.stem_connection_point, height, head_height)
+            note_height = None
+            stem_connection_offset = None
+            if ssih.lowest_note_id is not None:
+                lowest_note_level = notes[ssih.lowest_note_id].note_level
+                for note_level, note_height in note_level_info:
+                    if note_level == lowest_note_level:
+                        break
+                stem_connection_offset = notes[ssih.lowest_note_id].stem_connection_offset
+            self.stem_creator.update_height(ssih.stem_group, note_height, stem_connection_offset, height, head_height)
         self.size = width, height
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
 
     def make_section_section(self, i, note_level_info):
-        head_group, head_width, stem_connection_point = self.head_creator.create(None, note_level_info,
-                                                                                 self.storage[i].note_ids)
+        head_group, head_width, lowest_note_id = self.head_creator.create(None, note_level_info,
+                                                                          self.storage[i].note_ids)
         bar_group, bar_width_min, bar_height = self.bar_creator.create(None, self.storage[i].bars,
                                                                        self.storage[i].before_flags,
                                                                        self.storage[i].after_flags,
@@ -148,7 +158,7 @@ class ScoreSectionRenderer(Renderer):
         stem_group = self.stem_creator.create()
         built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
         ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
-                                        stem_connection_point=stem_connection_point,
+                                        lowest_note_id=lowest_note_id,
                                         bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
                                         dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
                                         custom_width=self.storage[i].custom_width,
