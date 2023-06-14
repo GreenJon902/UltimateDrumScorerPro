@@ -44,3 +44,4 @@ jobs:
         name: UDSP-linux
         path: dist/linux
         if-no-files-found: error
+        gooey: false
