@@ -42,6 +42,10 @@ class SectionSectionInfoHolder:
 
 
 class ScoreSectionRenderer(Renderer):
+    """
+    ScoreSectionRenderer renders a section of notes and other parts that are of actual musical value.
+    """
+
     storage: ScoreSectionStorage
 
     component_organiser: ScoreSection_ComponentOrganiserBase = ObjectProperty(allownone=True)
@@ -72,6 +76,8 @@ class ScoreSectionRenderer(Renderer):
         existant_nids = set()
         for section in self.storage:
             existant_nids.update(section.note_ids)
+        if self.note_height_calculator is None:
+            raise Exception("Cannot render score section without note_height_calculator")
         note_level_info, head_height = self.note_height_calculator.get(existant_nids)
 
         while len(instructions) > 0:  # Organiser adds new commands
@@ -140,6 +146,8 @@ class ScoreSectionRenderer(Renderer):
         self.dispatch_instruction("all")
 
     def do_heads(self, i, note_level_info, group=None):
+        if self.head_creator is None:
+            return None, None, None
         head_group, head_width, lowest_note_id = self.head_creator.create(group, note_level_info,
                                                                           self.storage[i].note_ids)
         return head_group, head_width, lowest_note_id
@@ -164,6 +172,8 @@ class ScoreSectionRenderer(Renderer):
             self._last_note_level_info = note_level_info
 
     def do_bars(self, i, group=None):
+        if self.bar_creator is None:
+            return None, None, None
         bar_group, bar_width_min, bar_height = self.bar_creator.create(group,
                                                                        self.storage[i].bars,
                                                                        self.storage[i].before_flags,
@@ -181,6 +191,8 @@ class ScoreSectionRenderer(Renderer):
             self.bar_creator.update_width(self.ssihs[i].bar_group, bar_width)
 
     def do_dots(self, i, group=None):
+        if self.dot_creator is None:
+            return None, None, None
         dot_group, dot_width, dot_height = self.dot_creator.create(group, self.storage[i].dots)
         return dot_group, dot_width, dot_height
 

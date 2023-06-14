@@ -4,6 +4,16 @@ from renderer.text.text_formatterBase import Text_FormatterBase
 
 
 class Text_MarkdownFormatter(Text_FormatterBase):
+    """
+    A basic Markdown implementation, it converts it to the kivy markup format.
+    Features Implemented:
+    - \*\***Bold**\*\*
+    - \__Italics_\_
+    - \**Italics*\*
+    - \_\_<u>Underline</u>\_\_
+    - \~\~~~strikethrough~~\~\~
+    """
+
     bold_regex = re.compile(r"\*\*(.+?)\*\*")
     bold_substitution = r"[b]\g<1>[/b]"
     underline_regex = re.compile(r"__(.+?)__")

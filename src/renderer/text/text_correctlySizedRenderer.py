@@ -4,6 +4,12 @@ from renderer.text.text_normalRenderer import Text_NormalRenderer
 
 
 class Text_CorrectlySizedRenderer(Text_NormalRenderer):
+    """
+    Renders it as specified above, but also accounts for any scaling that may make the text render at too low a resolution.
+    Takes an argument of the widget where it is rendered, so it can calculate the current scaling at that point.
+    """
+
+
     location: Widget  # To where this is rendered to (aka a child of some scatter)
 
     def __init__(self, location):

@@ -79,10 +79,9 @@ Some helpful information on the internals of how this project is played out.
 &emsp;&ensp;├─ **_designs_** - Contains the default designs for **_notes_** and **_decorations_**. Stored as json and hold what should go in the properties of that design, also hold id in "id" and canvas instructions in "instructions"  
 &emsp;&ensp;├─ **_kv_** - Loads kv lang, all .kv go in here  
 &emsp;&ensp;├─ **_renderer_** - Tools to render the forms of a score items.  
-&emsp;&ensp;│ &ensp;└─ **_(item_type)_**  
-&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **README.md** - Gives information about that specific renderer and the component's APIs.  
-&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **\_\_init\_\_.py** - File that links together this item type's components (as there can be multiple compnents for the same part (e.g. correctly rendered bars and bars rendered for editing)). This should still work if a component is missing (set to None). These should also correctly set their own size.  
-&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type).py** - These have no concept for scoreStorage, editing, etc. They exist purely to store data and modify it through an api which supplies the needed information  
+&emsp;&ensp;│ &ensp;└─ **_(item_type)_**   
+&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **\_\_init\_\_.py** - File that links together this item type's components (as there can be multiple compnents for the same part (e.g. correctly rendered bars and bars rendered for editing)). This should still work if some components are missing (set to None). These should also correctly set their own size.  
+&emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type).py** - These have no concept for scoreStorage, editing, etc. They exist purely to process information through an api which supplies the needed data.  
 &emsp;&ensp;│ &ensp;&emsp;&ensp;└─ **(item_type)_(component_type)Base.py** - Like an interface or ABC: it holds a set of functions that other components can implement or override.
 &emsp;&ensp;└─ **_tools_** - Scripts to set up and test various widgets and UIs during development.  
 &emsp;&ensp;└─ **_tests_** - Unit tests and stuff to make sure everything still works.  
@@ -98,21 +97,6 @@ check_notes()  # Ensures that the notes array has been filled.
 def foo():
     notes[0].draw()  # We can now use it.
 ```
-
-# Renderers
-A renderer's readme file should be formatted like this.
-```markdown
-# What does this do?
-A description of what the renderer is for.
-
-# Component Information
-### SpecificComponent
-Information about this component.
-
-### GroupOfComponent
-Information about different components that all act in a similar way.
-```
-Specific function information should go in docstrings, but only when required.
 
 ### Other small stuff
 TextStorage has do_formatting, so we don't have to recreate the text renderer pipeline, instead it can just toggle off.
