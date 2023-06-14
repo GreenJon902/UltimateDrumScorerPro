@@ -73,11 +73,14 @@ class ScoreSectionRenderer(Renderer):
         Logger.info(f"ScoreSectionRenderer: Updating {self} with {instructions}...")
         t = time.time()
 
+        if self.note_height_calculator is None:
+            raise Exception("Cannot render score section without note_height_calculator")
+        if self.component_organiser is None:
+            raise Exception("Cannot render score section without component_organiser")
+
         existant_nids = set()
         for section in self.storage:
             existant_nids.update(section.note_ids)
-        if self.note_height_calculator is None:
-            raise Exception("Cannot render score section without note_height_calculator")
         note_level_info, head_height = self.note_height_calculator.get(existant_nids)
 
         while len(instructions) > 0:  # Organiser adds new commands
@@ -126,7 +129,7 @@ class ScoreSectionRenderer(Renderer):
         head_group, head_width, lowest_note_id = self.do_heads(i, note_level_info)
         bar_group, bar_width_min, bar_height = self.do_bars(i)
         dot_group, dot_width, dot_height = self.do_dots(i)
-        stem_group = self.stem_creator.create()
+        stem_group = self.do_stem()
         built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
         ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
                                         lowest_note_id=lowest_note_id,
@@ -147,12 +150,14 @@ class ScoreSectionRenderer(Renderer):
 
     def do_heads(self, i, note_level_info, group=None):
         if self.head_creator is None:
-            return None, None, None
+            return None, 0, None
         head_group, head_width, lowest_note_id = self.head_creator.create(group, note_level_info,
                                                                           self.storage[i].note_ids)
         return head_group, head_width, lowest_note_id
 
     def update_heads(self, i, note_level_info):
+        if self.head_creator is None:
+            return
         head_group, head_width, lowest_note_id = self.do_heads(i, note_level_info, self.ssihs[i].head_group)
         self.ssihs[i].head_width = head_width
         self.ssihs[i].lowest_note_id = lowest_note_id
@@ -161,6 +166,8 @@ class ScoreSectionRenderer(Renderer):
         """
         Checks whether head heights have changed and all heads need to be redrawn.
         """
+        if self.head_creator is None:
+            return
         if note_level_info != self._last_note_level_info:
             for i in range(len(self.storage)):
                 head_group, head_width, lowest_note_id = self.head_creator.create(self.ssihs[i].head_group,
@@ -173,7 +180,7 @@ class ScoreSectionRenderer(Renderer):
 
     def do_bars(self, i, group=None):
         if self.bar_creator is None:
-            return None, None, None
+            return None, 0, 0
         bar_group, bar_width_min, bar_height = self.bar_creator.create(group,
                                                                        self.storage[i].bars,
                                                                        self.storage[i].before_flags,
@@ -182,26 +189,40 @@ class ScoreSectionRenderer(Renderer):
         return bar_group, bar_width_min, bar_height
 
     def update_bars(self, i):
+        if self.bar_creator is None:
+            return
         bar_group, bar_width_min, bar_height = self.do_bars(i, self.ssihs[i].bar_group)
         self.ssihs[i].bar_width_min = bar_width_min
         self.ssihs[i].bar_height = bar_height
 
     def update_bar_widths(self, bar_widths):
+        if self.bar_creator is None:
+            return
         for i, bar_width in enumerate(bar_widths):
             self.bar_creator.update_width(self.ssihs[i].bar_group, bar_width)
 
     def do_dots(self, i, group=None):
         if self.dot_creator is None:
-            return None, None, None
+            return None, 0, 0
         dot_group, dot_width, dot_height = self.dot_creator.create(group, self.storage[i].dots)
         return dot_group, dot_width, dot_height
 
     def update_dots(self, i):
+        if self.dot_creator is None:
+            return
         dot_group, dot_width, dot_height = self.do_dots(i, self.ssihs[i].dot_group)
         self.ssihs[i].dot_width = dot_width
         self.ssihs[i].dot_height = dot_height
 
+    def do_stem(self):
+        if self.stem_creator is None:
+            return None
+        stem_group = self.stem_creator.create()
+        return stem_group
+
     def update_stem_heights(self, note_level_info, height, head_height):
+        if self.stem_creator is None:
+            return
         for ssih in self.ssihs:
             note_height = None
             stem_connection_offset = None
