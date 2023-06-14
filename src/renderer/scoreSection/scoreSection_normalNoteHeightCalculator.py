@@ -1,5 +1,3 @@
-from math import floor
-
 from renderer.scoreSection.scoreSection_noteHeightCalculatorBase import ScoreSection_NoteHeightCalculatorBase
 from scoreSectionDesigns.notes import notes, note_ids_at_level
 
@@ -9,13 +7,21 @@ class ScoreSection_NormalNoteHeightCalculator(ScoreSection_NoteHeightCalculatorB
         if len(existent_notes_ids) == 0:
             return [], 0
 
-        existent_notes_ids = sorted(existent_notes_ids, key=lambda nid: notes[nid].note_level)
-        highest_major_level = max(floor(notes[nid].note_level) for nid in notes.keys())
-        existent_note_levels = {notes[nid].note_level for nid in existent_notes_ids}
+        # Knowing the note levels, we need to get any extra majors that are above, e.g. [1.1] -> [1.1, 2, 3],
+        # [1.1, 2.3] -> [1.1, 2.3, 3], [2] -> [2, 3]
 
-        note_levels = set(range(floor(min(existent_note_levels)), highest_major_level + 1))
-        note_levels.update(existent_note_levels)
-        note_levels = sorted(list(note_levels))
+        existent_levels = {notes[nid].note_level for nid in existent_notes_ids}
+        existent_major_levels = {int(level) for level in existent_levels}
+        lowest_existent_major_level = min(existent_major_levels)
+        highest_major_level = max(int(notes[nid].note_level) for nid in notes)
+
+        major_levels = set(range(lowest_existent_major_level,
+                                 highest_major_level + 1))
+        missing_major_levels = major_levels.symmetric_difference(existent_major_levels)
+
+        note_levels = existent_levels
+        note_levels.update(missing_major_levels)
+        note_levels = sorted(list(note_levels))  # Use set before so no duplicates, but we now want it ordered
 
         note_heights = []
         y = 0

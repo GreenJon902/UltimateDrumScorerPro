@@ -30,8 +30,8 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
                                     (note_height + notes[nid].stem_connection_offset) > stem_connection_point):
                     stem_connection_point = (note_height + notes[nid].stem_connection_offset)
 
-                y = note_height - y
-                group.add(Translate(0, y))
+                group.add(Translate(0, note_height - y))
+                y = note_height
 
                 color = self.present_color if nid in nids else self.absent_color
                 if color[3] != 0:  # If we actually need to draw it
@@ -44,7 +44,6 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
         group.add(PopMatrix())
 
         return group, width, stem_connection_point
-
 
 
 __all__ = ["ScoreSection_OpacityHeadCreator"]
