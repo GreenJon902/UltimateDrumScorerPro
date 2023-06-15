@@ -79,6 +79,9 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         group.remove(group.children[index + 1])  # +1 because of PushMatrix()
 
     def organise(self, ssihs, head_height):
+        if len(ssihs) == 0:
+            return 0, 0, []
+
         decorations = 0
         heads = 1
         dots = 2
