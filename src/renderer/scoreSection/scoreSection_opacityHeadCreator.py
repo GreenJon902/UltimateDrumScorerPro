@@ -20,6 +20,7 @@ class ScoreSection_OpacityHeadCreator(ScoreSection_HeadCreatorBase):  # TODO: up
 
         group.clear()
         group.add(PushMatrix())
+        group.add(Translate())  # So matrices don't break.
 
         width = 0
         y = 0
