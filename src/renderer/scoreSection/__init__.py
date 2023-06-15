@@ -28,6 +28,7 @@ class SectionSectionInfoHolder:
     bar_group: InstructionGroup
     built_group: InstructionGroup
     stem_group: InstructionGroup
+    decoration_group: InstructionGroup
     head_width: float
     lowest_note_id: Optional[int]
     dot_width: float
@@ -35,6 +36,8 @@ class SectionSectionInfoHolder:
     bar_width_min: float
     bar_height: float
     custom_width: float
+    decoration_width: float
+    decoration_height_min: float
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -112,6 +115,9 @@ class ScoreSectionRenderer(Renderer):
             elif command[0] == "section" and command[1] == "dots":
                 self.update_dots(self.storage.index(command[2]))
 
+            elif command[0] == "section" and command[1] == "decoration_id":
+                self.update_decoration(self.storage.index(command[2]))
+
             else:
                 Logger.critical(f"ScoreSectionRenderer: Can't process instruction - {command}")
 
@@ -119,8 +125,10 @@ class ScoreSectionRenderer(Renderer):
         self.check_heads(note_level_info)  # Do after so indexes of all ssihs are correct
 
         width, height, bar_widths = self.component_organiser.organise(self.ssihs, head_height)
+        Logger.debug(f"ScoreSectionRenderer: Organised, size is now {width, height}")
         self.update_bar_widths(bar_widths)
         self.update_stem_heights(note_level_info, height, head_height)
+        self.update_decoration_heights(height, head_height)
         self.size = width, height
         Logger.info(f"ScoreSectionRenderer: {time.time() - t}s elapsed!")
 
@@ -130,14 +138,17 @@ class ScoreSectionRenderer(Renderer):
         bar_group, bar_width_min, bar_height = self.do_bars(i)
         dot_group, dot_width, dot_height = self.do_dots(i)
         stem_group = self.do_stem()
-        built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group)
+        decoration_group, decoration_width, decoration_height_min = self.do_decoration(i)
+        built_group = self.component_organiser.build(head_group, bar_group, dot_group, stem_group, decoration_group)
         ssih = SectionSectionInfoHolder(head_group=head_group, head_width=head_width,
                                         lowest_note_id=lowest_note_id,
                                         bar_group=bar_group, bar_width_min=bar_width_min, bar_height=bar_height,
                                         dot_group=dot_group, dot_width=dot_width, dot_height=dot_height,
                                         custom_width=self.storage[i].custom_width,
                                         stem_group=stem_group,
-                                        built_group=built_group)
+                                        built_group=built_group,
+                                        decoration_group=decoration_group, decoration_width=decoration_width,
+                                        decoration_height_min=decoration_height_min)
         self.component_organiser.parent_insert(self.canvas, i, built_group)
         self.ssihs.insert(i, ssih)
 
@@ -233,6 +244,29 @@ class ScoreSectionRenderer(Renderer):
                         break
                 stem_connection_offset = notes[ssih.lowest_note_id].stem_connection_offset
             self.stem_creator.update_height(ssih.stem_group, note_height, stem_connection_offset, height, head_height)
+
+    def do_decoration(self, i, group=None):
+        if self.decoration_creator is None:
+            return None, 0, 0
+        decoration_group, decoration_width, decoration_height_min = \
+            self.decoration_creator.create(group, self.storage[i].decoration_id)
+        return decoration_group, decoration_width, decoration_height_min
+
+    def update_decoration(self, i):
+        if self.decoration_creator is None:
+            return None
+
+        decoration_group, decoration_width, decoration_height_min = self.do_decoration(i,
+                                                                                       self.ssihs[i].decoration_group)
+        self.ssihs[i].decoration_width = decoration_width
+        self.ssihs[i].decoration_height_min = decoration_height_min
+
+    def update_decoration_heights(self, height, head_height):
+        if self.decoration_creator is None:
+            return
+        for i, ssih in enumerate(self.ssihs):
+            self.decoration_creator.update_height(ssih.decoration_group, height, head_height,
+                                                  self.storage[i].decoration_id)
 
 
 __all__ = ["ScoreSectionRenderer", "SectionSectionInfoHolder"]

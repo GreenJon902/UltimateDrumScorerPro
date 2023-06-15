@@ -37,6 +37,7 @@ class Decoration(Design):
     name: str = StringProperty()
 
     def update(self, group: InstructionGroup, **kwargs):
+        print(kwargs)
         ii = 0  # Graphics instruction index
         for i, instruction in enumerate(self.instructions):
             ii = index_of_next_child_of_type(ii, group, instruction[0])

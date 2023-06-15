@@ -114,6 +114,8 @@ def update(_):
         scoreSectionStorage.insert(0, ScoreSectionSectionStorage(note_ids=[0]))
     elif n == 22:
         scoreSectionStorage[1].note_ids = [0, 1, 2]
+    elif n == 23:
+        scoreSectionStorage[1].decoration_id = 4
     else:
         print("No more changes to make!!")
     n += 1

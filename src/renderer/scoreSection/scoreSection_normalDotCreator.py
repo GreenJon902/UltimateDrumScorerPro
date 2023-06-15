@@ -12,6 +12,8 @@ class ScoreSection_NormalDotCreator(ScoreSection_DotCreatorBase):
     def create(self, group, dots):
         if group is None:
             group = InstructionGroup()
+
+        group.clear()
         group.add(Color(rgba=self.color))
 
         width = 0

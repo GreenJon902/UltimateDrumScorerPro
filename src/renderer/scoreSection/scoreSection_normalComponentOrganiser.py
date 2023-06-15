@@ -17,14 +17,23 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
     def __init__(self, *args, **kwargs):
         ScoreSection_ComponentOrganiserBase.__init__(self, *args, **kwargs)
 
-    def build(self, head_group=None, bar_group=None, dot_group=None, stem_group=None):
+    def build(self, head_group=None, bar_group=None, dot_group=None, stem_group=None, decoration_group=None):
         head_group = default(head_group, InstructionGroup())
         bar_group = default(bar_group, InstructionGroup())
         dot_group = default(dot_group, InstructionGroup())
         stem_group = default(stem_group, InstructionGroup())
+        decoration_group = default(decoration_group, InstructionGroup())
 
 
         section_group = InstructionGroup()
+
+        # Heads
+        g = InstructionGroup()
+        g.add(PushMatrix())
+        g.add(Translate())
+        g.add(decoration_group)
+        g.add(PopMatrix())
+        section_group.add(g)
 
         # Heads
         g = InstructionGroup()
@@ -70,23 +79,25 @@ class ScoreSection_NormalComponentOrganiser(ScoreSection_ComponentOrganiserBase)
         group.remove(group.children[index + 1])  # +1 because of PushMatrix()
 
     def organise(self, ssihs, head_height):
-        heads = 0
-        dots = 1
-        bars = 2
-        stems = 3
-        ending_trans = 4
+        decorations = 0
+        heads = 1
+        dots = 2
+        bars = 3
+        stems = 4
+        ending_trans = 5
 
         trans = 1
 
         max_dot_height = max(ssihs, key=lambda x: x.dot_height).dot_height
         max_bar_height = max(ssihs, key=lambda x: x.bar_height).bar_height
+        max_decoration_height = max(ssihs, key=lambda x: x.decoration_height_min).decoration_height_min
 
-        height = head_height + max_dot_height + max_bar_height
+        height = max(head_height + max_dot_height + max_bar_height, max_decoration_height)
 
         section_widths = list()
 
         for ssih in ssihs:
-            width = max(ssih.head_width, ssih.dot_width, ssih.bar_width_min, ssih.custom_width)
+            width = max(ssih.head_width, ssih.dot_width, ssih.bar_width_min, ssih.custom_width) + ssih.decoration_width
             section_widths.append(width)
 
             ssih.built_group.children[heads].children[trans].x = width - ssih.head_width
