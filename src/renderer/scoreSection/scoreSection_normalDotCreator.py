@@ -16,6 +16,10 @@ class ScoreSection_NormalDotCreator(ScoreSection_DotCreatorBase):
         group.clear()
         group.add(Color(rgba=self.color))
 
+        group, width, height = self.make(group, dots)
+        return group, width, height
+
+    def make(self, group, dots):
         width = 0
         for n in range(dots):
             group.add(Ellipse(pos=(width, 0), size=(dot_radius * 2, dot_radius * 2)))
