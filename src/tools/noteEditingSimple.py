@@ -5,6 +5,7 @@ from kivy.lang import Builder
 from kivy.uix.scatter import ScatterPlane
 
 from renderer.scoreSection import ScoreSectionRenderer
+from renderer.scoreSection.scoreSection_editorBarCreator import ScoreSection_EditorBarCreator
 from renderer.scoreSection.scoreSection_editorDotCreator import ScoreSection_EditorDotCreator
 from renderer.scoreSection.scoreSection_normalBarCreator import ScoreSection_NormalBarCreator
 from renderer.scoreSection.scoreSection_normalComponentOrganiser import ScoreSection_NormalComponentOrganiser
@@ -59,7 +60,7 @@ if True:  # Normal
                                           note_height_calculator=ScoreSection_NormalNoteHeightCalculator()))
 
 if True:  # Fast Editor
-    renderers.append(ScoreSectionRenderer(scoreSectionStorage, bar_creator=ScoreSection_NormalBarCreator((0, 0, 0, 1)),
+    renderers.append(ScoreSectionRenderer(scoreSectionStorage, bar_creator=ScoreSection_EditorBarCreator((0, 0, 0, 1), (0, 0, 0, 0.2)),
                                           dot_creator=ScoreSection_EditorDotCreator((0, 0, 0, 1), (0, 0, 0, 0.2)),
                                           head_creator=ScoreSection_OpacityHeadCreator((0, 0, 0, 1), (0, 0, 0, 0.2)),
                                           component_organiser=ScoreSection_NormalComponentOrganiser(),
