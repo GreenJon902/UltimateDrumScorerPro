@@ -1,11 +1,12 @@
 from kivy.clock import Clock
-from kivy.properties import OptionProperty
+from kivy.properties import OptionProperty, NumericProperty
 from kivy.uix.widget import Widget
 
 
 class SelfSizingBoxLayout(Widget):
     orientation = OptionProperty("horizontal", options=("horizontal", "vertical"))
     anchor = OptionProperty("middle", options=("lowest", "middle", "highest"))
+    spacing = NumericProperty()
 
     trigger_layout = None
     attr_names_for_vertical = {
@@ -26,6 +27,7 @@ class SelfSizingBoxLayout(Widget):
         self.fbind("orientation", self.trigger_layout)
         self.fbind("children", self.trigger_layout)
         self.fbind("pos", self.trigger_layout)
+        self.fbind("spacing", self.trigger_layout)
         self.trigger_layout()
 
     def do_layout(self, *_):
@@ -34,7 +36,7 @@ class SelfSizingBoxLayout(Widget):
             y = 0
             for child in self.children:
                 child.y = y + self.y
-                y += child.height
+                y += child.height + self.spacing
 
                 if child.width > self.width:
                     self.width = child.width
@@ -50,7 +52,7 @@ class SelfSizingBoxLayout(Widget):
             x = 0
             for child in self.children:
                 child.x = x + self.x
-                x += child.width
+                x += child.width + self.spacing
 
                 if child.height > self.height:
                     self.height = child.height
