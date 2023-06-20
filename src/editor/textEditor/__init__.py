@@ -1,13 +1,14 @@
-from assembler.pageContent.text import Text
 from kivy.core.window import Window
 from kivy.input import MotionEvent
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty, BooleanProperty
 from kivy.uix.bubble import Bubble
 from kivy.uix.image import Image
 from kivy.uix.relativelayout import RelativeLayout
 
-Builder.load_file("editor/textEditor/textEditor.kv")
+from kv import check_kv
+from scoreStorage.textStorage import TextStorage
+
+check_kv()
 
 
 class MdTooltip(Bubble):
@@ -15,15 +16,15 @@ class MdTooltip(Bubble):
 
 
 class TextEditor(RelativeLayout):
-    text_instance: Text
-
+    _storage: TextStorage
+    
     md_tooltip: MdTooltip = ObjectProperty()
     md_icon: Image = ObjectProperty()
     md_icon_hovered: bool = BooleanProperty()
 
-    def __init__(self, text_instance, **kwargs):
-        self.text_instance = text_instance
-
+    def __init__(self, storage, **kwargs):
+        self._storage = storage
+        
         RelativeLayout.__init__(self, **kwargs)
         Window.bind(mouse_pos=self.on_mouse_pos)
         self.bind(md_icon_hovered=self.do_md_icon_color)
@@ -33,27 +34,27 @@ class TextEditor(RelativeLayout):
         self.md_icon.bind(pos=self.do_md_tooltip_pos)
 
     def set_text(self, _, value):
-        self.text_instance.storage.text = value
+        self._storage.text = value
 
     def on_md_icon(self, _, value):
         if value is not None:
-            self.text_instance.storage.bind(do_markup=self.do_md_icon_color)
+            self._storage.bind(do_formatting=self.do_md_icon_color)
             self.md_icon.bind(enabled_color=self.do_md_icon_color, disabled_color=self.do_md_icon_color)
 
 
     def do_md_icon_color(self, *_):
         color = (
-            (self.md_icon.enabled_hover_color if self.text_instance.storage.do_markup else
+            (self.md_icon.enabled_hover_color if self._storage.do_formatting else
                 self.md_icon.disabled_hover_color)
             if self.md_icon_hovered else
-            (self.md_icon.enabled_color if self.text_instance.storage.do_markup else self.md_icon.disabled_color))
+            (self.md_icon.enabled_color if self._storage.do_formatting else self.md_icon.disabled_color))
         if color is None:
             color = (1, 0, 0, 1)  # Just a placeholder
         self.md_icon.color = color
 
     def md_clicked(self, touch: MotionEvent):
         if touch is not None and self.md_icon.collide_point(touch.x, touch.y):
-            self.text_instance.storage.do_markup = not self.text_instance.storage.do_markup
+            self._storage.do_formatting = not self._storage.do_formatting
 
 
     def on_mouse_pos(self, _, value):

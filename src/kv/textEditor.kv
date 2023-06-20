@@ -35,7 +35,7 @@
         RelativeLayout:
             RoundedTextInput:
                 id: text_input
-                text: root.text_instance.storage.text
+                text: root._storage.text
                 radius: text_input_radius
                 hint_text: "Enter your message here..."
 
@@ -44,7 +44,7 @@
             Image:
                 id: md_icon
 
-                source: "mdIcon.png"
+                source: "images/mdIcon.png"
                 size_hint: None, None
                 width: md_icon_width
                 height: self.width / self.image_ratio
@@ -80,8 +80,8 @@
                 max: font_size_max
                 step: font_size_step
 
-                value: root.text_instance.storage.font_size
-                on_value: root.text_instance.storage.font_size = self.value
+                value: root._storage.font_size
+                on_value: root._storage.font_size = self.value
 
             Label:
                 id: font_size_label
