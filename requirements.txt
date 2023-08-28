@@ -1,6 +1,6 @@
 Pillow
 
 Kivy==2.2.1
-PyInstaller==5.12.0
+PyInstaller==5.13.1
 PyTest==7.3.2
 parameterized~=0.9.0
