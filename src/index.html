@@ -1,116 +1,23 @@
 <html>
     <head>
         <title>UDSP</title>
-        <style>
-            #rendered-pane, #editor-pane {
-                width: 100%;
-                height: 50%;
-            }
-        </style>
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <div id="rendered-pane">
             <div id="component-container">
+            </div>
         </div>
         <div id="editor-pane">
 
         </div>
     </body>
-    <script type="text/javascript" src="files.js"></script>
-    <script type="text/javascript" src="rendered.js"></script>
-    <script type="text/javascript" src="editor.js"></script>
     
-    <script>
-        function listComponents() {
-            // Return a list of all the component IDs.
-            throw "Not Implemented";
-        }
-        
-        function getComponentType(componentID) {
-            // Returns the type of this component.
-            // This could be "score-component", or "text-component".
-            throw "Not Implemented";
-        }
-
-        function ensureComponentType(componentID, expectedType) {
-            // Throws an error if this component is not of the given type.
-            if (getComponentType(componentID) !== expectedType)
-                throw "Expected component " + componentID + " to be " + expectedType + ", not " + getComponentType(componentID);
-        }
-
-        function getComponentTimeSignature(componentID) {
-            // Returns the time-signature of this component.
-            // Result is [numerator, denomenator].
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component");
-            throw "Not Implemented";
-        }
-
-        function getComponentBaseSubdivisions(componentID) {
-            // Returns the base-subdivisions of this component.
-            // This is how much each beat should be split into by default (quavers, triplets, etc...).
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component");
-            throw "Not Implemented";
-        }
-        
-        function getComponentFurtherSubdivisions(componentID, baseSubdivisionIndex) {
-            // Returns the further-subdivisions of this component.
-            // This is the number of times the base subdivision should be split up (e.g. if we need a 32nd note drag kick but everything else is in crotechets).
-            // Returns an integer. 1 being no further subdivisions, 2 being split in half and so on.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-
-        function getComponentDrumCount(componentID) {
-            // Returns the number of types of drums (including cymbals) that are currently enabled for this component.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-        
-        function getComponentDrumSymbolID(componentID, componentDrumIndex) {
-            // Returns the symbol-id for the current component with the given drum index.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-        
-        function getComponentDrumHeight(componentID, componentDrumIndex) {
-            // Returns the height to draw this drum at.
-            // TODO: Add more specification on this information.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-
-        function getComponentDecorationCount(componentID) {
-            // Returns the number of types of decorations (including) that are currently enabled for this component.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-        
-        function getComponentDecorationID(componentID, componentDecorationIndex) {
-            // Returns the decoration-id for the current component with the given drum index.
-            // Requires componentID to be a score-component.
-            ensureComponentType(componentID, "score-component);
-            throw "Not Implemented";
-        }
-
-    </script>
-    <script>
-        function renderComponent(componentID) {
-            // Render a component with a given id.
-            // This will be added to the #component-container at it's correct coordinates
-            // If this component already exists then it will be replaced.
-            throw "Not Implemented";
-        }
-
-        function renderAllComponents() {
-            // Remove all current components and then render them all again.
-            throw "Not Implemented";
-        }
-    </script>
+    <script type="module">
+    import {loadJSON} from "./files.js";
+    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-1":{"x":100,"y":200,"time-signature":{"numerator":4,"denomenator":4},"base-subdivisions":1,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":["snare","kick"],"score-content":[[{"drums":["kick"],"decorations":[]}],[{"drums":["snare"],"decorations":[]}],[{"drums":["kick"],"decorations":[]},{"drums":["kick"],"decorations":[]}],[{"drums":["kick"],"decorations":["high-hat-open"]}]],"left-decoration":"","right-decoration":""}}});
+    
+    import {editComponent} from "./editor.js";
+    editComponent("score-component", "score-component-1");
+    </script> 
 </html>
