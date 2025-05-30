@@ -1,7 +1,6 @@
 td.editor-sequencer-toggle {
   position: relative;
   padding: 0;
-  width: 50px;
   height: 25px;
   cursor: pointer;
 }
@@ -31,4 +30,32 @@ td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-drum {
 
 td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-drum {
     background-color: lightgreen;
+}
+
+input[type="number"].editor-sequencer-further-subdivision-control::-webkit-outer-spin-button, input[type="number"].editor-sequencer-further-subdivision-control::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+td.editor-sequencer-further-subdivision-control {
+    position: relative;
+    padding: 0;
+    height: 25px;
+}
+
+input[type="number"].editor-sequencer-further-subdivision-control {
+  -moz-appearance: textfield;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: lightgray;
+  text-align: center;
+}
+
+svg.score-component {
+	width: 100%;
+	height: 100%;
 }

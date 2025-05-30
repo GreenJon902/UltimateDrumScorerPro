@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <title>UDSP</title>
@@ -15,9 +16,24 @@
     
     <script type="module">
     import {loadJSON} from "./files.js";
-    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-1":{"x":100,"y":200,"time-signature":{"numerator":4,"denomenator":4},"base-subdivisions":1,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":["snare","kick"],"score-content":[[{"drums":["kick"],"decorations":[]}],[{"drums":["snare"],"decorations":[]}],[{"drums":["kick"],"decorations":[]},{"drums":["kick"],"decorations":[]}],[{"drums":["kick"],"decorations":["high-hat-open"]}]],"left-decoration":"","right-decoration":""}}});
+    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-1":{"x":100,"y":200,"time-signature":{"numerator":3,"denomenator":4},"base-subdivisions":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":["snare","kick"],"score-content":[
+				[{"drums": ["kick"], "decorations": []}],
+				[{"drums": ["kick"], "decorations": []}],
+				[{"drums": [], "decorations": []}],
+				[{"drums": ["kick"], "decorations": []}],
+				
+				[{"drums": ["kick"], "decorations": []}],
+				[{"drums": [], "decorations": []}],
+				[{"drums": ["kick"], "decorations": []}, {"drums": ["kick"], "decorations": []}],
+				[{"drums": ["kick"], "decorations": []}],
+				
+				[{"drums": ["kick"], "decorations": []}],
+				[{"drums": ["kick"], "decorations": []}],
+				[{"drums": [], "decorations": []}],
+				[{"drums": [], "decorations": []}],
+			],"left-decoration":"","right-decoration":""}}});
     
-    import {editComponent} from "./editor.js";
-    editComponent("score-component", "score-component-1");
+    import {renderComponent} from "./rendered.js";
+    renderComponent("score-component", "score-component-1");
     </script> 
 </html>
