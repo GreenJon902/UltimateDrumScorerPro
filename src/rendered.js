@@ -28,7 +28,7 @@ function drawDots(svg, x, y, dotNumber) {
     for (let n=0; n<dotNumber; n++) {
         const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         dot.setAttribute("r", "2");
-        dot.setAttribute("cx", x + 5 + 5 * n);
+        dot.setAttribute("cx", x + 5 * n);
         dot.setAttribute("cy", y);
         svg.appendChild(dot);
     }
