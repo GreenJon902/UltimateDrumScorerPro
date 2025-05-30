@@ -106,7 +106,11 @@ export function renderComponent(componentType, componentID) {
                             }
                         }
                     }
+
                     x += 50;  // Bars are 50 wide so move x by 50 (or if no bars then move anyway)
+                    
+                    // Draw stem
+                    path += "M" + x + " 0 L" + x + " 50 "
 
                     // Now we can draw dots
                     const dots = subdivisionDots[subdivisionIndex];
