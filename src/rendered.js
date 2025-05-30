@@ -13,6 +13,15 @@ function calculateValuesBarsAndDots(duration, subdivisions, subdivisionValues, s
 }
 
 
+function calculateActualSubdivisionIndex(subdivisions, componentID, base, further) {
+    // Convert a base and further subdivision index to an index in a subdivision length of subdivisions.
+    // This returns the subdivision relative to the start of the beat, but base should be relative to the start of the component.
+    const furtherCount = getScoreComponentFurtherSubdivisionCount(componentID, base);
+    const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
+    return (subdivisions / baseSubdivisions * (base % baseSubdivisions)) + (subdivisions / baseSubdivisions / furtherCount * further);
+}
+
+
 export function renderComponent(componentType, componentID) {
     // Render the given component. If it already exists then it will be removed.
     
@@ -49,17 +58,19 @@ export function renderComponent(componentType, componentID) {
         const subdivisionValues = [];  // The number of subdivisions that follow a non-empty subdivision before we reach another non-empty subdivision. If the index is an empty-subdivision, it gives the value for the last non-empty subdivision before the current index  
         const subdivisionBars = [];  // Same rules as subdivisionValues, but this stores the number of bars attached to a given subdivision.
         const subdivisionDots = [];  // Same rules as subdivisionValues, but this stores the number of dots following a given subdivision. 
+        const nonEmptySubdivisionBaseIndexes = [];  // Index of each non-empty subdivision (this will be repeated for each non-empty further subdivision
+        const nonEmptySubdivisionFurtherIndexes = [];  // Same as above
         let isFirst = true;
         for (let beatBaseSubdivisionIndex = 0; beatBaseSubdivisionIndex < baseSubdivisions; beatBaseSubdivisionIndex++) {
             const baseSubdivisionIndex = beatIndex * baseSubdivisions + beatBaseSubdivisionIndex;
             const furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
             for (let furtherSubdivisionIndex = 0; furtherSubdivisionIndex<furtherSubdivisionCount; furtherSubdivisionIndex++) {
                 if (getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex).length !== 0) {
-                    if (isFirst) {
-                        isFirst = false;  // Don't add the first one yet, we'll add this later once we know how much empty space follows it.
-                    } else {
-                        calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots)                        
-                    }
+                    nonEmptySubdivisionBaseIndexes.push(baseSubdivisionIndex);
+                    nonEmptySubdivisionFurtherIndexes.push(furtherSubdivisionIndex);
+
+                    // While we are supposed to be adding after we found the empty space after the one we're adding. We can add what's before as it's useful for rest data
+                    calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots);                        
                     currentEmpty = 0;
                 }
                 currentEmpty += subdivisions / baseSubdivisions / furtherSubdivisionCount;
@@ -69,61 +80,129 @@ export function renderComponent(componentType, componentID) {
         // We are always one behind so we need to add the last one.
         calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots)                        
 
+        // Path object we can reuse:
+        let path = "";
+
+        // Check if we need to draw a rest (we handle crotchet rests later so ignore those)
+        if (nonEmptySubdivisionBaseIndexes.length > 0 && nonEmptySubdivisionBaseIndexes[0] !== 0 && nonEmptySubdivisionFurtherIndexes[0] !== 0) {
+            const restTicks = subdivisionBars[0];
+            const restDots = subdivisionDots[0];
+
+            path += "M" + x + " 30 L" + (x + restTicks * 5 + 2.5) + " " + (27.5 - restTicks * 5) + " ";
+            for (let n=0; n<restTicks; n++) {
+                path += "M" + (x + n * 5 + 5) + " " + (25 - n * 5) + " L" + (x + n * 5) + " " + (20 - n * 5) + " ";
+            }
+            x += 10;
+            for (let n=0; n<restDots; n++) {
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("r", "2");
+                dot.setAttribute("cx", x + 5 * n); 
+                dot.setAttribute("cy", "27.5");
+                svg.appendChild(dot);
+            }
+            x += 5 * restTicks;
+
+
+        }
 
         // Now we can draw the bars and dots ---
         
-        // For bars we need two non-empty subdivisions, so we will store the last one, and draw from it to the current.
-        // For dots we will just draw it after whatever the current subdivision is.
-        let lastSubdivisionIndex = null;
-        let path = "";
-        for (let beatBaseSubdivisionIndex = 0; beatBaseSubdivisionIndex < baseSubdivisions; beatBaseSubdivisionIndex++) {
-            const baseSubdivisionIndex = beatIndex * baseSubdivisions + beatBaseSubdivisionIndex;
-            const furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
-            for (let furtherSubdivisionIndex = 0; furtherSubdivisionIndex<furtherSubdivisionCount; furtherSubdivisionIndex++) {
-                if (getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex).length !== 0) {
-                    const subdivisionIndex = (subdivisions / baseSubdivisions * beatBaseSubdivisionIndex) + (subdivisions / baseSubdivisions / furtherSubdivisionCount * furtherSubdivisionIndex);
-                    
-                    // We need to draw bars between pairs of adjacent non-empty subdivisions. If this is the first then we can ignore it.
-                    if (lastSubdivisionIndex != null) {  // This is at least the second non-empty subdivision
-                        // Collect the information
-                        const lastBars = subdivisionBars[lastSubdivisionIndex];
-                        const currentBars = subdivisionBars[subdivisionIndex];
-                        const minBars = Math.min(lastBars, currentBars);
 
-                        // Now draw the bars
-                        // Full-bars:
-                        for (let n=0; n<minBars; n++) {
-                            path += "M" + x + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
+        // If there's only one non-empty then draw a stem with a flag, otherwise draw bars. Draw crotchet rest if no non-empty
+        if (nonEmptySubdivisionBaseIndexes.length == 0) {
+            path += "M" + x + " 0 L" + (x + 5) + " 10 L" + x + " 15 L" + (x + 5) + " 20 ";
+        } else if (nonEmptySubdivisionBaseIndexes.length == 1) {
+            const subdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[0], nonEmptySubdivisionFurtherIndexes[0]);
+            
+            // Draw stem
+            path += "M" + x + " 0 L" + x + " 50 "
+
+            // Draw flags
+            let y = 0;
+            for (let n=0; n < subdivisionBars[subdivisionIndex]; n++) {
+                path += "M" + x + " " + y + " L" + (x + 10) + " " + (y + 10) + " ";
+                y += 5;
+            }
+            y += 10;
+            
+            // Draw dots
+            const dots = subdivisionDots[subdivisionIndex];
+            for (let n=0; n<dots; n++) {
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("r", "2");
+                dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
+                dot.setAttribute("cy", y);
+                svg.appendChild(dot);
+            }
+
+
+        } else {
+        
+            // For bars we need two non-empty subdivisions, so we will store the last one, and draw from it to the current.
+            // For dots we will just draw it after whatever the current subdivision is.
+            for (let nonEmptyIndex=0; nonEmptyIndex<nonEmptySubdivisionBaseIndexes.length; nonEmptyIndex++) {
+                const currentSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex]);
+
+                // We need to draw bars between pairs of adjacent non-empty subdivisions. So if this is the first then we can ignore it.
+                if (nonEmptyIndex != 0) {  
+                    // Collect the information
+                    const lastSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex-1], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex-1]);
+                    const lastBars = subdivisionBars[lastSubdivisionIndex];
+                    const currentBars = subdivisionBars[currentSubdivisionIndex];
+                    const minBars = Math.min(lastBars, currentBars);
+
+                    // Now draw the bars
+                    // Full-bars:
+                    for (let n=0; n<minBars; n++) {
+                        path += "M" + x + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
+                    }
+                    // Half-bars:
+                    // We need half-bars iff a stem needs more bars than are connected to it (on either side).
+                    if (lastBars > minBars) {  // We might need half-bars on the left
+                        // Check if it already has enough bars on the other side
+                        let needsHalfBars = true;
+                        if (nonEmptyIndex > 1) {  // If last is the first then it cannot have any on the other side
+                            const secondLastSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex-2], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex-2]);
+                            if (subdivisionBars[secondLastSubdivisionIndex] >= lastBars) {
+                                needsHalfBars = false;
+                            }
                         }
-                        // Half-bars:
-                        if (lastBars > minBars) {  // We need half-bars on the left
+                        if (needsHalfBars) {
                             for (let n=minBars; n<lastBars; n++) {
                                 path += "M" + x + " " + (n * 10) + " L" + (x + 20) + " " + (n * 10) + " ";
                             }
-                        } else if (currentBars > minBars) {  // We need half-bars on the right
+                        }
+                    } else if (currentBars > minBars) {  // We might need half-bars on the right
+                        // Check if it already has enough bars on the other side
+                        let needsHalfBars = true;
+                        if (nonEmptyIndex < nonEmptySubdivisionBaseIndexes.length - 2) {  // If current is the last then it cannot have bars on the other side
+                            const nextSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex+1], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex+1]);
+                            if (subdivisionBars[nextSubdivisionIndex] >= currentBars) {
+                                needsHalfBars = false;
+                            }
+                        }
+                        if (needsHalfBars) {
                             for (let n=minBars; n<currentBars; n++) {
                                 path += "M" + (x + 30) + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
                             }
                         }
                     }
+                }
 
-                    x += 50;  // Bars are 50 wide so move x by 50 (or if no bars then move anyway)
-                    
-                    // Draw stem
-                    path += "M" + x + " 0 L" + x + " 50 "
+                x += 50;  // Bars are 50 wide so move x by 50 (or if no bars then move anyway)
+                
+                // Draw stem
+                path += "M" + x + " 0 L" + x + " 50 "
 
-                    // Now we can draw dots
-                    const dots = subdivisionDots[subdivisionIndex];
-                    const y = 10 * subdivisionBars[subdivisionIndex];  // Put under lowest bar
-                    for (let n=0; n<dots; n++) {
-                        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                        dot.setAttribute("r", "2");
-                        dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
-                        dot.setAttribute("cy", y);
-                        svg.appendChild(dot);
-                    }
-                    // Save this index for next time we find a non-empty subdivision
-                    lastSubdivisionIndex = subdivisionIndex;
+                // Now we can draw dots
+                const dots = subdivisionDots[currentSubdivisionIndex];
+                const y = 10 * subdivisionBars[currentSubdivisionIndex];  // Put under lowest bar
+                for (let n=0; n<dots; n++) {
+                    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    dot.setAttribute("r", "2");
+                    dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
+                    dot.setAttribute("cy", y);
+                    svg.appendChild(dot);
                 }
             }
         }
