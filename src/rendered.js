@@ -22,6 +22,18 @@ function calculateActualSubdivisionIndex(subdivisions, componentID, base, furthe
 }
 
 
+function drawDots(svg, x, y, dotNumber) {
+    // Draws dotNumber dots starting at x, y in svg.
+    
+    for (let n=0; n<dotNumber; n++) {
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("r", "2");
+        dot.setAttribute("cx", x + 5 + 5 * n);
+        dot.setAttribute("cy", y);
+        svg.appendChild(dot);
+    }
+}
+
 export function renderComponent(componentType, componentID) {
     // Render the given component. If it already exists then it will be removed.
     
@@ -93,13 +105,7 @@ export function renderComponent(componentType, componentID) {
                 path += "M" + (x + n * 5 + 5) + " " + (25 - n * 5) + " L" + (x + n * 5) + " " + (20 - n * 5) + " ";
             }
             x += 10;
-            for (let n=0; n<restDots; n++) {
-                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                dot.setAttribute("r", "2");
-                dot.setAttribute("cx", x + 5 * n); 
-                dot.setAttribute("cy", "27.5");
-                svg.appendChild(dot);
-            }
+            drawDots(svg, x, "27.5", restDots);
             x += 5 * restTicks;
 
 
@@ -127,13 +133,7 @@ export function renderComponent(componentType, componentID) {
             
             // Draw dots
             const dots = subdivisionDots[subdivisionIndex];
-            for (let n=0; n<dots; n++) {
-                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                dot.setAttribute("r", "2");
-                dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
-                dot.setAttribute("cy", y);
-                svg.appendChild(dot);
-            }
+            drawDots(svg, x + 5, y, dots); // Drawn under flags, assume less than 50px worth of dots, so we don't change x
 
 
         } else {
@@ -197,13 +197,7 @@ export function renderComponent(componentType, componentID) {
                 // Now we can draw dots
                 const dots = subdivisionDots[currentSubdivisionIndex];
                 const y = 10 * subdivisionBars[currentSubdivisionIndex];  // Put under lowest bar
-                for (let n=0; n<dots; n++) {
-                    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    dot.setAttribute("r", "2");
-                    dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
-                    dot.setAttribute("cy", y);
-                    svg.appendChild(dot);
-                }
+                drawDots(svg, x + 5, y, dots);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
             }
         }
         x += 50;  // Spacing between beats
