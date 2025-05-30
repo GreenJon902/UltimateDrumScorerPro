@@ -25,11 +25,12 @@ export function renderComponent(componentType, componentID) {
     if (componentType !== "score-component") throw "Not Implemented";
     
     // Now let's render it
-    const svg = document.createElement("svg");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add("score-component");
 
     const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
     const timeSignatureNumerator = getScoreComponentTimeSignatureNumerator(componentID);  // Number of beats
+    let x = 0;  // Current x-coord (of last beat)
     for (let beatIndex = 0; beatIndex < timeSignatureNumerator; beatIndex++) {
         // Bar calculations ---
         
@@ -69,64 +70,67 @@ export function renderComponent(componentType, componentID) {
         calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots)                        
 
 
-        console.log(subdivisionValues, subdivisionBars, subdivisionDots);
+        // Now we can draw the bars and dots ---
         
-       /* const subdivisionValues = [];
-
-        let baseSubdivisionIndex = beatIndex * baseSubdivisions;
-        let furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
-        let furtherSubdivisionIndex = 0;
-
-        do {
-            // Get empty space till next subdivision with drums in it
-            let emptySubdivisionCount = subdivisions / baseSubdivisions / furtherSubdivisionCount; // Take account of the first subdivision.
-            while (getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex).length === 0) {
-                furtherSubdivisionIndex++;
-                if (furtherSubdivisionIndex >= furtherSubdivisionCount) {
-                    furtherSubdivisionIndex = 0;
-                    baseSubdivisionIndex += 1;
-                    furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisions);
-                }
-                emptySubdivisionCount += subdivisions / baseSubdivisions / furtherSubdivisionCount;
-            }
-            subdivisionValues.push(...Array(emptySubdivisionCount).fill(emptySubdivisionCount));  // Add multiple
-            furtherSubdivisionIndex++;
-            if (furtherSubdivisionIndex >= furtherSubdivisionCount) {
-                furtherSubdivisionIndex = 0;
-                baseSubdivisionIndex += 1;
-                furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisions);
-            }
-        } while (baseSubdivisionIndex < (beatIndex+1)*subdivisions);
-
-        return;
-        let emptySubdivisionCount = 0;
-        let rest = 0;  // The number of subdivisions taken up by rests at the start of the bar
-
-        while (beatBaseSubdivisionIndex < baseSubdivisions) {
+        // For bars we need two non-empty subdivisions, so we will store the last one, and draw from it to the current.
+        // For dots we will just draw it after whatever the current subdivision is.
+        let lastSubdivisionIndex = null;
+        let path = "";
+        for (let beatBaseSubdivisionIndex = 0; beatBaseSubdivisionIndex < baseSubdivisions; beatBaseSubdivisionIndex++) {
             const baseSubdivisionIndex = beatIndex * baseSubdivisions + beatBaseSubdivisionIndex;
             const furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
-            const isNotEmpty = getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex).length !== 0;
+            for (let furtherSubdivisionIndex = 0; furtherSubdivisionIndex<furtherSubdivisionCount; furtherSubdivisionIndex++) {
+                if (getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex).length !== 0) {
+                    const subdivisionIndex = (subdivisions / baseSubdivisions * beatBaseSubdivisionIndex) + (subdivisions / baseSubdivisions / furtherSubdivisionCount * furtherSubdivisionIndex);
+                    
+                    // We need to draw bars between pairs of adjacent non-empty subdivisions. If this is the first then we can ignore it.
+                    if (lastSubdivisionIndex != null) {  // This is at least the second non-empty subdivision
+                        // Collect the information
+                        const lastBars = subdivisionBars[lastSubdivisionIndex];
+                        const currentBars = subdivisionBars[subdivisionIndex];
+                        const minBars = Math.min(lastBars, currentBars);
 
-            const isRest = subdivisionValues.length == 0 && beatBaseSubdivisionIndex != 0 && furtherSubdivisionIndex != 0;  // Is this / is there a rest
-            if (isNotEmpty && isRest) {  // Is a rest
-                rest = emptySubdivisionCount;
-                subdivisionValues.push(...Array(emptySubdivisionCount).fill(0));  // No bars over rests
-                emptySubdivisionCount = 0;
-            } else if (isNotEmpty) {  // Not a rest 
-                emptySubdivisionCount += subdivisions / baseSubdivisions / furtherSubdivisionCount;  // This is how much space this note takes up.
-subdivisionValues.push(...Array(emptySubdivisionCount).fill(emptySubdivisionCount));  // Add length of last.
-                emptySubdivisionCount = 0;
-            } else {  // Empty so just carry on
-                emptySubdivisionCount += subdivisions / baseSubdivisions / furtherSubdivisionCount;  // This is how much space this note takes up.
-            }
+                        // Now draw the bars
+                        // Full-bars:
+                        for (let n=0; n<minBars; n++) {
+                            path += "M" + x + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
+                        }
+                        // Half-bars:
+                        if (lastBars > minBars) {  // We need half-bars on the left
+                            for (let n=minBars; n<lastBars; n++) {
+                                path += "M" + x + " " + (n * 10) + " L" + (x + 20) + " " + (n * 10) + " ";
+                            }
+                        } else if (currentBars > minBars) {  // We need half-bars on the right
+                            for (let n=minBars; n<currentBars; n++) {
+                                path += "M" + (x + 30) + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
+                            }
+                        }
+                    }
+                    x += 50;  // Bars are 50 wide so move x by 50 (or if no bars then move anyway)
 
-            furtherSubdivisionIndex++;
-            if (furtherSubdivisionIndex >= furtherSubdivisionCount) {
-                furtherSubdivisionIndex = 0;
-                beatBaseSubdivisionIndex += 1;
+                    // Now we can draw dots
+                    const dots = subdivisionDots[subdivisionIndex];
+                    const y = 10 * subdivisionBars[subdivisionIndex];  // Put under lowest bar
+                    for (let n=0; n<dots; n++) {
+                        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        dot.setAttribute("r", "2");
+                        dot.setAttribute("cx", x + 5 + 5 * n);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
+                        dot.setAttribute("cy", y);
+                        svg.appendChild(dot);
+                    }
+                    // Save this index for next time we find a non-empty subdivision
+                    lastSubdivisionIndex = subdivisionIndex;
+                }
             }
         }
-        console.log(subdivisionValues);*/
+        x += 50;  // Spacing between beats
+        const bars = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        bars.setAttribute("d", path);
+        bars.setAttribute("stroke", "black");
+        bars.setAttribute("stroke-width", "3");
+        svg.appendChild(bars);
+        svg.setAttribute("height", "210");
+        svg.setAttribute("width", x);
     }
 
     // Now add the svg to the document

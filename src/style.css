@@ -1,3 +1,9 @@
+html, body {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
 td.editor-sequencer-toggle {
   position: relative;
   padding: 0;
@@ -55,7 +61,3 @@ input[type="number"].editor-sequencer-further-subdivision-control {
   text-align: center;
 }
 
-svg.score-component {
-	width: 100%;
-	height: 100%;
-}
