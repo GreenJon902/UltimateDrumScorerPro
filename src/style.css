@@ -61,3 +61,25 @@ input[type="number"].editor-sequencer-further-subdivision-control {
   text-align: center;
 }
 
+body {
+    position: absolute;
+}
+
+.score-component {
+    position: absolute;
+    background-color: rgba(0, 1, 0, 0.5);
+}
+
+#component-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: red;
+}
+
+#rendered-pane, #editor-pane {
+    width: 100%;
+    height: 50%;
+}
+
+

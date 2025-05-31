@@ -1,4 +1,5 @@
-import {getScoreComponentBaseSubdivisions, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDrums, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator} from "./files.js";
+import {setEditComponent} from "./editor.js";
+import {getScoreComponentBaseSubdivisions, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDrums, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentX, getScoreComponentY, setScoreComponentX, setScoreComponentY} from "./files.js";
 
 function calculateValuesBarsAndDots(duration, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots) {
     // Calculates the value, number of bars and number of dots that a note with duration/subdivision for a beat would have.
@@ -40,7 +41,7 @@ export function renderComponent(componentType, componentID) {
     // First delete it if it already exists
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
-        document.remove();
+        old.remove();
     }
 
     if (componentType !== "score-component") throw "Not Implemented";
@@ -48,6 +49,7 @@ export function renderComponent(componentType, componentID) {
     // Now let's render it
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add("score-component");
+    svg.setAttribute("id", componentType + "_" + componentID);  // So we can refer to it if we need to
 
     const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
     const timeSignatureNumerator = getScoreComponentTimeSignatureNumerator(componentID);  // Number of beats
@@ -206,8 +208,38 @@ export function renderComponent(componentType, componentID) {
         bars.setAttribute("stroke", "black");
         bars.setAttribute("stroke-width", "3");
         svg.appendChild(bars);
-        svg.setAttribute("height", "210");
+        svg.setAttribute("height", "50");
         svg.setAttribute("width", x);
+    }
+
+    
+    // Initial coordinates 
+    svg.style.left = (getScoreComponentX(componentID) * 100) + "%";
+    svg.style.top = (getScoreComponentY(componentID) * 100) + "%";
+    // Add dragging logic
+    const container = document.getElementById("component-container");
+    svg.onmousedown = (downEvent) => {
+        console.log("1", downEvent);
+        const svgRect = svg.getBoundingClientRect();
+        const parentRect = container.getBoundingClientRect();
+        document.onmousemove = (moveEvent) => {
+            console.log("2", downEvent);
+            const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
+            const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
+            setScoreComponentX(componentID, newX);
+            setScoreComponentY(componentID, newY);
+            svg.style.left = (newX * 100) + "%";
+            svg.style.top = (newY * 100) + "%";
+        }
+        document.onmouseup = (upEvent) => {
+            console.log("3", downEvent);
+            document.onmousemove = null;
+            document.onmouseup = null;
+        }
+    }
+    // Editing of component
+    svg.onmouseup = (e) => {
+        setEditComponent("score-component", componentID);
     }
 
     // Now add the svg to the document

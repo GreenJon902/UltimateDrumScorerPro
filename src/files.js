@@ -44,12 +44,27 @@ export function getScoreComponentEnabledDecorations(componentID) {
 
 export function getScoreComponentX(componentID) {
     // Returns the X coordinate of this score component.
+    // The returned value multiplied by the parent's width is the x-coordinate.
     return CURRENT_PROJECT["score-components"][componentID]["x"];
+}
+
+export function setScoreComponentX(componentID, value) {
+    // Sets the X coordinate of this score component.
+    // The value multiplied by the parent's width is the x-coordinate.
+    CURRENT_PROJECT["score-components"][componentID]["x"] = value;
 }
 
 export function getScoreComponentY(componentID) {
     // Returns the Y coordinate of this score component.
+    // The returned value multiplied by the parent's height is the y-coordinate.
     return CURRENT_PROJECT["score-components"][componentID]["y"];
+}
+
+
+export function setScoreComponentY(componentID, value) {
+    // Sets the Y coordinate of this score component.
+    // The returned value multiplied by the parent's height is the y-coordinate.
+    CURRENT_PROJECT["score-components"][componentID]["y"] = value;
 }
 
 export function getScoreComponentLeftDecoration(componentID) {

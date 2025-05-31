@@ -1,4 +1,5 @@
 import {getScoreComponentBaseSubdivisions, getScoreComponentEnabledDecorations, getScoreComponentEnabledDrums, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDecoration, getScoreComponentFurtherSubdivisionDrum, getScoreComponentTimeSignatureNumerator, setScoreComponentFurtherSubdivisionCount, setScoreComponentFurtherSubdivisionDecoration, setScoreComponentFurtherSubdivisionDrum} from "./files.js";
+import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
@@ -42,6 +43,7 @@ function scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID) {
         textBox.onchange = () => {
             setScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex, parseInt(textBox.value));  // Save the new value
             setEditComponent("score-component", componentID);  // Redraw the editor
+            renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
         };
         tableData.appendChild(textBox);
         tableRow.appendChild(tableData);
@@ -100,6 +102,7 @@ function scoreEditorCreateSequencerToggleButtonInTd(furtherSubdivisionCount, ena
     toggleButton.checked = enabled;
     toggleButton.onclick = () => {
         isCheckedSetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID, toggleButton.checked);  // Save the new value
+        renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
     };
     tableData.style.width = (3 / furtherSubdivisionCount) + 'em';
     tableData.appendChild(toggleButton);
