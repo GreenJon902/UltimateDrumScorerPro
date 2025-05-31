@@ -1,14 +1,14 @@
 import {setEditComponent} from "./editor.js";
 import {getScoreComponentBaseSubdivisions, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDrums, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentX, getScoreComponentY, setScoreComponentX, setScoreComponentY} from "./files.js";
 
-function calculateValuesBarsAndDots(duration, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots) {
-    // Calculates the value, number of bars and number of dots that a note with duration/subdivision for a beat would have.
+function calculateValuesBeamsAndDots(duration, subdivisions, subdivisionValues, subdivisionBeams, subdivisionDots) {
+    // Calculates the value, number of beams and number of dots that a note with duration/subdivision for a beat would have.
     // This function will add duration occurances of these to each array.
     const v = duration;
     const l = Math.ceil(Math.log2(subdivisions/v));
     const d = Math.log2(subdivisions/(subdivisions-v*2**(l-1))) - 1;
     subdivisionValues.push(...Array(duration).fill(v)); // We want to add for all the gaps after too.
-    subdivisionBars.push(...Array(duration).fill(l)); // We want to add for all the gaps after too.
+    subdivisionBeams.push(...Array(duration).fill(l)); // We want to add for all the gaps after too.
     subdivisionDots.push(...Array(duration).fill(d)); // We want to add for all the gaps after too.
 
 }
@@ -55,7 +55,7 @@ export function renderComponent(componentType, componentID) {
     const timeSignatureNumerator = getScoreComponentTimeSignatureNumerator(componentID);  // Number of beats
     let x = 0;  // Current x-coord (of last beat)
     for (let beatIndex = 0; beatIndex < timeSignatureNumerator; beatIndex++) {
-        // Bar calculations ---
+        // Beam calculations ---
         
         // We store it as a mix of subdivisions, but we need to have only one per beat that can account for all.
         // The easiest way to do this is to find the product of all the subdivisions 
@@ -70,7 +70,7 @@ export function renderComponent(componentType, componentID) {
         
         let currentEmpty = 0;
         const subdivisionValues = [];  // The number of subdivisions that follow a non-empty subdivision before we reach another non-empty subdivision. If the index is an empty-subdivision, it gives the value for the last non-empty subdivision before the current index  
-        const subdivisionBars = [];  // Same rules as subdivisionValues, but this stores the number of bars attached to a given subdivision.
+        const subdivisionBeams = [];  // Same rules as subdivisionValues, but this stores the number of beams attached to a given subdivision.
         const subdivisionDots = [];  // Same rules as subdivisionValues, but this stores the number of dots following a given subdivision. 
         const nonEmptySubdivisionBaseIndexes = [];  // Index of each non-empty subdivision (this will be repeated for each non-empty further subdivision
         const nonEmptySubdivisionFurtherIndexes = [];  // Same as above
@@ -84,7 +84,7 @@ export function renderComponent(componentType, componentID) {
                     nonEmptySubdivisionFurtherIndexes.push(furtherSubdivisionIndex);
 
                     // While we are supposed to be adding after we found the empty space after the one we're adding. We can add what's before as it's useful for rest data
-                    calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots);                        
+                    calculateValuesBeamsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBeams, subdivisionDots);                        
                     currentEmpty = 0;
                 }
                 currentEmpty += subdivisions / baseSubdivisions / furtherSubdivisionCount;
@@ -92,14 +92,14 @@ export function renderComponent(componentType, componentID) {
         }
          
         // We are always one behind so we need to add the last one.
-        calculateValuesBarsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBars, subdivisionDots)                        
+        calculateValuesBeamsAndDots(currentEmpty, subdivisions, subdivisionValues, subdivisionBeams, subdivisionDots)                        
 
         // Path object we can reuse:
         let path = "";
 
         // Check if we need to draw a rest (we handle crotchet rests later so ignore those)
         if (nonEmptySubdivisionBaseIndexes.length > 0 && (nonEmptySubdivisionBaseIndexes[0] !== 0 || nonEmptySubdivisionFurtherIndexes[0] !== 0)) {
-            const restTicks = subdivisionBars[0];
+            const restTicks = subdivisionBeams[0];
             const restDots = subdivisionDots[0];
 
             path += "M" + x + " 30 L" + (x + restTicks * 5 + 2.5) + " " + (27.5 - restTicks * 5) + " ";
@@ -113,10 +113,10 @@ export function renderComponent(componentType, componentID) {
 
         }
 
-        // Now we can draw the bars and dots ---
+        // Now we can draw the beams and dots ---
         
 
-        // If there's only one non-empty then draw a stem with a flag, otherwise draw bars. Draw crotchet rest if no non-empty
+        // If there's only one non-empty then draw a stem with a flag, otherwise draw beams. Draw crotchet rest if no non-empty
         if (nonEmptySubdivisionBaseIndexes.length == 0) {
             path += "M" + x + " 0 L" + (x + 5) + " 10 L" + x + " 15 L" + (x + 5) + " 20 ";
         } else if (nonEmptySubdivisionBaseIndexes.length == 1) {
@@ -127,7 +127,7 @@ export function renderComponent(componentType, componentID) {
 
             // Draw flags
             let y = 0;
-            for (let n=0; n < subdivisionBars[subdivisionIndex]; n++) {
+            for (let n=0; n < subdivisionBeams[subdivisionIndex]; n++) {
                 path += "M" + x + " " + y + " L" + (x + 10) + " " + (y + 10) + " ";
                 y += 5;
             }
@@ -140,74 +140,74 @@ export function renderComponent(componentType, componentID) {
 
         } else {
         
-            // For bars we need two non-empty subdivisions, so we will store the last one, and draw from it to the current.
+            // For beams we need two non-empty subdivisions, so we will store the last one, and draw from it to the current.
             // For dots we will just draw it after whatever the current subdivision is.
             for (let nonEmptyIndex=0; nonEmptyIndex<nonEmptySubdivisionBaseIndexes.length; nonEmptyIndex++) {
                 const currentSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex]);
 
-                // We need to draw bars between pairs of adjacent non-empty subdivisions. So if this is the first then we can ignore it.
+                // We need to draw beams between pairs of adjacent non-empty subdivisions. So if this is the first then we can ignore it.
                 if (nonEmptyIndex != 0) {  
                     // Collect the information
                     const lastSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex-1], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex-1]);
-                    const lastBars = subdivisionBars[lastSubdivisionIndex];
-                    const currentBars = subdivisionBars[currentSubdivisionIndex];
-                    const minBars = Math.min(lastBars, currentBars);
+                    const lastBeams = subdivisionBeams[lastSubdivisionIndex];
+                    const currentBeams = subdivisionBeams[currentSubdivisionIndex];
+                    const minBeams = Math.min(lastBeams, currentBeams);
 
-                    // Now draw the bars
-                    // Full-bars:
-                    for (let n=0; n<minBars; n++) {
+                    // Now draw the beams
+                    // Full-beams:
+                    for (let n=0; n<minBeams; n++) {
                         path += "M" + x + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
                     }
-                    // Half-bars:
-                    // We need half-bars iff a stem needs more bars than are connected to it (on either side).
-                    if (lastBars > minBars) {  // We might need half-bars on the left
-                        // Check if it already has enough bars on the other side
-                        let needsHalfBars = true;
+                    // Half-beams:
+                    // We need half-beams iff a stem needs more beams than are connected to it (on either side).
+                    if (lastBeams > minBeams) {  // We might need half-beams on the left
+                        // Check if it already has enough beams on the other side
+                        let needsHalfBeams = true;
                         if (nonEmptyIndex > 1) {  // If last is the first then it cannot have any on the other side
                             const secondLastSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex-2], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex-2]);
-                            if (subdivisionBars[secondLastSubdivisionIndex] >= lastBars) {
-                                needsHalfBars = false;
+                            if (subdivisionBeams[secondLastSubdivisionIndex] >= lastBeams) {
+                                needsHalfBeams = false;
                             }
                         }
-                        if (needsHalfBars) {
-                            for (let n=minBars; n<lastBars; n++) {
+                        if (needsHalfBeams) {
+                            for (let n=minBeams; n<lastBeams; n++) {
                                 path += "M" + x + " " + (n * 10) + " L" + (x + 20) + " " + (n * 10) + " ";
                             }
                         }
-                    } else if (currentBars > minBars) {  // We might need half-bars on the right
-                        // Check if it already has enough bars on the other side
-                        let needsHalfBars = true;
-                        if (nonEmptyIndex < nonEmptySubdivisionBaseIndexes.length - 2) {  // If current is the last then it cannot have bars on the other side
+                    } else if (currentBeams > minBeams) {  // We might need half-beams on the right
+                        // Check if it already has enough beams on the other side
+                        let needsHalfBeams = true;
+                        if (nonEmptyIndex < nonEmptySubdivisionBaseIndexes.length - 2) {  // If current is the last then it cannot have beams on the other side
                             const nextSubdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex+1], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex+1]);
-                            if (subdivisionBars[nextSubdivisionIndex] >= currentBars) {
-                                needsHalfBars = false;
+                            if (subdivisionBeams[nextSubdivisionIndex] >= currentBeams) {
+                                needsHalfBeams = false;
                             }
                         }
-                        if (needsHalfBars) {
-                            for (let n=minBars; n<currentBars; n++) {
+                        if (needsHalfBeams) {
+                            for (let n=minBeams; n<currentBeams; n++) {
                                 path += "M" + (x + 30) + " " + (n * 10) + " L" + (x + 50) + " " + (n * 10) + " ";
                             }
                         }
                     }
                 }
 
-                x += 50;  // Bars are 50 wide so move x by 50 (or if no bars then move anyway)
+                x += 50;  // Beams are 50 wide so move x by 50 (or if no beams then move anyway)
                 
                 // Draw stem
                 path += "M" + x + " 0 L" + x + " 50 "
 
                 // Now we can draw dots
                 const dots = subdivisionDots[currentSubdivisionIndex];
-                const y = 10 * subdivisionBars[currentSubdivisionIndex];  // Put under lowest bar
-                drawDots(svg, x + 5, y, dots);  // Drawn under bars, assume less than 50px worth of dots, so we don't change x
+                const y = 10 * subdivisionBeams[currentSubdivisionIndex];  // Put under lowest beam
+                drawDots(svg, x + 5, y, dots);  // Drawn under beams, assume less than 50px worth of dots, so we don't change x
             }
         }
         x += 50;  // Spacing between beats
-        const bars = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        bars.setAttribute("d", path);
-        bars.setAttribute("stroke", "black");
-        bars.setAttribute("stroke-width", "3");
-        svg.appendChild(bars);
+        const beams = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        beams.setAttribute("d", path);
+        beams.setAttribute("stroke", "black");
+        beams.setAttribute("stroke-width", "3");
+        svg.appendChild(beams);
         svg.setAttribute("height", "50");
         svg.setAttribute("width", x);
     }
