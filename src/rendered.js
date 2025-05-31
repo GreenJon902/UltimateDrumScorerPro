@@ -98,7 +98,7 @@ export function renderComponent(componentType, componentID) {
         let path = "";
 
         // Check if we need to draw a rest (we handle crotchet rests later so ignore those)
-        if (nonEmptySubdivisionBaseIndexes.length > 0 && nonEmptySubdivisionBaseIndexes[0] !== 0 && nonEmptySubdivisionFurtherIndexes[0] !== 0) {
+        if (nonEmptySubdivisionBaseIndexes.length > 0 && (nonEmptySubdivisionBaseIndexes[0] !== 0 || nonEmptySubdivisionFurtherIndexes[0] !== 0)) {
             const restTicks = subdivisionBars[0];
             const restDots = subdivisionDots[0];
 
