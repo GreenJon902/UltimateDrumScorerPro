@@ -1,9 +1,5 @@
 var CURRENT_PROJECT;
 
-// TODO: Loading of drums
-// TODO: Loading of decorations
-// TODO: Loading of left and right decorations
-// TODO: Loading of text components
 
 export function loadJSON(data) {
     // Validates and loads the given data as the current project.

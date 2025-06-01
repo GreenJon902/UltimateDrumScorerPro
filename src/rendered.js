@@ -1,5 +1,7 @@
+import {getDrumSymbolID, getDrumY} from "./drums.js";
 import {setEditComponent} from "./editor.js";
 import {getScoreComponentBaseSubdivisions, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDrums, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentX, getScoreComponentY, setScoreComponentX, setScoreComponentY} from "./files.js";
+import {getSymbolIDs, getSymbolPath, getSymbolLeft, getSymbolRight, getSymbolTop, getSymbolBottom} from "./symbols.js";
 
 function calculateValuesBeamsAndDots(duration, subdivisions, subdivisionValues, subdivisionBeams, subdivisionDots) {
     // Calculates the value, number of beams and number of dots that a note with duration/subdivision for a beat would have.
@@ -54,6 +56,7 @@ export function renderComponent(componentType, componentID) {
     const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
     const timeSignatureNumerator = getScoreComponentTimeSignatureNumerator(componentID);  // Number of beats
     let x = 0;  // Current x-coord (of last beat)
+    let height = 50;  // Min height
     for (let beatIndex = 0; beatIndex < timeSignatureNumerator; beatIndex++) {
         // Beam calculations ---
         
@@ -113,15 +116,13 @@ export function renderComponent(componentType, componentID) {
 
         }
 
-        // Now we can draw the beams and dots ---
         
-
         // If there's only one non-empty then draw a stem with a flag, otherwise draw beams. Draw crotchet rest if no non-empty
-        if (nonEmptySubdivisionBaseIndexes.length == 0) {
+        if (nonEmptySubdivisionBaseIndexes.length == 0) {  // Draw crotchet rest
             path += "M" + x + " 0 L" + (x + 5) + " 10 L" + x + " 15 L" + (x + 5) + " 20 ";
         } else if (nonEmptySubdivisionBaseIndexes.length == 1) {
             const subdivisionIndex = calculateActualSubdivisionIndex(subdivisions, componentID, nonEmptySubdivisionBaseIndexes[0], nonEmptySubdivisionFurtherIndexes[0]);
-            
+
             // Draw stem
             path += "M" + x + " 0 L" + x + " 50 "
 
@@ -193,8 +194,36 @@ export function renderComponent(componentType, componentID) {
 
                 x += 50;  // Beams are 50 wide so move x by 50 (or if no beams then move anyway)
                 
+                // Draw note head(s)
+                let lowestSubdivisionY = 0;
+                let lowestSubdivisionYDrumBottom = 0;
+                const drumIDs = getScoreComponentFurtherSubdivisionDrums(componentID, nonEmptySubdivisionBaseIndexes[nonEmptyIndex], nonEmptySubdivisionFurtherIndexes[nonEmptyIndex]);
+                for (let drumIndex = 0; drumIndex < drumIDs.length; drumIndex++) {
+                    const drumID = drumIDs[drumIndex];
+                    const symbolID = getDrumSymbolID(drumID);
+                    const drumY = getDrumY(drumID);
+                    const pathString = getSymbolPath(symbolID);
+                    const left = getSymbolLeft(symbolID);
+                    const right = getSymbolRight(symbolID);
+                    const top = getSymbolTop(symbolID);
+                    const bottom = getSymbolBottom(symbolID);
+                    
+                    if (drumY > lowestSubdivisionY) {
+                        lowestSubdivisionY = drumY;
+                        lowestSubdivisionYDrumBottom = bottom;
+                    }
+
+                    const pathObj = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathObj.setAttribute("d", pathString);
+                    pathObj.setAttribute("stroke", "black");
+                    pathObj.setAttribute("stroke-width", "3");
+                    pathObj.setAttribute("transform", "translate(" + x + " " + drumY + ")")
+                    svg.appendChild(pathObj);
+                }
+
                 // Draw stem
-                path += "M" + x + " 0 L" + x + " 50 "
+                path += "M" + x + " 0 L" + x + " " + lowestSubdivisionY + " "
+                height = Math.max(height, lowestSubdivisionY + lowestSubdivisionYDrumBottom);
 
                 // Now we can draw dots
                 const dots = subdivisionDots[currentSubdivisionIndex];
@@ -208,9 +237,10 @@ export function renderComponent(componentType, componentID) {
         beams.setAttribute("stroke", "black");
         beams.setAttribute("stroke-width", "3");
         svg.appendChild(beams);
-        svg.setAttribute("height", "50");
-        svg.setAttribute("width", x);
     }
+    svg.setAttribute("height", height);
+    svg.setAttribute("width", x);
+
 
     
     // Initial coordinates 
