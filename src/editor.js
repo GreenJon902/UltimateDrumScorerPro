@@ -1,4 +1,4 @@
-import {getScoreComponentBaseSubdivisions, getScoreComponentEnabledDecorations, getScoreComponentEnabledDrums, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDecoration, getScoreComponentFurtherSubdivisionDrum, getScoreComponentTimeSignatureNumerator, setScoreComponentFurtherSubdivisionCount, setScoreComponentFurtherSubdivisionDecoration, setScoreComponentFurtherSubdivisionDrum} from "./files.js";
+import {getScoreComponentBaseSubdivisions, getScoreComponentEnabledDecorations, getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDecoration, getScoreComponentFurtherSubdivisionDrum, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, setScoreComponentFurtherSubdivisionCount, setScoreComponentFurtherSubdivisionDecoration, setScoreComponentFurtherSubdivisionDrum, setScoreComponentBaseSubdivisions} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -12,6 +12,17 @@ export function setEditComponent(componentType, componentID) {
 
     if (componentType !== "score-component") throw "Not Implemented";
     
+    // Score-component options
+    const div = document.createElement("div");
+    createNumberBoxesWithText(div, componentID, 
+        {text: "Time Signature:&ensp;", getter: getScoreComponentTimeSignatureNumerator, setter: setScoreComponentTimeSignatureNumerator, min: 1, size: 1}, 
+        {text: "/", getter: getScoreComponentTimeSignatureDenominator, setter: setScoreComponentTimeSignatureDenominator, min: 1, size: 1}
+    );
+    createNumberBoxesWithText(div, componentID, {text: "Base Subdivisions:&ensp;", getter: getScoreComponentBaseSubdivisions, setter: setScoreComponentBaseSubdivisions, min: 1, size: 1});
+    editor.appendChild(div);
+    
+
+    // Sequencer ----
     // We'll display the sequencer as a table and add it to the editor.
     const table = document.createElement("table");
     table.appendChild(scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID));
@@ -21,6 +32,60 @@ export function setEditComponent(componentType, componentID) {
     scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentFurtherSubdivisionDrum, setScoreComponentFurtherSubdivisionDrum, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"]);
     editor.appendChild(table);
 }
+
+function createNumberBoxesWithText(div, componentID, ...boxes) {
+    // Creates a (or multiple) input fields that have some text beforehand.
+    // These will validate to only allow numbers above a certain value to be entered. When calling the setter, this will have already parsed the integer.
+    // The boxes should be objects with this format {text: String, type: String, getter: Callable<componentID>, setter: Callable<componentID, value: int>, min: int, size: int}.
+    //      Text is what to display before the box.
+    //      Type should be "text" or "number".
+    //      The getter and setters should be functions that take the arguements as described, the getter returning the initial value to put in the box.
+    //      Min is the minimum value.
+    //      Size is width to draw the text box
+    // Boxes drawn at the same time will all be put on the same line, contained within a div which will be added to the end of the given div.
+    
+    // Contain within a flex-div so it's all on one line 
+    const container = document.createElement("container");
+    container.style.display = "flex";
+
+    // Create all the boxes and add them to the container 
+    for (let i=0; i<boxes.length; i++) {
+        // Create the text to go beforehand
+        const span = document.createElement("span");
+        span.innerHTML = boxes[i].text;
+        span.style.textWrap = "nowrap";
+        
+        // Create the input field
+        const input = document.createElement("input");
+        input.value = boxes[i].getter(componentID);
+        input.inputMode = "numeric";
+        input.min = boxes[i].min;
+        input.size = boxes[i].size;
+        // Bind the update event to call the functions and do validation
+        input.oninput = () => {
+            input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
+            if (parseInt(input.value) < boxes[i].min) {  // If below min 
+                input.value = boxes[i].min;
+            }
+        }
+        input.onchange = () => {
+            if (input.value == '') {  // If empty then set to min
+                input.value = boxes[i].min;
+            }
+            boxes[i].setter(componentID, parseInt(input.value))
+            setEditComponent("score-component", componentID);  // Redraw the editor
+            renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
+        };
+
+        // Add to container
+        container.appendChild(span);
+        container.appendChild(input);
+    }
+
+    // Add container to the div
+    div.appendChild(container);
+}
+
 
 function scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID) {
     // Creates a table row containing the controls for managing further-subdivisions.

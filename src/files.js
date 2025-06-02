@@ -17,15 +17,57 @@ export function getScoreComponentTimeSignatureNumerator(componentID) {
     return CURRENT_PROJECT["score-components"][componentID]["time-signature"]["numerator"];
 }
 
+export function setScoreComponentTimeSignatureNumerator(componentID, value) {
+    // Sets the top of the time-signature of this component.
+    // This will chop the end off, or add to the end depending how it grows.
+    const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
+    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"];
+    const desiredLength = value * baseSubdivisions;
+    while (array.length > desiredLength) {  // Too long so remove from the end
+        array.pop();
+    }
+    while (array.length < desiredLength) {  // Too short so add to the end
+        array.push([{"drums": [], "decorations": []}]);  // Default value
+    }
+    
+    // Now set the actual time-signature value
+    CURRENT_PROJECT["score-components"][componentID]["time-signature"]["numerator"] = value;
+}
+
 export function getScoreComponentTimeSignatureDenominator(componentID) {
     // Returns the bottom of the time-signature of this component.
     return CURRENT_PROJECT["score-components"][componentID]["time-signature"]["denomenator"];
+}
+
+export function setScoreComponentTimeSignatureDenominator(componentID, value) {
+    // Sets the bottom of the time-signature of this component.
+    CURRENT_PROJECT["score-components"][componentID]["time-signature"]["denomenator"] = value;
 }
 
 export function getScoreComponentBaseSubdivisions(componentID) {
     // Returns the base-subdivisions of this component.
     // This is how much each beat should be split into by default (quavers, triplets, etc...).
     return CURRENT_PROJECT["score-components"][componentID]["base-subdivisions"];
+}
+
+export function setScoreComponentBaseSubdivisions(componentID, value) {
+    // Sets the base-subdivisions of this component.
+    // This is how much each beat should be split into by default (quavers, triplets, etc...).
+    // This will remove or add to the end of the score-data to remove or add subdivisions.
+    
+    // TODO: Crop each beat individually
+ 
+    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
+    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"];
+    const desiredLength = value * numerator;
+    while (array.length > desiredLength) {  // Too long so remove from the end
+        array.pop();
+    }
+    while (array.length < desiredLength) {  // Too short so add to the end
+        array.push([{"drums": [], "decorations": []}]);  // Default value
+    }
+
+    CURRENT_PROJECT["score-components"][componentID]["base-subdivisions"] = value;
 }
 
 export function getScoreComponentEnabledDrums(componentID) {
