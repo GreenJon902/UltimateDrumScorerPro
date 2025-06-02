@@ -45,7 +45,7 @@ function createNumberBoxesWithText(div, componentID, ...boxes) {
     // Boxes drawn at the same time will all be put on the same line, contained within a div which will be added to the end of the given div.
     
     // Contain within a flex-div so it's all on one line 
-    const container = document.createElement("container");
+    const container = document.createElement("div");
     container.style.display = "flex";
 
     // Create all the boxes and add them to the container 
