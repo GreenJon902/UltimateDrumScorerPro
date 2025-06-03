@@ -19,8 +19,7 @@ const symbols = {
         "right": 0,
         "top": 0,
         "bottom": 20
-    }
-,
+    },
     "shallow-cross": {
         "path": "M0 0 L-20 10 M-20 0 L0 10",
         "left": -20,

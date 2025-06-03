@@ -99,11 +99,13 @@ function calculateRhythmInformation(componentID, beatIndex) {
 
 function drawPath(svg, pathString) {
 	// Draws the given path to the svg.
+	// This will set fill to none.
 	// Returns the created path node.
 	const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", pathString);
     path.setAttribute("stroke", "black");
     path.setAttribute("stroke-width", "3");
+    path.setAttribute("fill", "none");
     svg.appendChild(path);
 
 	return path;
