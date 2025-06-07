@@ -292,17 +292,156 @@ function preRenderScoreComponent(componentID) {
 
 
     // Fifth, convert groups to RenderInstructions
-    const renderInstructions = [];
-    for (let i=0; i<groups.length; i++) {
-        const currentIndex = groups[i].index;
-        const currentLength = groups[i].length;
-        const currentIsEmpty = getScoreComponentFurtherSubdivisionDrums(componenetID, currentIndex.base, currentIndex.further).length == 0;
+    SubdivisionGroup.prototype.drums = function() {
+        // Gets the list of drums in this subdivision group.
 
-        // If i is empty then i must be a rest
-        if (currentIsEmpty) {
-            
+        // If currentIndex is null then it's rest (so is empty)
+        if (this.index == null) {
+            return [];
         }
+
+        // Otherwise load the score-component info
+        return getScoreComponentFurtherSubdivisionDrums(componentID, this.index.base, this.index.further);
     }
+    const renderInstructions = [];
+    let i = 0;
+    let finalIndex = 0;  // Some SubdivisionGroups won't store an index, so we will use the lengths to track which beat we are in
+    while (i<sGroups.length) {
+        //const current = sGroups[i];
+
+        /*// If current is empty then current is a rest
+        if (current.drums().length == 0) {
+            const rhythmInfo = current.rhythmInfo();
+            renderInstructions.push(new RenderInstruction(RenderInstruction.REST, rhythmInfo.bars, rhythmInfo.dots));
+            i++;
+        } else {  // Group some groups together for beaming (or if there's only one then it's a FLAG)
+        */    // We can just beam all the notes till the end of the bar. The groups already account for any necessary rests
+        
+        /*// We do this one beat at a time, first we need to know whether this beat has beams or flags (or is only a rest). For this we need to know how many sGroups are in this beat and which sGroups are non-empty (so are not rests).
+            const currentBeat = Math.floor(finalIndex / finalSubdivisions);
+            let j = i;  // We know sGroup[i] must fit within this beat, but we don't know if it's non-empty, and that is checked inside the loop
+            const nonEmptySGroups = [];
+            while (j < sGroups.length && currentBeat == Math.floor((
+                finalIndex + sGroups[j].length - 1  // - 1 as + length is the finalSubdivision immediately after this sGroup, not that last one in this sGroup
+            ) / finalSubdivisions)) {  // Is still sGroups left and are we still in the same beat?
+                finalIndex += sGroups[j].length;
+                if (sGroups[j].drums().length != 0) {
+                    nonEmptySGroups.push(sGroups[j]);
+                }
+                j += 1;
+            }*/
+        
+            
+            // Find an adjacent non-empty subgroups. Otherwise just process one rest.
+            const currentBeat = Math.floor(finalIndex / finalSubdivisions);
+            let j = i;  // We know sGroup[i] must fit within this beat, but we don't know if it's non-empty, and that is checked inside the loop
+            const nonEmptySGroups = [];
+            while (j < sGroups.length && currentBeat == Math.floor((
+                finalIndex + sGroups[j].length - 1  // - 1 as + length is the finalSubdivision immediately after this sGroup, not that last one in this sGroup
+            ) / finalSubdivisions) && sGroups[j].drums().length != 0) {  // Is still sGroups left and are we still in the same beat?
+                finalIndex += sGroups[j].length;
+                if (sGroups[j].drums().length != 0) {
+                    nonEmptySGroups.push(sGroups[j]);
+                }
+                j += 1;
+            }
+            if (i == j) {  // We found a rest
+                j += 1;
+            }
+        // TODO: The logic parts of the algorithm can have parts removed due to restrictions that have been added to what gets past this point (e.g. nonEmptySGroups can be removed).
+
+
+            // Now create the render instructions
+            /*if (nonEmptySGroups.length == 0) {
+                throw "nonEmptySGroups.length is 0, how did we even get here?";
+            } else */if (nonEmptySGroups.length == 0 || nonEmptySGroups.length == 1) {  // It's only RESTs or it's RESTs and a FLAG
+                // There may still be rests so loop properly
+                while (i < j) {
+                    const current = sGroups[i];
+                    if (current.drums().length == 0) {  // It's a rest
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.REST, current.rhythmInfo().beams, current.rhythmInfo().dots));
+                    } else {  // It's a flag
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.FLAG, current.drums(), [], current.rhythmInfo().beams, current.rhythmInfo().dots));
+                    }
+                    i += 1;
+                    finalIndex += current.length;
+                }
+            } else {  // We need to add some GROUPs, a GROUP_END and possibly some RESTs
+            
+
+                let nonEmptyI = 0;  // The index in the nonEmptySGroups array. The value in here should refer to the same sGroup as i does
+                while (i < j) {
+                    if (sGroups[i].drums().length == 0) {  
+                        // This is a rest, so it doesn't affect the beams (they go over it (unless this is at the start or end of the beat but it still doesn't matter)).
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.REST, sGroups[i].rhythmInfo().beams, sGroups[i].rhythmInfo().dots));
+                        finalIndex += sGroups[i].length;
+                        i++;
+                    } else {
+                        // This is not a rest, so calculate
+                        //last = nonEmptySGroups[nonEmptyI - 1];  // If index is out of bounds then this will be null.
+                        //current = nonEmptySGroups[nonEmptyI];
+                        //next = nonEmptySGroups[nonEmptyI + 1];
+                        //nextNext = nonEmptySGroups[nonEmptyI + 2];
+                        //i++;
+                        //nonEmptyI++;
+                        
+                        if (nonEmptyI < nonEmptySGroups.length - 1) { // Are there more non-empty groups to beam to?
+                            // We need to figure out what combination of (full) beams and broken-beams we need to draw for this current GROUP
+                            const c = nonEmptySGroups[nonEmptyI].rhythmInfo().beams;  // How many beams it wants connected to it
+                            const n = nonEmptySGroups[nonEmptyI + 1].rhythmInfo().beams;
+                            const nn = ((nonEmptyI < nonEmptySGroups.length - 2) ? nonEmptySGroups[nonEmptyI + 2].rhythmInfo().beams : 0);  // If a sGroup doesn't exist then it will supply no beams, so just say 0
+                            const l = ((nonEmptyI > 0) ? nonEmptySGroups[nonEmptyI - 1].rhythmInfo().beams : 0);  
+                            
+                            // Remember, beams go from c to n!
+                            if (c == n) {  // Both want the same number of beams. So draw that.
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                            } else if (c < n && nn >= n) {  // Next wants more beams than current will give it, but nextnext is able to supply what it needs. So we only need to draw current (full) beams
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                            } else if (c < n && nn < n) {  // Next wants more beams than current will give it, and nextnext also won't supply enough. So draw c full (beams) and n-c half-beams on the right
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, n - c, sGroups[nonEmptyI].rhythmInfo().dots)); 
+                            } else if (c > n && l >= c) {  // If current wants more beams than next will supply, but last can supply enough. So draw n (full) beams
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], n, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                            } else if (c > n && l < c/* && !(l < c && n < c)*/) {  // If current wants more beams than next will supply, and last can't supply enough beams, and we didn't draw right-broken-beams on the last nonEmptySGroup. So draw n (full) beams and c - n broken beams on the left
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], n, -(c - n), sGroups[nonEmptyI].rhythmInfo().dots));  // Negative broken-beams means draw on left
+                            } else {
+                                throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
+                            }
+                            
+
+                        } else { // This is the last non-empty sGroup so this is a GROUP-END
+                            renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, sGroups[i].drums, [], sGroups[i].rhythmInfo().dots));
+                        }
+
+                        finalIndex += sGroups[i].length;
+                        i++;
+                        nonEmptyI++;
+                    }
+                }
+            }
+    
+
+                /*const last = sGroups[i - 1];
+                const current = sGroups[i];
+                const next = sGroups[i + 1];
+                const nextNext = sGroups[i + 2];
+                
+                const fullBeams = Math.min(current.rhythmInfo().beams, next.rhythmInfo().beams);
+                if (fullBeams < current.rhythmInfo().beams && (last == null || last.rhythmInfo().beams < current.rhythmInfo().beams)) {  // fullBeams is not enough beams for current and last also doesn't supply enough. If last is null then it cannot supply any beams
+                    brokenBeams = fullBeams - current.rhythmInfo().beams;  // Negative as draw on left
+                } else if (fullBeams < next.rhythmInfo().beams && (nextNext == null || nextNext.rhythmInfo().beams < next.rhythmInfo().beams)) {  // fullBeams is not enough beams for next and nextNext also doesn't supply enough. If nextNext is null then it cannot supply any beams. Next cannot be null due to the loop condition
+                    brokenBeams = current.rhythmInfo().beams - fullBeams;  // Positive as draw on right
+                }
+                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, current.drums(), [], fullBeams, brokenBeams, current.dots));
+
+                i++;*/
+            /*}
+            // Create GROUP-End
+            renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, sGroups[i].drums(), [], sGroups[i].dots));
+            i++;*/
+        //}
+    }
+
+    return renderInstructions;
 }
 
 
@@ -310,6 +449,7 @@ function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
     let instructions = preRenderScoreComponent(componentID);
+    console.log(instructions);
     // TODO: Process sizing first?
     // Then draw.
 }
