@@ -317,7 +317,7 @@ function preRenderScoreComponent(componentID) {
         } else {  // Group some groups together for beaming (or if there's only one then it's a FLAG)
         */    // We can just beam all the notes till the end of the bar. The groups already account for any necessary rests
         
-        /*// We do this one beat at a time, first we need to know whether this beat has beams or flags (or is only a rest). For this we need to know how many sGroups are in this beat and which sGroups are non-empty (so are not rests).
+        // We do this one beat at a time, first we need to know whether this beat has beams or flags (or is only a rest). For this we need to know how many sGroups are in this beat and which sGroups are non-empty (so are not rests).
             const currentBeat = Math.floor(finalIndex / finalSubdivisions);
             let j = i;  // We know sGroup[i] must fit within this beat, but we don't know if it's non-empty, and that is checked inside the loop
             const nonEmptySGroups = [];
@@ -329,28 +329,8 @@ function preRenderScoreComponent(componentID) {
                     nonEmptySGroups.push(sGroups[j]);
                 }
                 j += 1;
-            }*/
-        
+            }
             
-            // Find an adjacent non-empty subgroups. Otherwise just process one rest.
-            const currentBeat = Math.floor(finalIndex / finalSubdivisions);
-            let j = i;  // We know sGroup[i] must fit within this beat, but we don't know if it's non-empty, and that is checked inside the loop
-            const nonEmptySGroups = [];
-            while (j < sGroups.length && currentBeat == Math.floor((
-                finalIndex + sGroups[j].length - 1  // - 1 as + length is the finalSubdivision immediately after this sGroup, not that last one in this sGroup
-            ) / finalSubdivisions) && sGroups[j].drums().length != 0) {  // Is still sGroups left and are we still in the same beat?
-                finalIndex += sGroups[j].length;
-                if (sGroups[j].drums().length != 0) {
-                    nonEmptySGroups.push(sGroups[j]);
-                }
-                j += 1;
-            }
-            if (i == j) {  // We found a rest
-                j += 1;
-            }
-        // TODO: The logic parts of the algorithm can have parts removed due to restrictions that have been added to what gets past this point (e.g. nonEmptySGroups can be removed).
-
-
             // Now create the render instructions
             /*if (nonEmptySGroups.length == 0) {
                 throw "nonEmptySGroups.length is 0, how did we even get here?";
