@@ -80,6 +80,7 @@ function calculateFinalSubdivisionIndex(finalSubdivisions, componentID, base, fu
     return (finalSubdivisions / baseSubdivisions * base) + (finalSubdivisions / baseSubdivisions / furtherCount * further);
 }
 
+// TODO: Move this to another file called compiler or something idk
 function preRenderScoreComponent(componentID) {
     // Figures out how to actaully draw the score-component.
     // This is like the overall idea, it tells us what we need to draw, not how. Specifically which drums, decorations on each subdivision, and what bars / dots / rests / flags to draw.
@@ -425,6 +426,19 @@ function preRenderScoreComponent(componentID) {
 }
 
 
+function drawDots(svg, x, y, dotNumber) {
+    // Draws dotNumber dots starting at x, y in svg.
+    
+    for (let n=0; n<dotNumber; n++) {
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("r", "2");
+        dot.setAttribute("cx", x + 5 * n);
+        dot.setAttribute("cy", y);
+        svg.appendChild(dot);
+    }
+}
+
+
 function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
@@ -432,6 +446,105 @@ function renderScoreComponent(componentID) {
     console.log(instructions);
     // TODO: Process sizing first?
     // Then draw.
+    
+    
+    // PoC renderer
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("score-component");
+    
+
+    function drawRest(svg, path, instructions, i, y) {
+        if (instructions[i].ticks == 0) {
+            path += "M" + x + " " + y + " L" + (x + 5) + " " + (y + 10) + " L" + x + " " + (y + 15) + " L" + (x + 5) + " " + (y + 20) + " ";
+            x += 5;
+            if (instructions[i].dots != 0) throw "We can't draw dots on a crotchet rest";
+        } else {
+            const count = instructions[i].ticks;
+            path += "M" + x + " " + (y + count * 10) + " L" + (x + count * 10) + " " + y + " ";
+            for (let n=0; n < count; n++) {
+                path += "M" + (x + 5 + n * 10) + " " + (y + (count - n) * 10 - 5) + " L" + (x + n * 10) + " " + (y + (count - n) * 10 - 10) + " ";
+            }
+            drawDots(svg, x + 10, y + count * 10 - 5, instructions[i].dots);
+            x += Math.max(count * 10, instructions[i].dots * 10 + 10);
+        }
+
+        return path;
+    }
+
+
+    let i = 0;
+    let x = 0;
+    let lastBeamPath = "";
+    let path = "";
+    while (i < instructions.length) {
+        if (instructions[i].type === RenderInstruction.REST) {
+           path = drawRest(svg, path, instructions, i, 0); 
+        } else if (instructions[i].type === RenderInstruction.FLAG) {
+            path += "M" + x + " 0 " + "L" + x + " 100 ";
+            for (let n=0; n < instructions[i].flags; n++) {
+                path += "M" + x + " " + (n * 10) + " L" + (x + 10) + " " + (n * 10 + 10) + " ";
+            }
+            drawDots(svg, x + 5, instructions[i].flags * 10 + 20, instructions[i].dots)
+            x += Math.max(5, instructions[i].dots * 5 + 5);
+        } else if (instructions[i].type === RenderInstruction.GROUP) {
+            while (instructions[i].type !== RenderInstruction.GROUP_END) {
+                if (instructions[i].type === RenderInstruction.FLAG) {
+                    throw "Found flag in the middle of a GROUP";
+                } else if (instructions[i].type == RenderInstruction.REST) {
+                    path = drawRest(svg, path, instructions, i, 50);
+                    x += 10;  // Spacing
+                } else {
+                    path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
+                    lastBeamPath = "";
+
+                    path += "M" + x + " 0 " + "L" + x + " 100 ";
+                    let y = 0;
+                    for (let n = 0; n< instructions[i].full_beams; n++) {
+                        lastBeamPath += "M" + x + " " + y + " Lx " + y + " ";
+                        y += 5;
+                    }
+                    for (let n = 0; n> instructions[i].broken_beams; n--) {
+                        path += "M" + x + " " + y + " L" + (x + 10) + " " + y + " ";
+                        y += 5;
+                    }
+                     for (let n = 0; n< instructions[i].broken_beams; n++) {
+                        lastBeamPath += "MsubX " + y + " Lx " + y + " ";
+                        y += 5;
+                    }
+                    drawDots(svg, x + 5, y, instructions[i].dots);
+
+                    x += (instructions[i].broken_beams == 0) ? 10 : 20;  // Spacing
+                }
+                i += 1;
+            }
+            path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
+            lastBeamPath = "";
+            path += "M" + x + " 0 " + "L" + x + " 100 ";
+            drawDots(svg, x + 5, 0, instructions[i].dots);
+        } else {
+            throw "Unexpected instruction type " + instructions[i].type;
+        }
+        x += 10;  // Spacing
+        i++;
+    }
+    x -= 10;  // Don't need the last spacing
+    path = path.trim();  // It has a space as the last character
+
+    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathNode.setAttribute("d", path);
+    pathNode.setAttribute("stroke", "black");
+    pathNode.setAttribute("stroke-width", "3");
+    pathNode.setAttribute("fill", "none");
+    svg.appendChild(pathNode);
+    
+    svg.style.left = "20px";
+    svg.style.top = "20px";
+    svg.setAttribute("viewBox", "-10 -10 " + (x + 20) + " 120");
+    svg.setAttribute("width", x + 20);
+    svg.setAttribute("height", 100 + 20);
+
+    return svg;
+
 }
 
 
