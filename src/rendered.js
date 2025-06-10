@@ -68,7 +68,7 @@ this.decorations = args[1];
             this.dots = args[1];
         }
         
-        Object.freeze(this);  // So is immutable
+        // Object.freeze(this);  // So is immutable  // TODO: Freeze this again
     }
 }
 
@@ -367,6 +367,7 @@ function preRenderScoreComponent(componentID) {
             
 
                 let nonEmptyI = 0;  // The index in the nonEmptySGroups array. The value in here should refer to the same sGroup as i does
+                let lastGroup = null;  // The last GROUP that we created
                 while (i < j) {
                     if (sGroups[i].drums().length == 0) {  
                         // This is a rest, so it doesn't affect the beams (they go over it (unless this is at the start or end of the beat but it still doesn't matter)).
@@ -398,11 +399,25 @@ function preRenderScoreComponent(componentID) {
                                 renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], c, n - c, sGroups[i].rhythmInfo().dots)); 
                             } else if (c > n && l >= c) {  // If current wants more beams than next will supply, but last can supply enough. So draw n (full) beams
                                 renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], n, 0, sGroups[i].rhythmInfo().dots));
-                            } else if (c > n && l < c/* && !(l < c && n < c)*/) {  // If current wants more beams than next will supply, and last can't supply enough beams, and we didn't draw right-broken-beams on the last nonEmptySGroup. So draw n (full) beams and c - n broken beams on the left
+                            } else if (c > n && l < c/* && (l >= c || n >= c)*/) {  // If current wants more beams than next will supply, and last can't supply enough beams, and we didn't draw right-broken-beams on the last nonEmptySGroup. So draw n (full) beams and c - n broken beams on the left
                                 renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], n, -(c - n), sGroups[i].rhythmInfo().dots));  // Negative broken-beams means draw on left
                             } else {
                                 throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
                             }
+                            
+                            // In the case that we have drawn broken beams on both sides of a stem
+                            const currentGroup = renderInstructions[renderInstructions.length - 1];
+                            if (lastGroup != null && lastGroup.broken_beams > 0 && currentGroup.broken_beams < 0) {
+                                // We only want to keep the side with the most full-beams
+                                if (lastGroup.full_beams > currentGroup.full_beams) {
+                                    currentGroup.broken_beams = 0;
+                                } else {
+                                    lastGroup.broken_beams = 0;
+                                    
+                                }
+                            }
+                            lastGroup = currentGroup;
+                            
                             
 
                         } else { // This is the last non-empty sGroup so this is a GROUP-END
@@ -529,7 +544,7 @@ function renderScoreComponent(componentID) {
                     }
                     drawDots(svg, x + 5, y, instructions[i].dots);
 
-                    x += (instructions[i].broken_beams == 0) ? 10 : 20;  // Spacing
+                    x += Math.max((instructions[i].broken_beams == 0) ? 10 : 20, instructions[i].dots * 5 + 5);
                 }
                 i += 1;
             }
@@ -555,9 +570,9 @@ function renderScoreComponent(componentID) {
     
     svg.style.left = "20px";
     svg.style.top = "20px";
-    svg.setAttribute("viewBox", "-10 -10 " + (x + 20) + " 120");
+    svg.setAttribute("viewBox", "-10 -10 " + (x + 20) + " 150");
     svg.setAttribute("width", x + 20);
-    svg.setAttribute("height", 100 + 20);
+    svg.setAttribute("height", 150 + 20);
 
     return svg;
 
