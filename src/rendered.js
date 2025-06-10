@@ -80,6 +80,16 @@ function calculateFinalSubdivisionIndex(finalSubdivisions, componentID, base, fu
     return (finalSubdivisions / baseSubdivisions * base) + (finalSubdivisions / baseSubdivisions / furtherCount * further);
 }
 
+function numberOfFactors(n, f) {
+    // Returns the number of times n fits fully into f.
+    let count = -1;  // As the loop adds a count for the first non-integer value
+    while (n == Math.floor(n)) {
+        n /= f;
+        count += 1;
+    }
+    return count;
+}
+
 // TODO: Move this to another file called compiler or something idk
 function preRenderScoreComponent(componentID) {
     // Figures out how to actaully draw the score-component.
@@ -213,7 +223,7 @@ function preRenderScoreComponent(componentID) {
         // Beams
         let val = this.length / finalSubdivisions;
         if (val < 0) throw "val < 0"
-        let beams = 0;
+        let beams = -0; //numberOfFactors(val, 2);
         while (val < 1) {
             val *= 2;
             beams += 1;
@@ -223,7 +233,7 @@ function preRenderScoreComponent(componentID) {
         const initialValue = finalSubdivisions / Math.pow(2, beams);  // The value of the note before the dots
         val = this.length - initialValue;
         let dots = 0;
-        while (val > 0) {
+        while (val > 0 && numberOfFactors(finalSubdivisions, 2) >= dots) {  // If we can add more dots, and our final subdivision allows for more dots
             dots += 1;
             val -= initialValue / Math.pow(2, dots);
         }
@@ -239,6 +249,13 @@ function preRenderScoreComponent(componentID) {
         return {beams, dots, length};
     }
 
+    // Does the bar start with a rest
+    if (sGroups.length > 0 && (sGroups[0].index.base != 0 || sGroups[0].index.further != 0)) {
+        sGroups.splice(0, 0, new SubdivisionGroup(new SubdivisionIndex(0, 0), calculateFinalSubdivisionIndex(finalSubdivisions, componentID, sGroups[0].index.base, sGroups[0].index.further)));  // Index cannot be null, as it's length may be bigger than a beat, and the next algorithm needs the index to split it up
+    } else if (sGroups.length == 0) {  // Insert a rest that is as long as the bar
+        sGroups.push(new SubdivisionGroup(new SubdivisionIndex(0, 0), finalSubdivisions * numerator));
+    }
+
     // We will work on the array in-place because then any rests we add that are illegal will be fixed in further iterations
     for (let i=0; i < sGroups.length; i++) {
         let group = sGroups[i];
@@ -249,25 +266,26 @@ function preRenderScoreComponent(componentID) {
             let groupEndFinal = groupStartFinal + group.length - 1;  // We want the last final subdivision of this group, not the first of the next
             if (Math.floor(groupStartFinal / finalSubdivisions) != Math.floor(groupEndFinal / finalSubdivisions)) {
                 // It does so we need to split it on the beat boundary.
-                const amountOver = groupEndFinal % finalSubdivisions + 1;  // Because the first in the next beat is 1 over, not 0 over.
-                let newLength = group.length - amountOver;
+                let amountOver = groupEndFinal % finalSubdivisions + 1;  // Because the first in the next beat is 1 over, not 0 over.
+                const newLength = group.length - amountOver;
 
                 // Check if we need to add crotchet rests
                 let crotchetRestCount = 0;
-                while (newLength >= finalSubdivisions) {
+                while (amountOver >= finalSubdivisions) {
                     crotchetRestCount += 1;
-                    newLength -= finalSubdivisions;
+                    amountOver -= finalSubdivisions;
                 }
                 // Incase my logic is wrong
-                if (newLength == 0) throw "newLength = 0"
-                if (newLength < 0) throw "newLength < 0"
+                if (amountOver < 0) throw "newLength < 0"
 
                 // Split the group
                 sGroups.splice(i, 1, new SubdivisionGroup(group.index, newLength));  // Replace the old group
                 for (let n=0; n<crotchetRestCount; n++) { // Add crotchet rests
                     sGroups.splice(i + n + 1, 0, new SubdivisionGroup(null, finalSubdivisions));  // We can put null in because it is a rest.
                 }
-                sGroups.splice(i + crotchetRestCount + 1, 0, new SubdivisionGroup(null, amountOver));  // Add the smaller rest. We can put null because it is a rest.
+                if (amountOver != 0) {
+                    sGroups.splice(i + crotchetRestCount + 1, 0, new SubdivisionGroup(null, amountOver));  // Add the smaller rest. We can put null because it is a rest.
+                }
             }
             group = sGroups[i];
         }
@@ -287,8 +305,6 @@ function preRenderScoreComponent(componentID) {
         group = sGroups[i];
     }
     console.log(sGroups);
-    
-    
 
 
 
@@ -375,15 +391,15 @@ function preRenderScoreComponent(componentID) {
                             
                             // Remember, beams go from c to n!
                             if (c == n) {  // Both want the same number of beams. So draw that.
-                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], c, 0, sGroups[i].rhythmInfo().dots));
                             } else if (c < n && nn >= n) {  // Next wants more beams than current will give it, but nextnext is able to supply what it needs. So we only need to draw current (full) beams
-                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], c, 0, sGroups[i].rhythmInfo().dots));
                             } else if (c < n && nn < n) {  // Next wants more beams than current will give it, and nextnext also won't supply enough. So draw c full (beams) and n-c half-beams on the right
-                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], c, n - c, sGroups[nonEmptyI].rhythmInfo().dots)); 
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], c, n - c, sGroups[i].rhythmInfo().dots)); 
                             } else if (c > n && l >= c) {  // If current wants more beams than next will supply, but last can supply enough. So draw n (full) beams
-                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], n, 0, sGroups[nonEmptyI].rhythmInfo().dots));
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], n, 0, sGroups[i].rhythmInfo().dots));
                             } else if (c > n && l < c/* && !(l < c && n < c)*/) {  // If current wants more beams than next will supply, and last can't supply enough beams, and we didn't draw right-broken-beams on the last nonEmptySGroup. So draw n (full) beams and c - n broken beams on the left
-                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[nonEmptyI].drums(), [], n, -(c - n), sGroups[nonEmptyI].rhythmInfo().dots));  // Negative broken-beams means draw on left
+                                renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, sGroups[i].drums(), [], n, -(c - n), sGroups[i].rhythmInfo().dots));  // Negative broken-beams means draw on left
                             } else {
                                 throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
                             }
