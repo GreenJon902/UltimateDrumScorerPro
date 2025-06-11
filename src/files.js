@@ -14,60 +14,23 @@ export function listScoreComponents() {
 
 export function getScoreComponentTimeSignatureNumerator(componentID) {
     // Returns the top of the time-signature of this component.
-    return CURRENT_PROJECT["score-components"][componentID]["time-signature"]["numerator"];
+    return CURRENT_PROJECT["score-components"][componentID]["score-content"].length;
 }
 
 export function setScoreComponentTimeSignatureNumerator(componentID, value) {
     // Sets the top of the time-signature of this component.
     // This will chop the end off, or add to the end depending how it grows.
-    const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
-    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"];
-    const desiredLength = value * baseSubdivisions;
-    while (array.length > desiredLength) {  // Too long so remove from the end
-        array.pop();
-    }
-    while (array.length < desiredLength) {  // Too short so add to the end
-        array.push([{"drums": [], "decorations": []}]);  // Default value
-    }
-    
-    // Now set the actual time-signature value
-    CURRENT_PROJECT["score-components"][componentID]["time-signature"]["numerator"] = value;
+    throw "Not implemented";
 }
 
 export function getScoreComponentTimeSignatureDenominator(componentID) {
     // Returns the bottom of the time-signature of this component.
-    return CURRENT_PROJECT["score-components"][componentID]["time-signature"]["denomenator"];
+    return CURRENT_PROJECT["score-components"][componentID]["time-signature-denomenator"];
 }
 
 export function setScoreComponentTimeSignatureDenominator(componentID, value) {
     // Sets the bottom of the time-signature of this component.
-    CURRENT_PROJECT["score-components"][componentID]["time-signature"]["denomenator"] = value;
-}
-
-export function getScoreComponentBaseSubdivisions(componentID) {
-    // Returns the base-subdivisions of this component.
-    // This is how much each beat should be split into by default (quavers, triplets, etc...).
-    return CURRENT_PROJECT["score-components"][componentID]["base-subdivisions"];
-}
-
-export function setScoreComponentBaseSubdivisions(componentID, value) {
-    // Sets the base-subdivisions of this component.
-    // This is how much each beat should be split into by default (quavers, triplets, etc...).
-    // This will remove or add to the end of the score-data to remove or add subdivisions.
-    
-    // TODO: Crop each beat individually
- 
-    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
-    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"];
-    const desiredLength = value * numerator;
-    while (array.length > desiredLength) {  // Too long so remove from the end
-        array.pop();
-    }
-    while (array.length < desiredLength) {  // Too short so add to the end
-        array.push([{"drums": [], "decorations": []}]);  // Default value
-    }
-
-    CURRENT_PROJECT["score-components"][componentID]["base-subdivisions"] = value;
+    CURRENT_PROJECT["score-components"][componentID]["time-signature-denomenator"] = value;
 }
 
 export function getScoreComponentEnabledDrums(componentID) {
@@ -115,37 +78,32 @@ export function getScoreComponentRightDecoration(componentID) {
     return CURRENT_PROJECT["score-components"][componentID]["right-decoration"];
 }
 
-export function getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex) {
-	// Returns the number of further-subdivisions for a specific subdivision of a specific subdivision. This is effectively how many times the base-subdivision once again split.
-    return CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex].length;
+export function getScoreComponentBeatSubdivisionCount(componentID, beatIndex) {
+	// Returns the number of times a given beat is subdivided.
+    return CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex].length;
 }
 
-export function setScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex, value) {
-	// Sets the number of further-subdivisions for a specific subdivision of a specific subdivision. This is effectively how many times the base-subdivision once again split.
-    while (getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex) > value) {
-        CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex].pop();  // Too many so chop the last one off
-    }
-    while (getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex) < value) {
-        CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex].push({"drums": [], "decorations": []});  // Too few so add empty array
-    }
-    return CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex].length;
+export function setScoreComponentBeatSubdivisionCount(componentID, beatIndex, value) {
+	// Sets the number of times a given beat is subdivided.
+    throw "Not implemented";
 }
 
-export function getScoreComponentFurtherSubdivisionDrum(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, drumID) {
-	// Returns whether given drum (or cymbal) is being hit on a specific further-subdivision of subdivision of a component.
-    return CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["drums"].includes(drumID);
+export function getScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID) {
+	// Returns whether given drum (or cymbal) is being hit on a specific subdivision of a beat of a component.
+    return CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"].includes(drumID);
 }
 
-export function getScoreComponentFurtherSubdivisionDrums(componentID, baseSubdivisionIndex, furtherSubdivisionIndex) {
-	// Returns an array of the IDs of the drums (and cymbals) being hit on a specific further-subdivision of subdivision of a component.
-    return Array.from(CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["drums"]);  // Duplicate array
+export function getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex) {
+	// Returns an array of the IDs of the drums (and cymbals) being hit on a specific subdivision of beat of a component.
+    return Array.from(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"]);  // Duplicate array
 }
 
-export function setScoreComponentFurtherSubdivisionDrum(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, drumID, checked) {
+export function setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked) {
 	// Sets the IDs of the drums (and cymbals) that are being hit on a specific further-subdivision of subdivision of a component.
-    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["drums"], drumID, checked);
+    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"], drumID, checked);
 }
 
+/*
 export function getScoreComponentFurtherSubdivisionDecoration(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, decorationID) {
 	// Returns whether a given decoration is being used on a specific further-subdivision of subdivision of a component.
     return CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["decorations"].includes(decorationID);
@@ -154,7 +112,7 @@ export function getScoreComponentFurtherSubdivisionDecoration(componentID, baseS
 export function setScoreComponentFurtherSubdivisionDecoration(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, decorationID, checked) {
 	// Sets the IDs of the decorations that are being used on a specific further-subdivision of subdivision of a component.
     addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["decorations"], decorationID, checked);
-}
+}*/
 
 function addRemoveFromArray(array, item, shouldContain) {
     // If shouldContain is true then this function makes sure item is in the given array, otherwise all instances of it are removed from the array
