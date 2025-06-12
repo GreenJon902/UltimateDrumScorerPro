@@ -109,20 +109,24 @@ body {
 
 #component-container {
     position: relative;
-    height: 100%;
+    width: 210mm;
+	height: 297mm;
+	margin: auto;
+	background: white;
 }
 
 #rendered-pane, #editor-pane {
     box-sizing: border-box;
     border-radius: 1ch;
+    background: #262626;
 }
 
 #rendered-pane {
-	background: white;
+	overflow: scroll;
+	padding: 1ch;
 }
 
 #editor-pane {
-	background: #262626;
 	padding: 1ch;
 	color: white;
 	display: flex;
