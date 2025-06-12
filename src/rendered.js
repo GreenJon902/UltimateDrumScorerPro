@@ -22,6 +22,10 @@ class RenderInstruction {
     //     REST:
     //         - ticks
     //         - dots
+    //     CONTRACT-START:
+    //     CONTRACT-END:
+    //         - ratio
+    //         - hooks
     // 
     // drums: A string array of the drumIDs to draw.
     // decorations: A string array of the symbolIDs to draw.
@@ -30,18 +34,24 @@ class RenderInstruction {
     // dots: The number (zero or positive) of dots that should be drawn after the stem. If broken-beams is negative (broken-beams on the left) then this must be 0 (no dots).
     // flags: The number (zero or positive) of flags to draw after the stem.
     // ticks: The number (zero or positive) of ticks to draw on a rest. Zero means it's a crotchet rest.
+    // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
+    // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
     // 
-    // GROUPs connect to the next GROUP or GROUP-END, so must be followed by at least one of these. However RESTs can be put in-between.
-    // Rests can also come between GROUPs, FLAGs and RESTs.
-    // A GROUP-END must follow a GROUP (there can be RESTs in-between).
-    // FLAGs stand alone so should not follow an un-ended GROUP.
-    // This means crotchets should be represented using a FLAG with flags=0.
+    // GROUPs connect to the next GROUP or GROUP-END, so must be followed by at least one of these.
+    // A GROUP-END must follow a GROUP.
+    // FLAGs stand alone so should not follow an un-ended GROUP. This means crotchets should be represented using a FLAG with flags=0.
+    // Each CONTRACT-START must be closed by a CONTRACT-END, and must be closed before another CONTRACT can start.
+    // RESTS and CONTRACTING-START/END can come anywhere between GROUPs and FLAGs.
+    // 
+    // CONTRACT groups are for contracting-ratios, they say notes inside this group (of the length given inside ratio) should be contracted so that they last the length of a single beat.
     
     // Instruction Types
     static get GROUP() {return "GROUP";}  // Declare like this so are immutable.
     static get GROUP_END() {return "GROUP_END";}
     static get FLAG() {return "FLAG";}
     static get REST() {return "REST";}
+    static get CONTRACT_START() {return "CONTRACT_START";}
+    static get CONTRACT_END() {return "CONTRACT_END";}
 
     constructor(type, ...args) {
         // Type should be the value in GROUP, GROUP_END...
@@ -66,7 +76,14 @@ class RenderInstruction {
         } else if (type === RenderInstruction.REST) {
             this.ticks = args[0];
             this.dots = args[1];
+        } else if (type === RenderInstruction.CONTRACT_START) {
+        } else if (type === RenderInstruction.CONTRACT_END) {
+            this.ratio = args[0];
+            this.hooks = args[1];
+        } else {
+            throw "Unkown type " + type;
         }
+
         
         // Object.freeze(this);  // So is immutable  // TODO: Freeze this again
     }
@@ -75,20 +92,27 @@ class RenderInstruction {
 function calculateRhythmInformation(length, subdivisions) {
     // Calculates the rhythm info that is used to draw a duration of length / subdivisions of a beat.
     // Returns {beams: int, dots: int, length: int} where beams is the total number of beams (full and broken) that the stem at the start of this needs, and length is the actual of the returned beams and dots (as it may not be possbile to represent this length with just beams and dots).
+    
+    // So, to calculate the information, we pretend subdivisions is actually the highest power of two below what it actually is. This means (ignoring the number above) it would last longer than a beat, however the number we draw above the beams tells us to squish the notes closer together.
+    // So for example, If we have a triplet with only the first note, we would draw a dotted crotchet, which is 1.5 beats, but then the 3 we write above it tells us to compress that into 1 beat.
+    const pretendSubdivisions = 2**Math.floor(Math.log2(subdivisions));
 
     // Beams
-    const beams = Math.ceil(Math.log(length / subdivisions) / Math.log(1/2));
+    const beams = Math.ceil(Math.log(length / pretendSubdivisions) / Math.log(1/2));
     
     // Dots
-    let lengthLeft = length;
-    let dots = -1;  // -1 as the first iteration is accounting for the length taken up by the note with no dots
-    while (lengthLeft > 0 && 2**(beams + dots) < subdivisions) {  // Could there be another dot, and does that fit into the subdivision (as we can't return a length of half a subdivision).
-        lengthLeft -= subdivisions / 2**(beams + dots + 1);
+    let lengthLeft = length - pretendSubdivisions / 2**(beams);
+    let dots = 0;
+    while (lengthLeft != 0) {
+        const sub = pretendSubdivisions / 2**(beams + dots + 1);
+        if (Math.floor(sub) != sub) {
+            break;
+        }
+        if (lengthLeft - sub < 0) {
+            break;
+        }
+        lengthLeft -= sub;
         dots += 1;
-    }
-    if (lengthLeft < 0) {  // Did we go one too far?
-        lengthLeft += subdivisions / 2**(beams + dots);
-        dots -= 1;
     }
 
     return {beams, dots: dots, length: length - lengthLeft};
@@ -142,7 +166,7 @@ function preRenderScoreComponent(componentID) {
             let rhythmInfo = calculateRhythmInformation(sGroups[i], beatSubdivisions);
             if (rhythmInfo.length != sGroups[i]) {  // Is the group an illegal length?
                 const amountOver = sGroups[i] - rhythmInfo.length;
-                if (amountOver < 0) throw "amountOver < 0";
+                if (amountOver <= 0) throw "amountOver <= 0";  
 
                 // Split the group into two (the first must be a legal length, if the second isn't then it will be fixed in the next iteration).
                 sGroups.splice(i, 1, rhythmInfo.length);  // Replace the old group
@@ -164,7 +188,10 @@ function preRenderScoreComponent(componentID) {
         
 
         // Fifth, convert groups to RenderInstructions
-        // Ok now we can make the instructions
+        // Add the CONTRACT-START // TODO: (if we need it)
+        renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START));
+
+        // Draw the actual content
         si = 0;  // Reset SI
         for (let i=0; i<sGroups.length; i++) {  // i: Index of current sGroup
             const rhythmInfo = calculateRhythmInformation(sGroups[i], beatSubdivisions);
@@ -226,6 +253,11 @@ function preRenderScoreComponent(componentID) {
 
             si += sGroups[i];
         }
+        
+        // Add the CONTRACT-END // TODO: (if we need it)
+        const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
+        renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, beatSubdivisions, needsHooks));
+
     }
 
     return renderInstructions;
@@ -282,6 +314,7 @@ function renderScoreComponent(componentID) {
     let x = 0;
     let lastBeamPath = "";
     let path = "";
+    let currentContractStartX = null;  // The starting x-coordinate of the current CONTRACT, or null if we are not in a contract
     while (i < instructions.length) {
         if (instructions[i].type === RenderInstruction.REST) {
            path = drawRest(svg, path, instructions, i, 0); 
@@ -296,10 +329,10 @@ function renderScoreComponent(componentID) {
             while (instructions[i].type !== RenderInstruction.GROUP_END) {
                 if (instructions[i].type === RenderInstruction.FLAG) {
                     throw "Found flag in the middle of a GROUP";
-                } else if (instructions[i].type == RenderInstruction.REST) {
+                } else if (instructions[i].type === RenderInstruction.REST) {
                     path = drawRest(svg, path, instructions, i, 50);
                     x += 10;  // Spacing
-                } else {
+                } else if (instructions[i].type === RenderInstruction.GROUP) {
                     path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
                     lastBeamPath = "";
 
@@ -320,13 +353,41 @@ function renderScoreComponent(componentID) {
                     drawDots(svg, x + 5, y, instructions[i].dots);
 
                     x += Math.max((instructions[i].broken_beams == 0) ? 10 : 20, instructions[i].dots * 5 + 5);
+                } else {
+                    throw "Unexpected instruction type " + instructions[i].type;
                 }
+
                 i += 1;
             }
             path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
             lastBeamPath = "";
             path += "M" + x + " 0 " + "L" + x + " 100 ";
             drawDots(svg, x + 5, 0, instructions[i].dots);
+        } else if (instructions[i].type === RenderInstruction.CONTRACT_START) {
+            if (currentContractStartX != null) {
+                throw "Cannot start contract when it's already open";
+            }
+            currentContractStartX = x;
+        } else if (instructions[i].type === RenderInstruction.CONTRACT_END) {
+            if (currentContractStartX == null) {
+                throw "Cannot end un-opened contract";
+            }
+            const centerX = (currentContractStartX + x) / 2;
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.style.fontStyle = "italic";
+            text.style.fontWeight = "bold";
+            text.style.textAnchor = "middle";
+            text.style.dominantBaseline = "hanging";
+            text.innerHTML = instructions[i].ratio.toString();
+            text.setAttribute("x", centerX);
+            svg.appendChild(text);  // Needs to be before text.getBBox()
+            let bbox = {width: 5 * text.innerHTML.length, height: 17};  //TODO: fix this -  text.getBBox();
+            text.setAttribute("y", "-" + bbox.height + "px");
+            if (instructions[i].hooks) {
+                path += "M" + currentContractStartX + " -2 L" + currentContractStartX + " " + (-bbox.height / 2) + " L" + (centerX - bbox.width / 2 - 5) + " " + (-bbox.height / 2) + " ";
+                path += "M" + (centerX + bbox.width / 2 + 5) + " " + (-bbox.height / 2) + " L" + x + " " + (-bbox.height / 2) + " L" + x + " -2 ";
+            }
+            currentContractStartX = null;
         } else {
             throw "Unexpected instruction type " + instructions[i].type;
         }
