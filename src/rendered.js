@@ -118,6 +118,24 @@ function calculateRhythmInformation(length, subdivisions) {
     return {beams, dots: dots, length: length - lengthLeft};
 }
 
+function gcd(a, b) {
+    // Calculate the greatest common denominator of two numbers
+    if (!b) {
+    return a;
+  }
+
+  return gcd(b, a % b);
+}
+
+function gcdOfArray(array) {
+    // Calculates the GCD of all the numbers in an array
+    let current = array[0];
+    for (let i=1; i<array.length; i++) {
+        current = gcd(current, array[i]);
+    }
+    return current;
+}
+
 function preRenderScoreComponent(componentID) {
     // Figures out how to actaully draw the score-component.
     // This is like the overall idea, it tells us what we need to draw, not how. Specifically which drums, decorations on each subdivision, and what bars / dots / rests / flags to draw.
@@ -157,9 +175,19 @@ function preRenderScoreComponent(componentID) {
             sGroups.push(beatSubdivisions - nonEmptySubdivisionIndexes[nonEmptySubdivisionIndexes.length - 1]);
         }
         console.log(sGroups);
+        
+
 
         
         // Third, clean the sGroups:
+        // Can we actually reduce the number of subdivisions (if we have 2, 2, 2 that can be 1, 1, 1)
+        const subdivisionMultiplier = gcdOfArray(sGroups);  // The amount to multiply a subdivisons after this point to get indexes that can be used to lookup in the component info.
+        for (let i=0; i<sGroups.length; i++) {
+            sGroups[i] /= subdivisionMultiplier;
+        }
+        const relativeSubdivisions = beatSubdivisions / subdivisionMultiplier;
+        console.log(sGroups, beatSubdivisions);
+        
         // Many of the sGroups are actually impossible due to limitations with beams and dots, and many will also cross beat boundaries (which they should not). So add rests where they are required.
         // We will work on the array in-place because then any rests we add that are illegal will be fixed in further iterations
         for (let i=0; i < sGroups.length; i++) {
@@ -180,7 +208,7 @@ function preRenderScoreComponent(componentID) {
         let si = 0;  // SI: subdivisionIndex. This should correspond to the start of the ith (see below) sGroup
         let nonEmptySGroups = [];  // The indexes of sGroups that aren't empty
         for (let i=0; i<sGroups.length; i++) {  // i: Index of curreng sGroup
-            if (getScoreComponentBeatSubdivisionDrums(componentID, bi, si).length != 0) { // Is non-empty?
+            if (getScoreComponentBeatSubdivisionDrums(componentID, bi, si * subdivisionMultiplier).length != 0) { // Is non-empty?
                 nonEmptySGroups.push(i);
             }
             si += sGroups[i];
@@ -189,7 +217,7 @@ function preRenderScoreComponent(componentID) {
 
         // Fifth, convert groups to RenderInstructions
         // Add the CONTRACT-START (if we need it)
-        const isStandardSubdivision = beatSubdivisions == 2**Math.floor(Math.log2(beatSubdivisions));  // Is subdivisions a power of two?
+        const isStandardSubdivision = relativeSubdivisions == 2**Math.floor(Math.log2(relativeSubdivisions));  // Is subdivisions a power of two?
         if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
             renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START));
         }
@@ -197,9 +225,9 @@ function preRenderScoreComponent(componentID) {
         // Draw the actual content
         si = 0;  // Reset SI
         for (let i=0; i<sGroups.length; i++) {  // i: Index of current sGroup
-            const rhythmInfo = calculateRhythmInformation(sGroups[i], beatSubdivisions);
+            const rhythmInfo = calculateRhythmInformation(sGroups[i], relativeSubdivisions);
             if (nonEmptySGroups.includes(i)) {
-                const drums = getScoreComponentBeatSubdivisionDrums(componentID, bi, si);
+                const drums = getScoreComponentBeatSubdivisionDrums(componentID, bi, si * subdivisionMultiplier);
                 const decorations = [];  // TODO: Me
                 if (nonEmptySGroups.length == 1) {
                     // i is the only non-empty sGroup, so draw a FLAG
@@ -260,7 +288,7 @@ function preRenderScoreComponent(componentID) {
         // Add the CONTRACT-END (if we need it)
         if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
             const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
-            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, beatSubdivisions, needsHooks));
+            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, relativeSubdivisions, needsHooks));
         }
 
     }
