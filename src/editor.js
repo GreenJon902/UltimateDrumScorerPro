@@ -50,7 +50,7 @@ function createSpacingTableData(row, classNames) {
 }
 
 
-function createNumberBoxesWithText(div, componentID, ...boxes) {
+function createNumberBoxesWithText(div, componentID, ...boxes) {  // TODO: Only redraw if we have to
     // Creates a (or multiple) input fields that have some text beforehand.
     // These will validate to only allow numbers above a certain value to be entered. When calling the setter, this will have already parsed the integer.
     // The boxes should be objects with this format {text: String, type: String, getter: Callable<componentID>, setter: Callable<componentID, value: int>, min: int, size: int}.
@@ -74,27 +74,14 @@ function createNumberBoxesWithText(div, componentID, ...boxes) {
         span.style.textWrap = "nowrap";
         
         // Create the input field
-        const input = document.createElement("input");
-        input.classList.add("score-sequencer-option-box");
-        input.value = boxes[i].getter(componentID);
-        input.inputMode = "numeric";
-        input.min = boxes[i].min;
-        input.size = boxes[i].size;
-        // Bind the update event to call the functions and do validation
-        input.oninput = () => {
-            input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
-            if (parseInt(input.value) < boxes[i].min) {  // If below min 
-                input.value = boxes[i].min;
-            }
-        }
-        input.onchange = () => {
-            if (input.value == '') {  // If empty then set to min
-                input.value = boxes[i].min;
-            }
-            boxes[i].setter(componentID, parseInt(input.value))
+        const input = createValidatedIntegerInput(() => {
+            return boxes[i].getter(componentID);
+        }, (value) => {
+            boxes[i].setter(componentID, value);
             setEditComponent("score-component", componentID);  // Redraw the editor
             renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
-        };
+
+        }, ["score-sequencer-option-box"], 1, boxes[i].size);
 
         // Add to container
         container.appendChild(span);
@@ -103,6 +90,40 @@ function createNumberBoxesWithText(div, componentID, ...boxes) {
 
     // Add container to the div
     div.appendChild(container);
+}
+
+function createValidatedIntegerInput(getter, setter, classes, min, size) {
+    // Returns an input node
+    // Getter is used for the default value, it takes no arguements.
+    // Setter is used to set the value, it takes the new value as an integer.
+    // Classes are the css classes to add, this should be a string list.
+    // Min is the minimum allowed value.
+    // Size is an optional value for the width of the box
+    
+    // Create the input field
+    const input = document.createElement("input");
+    input.classList.add(...classes);
+    input.value = getter();
+    input.inputMode = "numeric";
+    input.min = min;
+    if (size != null) {
+        input.size = size;
+    }
+    // Bind the update event to call the functions and do validation
+    input.oninput = () => {
+        input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
+        if (parseInt(input.value) < min) {  // If below min 
+            input.value = min;
+        }
+    }
+    input.onchange = () => {
+        if (input.value == '') {  // If empty then set to min
+            input.value = min;
+        }
+        setter(parseInt(input.value));  // Dispatch event
+    };
+    
+    return input;
 }
 
 
@@ -119,16 +140,14 @@ function scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID) {
         const beatSubdivisionCount = getScoreComponentBeatSubdivisionCount(componentID, bi);
         tableData.colSpan = beatSubdivisionCount;  // Because we have a column of sequencer toggles for each beat subdivision
         tableData.classList.add("editor-sequencer-subdivision-control");
-        const textBox = document.createElement("input");
-        textBox.classList.add("editor-sequencer-subdivision-control");
-        textBox.type = "number";
-        textBox.min = 1;
-        textBox.value = beatSubdivisionCount;
-        textBox.onchange = () => {
-            setScoreComponentBeatSubdivisionCount(componentID, bi, parseInt(textBox.value));  // Save the new value
+        const textBox = createValidatedIntegerInput(() => {
+            return beatSubdivisionCount;
+        }, (value) => {
+            setScoreComponentBeatSubdivisionCount(componentID, bi, value);  // Save the new value
             setEditComponent("score-component", componentID);  // Redraw the editor
             renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
-        };
+
+        }, ["editor-sequencer-subdivision-control"], 1, null);
         tableData.appendChild(textBox);
         tableRow.appendChild(tableData);
 

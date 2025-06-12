@@ -48,12 +48,12 @@ td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-drum {
     background-color: green;
 }
 
-input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button, .score-sequencer-option-box {
+input[inputmode="numeric"]::-webkit-outer-spin-button, input[inputmode="numeric"]::-webkit-inner-spin-button, .score-sequencer-option-box {
     -webkit-appearance: none;
     margin: 0;
 }
 
-input[type="number"], .score-sequencer-option-box {
+input[type="numeric"], .score-sequencer-option-box {
 	-moz-appearance: textfield;
 }
 
@@ -63,7 +63,7 @@ td.editor-sequencer-subdivision-control {
     height: 25px;
 }
 
-input[type="number"].editor-sequencer-subdivision-control {
+input[inputmode="numeric"].editor-sequencer-subdivision-control {
   position: absolute;
   top: 0;
   left: 0;
@@ -71,7 +71,7 @@ input[type="number"].editor-sequencer-subdivision-control {
   height: 100%;
 }
 
-input[type="number"].editor-sequencer-subdivision-control, .score-sequencer-option-box {
+input[inputmode="numeric"].editor-sequencer-subdivision-control, .score-sequencer-option-box {
   border: none;
   background-color: lightgray;
   text-align: center;
