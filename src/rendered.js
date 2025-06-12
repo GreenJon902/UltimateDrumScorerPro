@@ -188,8 +188,11 @@ function preRenderScoreComponent(componentID) {
         
 
         // Fifth, convert groups to RenderInstructions
-        // Add the CONTRACT-START // TODO: (if we need it)
-        renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START));
+        // Add the CONTRACT-START (if we need it)
+        const isStandardSubdivision = beatSubdivisions == 2**Math.floor(Math.log2(beatSubdivisions));  // Is subdivisions a power of two?
+        if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
+            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START));
+        }
 
         // Draw the actual content
         si = 0;  // Reset SI
@@ -254,9 +257,11 @@ function preRenderScoreComponent(componentID) {
             si += sGroups[i];
         }
         
-        // Add the CONTRACT-END // TODO: (if we need it)
-        const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
-        renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, beatSubdivisions, needsHooks));
+        // Add the CONTRACT-END (if we need it)
+        if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
+            const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
+            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, beatSubdivisions, needsHooks));
+        }
 
     }
 
@@ -372,6 +377,7 @@ function renderScoreComponent(componentID) {
             if (currentContractStartX == null) {
                 throw "Cannot end un-opened contract";
             }
+            // Create text to say what the subdivision is
             const centerX = (currentContractStartX + x) / 2;
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.style.fontStyle = "italic";
@@ -383,6 +389,7 @@ function renderScoreComponent(componentID) {
             svg.appendChild(text);  // Needs to be before text.getBBox()
             let bbox = {width: 5 * text.innerHTML.length, height: 17};  //TODO: fix this -  text.getBBox();
             text.setAttribute("y", "-" + bbox.height + "px");
+            // Draw hooks if we want them
             if (instructions[i].hooks) {
                 path += "M" + currentContractStartX + " -2 L" + currentContractStartX + " " + (-bbox.height / 2) + " L" + (centerX - bbox.width / 2 - 5) + " " + (-bbox.height / 2) + " ";
                 path += "M" + (centerX + bbox.width / 2 + 5) + " " + (-bbox.height / 2) + " L" + x + " " + (-bbox.height / 2) + " L" + x + " -2 ";
