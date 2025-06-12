@@ -1,4 +1,4 @@
-import {getScoreComponentBaseSubdivisions, getScoreComponentEnabledDecorations, getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentFurtherSubdivisionCount, getScoreComponentFurtherSubdivisionDecoration, getScoreComponentFurtherSubdivisionDrum, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, setScoreComponentFurtherSubdivisionCount, setScoreComponentFurtherSubdivisionDecoration, setScoreComponentFurtherSubdivisionDrum, setScoreComponentBaseSubdivisions} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -18,7 +18,6 @@ export function setEditComponent(componentType, componentID) {
         {text: "Time Signature:&nbsp;", getter: getScoreComponentTimeSignatureNumerator, setter: setScoreComponentTimeSignatureNumerator, min: 1, size: 2}, 
         {text: "&nbsp;/&nbsp;", getter: getScoreComponentTimeSignatureDenominator, setter: setScoreComponentTimeSignatureDenominator, min: 1, size: 2}
     );
-    createNumberBoxesWithText(div, componentID, {text: "Base Subdivisions:&nbsp;", getter: getScoreComponentBaseSubdivisions, setter: setScoreComponentBaseSubdivisions, min: 1, size: 2});
     editor.appendChild(div);
     
 
@@ -26,11 +25,11 @@ export function setEditComponent(componentType, componentID) {
     // We'll display the sequencer as a table and add it to the editor.
     const table = document.createElement("table");
     table.classList.add("editor-sequencer-table");
-    table.appendChild(scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID));
+    table.appendChild(scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID));
     createSpacingTableRow(table, ["editor-sequencer-subdivision-decoration-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentFurtherSubdivisionDecoration, setScoreComponentFurtherSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"]);
-    createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentFurtherSubdivisionDrum, setScoreComponentFurtherSubdivisionDrum, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"]);
+    //scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeat, setScoreComponentFurtherSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"]);
+    //createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
+    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"]);
     editor.appendChild(table);
 }
 
@@ -107,27 +106,26 @@ function createNumberBoxesWithText(div, componentID, ...boxes) {
 }
 
 
-function scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID) {
-    // Creates a table row containing the controls for managing further-subdivisions.
-    // It will create a text box for each base-subdivision, with colspan being set to the number of further-subdivisions for formatting.
+function scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID) {
+    // Creates a table row containing the controls for managing beat-subdivisions.
+    // It will create a text box for each beat, with colspan being set to the number of subdivisions for formatting.
     // This will then return the table row.
     const tableRow = document.createElement("tr");
     tableRow.append(document.createElement("th"));  // The first column is just descriptors of each drum
 
-    const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
-    const numberOfBaseSubdivisions = getScoreComponentTimeSignatureNumerator(componentID) * baseSubdivisions;
-    for (let baseSubdivisionIndex = 0; baseSubdivisionIndex < numberOfBaseSubdivisions; baseSubdivisionIndex++) {
+    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
+    for (let bi = 0; bi < numerator; bi++) {  // BI: beatIndex
         const tableData = document.createElement("td");
-        const furtherSubdivisionCount = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
-        tableData.colSpan = furtherSubdivisionCount;  // Because we have a column of sequencer toggles for each further subdivision
-        tableData.classList.add("editor-sequencer-further-subdivision-control");
+        const beatSubdivisionCount = getScoreComponentBeatSubdivisionCount(componentID, bi);
+        tableData.colSpan = beatSubdivisionCount;  // Because we have a column of sequencer toggles for each beat subdivision
+        tableData.classList.add("editor-sequencer-subdivision-control");
         const textBox = document.createElement("input");
-        textBox.classList.add("editor-sequencer-further-subdivision-control");
+        textBox.classList.add("editor-sequencer-subdivision-control");
         textBox.type = "number";
         textBox.min = 1;
-        textBox.value = furtherSubdivisionCount;
+        textBox.value = beatSubdivisionCount;
         textBox.onchange = () => {
-            setScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex, parseInt(textBox.value));  // Save the new value
+            setScoreComponentBeatSubdivisionCount(componentID, bi, parseInt(textBox.value));  // Save the new value
             setEditComponent("score-component", componentID);  // Redraw the editor
             renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
         };
@@ -135,7 +133,7 @@ function scoreEditorCreateSequencerFurtherSubdivisionControlsTr(componentID) {
         tableRow.appendChild(tableData);
 
         // Add spacing if required
-        if ((baseSubdivisionIndex + 1) % baseSubdivisions == 0 && baseSubdivisionIndex + 1 != numberOfBaseSubdivisions) {  // If end of beat but not after very last beat
+        if (bi + 1 != numerator) {  // If not last beat
             createSpacingTableData(tableRow, "editor-sequencer-beat-divider");
         }
     }
@@ -147,13 +145,12 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
     // Adds the toggle buttons for the sequencer to a table.
     // You supply functions idGetter and isCheckedGetter and isCheckedSetter depending if this is drums or decorations.
     //    idGetter(componentID) -> String list of IDs.
-    //    isCheckedGetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID) -> Is this drum / decoration hit on this specific subdivision.  The given ID is the id of the drum / decoration
-    //    isCheckedSetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID, checked)    Sets whether or not a given drum / decoration is set on a given subdivision. The id is the id of the drum / decoration.
+    //    isCheckedGetter(componentID, beatIndex, subdivisionIndex, ID) -> Is this drum / decoration hit on this specific subdivision.  The given ID is the id of the drum / decoration
+    //    isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, checked)    Sets whether or not a given drum / decoration is set on a given subdivision. The id is the id of the drum / decoration.
     // The given classNames will be given to the toggle buttons (and their td containers).
     
     const IDs = idGetter(componentID);
-    const baseSubdivisions = getScoreComponentBaseSubdivisions(componentID);
-    const numberOfBaseSubdivisions = getScoreComponentTimeSignatureNumerator(componentID) * baseSubdivisions;
+    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
     for (let index = 0; index < IDs.length; index++) {
         const ID = IDs[index];
 
@@ -164,20 +161,18 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
         tableRow.appendChild(symbolID);
 
         // Add the actual buttons
-        for (let baseSubdivisionIndex = 0; baseSubdivisionIndex < numberOfBaseSubdivisions; baseSubdivisionIndex++) {
-            const numberOfFurtherSubdivisions = getScoreComponentFurtherSubdivisionCount(componentID, baseSubdivisionIndex);
-            for (let furtherSubdivisionIndex = 0; furtherSubdivisionIndex < numberOfFurtherSubdivisions; furtherSubdivisionIndex++) {
+        for (let bi = 0; bi < numerator; bi++) {  // BI: beatIndex
+            const numberOfSubdivisions = getScoreComponentBeatSubdivisionCount(componentID, bi);
+            for (let si = 0; si < numberOfSubdivisions; si++) {  // SI: subdivisionIndex
                 // Create the actual button and add it to the table
-                const enabled = isCheckedGetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID);
-                const tableData = scoreEditorCreateSequencerToggleButtonInTd(numberOfFurtherSubdivisions, enabled, classNames, isCheckedSetter, baseSubdivisionIndex, furtherSubdivisionIndex, ID, componentID);
+                const enabled = isCheckedGetter(componentID, bi, si, ID);
+                const tableData = scoreEditorCreateSequencerToggleButtonInTd(numberOfSubdivisions, enabled, classNames, isCheckedSetter, bi, si, ID, componentID);
                 tableRow.appendChild(tableData);
             }
-            
             // Add spacing if required
-            if ((baseSubdivisionIndex + 1) % baseSubdivisions == 0 && baseSubdivisionIndex + 1 != numberOfBaseSubdivisions) {  // If end of beat but not after very last beat
+            if (bi + 1 != numerator) {  // If not last beat
                 createSpacingTableData(tableRow, "editor-sequencer-beat-divider");
             }
-
         }
 
         // Add table row to table
@@ -185,12 +180,12 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
     }
 }
 
-function scoreEditorCreateSequencerToggleButtonInTd(furtherSubdivisionCount, enabled, classNames, isCheckedSetter, baseSubdivisionIndex, furtherSubdivisionIndex, ID, componentID) {
+function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, classNames, isCheckedSetter, beatIndex, subdivisionIndex, ID, componentID) {
     // Create a toggle button to be used in the editor for the actual score (turning drums on and off).
-    // This returns a table data element with the correct width based of the furtherSubdivisionCount.
+    // This returns a table data element with the correct width based of the subdivisionCount.
     // If enabled is true then it will be checked by default.
     // The classes in classNames will be given to both the input and the td.
-    // The function isCheckedSetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID, checked) is used when we toggle the checkbox. The id is the id of the drum / decoration.
+    // The function isCheckedSetter(componentID, beatIndex, suubdivisonIndex, ID, checked) is used when we toggle the checkbox. The id is the id of the drum / decoration.
     // The given ID is the ID of the drum / decoration.
     const tableData = document.createElement("td");
     const toggleButton = document.createElement("input");
@@ -199,10 +194,10 @@ function scoreEditorCreateSequencerToggleButtonInTd(furtherSubdivisionCount, ena
     toggleButton.classList.add(...classNames);
     toggleButton.checked = enabled;
     toggleButton.onclick = () => {
-        isCheckedSetter(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, ID, toggleButton.checked);  // Save the new value
+        isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, toggleButton.checked);  // Save the new value
         renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
     };
-    tableData.style.width = (3 / furtherSubdivisionCount) + 'em';
+    tableData.style.width = (3 / subdivisionCount) + 'em';
     tableData.appendChild(toggleButton);
     return tableData;
 }

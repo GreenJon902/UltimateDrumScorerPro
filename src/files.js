@@ -20,7 +20,14 @@ export function getScoreComponentTimeSignatureNumerator(componentID) {
 export function setScoreComponentTimeSignatureNumerator(componentID, value) {
     // Sets the top of the time-signature of this component.
     // This will chop the end off, or add to the end depending how it grows.
-    throw "Not implemented";
+    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"];
+    while (array.length < value) {  // Grow it
+        array.push([{"drums": [], "decorations": []}]);  // Add empty beat
+    }
+    while (array.length > value) {  // Shrink it
+        array.pop();
+    }
+    CURRENT_PROJECT["score-components"][componentID]["score-content"] = array;  // I don't trust JS.
 }
 
 export function getScoreComponentTimeSignatureDenominator(componentID) {
@@ -85,7 +92,15 @@ export function getScoreComponentBeatSubdivisionCount(componentID, beatIndex) {
 
 export function setScoreComponentBeatSubdivisionCount(componentID, beatIndex, value) {
 	// Sets the number of times a given beat is subdivided.
-    throw "Not implemented";
+    // TODO: Grow and shrink this logically (don't just change the end) (e.g. If 4 to 2 then remove 1, 3.
+    const array = CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex];
+    while (array.length < value) {  // Grow it
+        array.push({"drums": [], "decorations": []});  // Add empty subdivision
+    }
+    while (array.length > value) {  // Shrink it
+        array.pop();
+    }
+    CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex] = array;  // I don't trust JS.
 }
 
 export function getScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID) {
@@ -126,3 +141,4 @@ function addRemoveFromArray(array, item, shouldContain) {
     }
 
 }
+

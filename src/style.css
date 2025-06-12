@@ -33,19 +33,19 @@ input[type="checkbox"].editor-sequencer-toggle {
 }
 
 td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-decoration {
-    background-color: orangered;
-}
-
-td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-decoration {
     background-color: orange;
 }
 
+td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-decoration {
+    background-color: orangered;
+}
+
 td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-drum {
-    background-color: green;
+    background-color: lightgreen;
 }
 
 td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-drum {
-    background-color: lightgreen;
+    background-color: green;
 }
 
 input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button, .score-sequencer-option-box {
@@ -57,13 +57,13 @@ input[type="number"], .score-sequencer-option-box {
 	-moz-appearance: textfield;
 }
 
-td.editor-sequencer-further-subdivision-control {
+td.editor-sequencer-subdivision-control {
     position: relative;
     padding: 0;
     height: 25px;
 }
 
-input[type="number"].editor-sequencer-further-subdivision-control {
+input[type="number"].editor-sequencer-subdivision-control {
   position: absolute;
   top: 0;
   left: 0;
@@ -71,7 +71,7 @@ input[type="number"].editor-sequencer-further-subdivision-control {
   height: 100%;
 }
 
-input[type="number"].editor-sequencer-further-subdivision-control, .score-sequencer-option-box {
+input[type="number"].editor-sequencer-subdivision-control, .score-sequencer-option-box {
   border: none;
   background-color: lightgray;
   text-align: center;
