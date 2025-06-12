@@ -48,13 +48,13 @@ class HTTPHandler(SimpleHTTPRequestHandler):
         # Example modification: inject a console.log
         new = ""
         for n, line in enumerate(content.split("\n")):
-        	if "while (" in line and ") {" in line:
+        	if ("while (" in line or "for (" in line) and ") {" in line:
         		split = line.split("//", 1)
         		split[0] += f" __check_no_forever_loop({n}); "
         		line = "//".join(split)
         	new += line + "\n"
         
-        new += "\n\n\nconst __values = {}\nfunction __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>10000) {throw \"Too many iterations on line \" + n + \"\"};}"
+        new += "\n\nlet __values = {}\nfunction __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>10000) {__values = {};throw \"Too many iterations on line \" + n + \"\";}}"
         
         return new
 
