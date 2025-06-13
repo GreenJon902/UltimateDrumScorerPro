@@ -196,7 +196,7 @@ function preRenderScoreComponent(componentID) {
         // Many of the sGroups are actually impossible due to limitations with beams and dots, and many will also cross beat boundaries (which they should not). So add rests where they are required.
         // We will work on the array in-place because then any rests we add that are illegal will be fixed in further iterations
         for (let i=0; i < sGroups.length; i++) {
-            let rhythmInfo = calculateRhythmInformation(sGroups[i], beatSubdivisions);
+            let rhythmInfo = calculateRhythmInformation(sGroups[i], relativeSubdivisions);
             if (rhythmInfo.length != sGroups[i]) {  // Is the group an illegal length?
                 const amountOver = sGroups[i] - rhythmInfo.length;
                 if (amountOver <= 0) throw "amountOver <= 0";  
