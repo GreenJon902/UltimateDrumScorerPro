@@ -98,7 +98,7 @@ function calculateRhythmInformation(length, subdivisions) {
     const pretendSubdivisions = 2**Math.floor(Math.log2(subdivisions));
 
     // Beams
-    let beams = Math.ceil(Math.log(length / pretendSubdivisions) / Math.log(1/2));
+    let beams = Math.ceil(Math.log2(pretendSubdivisions / length));
     if (beams == 0 && subdivisions != 1) {  
         // If subdivisions == 1 then it is a crotechet, otherwise it's duration is less than a crotchet so it should have at least one beam. Except when using a subdivision like 3, we could have a this combo of lengths {2, 1}. The 2 has no beams, but the 1 does. Our beaming algorithm is not set up to handle that, so just force at least one beam and then have it add a rest or something.
         // I also feel it is easier to read.
