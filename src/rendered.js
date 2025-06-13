@@ -98,7 +98,12 @@ function calculateRhythmInformation(length, subdivisions) {
     const pretendSubdivisions = 2**Math.floor(Math.log2(subdivisions));
 
     // Beams
-    const beams = Math.ceil(Math.log(length / pretendSubdivisions) / Math.log(1/2));
+    let beams = Math.ceil(Math.log(length / pretendSubdivisions) / Math.log(1/2));
+    if (beams == 0 && subdivisions != 1) {  
+        // If subdivisions == 1 then it is a crotechet, otherwise it's duration is less than a crotchet so it should have at least one beam. Except when using a subdivision like 3, we could have a this combo of lengths {2, 1}. The 2 has no beams, but the 1 does. Our beaming algorithm is not set up to handle that, so just force at least one beam and then have it add a rest or something.
+        // I also feel it is easier to read.
+        beams = 1;
+    }
     
     // Dots
     let lengthLeft = length - pretendSubdivisions / 2**(beams);
@@ -155,7 +160,7 @@ function preRenderScoreComponent(componentID) {
                 nonEmptySubdivisionIndexes.push(si);
             }
         }
-        console.log(nonEmptySubdivisionIndexes);
+        console.log("1. BI:", bi, "BS:", beatSubdivisions, "NESI:", nonEmptySubdivisionIndexes);
         
         
         // Second, group all empty subdivisions after a non-empty subdivision with that non-empty subdivision.
@@ -174,7 +179,7 @@ function preRenderScoreComponent(componentID) {
         if (nonEmptySubdivisionIndexes.length > 0) {  // Is there at least one?
             sGroups.push(beatSubdivisions - nonEmptySubdivisionIndexes[nonEmptySubdivisionIndexes.length - 1]);
         }
-        console.log(sGroups);
+        console.log("2. BI:", bi, "BS:", beatSubdivisions, "SG:", sGroups);
         
 
 
@@ -186,7 +191,7 @@ function preRenderScoreComponent(componentID) {
             sGroups[i] /= subdivisionMultiplier;
         }
         const relativeSubdivisions = beatSubdivisions / subdivisionMultiplier;
-        console.log(sGroups, beatSubdivisions);
+        console.log("3a. BI:", bi, "RS:", relativeSubdivisions, "SG:", sGroups);
         
         // Many of the sGroups are actually impossible due to limitations with beams and dots, and many will also cross beat boundaries (which they should not). So add rests where they are required.
         // We will work on the array in-place because then any rests we add that are illegal will be fixed in further iterations
@@ -201,7 +206,7 @@ function preRenderScoreComponent(componentID) {
                 sGroups.splice(i + 1, 0, amountOver);  // Put in the rest
             }
         }
-        console.log(sGroups);
+        console.log("3b. BI:", bi, "RS:", relativeSubdivisions, "SG:", sGroups);
 
         
         // Fourth, get all the non-empty sGroups
@@ -238,9 +243,9 @@ function preRenderScoreComponent(componentID) {
                     // We need to figure out what combination of full-beams and broken-beams we need to draw for this current GROUP
                     const currentNonEmptyIndex = nonEmptySGroups.indexOf(i);
                     const c = rhythmInfo.beams;  // How many beams it wants connected to it
-                    const n = calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex + 1]], beatSubdivisions).beams;
-                    const nn = ((currentNonEmptyIndex < nonEmptySGroups.length - 2) ? calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex + 2]], beatSubdivisions).beams : 0);  // If a sGroup doesn't exist then it will supply no beams, so just say 0
-                    const l = ((currentNonEmptyIndex > 0) ? calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex - 1]], beatSubdivisions).beams : 0);  
+                    const n = calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex + 1]], relativeSubdivisions).beams;
+                    const nn = ((currentNonEmptyIndex < nonEmptySGroups.length - 2) ? calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex + 2]], relativeSubdivisions).beams : 0);  // If a sGroup doesn't exist then it will supply no beams, so just say 0
+                    const l = ((currentNonEmptyIndex > 0) ? calculateRhythmInformation(sGroups[nonEmptySGroups[currentNonEmptyIndex - 1]], relativeSubdivisions).beams : 0);  
                     
                     // Remember, beams go from c to n!
                     if (c == n) {  // Both want the same number of beams. So draw that.
@@ -292,6 +297,8 @@ function preRenderScoreComponent(componentID) {
         }
 
     }
+    
+    console.log("5. RI:", renderInstructions)
 
     return renderInstructions;
 }
