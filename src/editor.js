@@ -216,7 +216,7 @@ function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, c
         isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, toggleButton.checked);  // Save the new value
         renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
     };
-    tableData.style.width = (3 / subdivisionCount) + 'em';
+    tableData.style.width = (4 / subdivisionCount) + 'ch';
     tableData.appendChild(toggleButton);
     return tableData;
 }
