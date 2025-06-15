@@ -154,3 +154,9 @@ body > * {
 .editor-squencer-beat-divider {
 	width: 1px;
 }
+
+svg {
+	stroke: black;
+	stroke-width: 1;
+	fill: none;
+}
