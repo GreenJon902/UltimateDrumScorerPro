@@ -319,47 +319,77 @@ function loadDrumsSVG(callback) {
 
 function calculateSpacing(instructions) {
     loadDrumsSVG(DRUMS => {
-        // First, calculate relative drum Ys
-        const allDrumIDs = new Set();
-        for (let i=0; i<instructions.length; i++) {
-            const type = instructions[i].type;
-            if (type === RenderInstruction.GROUP, type === RenderInstruction.GROUP_END || type === RenderInstruction.FLAG) {
-                instructions[i].drums.forEach(id => allDrumIDs.add(id));
-            }
-        }
-        
-        let currentY = 0;  // The bottom of the last drum we've looked at
-        let amountShifted = 0;  // If two drums will overlap then we shift the bottom one down. This is the sum of the shifted amount
-        const relativeDrumYs = {};  // Y-coord is relative to top of top drum. Y-coord is coord of the anchor (where the stem attaches to the head)
-        for (let i=0; i<DRUMS.length; i++) {  // We want to get nodes in the order that they're declared (from top to bottom).
-            const drum = DRUMS[i];
-            if (allDrumIDs.has(drum.id)) {
-                const sizeUp = parseInt(drum.dataset.sizeUp);
-                const sizeDown = parseInt(drum.dataset.sizeDown);
-                const beamSpacing = parseInt(drum.dataset.beamSpacing);
-                let newY = beamSpacing + amountShifted;  // The beamSpacing can be used to ensure there is a minimum distance between two notes, so if the top one is shifted down then we need to shift the bottom one down too.
-                if (newY - sizeUp < currentY) {  // Does it collide with the last drum (or top of screen)?
-                    amountShifted += currentY - (newY - sizeUp);
-                    newY = beamSpacing + amountShifted;
-                }
-
-                relativeDrumYs[drum.id] = newY;
-                currentY = newY + sizeDown;
-            }
-        }
-        console.log("1. RDY:", relativeDrumYs);
-        
-        // Second, convert DRUMS from an array to a map
+        // Get DRUMS as a map if we need it
         const DRUMS_MAP = {};
         for (let i=0; i<DRUMS.length; i++) {
             DRUMS_MAP[DRUMS[i].id] = DRUMS[i];
         } 
-        console.log("2. DM: ", DRUMS_MAP);
         
+        // First, calculate the spacing between each instruction
+        const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
+        let x = 0;
+        for (let i=0; i<instructions.length; i++) {
+            const instr = instructions[i];
+            const type = instr.type;
+            /*const lastType = (i > 0) ? instructions[i - 1].type : null;*/
+            // We need x to be the stem or the right edge of a rest, so shift it along
+            if (type === RenderInstruction.FLAG/* || (type === RenderInstruction.GROUP && lastType !== RenderInstruction.GROUP)*/) {
+                // Account for width of note heads
+                const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+                x += headWidth
+            } else if (type === RenderInstruction.REST) {
+                // Account for width of rest
+                if (instr.ticks == 0) {  // Is rotchet rest
+                    x += 5;
+                } else {  // Is non-crotechet rest
+                    x += 5 * instr.ticks;  
+                }
+            /*} else if ((type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) && lastType === RenderInstruction.GROUP) {
+                // Acount for width of note heads
+                const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+                // Account for width of last's rhythm
+                const lastInstr = instructions[i - 1];
+                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
+                let rhythmWidth;
+                if (lastInstr.broken_beams < 0) {  // Are broken beams on left?
+                    const brokenBeamWidth = 5;
+                    rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
+                } else if (lastInstr.broken_beams > 0) {  // Are broken beams on right?
+                    const brokenBeamWidth = 5;  
+                    rhythmWidth = dotWidth + brokenBeamWidth;
+                } else {  // No broken beams
+                    rhythmWidth = dotWidth;
+                }
+
+                x += Math.max(headWidth, rhythmWidth);
+                
+            */} else {
+                throw "Unexpected instruction type";
+            }
+            instructionXs.push(x);
+            // Shift x along for any extra padding we want
+            if (type === RenderInstruction.FLAG) {
+                // Acount for flags and dots
+                const flagWidth = (instr.flags == 0) ? 0 : 5;
+                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
+                x += Math.max(flagWidth, dotWidth);
+            } else if (type === RenderInstruction.REST) {
+                // Does not take up space afterwards
+            /*} else if (type === RenderInstruction.GROUP) {
+                // Space afterwards is computed when we add to x in the next iteration
+            } else if (type === RenderInstruction.GROUP_END) {
+                // Account for dots
+                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
+                x += dotWidth;
+            */} else {
+                throw "Unexpected instruction type";
+            }   
+        }
+        console.log("1. IX:", instructionXs);
+
                 
 
         
-        const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests
         const drumYs = {};  // Key is drumID, value is height where stem connects
         debugger;
     });
