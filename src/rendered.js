@@ -1,4 +1,6 @@
 import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator} from "./files.js";
+import {getDrumSymbolID, getDrumY} from "./drums.js";
+import {getSymbolPath, getSymbolTop, getSymbolBottom, getSymbolLeft, getSymbolRight} from "./symbols.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -316,6 +318,35 @@ function drawDots(svg, x, y, dotNumber) {
     }
 }
 
+function drawNoteHeads(svg, x, drumIDs) {
+	// Draws note head(s) to the svg.
+	// The new x-coordinate is returned. It also returns lowestSubdivisionY - the lowest note-head's stem connection point, and lowestSubdivisionYDrumBottom - the distance the lowest note-head's goes below lowestSubdivisionYDrumBottom
+    x += 20;  // Note heads draw backwards to increment x beforehand
+    let lowestSubdivisionY = 0;
+    let lowestSubdivisionYDrumBottom = 0;
+    for (let drumIndex = 0; drumIndex < drumIDs.length; drumIndex++) {
+        const drumID = drumIDs[drumIndex];
+        const symbolID = getDrumSymbolID(drumID);
+        const drumY = getDrumY(drumID);
+        const pathString = getSymbolPath(symbolID);
+        const left = getSymbolLeft(symbolID);
+        const right = getSymbolRight(symbolID);
+        const top = getSymbolTop(symbolID);
+        const bottom = getSymbolBottom(symbolID);
+         if (drumY > lowestSubdivisionY) {
+            lowestSubdivisionY = drumY;
+            lowestSubdivisionYDrumBottom = bottom;
+             }
+        const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathNode.setAttribute("d", pathString);
+        pathNode.setAttribute("stroke", "black");
+        pathNode.setAttribute("stroke-width", "3");
+        pathNode.setAttribute("fill", "none");
+        svg.appendChild(pathNode);
+        pathNode.setAttribute("transform", "translate(" + x + " " + drumY + ")")
+    }
+    return {x, lowestSubdivisionY, lowestSubdivisionYDrumBottom};
+}
 
 function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
@@ -352,6 +383,7 @@ function renderScoreComponent(componentID) {
 
     let i = 0;
     let x = 0;
+    let height = 50;  // Min height 50
     let lastBeamPath = "";
     let path = "";
     let currentContractStartX = null;  // The starting x-coordinate of the current CONTRACT, or null if we are not in a contract
@@ -359,7 +391,11 @@ function renderScoreComponent(componentID) {
         if (instructions[i].type === RenderInstruction.REST) {
            path = drawRest(svg, path, instructions, i, 0); 
         } else if (instructions[i].type === RenderInstruction.FLAG) {
-            path += "M" + x + " 0 " + "L" + x + " 100 ";
+            let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
+            const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
+            height = Math.max(height, newHeight);
+            x = newX;
+            path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
             for (let n=0; n < instructions[i].flags; n++) {
                 path += "M" + x + " " + (n * 10) + " L" + (x + 10) + " " + (n * 10 + 10) + " ";
             }
@@ -373,10 +409,14 @@ function renderScoreComponent(componentID) {
                     path = drawRest(svg, path, instructions, i, 50);
                     x += 10;  // Spacing
                 } else if (instructions[i].type === RenderInstruction.GROUP) {
+                    let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
+                    const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
+                    height = Math.max(height, newHeight);
+                    x = newX;
                     path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
                     lastBeamPath = "";
 
-                    path += "M" + x + " 0 " + "L" + x + " 100 ";
+                    path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
                     let y = 0;
                     for (let n = 0; n< instructions[i].full_beams; n++) {
                         lastBeamPath += "M" + x + " " + y + " Lx " + y + " ";
@@ -399,9 +439,16 @@ function renderScoreComponent(componentID) {
 
                 i += 1;
             }
+            
+            // Draw GROUP_END
+            let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
+            const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
+            height = Math.max(height, newHeight);
+            x = newX;
+
             path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
             lastBeamPath = "";
-            path += "M" + x + " 0 " + "L" + x + " 100 ";
+            path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
             drawDots(svg, x + 5, 0, instructions[i].dots);
         } else if (instructions[i].type === RenderInstruction.CONTRACT_START) {
             if (currentContractStartX != null) {
