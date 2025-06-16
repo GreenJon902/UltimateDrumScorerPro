@@ -318,6 +318,10 @@ function loadDrumsSVG(callback) {
     }
 
 function calculateSpacing(instructions) {
+    // Returns some information on how to draw the given instructions.
+    // It returns {instructionXs: [int]} where instructionXs is the x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
+
+
     loadDrumsSVG(DRUMS => {
         // Get DRUMS as a map if we need it
         const DRUMS_MAP = {};
@@ -329,8 +333,8 @@ function calculateSpacing(instructions) {
         const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
         let x = 0;
         for (let i=0; i<instructions.length; i++) {
-            const instr = instructions[i];
-            const type = instr.type;
+            let instr = instructions[i];  // If i is changed then this should be changed to reflect that
+            let type = instr.type;  // If i is changed then this should be changed to reflect that
             /*const lastType = (i > 0) ? instructions[i - 1].type : null;*/
             // We need x to be the stem or the right edge of a rest, so shift it along
             if (type === RenderInstruction.FLAG/* || (type === RenderInstruction.GROUP && lastType !== RenderInstruction.GROUP)*/) {
@@ -339,31 +343,88 @@ function calculateSpacing(instructions) {
                 x += headWidth
             } else if (type === RenderInstruction.REST) {
                 // Account for width of rest
-                if (instr.ticks == 0) {  // Is rotchet rest
+                if (instr.ticks == 0) {  // Is crotchet rest
                     x += 5;
                 } else {  // Is non-crotechet rest
                     x += 5 * instr.ticks;  
                 }
-            /*} else if ((type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) && lastType === RenderInstruction.GROUP) {
-                // Acount for width of note heads
+            } else if (type === RenderInstruction.GROUP) {
+                // Account for width of note heads (before first stem in group)
                 const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
-                // Account for width of last's rhythm
-                const lastInstr = instructions[i - 1];
-                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
-                let rhythmWidth;
-                if (lastInstr.broken_beams < 0) {  // Are broken beams on left?
-                    const brokenBeamWidth = 5;
-                    rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
-                } else if (lastInstr.broken_beams > 0) {  // Are broken beams on right?
-                    const brokenBeamWidth = 5;  
-                    rhythmWidth = dotWidth + brokenBeamWidth;
-                } else {  // No broken beams
-                    rhythmWidth = dotWidth;
-                }
+                x += headWidth
+                instructionXs.push(x);
 
-                x += Math.max(headWidth, rhythmWidth);
-                
-            */} else {
+                // Save the current group for later
+                let lastGroupI = i;
+                i ++;
+                while (true) {
+                    instr = instructions[i];
+                    type = instructions[i].type;
+                    if (type === RenderInstruction.REST) {
+                        // Account for right of last note heads
+                        const lastInstr = instructions[i - 1];
+                        if (lastInstr.type === RenderInstruction.GROUP) {
+                            const maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                            x += maxLastInstrRight;
+                        }
+
+                        // Account for width of rest
+                        if (instr.ticks == 0) {  // Is crotchet rest
+                            throw "Cannot have crotchet rest after un-ended GROUP";
+                        } else {  // Is non-crotechet rest
+                            x += 5 * instr.ticks;  
+                        }
+                    } else if (type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) {
+                        // Calculate minimum rhythmWidth
+                        const lastGroupInstr = instructions[lastGroupI];
+                        const dotWidth = lastGroupInstr.dots * 5;
+                        let rhythmWidth;
+                        if (lastGroupInstr.broken_beams < 0) {  // Are broken beams on left?
+                            const brokenBeamWidth = 5;
+                            rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
+                        } else if (lastGroupInstr.broken_beams > 0) {  // Are broken beams on right?
+                            const brokenBeamWidth = 5;  
+                            rhythmWidth = dotWidth + brokenBeamWidth;
+                        } else {  // No broken beams
+                            rhythmWidth = dotWidth;
+                        }
+
+                        // Calculate minimum space used by note heads
+                        const lastInstr = instructions[i - 1];
+                        let maxLastInstrRight;
+                        if (lastInstr.type === RenderInstruction.GROUP) {
+                            maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                        } else {
+                            maxLastInstrRight = 0;  // RESTs take up no space to the right
+                        }
+                        let maxInstrLeft = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+                        const headWith = maxLastInstrRight + maxInstrLeft;
+
+                        // Figure out the actual width
+                        const width = Math.max(rhythmWidth, headWith);
+                        x += width;
+ 
+                        // If GROUP_END then exit
+                        if (type === RenderInstruction.GROUP_END) {
+                            break;
+                        }
+                        lastGroupI = i;
+                    } else {
+                        throw "Unexpected instruction type";
+                    }
+                    instructionXs.push(x);
+                    if (type === RenderInstruction.REST) {
+                        // Account for rest dots if we have them
+                        const dotWidth = 5 * instr.dots - 5 * instr.ticks - 5;
+                        if (dotWidth > 0) {
+                            x += dotWidth;
+                        }
+                    }
+                    i++;
+                }
+            } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+                // These don't take up any width
+            } else {  // GROUP_ENDs intentionally come here, it should be a GROUP
                 throw "Unexpected instruction type";
             }
             instructionXs.push(x);
@@ -371,17 +432,17 @@ function calculateSpacing(instructions) {
             if (type === RenderInstruction.FLAG) {
                 // Acount for flags and dots
                 const flagWidth = (instr.flags == 0) ? 0 : 5;
-                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
+                const dotWidth = instr.dots * 5;
                 x += Math.max(flagWidth, dotWidth);
             } else if (type === RenderInstruction.REST) {
                 // Does not take up space afterwards
-            /*} else if (type === RenderInstruction.GROUP) {
-                // Space afterwards is computed when we add to x in the next iteration
             } else if (type === RenderInstruction.GROUP_END) {
                 // Account for dots
-                const dotWidth = (instr.dots == 0) ? 0 : (5 * (instr.dots + 1));
+                const dotWidth = (instr.dots * 5);
                 x += dotWidth;
-            */} else {
+            } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+                // These don't take up any width
+            } else {  // GROUPs intentionally come here, it should be a GROUP_END
                 throw "Unexpected instruction type";
             }   
         }
