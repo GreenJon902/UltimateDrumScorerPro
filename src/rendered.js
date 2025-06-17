@@ -328,6 +328,11 @@ function calculateSpacing(instructions) {
         for (let i=0; i<DRUMS.length; i++) {
             DRUMS_MAP[DRUMS[i].id] = DRUMS[i];
         } 
+
+        // Get a list of the DRUMS that are. Order is preserved.
+        const usedDrumsSet = new Set();
+        instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).forEach(instruction => instruction.drums.forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
+        const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
         
         // First, calculate the spacing between each instruction
         const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
@@ -449,9 +454,94 @@ function calculateSpacing(instructions) {
         console.log("1. IX:", instructionXs);
 
                 
+        // Second, calculate which drumIDs exist on the same beat
+        const drumCollisions = {};  // Maps from drumID to set of drumIDs
+        for (let i=0; i<instructions.length; i++) {
+            if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
+
+            for (let j=0; j<instructions[i].drums.length; j++) {
+                for (let k=0; k<instructions[i].drums.length; k++) {
+                    if (j != k) {
+                        const jID = instructions[i].drums[j];
+                        const kID = instructions[i].drums[k];
+                        if (drumCollisions[jID] === undefined) {
+                            drumCollisions[jID] = new Set();
+                        }
+                        drumCollisions[jID].add(kID);
+                    }
+                }
+            }
+        }
+        console.log("2. DC:", drumCollisions);
+
+        // Third, calculate the relative (to the anchor of the head above it) Y of each drum
+        const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
+        let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
+        for (let i=0; i<USED_DRUMS.length; i++) {  
+            const currentDrum = USED_DRUMS[i];
+            let y = parseInt(currentDrum.dataset.beamSpacing) + amountShifted;  // Add amount shifted to retain minimum distance between notes like kicks and snares
+            
+            // Check if this drum will colide with a drum above it
+            for (let j=0; j<drumYs.length; j++) {
+                if (drumCollisions[currentDrum.id] !== undefined && drumCollisions[currentDrum.id].has(USED_DRUMS[j].id)) {  // Does i exist in the same beat as j (and hence have potentially actually colide)?
+                    if (y - parseInt(currentDrum.dataset.sizeUp) < drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown)) {  // Does i actually colide with j?
+                        // Shift i down so it doesn't collide with j.
+                        const newY = drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown) + parseInt(currentDrum.dataset.sizeUp);
+                        amountShifted += newY - y;
+                        y = newY;
+                    }
+                }
+                // Carry on looping as we may collide with another drum at the same height as j but is taller
+            }
+
+            drumYs.push(y);
+        }
+        console.log("3. DY:", drumYs);
+        // Check if any drums collide
+        
+        /*function getCurrentAnchorY(id) {  // Get's the current anchor Y for a drum with the given ID
+            let i=0;
+            let y=0;
+            while (DRUMS[i].id !== id) {
+                y += drumYs[DRUMS[i].id];
+                i++;
+            }
+            y += drumYs[DRUMS[i].id];
+        }
+        for (let instrI=0; i<instructions.length; i++) {
+            const instr = instructions[instrI];
+            for (let i=0; i<instr.drums.length; i++) {
+                for (let j=0; j<instr.drums.length; j++) {
+                    if (i == k) continue;  // We can't collide with ourself
+                    
+                    const iID = instr.drums[i];
+                    const iCurrAnchY = getCurrentAnchorY(iID);
+                    const iUp = DRUMS[iID].dataset.sizeUp;
+                    const iDown = DRUMS[iID].dataset.sizeDown;
+                    const jID = instr.drums[j];
+                    const jCurrAnchY = getCurrentAnchorY(iID);
+                    const jUp = DRUMS[jID].dataset.sizeUp;
+                    const jDown = DRUMS[jID].dataset.sizeDown;
+                    
+                    // Check if colliding
+                    if (iCurrAnchY + iDown > jCurrAnchY - iUp || iCurrAnchY - iUp < jCurrAnchY + jDown) {
+                        // Whichever should be on top will appear first in DRUMS
+                        for (let drumI=0; drumI<DRUMS.length; drumI++) {
+                            if (DRUMS[drumI].id == iID) {
+                                top = iID;
+                                bottom = jID;
+                            } else {
+                                top = jID;
+                                bottom = iID;
+                            }
+                        }
+                    }
+                }
+            }
+        }*/
+
 
         
-        const drumYs = {};  // Key is drumID, value is height where stem connects
         debugger;
     });
 }

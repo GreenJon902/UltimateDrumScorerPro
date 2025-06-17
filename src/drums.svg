@@ -14,6 +14,10 @@
 		<g id="snare" data-size-up="0" data-size-down="5" data-size-left="5" data-size-right="0" data-beam-spacing="5">
 			<path d="M-5 5 L0 0"/>
 		</g>
+		
+		<g id="snare2" data-size-up="0" data-size-down="5" data-size-left="5" data-size-right="0" data-beam-spacing="7">
+			<path d="M-5 5 L0 0"/>
+		</g>
 	
 		<g id="kick" data-size-up="0" data-size-down="5" data-size-left="5" data-size-right="0" data-beam-spacing="15">
 			<use href="#drum-snare"/>
