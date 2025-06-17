@@ -50,7 +50,7 @@ class HTTPHandler(SimpleHTTPRequestHandler):
         for n, line in enumerate(content.split("\n")):
         	if ("while (" in line or "for (" in line) and ") {" in line:
         		split = line.split("//", 1)
-        		split[0] += f" __check_no_forever_loop({n}); "
+        		split[0] += f" __check_no_forever_loop({n + 1}); "
         		line = "//".join(split)
         	new += line + "\n"
         
