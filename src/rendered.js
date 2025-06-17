@@ -319,7 +319,12 @@ function loadDrumsSVG(callback) {
 
 function calculateSpacing(instructions) {
     // Returns some information on how to draw the given instructions.
-    // It returns {instructionXs: [int]} where instructionXs is the x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
+    // It returns {
+    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
+    //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
+    //     restCenterY: int - The y line where all rests should be centered on
+    //     width: int, height: int  - The width and height of the SVG to be drawn
+    //  }
 
 
     loadDrumsSVG(DRUMS => {
@@ -451,7 +456,8 @@ function calculateSpacing(instructions) {
                 throw "Unexpected instruction type";
             }   
         }
-        console.log("1. IX:", instructionXs);
+        let width = x;
+        console.log("1. IX:", instructionXs, "W:", width);
 
                 
         // Second, calculate which drumIDs exist on the same beat
@@ -497,52 +503,65 @@ function calculateSpacing(instructions) {
             drumYs.push(y);
         }
         console.log("3. DY:", drumYs);
-        // Check if any drums collide
         
-        /*function getCurrentAnchorY(id) {  // Get's the current anchor Y for a drum with the given ID
-            let i=0;
-            let y=0;
-            while (DRUMS[i].id !== id) {
-                y += drumYs[DRUMS[i].id];
-                i++;
+        // Fourth, calculate the tallest beam + dots
+        let tallestRhythm = 0;
+        for (let i=0; i<instructions.length; i++) {
+            const instr = instructions[i];
+            if (instr.type === RenderInstruction.GROUP) {
+                const maxBeams = instr.full_beams + Math.abs(instr.broken_beams);
+                const dotHeight = (instr.dots === 0) ? 0 : 5;
+                const height = maxBeams * 5 + dotHeight;
+                tallestRhythm = Math.max(tallestRhythm, height);
+            } else if (instr.type === RenderInstruction.FLAG) {
+                const flagHeight = 5 * instr.flags;
+                const dotHeight = (instr.dots === 0) ? 0 : 5;
+                const height = flagHeight + dotHeight;
+                tallestRhythm = Math.max(tallestRhythm, height);
+            } else if (instr.type === RenderInstruction.GROUP_END) {
+                const dotHeight = (instr.dots === 0) ? 0 : 5;
+                const height = dotHeight;
+                tallestRhythm = Math.max(tallestRhythm, height);
             }
-            y += drumYs[DRUMS[i].id];
         }
-        for (let instrI=0; i<instructions.length; i++) {
-            const instr = instructions[instrI];
-            for (let i=0; i<instr.drums.length; i++) {
-                for (let j=0; j<instr.drums.length; j++) {
-                    if (i == k) continue;  // We can't collide with ourself
-                    
-                    const iID = instr.drums[i];
-                    const iCurrAnchY = getCurrentAnchorY(iID);
-                    const iUp = DRUMS[iID].dataset.sizeUp;
-                    const iDown = DRUMS[iID].dataset.sizeDown;
-                    const jID = instr.drums[j];
-                    const jCurrAnchY = getCurrentAnchorY(iID);
-                    const jUp = DRUMS[jID].dataset.sizeUp;
-                    const jDown = DRUMS[jID].dataset.sizeDown;
-                    
-                    // Check if colliding
-                    if (iCurrAnchY + iDown > jCurrAnchY - iUp || iCurrAnchY - iUp < jCurrAnchY + jDown) {
-                        // Whichever should be on top will appear first in DRUMS
-                        for (let drumI=0; drumI<DRUMS.length; drumI++) {
-                            if (DRUMS[drumI].id == iID) {
-                                top = iID;
-                                bottom = jID;
-                            } else {
-                                top = jID;
-                                bottom = iID;
-                            }
-                        }
-                    }
+        console.log("4. TRh:", tallestRhythm);
+
+        // Fifth, calculate the tallest rest
+        let tallestRest = 0;
+        for (let i=0; i<instructions.length; i++) {
+            const instr = instructions[i];
+            if (instr.type === RenderInstruction.REST) {
+                if (instr.ticks === 0) {  // Is crotchet rest?
+                    tallestRest = Math.max(tallestRest, 10);
+                } else {
+                    tallestRest = Math.max(tallestRest, 5 * instr.ticks);
                 }
             }
-        }*/
-
-
+        }
+        console.log("5. TRe", tallestRest);
         
-        debugger;
+        // Sixth, combind height information and return
+        const headHeight = parseInt(USED_DRUMS[0].dataset.sizeUp) + drumYs[drumYs.length - 1] + parseInt(USED_DRUMS[USED_DRUMS.length - 1].dataset.sizeDown);  // Distance from top of top drum to bottom of last drum
+        const underRhythmHeight = Math.max(tallestRest, headHeight);  // Height of stuff under beams
+            
+        const restCenterY = tallestRhythm + (underRhythmHeight / 2);
+        const height = tallestRhythm + underRhythmHeight;
+        
+         // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
+        const drumYsMap = {};
+        for (let i=0; i<drumYs.length; i++) {
+            drumYsMap[USED_DRUMS[i].id] = drumYs[i] + (underRhythmHeight - headHeight) / 2 + parseInt(USED_DRUMS[0].dataset.sizeUp) + tallestRhythm;            
+        }
+
+        let ret = {
+            instructionXs,
+            drumYs: drumYsMap,
+            restCenterY,
+            width,
+            height
+        };
+        console.log("6. RE:", ret);
+        return ret;
     });
 }
 
