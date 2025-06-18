@@ -156,7 +156,14 @@ body > * {
 }
 
 svg {
+	fill: none;
 	stroke: black;
 	stroke-width: 1;
-	fill: none;
+	background: rgba(0, 255, 0, 0.2);
+	overflow: visible;
+}
+
+svg circle {
+	fill: black;
+	stroke: none;
 }

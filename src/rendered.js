@@ -303,274 +303,411 @@ function preRenderScoreComponent(componentID) {
     return renderInstructions;
 }
 
-function loadDrumsSVG(callback) {
-    // Runs the given function with the argument of groups defined in drums.svg.
+function loadDrumsSVG() {
+    // Loads the SVG information for each of the drums, returns an array ordered in height to draw at, and a map from drumID to svg node.
+    // Return is {array, map}.
 
     // Get SVG
-    fetch("drums.svg").then(response =>  response.text()).then (text => {
-        // Parse SVG and give to callback
-        const parser = new DOMParser();
-        const svg = parser.parseFromString(text, "text/xml");
-        const children = svg.getElementById("defs").children;
-        callback(children);
-    });
-    
+    let drumsSVG = Array.from(document.getElementById("drums").getElementById("defs").children);
+    // Make a map from drumID to node too
+    const drumsSVGMap = {};
+    for (let i=0; i<drumsSVG.length; i++) {
+        drumsSVGMap[drumsSVG[i].id] = drumsSVG[i];
     }
+    // Return
+    return {array: drumsSVG, map: drumsSVGMap};
+}
 
-function calculateSpacing(instructions) {
+function calculateSpacing(instructions, callback) {
     // Returns some information on how to draw the given instructions.
     // It returns {
     //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
-    //     restCenterY: int - The y line where all rests should be centered on
+    //     restCenterYs: [int] - The y line where all rests should be centered on. The index is the number of the rest as they come in instructions.
     //     width: int, height: int  - The width and height of the SVG to be drawn
     //  }
 
-
-    loadDrumsSVG(DRUMS => {
-        // Get DRUMS as a map if we need it
-        const DRUMS_MAP = {};
-        for (let i=0; i<DRUMS.length; i++) {
-            DRUMS_MAP[DRUMS[i].id] = DRUMS[i];
-        } 
-
-        // Get a list of the DRUMS that are. Order is preserved.
-        const usedDrumsSet = new Set();
-        instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).forEach(instruction => instruction.drums.forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
-        const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
-        
-        // First, calculate the spacing between each instruction
-        const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
-        let x = 0;
-        for (let i=0; i<instructions.length; i++) {
-            let instr = instructions[i];  // If i is changed then this should be changed to reflect that
-            let type = instr.type;  // If i is changed then this should be changed to reflect that
-            /*const lastType = (i > 0) ? instructions[i - 1].type : null;*/
-            // We need x to be the stem or the right edge of a rest, so shift it along
-            if (type === RenderInstruction.FLAG/* || (type === RenderInstruction.GROUP && lastType !== RenderInstruction.GROUP)*/) {
-                // Account for width of note heads
-                const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
-                x += headWidth
-            } else if (type === RenderInstruction.REST) {
-                // Account for width of rest
-                if (instr.ticks == 0) {  // Is crotchet rest
-                    x += 5;
-                } else {  // Is non-crotechet rest
-                    x += 5 * instr.ticks;  
-                }
-            } else if (type === RenderInstruction.GROUP) {
-                // Account for width of note heads (before first stem in group)
-                const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
-                x += headWidth
-                instructionXs.push(x);
-
-                // Save the current group for later
-                let lastGroupI = i;
-                i ++;
-                while (true) {
-                    instr = instructions[i];
-                    type = instructions[i].type;
-                    if (type === RenderInstruction.REST) {
-                        // Account for right of last note heads
-                        const lastInstr = instructions[i - 1];
-                        if (lastInstr.type === RenderInstruction.GROUP) {
-                            const maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
-                            x += maxLastInstrRight;
-                        }
-
-                        // Account for width of rest
-                        if (instr.ticks == 0) {  // Is crotchet rest
-                            throw "Cannot have crotchet rest after un-ended GROUP";
-                        } else {  // Is non-crotechet rest
-                            x += 5 * instr.ticks;  
-                        }
-                    } else if (type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) {
-                        // Calculate minimum rhythmWidth
-                        const lastGroupInstr = instructions[lastGroupI];
-                        const dotWidth = lastGroupInstr.dots * 5;
-                        let rhythmWidth;
-                        if (lastGroupInstr.broken_beams < 0) {  // Are broken beams on left?
-                            const brokenBeamWidth = 5;
-                            rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
-                        } else if (lastGroupInstr.broken_beams > 0) {  // Are broken beams on right?
-                            const brokenBeamWidth = 5;  
-                            rhythmWidth = dotWidth + brokenBeamWidth;
-                        } else {  // No broken beams
-                            rhythmWidth = dotWidth;
-                        }
-
-                        // Calculate minimum space used by note heads
-                        const lastInstr = instructions[i - 1];
-                        let maxLastInstrRight;
-                        if (lastInstr.type === RenderInstruction.GROUP) {
-                            maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
-                        } else {
-                            maxLastInstrRight = 0;  // RESTs take up no space to the right
-                        }
-                        let maxInstrLeft = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
-                        const headWith = maxLastInstrRight + maxInstrLeft;
-
-                        // Figure out the actual width
-                        const width = Math.max(rhythmWidth, headWith);
-                        x += width;
- 
-                        // If GROUP_END then exit
-                        if (type === RenderInstruction.GROUP_END) {
-                            break;
-                        }
-                        lastGroupI = i;
-                    } else {
-                        throw "Unexpected instruction type";
-                    }
-                    instructionXs.push(x);
-                    if (type === RenderInstruction.REST) {
-                        // Account for rest dots if we have them
-                        const dotWidth = 5 * instr.dots - 5 * instr.ticks - 5;
-                        if (dotWidth > 0) {
-                            x += dotWidth;
-                        }
-                    }
-                    i++;
-                }
-            } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
-                // These don't take up any width
-            } else {  // GROUP_ENDs intentionally come here, it should be a GROUP
-                throw "Unexpected instruction type";
+    let {array: DRUMS, map: DRUMS_MAP} = loadDrumsSVG();
+    
+    // Get a list of the DRUMS that are. Order is preserved.
+    const usedDrumsSet = new Set();
+    instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).forEach(instruction => instruction.drums.forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
+    const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
+    
+    // First, calculate the spacing between each instruction
+    const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
+    let x = 0;
+    for (let i=0; i<instructions.length; i++) {
+        let instr = instructions[i];  // If i is changed then this should be changed to reflect that
+        let type = instr.type;  // If i is changed then this should be changed to reflect that
+        /*const lastType = (i > 0) ? instructions[i - 1].type : null;*/
+        // We need x to be the stem or the right edge of a rest, so shift it along
+        if (type === RenderInstruction.FLAG/* || (type === RenderInstruction.GROUP && lastType !== RenderInstruction.GROUP)*/) {
+            // Account for width of note heads
+            const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+            x += headWidth
+        } else if (type === RenderInstruction.REST) {
+            // Account for width of rest
+            if (instr.ticks == 0) {  // Is crotchet rest
+                x += 5;
+            } else {  // Is non-crotechet rest
+                x += 5 * instr.ticks;  
             }
+        } else if (type === RenderInstruction.GROUP) {
+            // Account for width of note heads (before first stem in group)
+            const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+            x += headWidth
             instructionXs.push(x);
-            // Shift x along for any extra padding we want
-            if (type === RenderInstruction.FLAG) {
-                // Acount for flags and dots
-                const flagWidth = (instr.flags == 0) ? 0 : 5;
-                const dotWidth = instr.dots * 5;
-                x += Math.max(flagWidth, dotWidth);
-            } else if (type === RenderInstruction.REST) {
-                // Does not take up space afterwards
-            } else if (type === RenderInstruction.GROUP_END) {
-                // Account for dots
-                const dotWidth = (instr.dots * 5);
-                x += dotWidth;
-            } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
-                // These don't take up any width
-            } else {  // GROUPs intentionally come here, it should be a GROUP_END
-                throw "Unexpected instruction type";
-            }   
-        }
-        let width = x;
-        console.log("1. IX:", instructionXs, "W:", width);
 
-                
-        // Second, calculate which drumIDs exist on the same beat
-        const drumCollisions = {};  // Maps from drumID to set of drumIDs
-        for (let i=0; i<instructions.length; i++) {
-            if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
-
-            for (let j=0; j<instructions[i].drums.length; j++) {
-                for (let k=0; k<instructions[i].drums.length; k++) {
-                    if (j != k) {
-                        const jID = instructions[i].drums[j];
-                        const kID = instructions[i].drums[k];
-                        if (drumCollisions[jID] === undefined) {
-                            drumCollisions[jID] = new Set();
-                        }
-                        drumCollisions[jID].add(kID);
+            // Save the current group for later
+            let lastGroupI = i;
+            i ++;
+            while (true) {
+                instr = instructions[i];
+                type = instructions[i].type;
+                if (type === RenderInstruction.REST) {
+                    // Account for right of last note heads
+                    const lastInstr = instructions[i - 1];
+                    if (lastInstr.type === RenderInstruction.GROUP) {
+                        const maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                        x += maxLastInstrRight;
                     }
-                }
-            }
-        }
-        console.log("2. DC:", drumCollisions);
 
-        // Third, calculate the relative (to the anchor of the head above it) Y of each drum
-        const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
-        let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
-        for (let i=0; i<USED_DRUMS.length; i++) {  
-            const currentDrum = USED_DRUMS[i];
-            let y = parseInt(currentDrum.dataset.beamSpacing) + amountShifted;  // Add amount shifted to retain minimum distance between notes like kicks and snares
-            
-            // Check if this drum will colide with a drum above it
-            for (let j=0; j<drumYs.length; j++) {
-                if (drumCollisions[currentDrum.id] !== undefined && drumCollisions[currentDrum.id].has(USED_DRUMS[j].id)) {  // Does i exist in the same beat as j (and hence have potentially actually colide)?
-                    if (y - parseInt(currentDrum.dataset.sizeUp) < drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown)) {  // Does i actually colide with j?
-                        // Shift i down so it doesn't collide with j.
-                        const newY = drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown) + parseInt(currentDrum.dataset.sizeUp);
-                        amountShifted += newY - y;
-                        y = newY;
+                    // Account for width of rest
+                    if (instr.ticks == 0) {  // Is crotchet rest
+                        throw "Cannot have crotchet rest after un-ended GROUP";
+                    } else {  // Is non-crotechet rest
+                        x += 5 * instr.ticks;  
                     }
-                }
-                // Carry on looping as we may collide with another drum at the same height as j but is taller
-            }
+                } else if (type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) {
+                    // Calculate minimum rhythmWidth
+                    const lastGroupInstr = instructions[lastGroupI];
+                    const dotWidth = lastGroupInstr.dots * 2 + ((lastGroupInstr.dots === 0) ? 0 : 2);  // Add extra space if there are dots so they don't collide with next thing
+                    let rhythmWidth;
+                    if (lastGroupInstr.broken_beams < 0) {  // Are broken beams on left?
+                        const brokenBeamWidth = 5 + 5;  // Plus five so broken beams don't connect to current stem  
+                        rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
+                    } else if (lastGroupInstr.broken_beams > 0) {  // Are broken beams on right?
+                        const brokenBeamWidth = 5 + ((lastGroupInstr.dots === 0) ? 5 : 0);  // Plus five so broken beams don't connect to last stem. If dots then won't connect anyway
+                        rhythmWidth = dotWidth + brokenBeamWidth;
+                    } else {  // No broken beams
+                        rhythmWidth = dotWidth;
+                    }
 
-            drumYs.push(y);
-        }
-        console.log("3. DY:", drumYs);
-        
-        // Fourth, calculate the tallest beam + dots
-        let tallestRhythm = 0;
-        for (let i=0; i<instructions.length; i++) {
-            const instr = instructions[i];
-            if (instr.type === RenderInstruction.GROUP) {
-                const maxBeams = instr.full_beams + Math.abs(instr.broken_beams);
-                const dotHeight = (instr.dots === 0) ? 0 : 5;
-                const height = maxBeams * 5 + dotHeight;
-                tallestRhythm = Math.max(tallestRhythm, height);
-            } else if (instr.type === RenderInstruction.FLAG) {
-                const flagHeight = 5 * instr.flags;
-                const dotHeight = (instr.dots === 0) ? 0 : 5;
-                const height = flagHeight + dotHeight;
-                tallestRhythm = Math.max(tallestRhythm, height);
-            } else if (instr.type === RenderInstruction.GROUP_END) {
-                const dotHeight = (instr.dots === 0) ? 0 : 5;
-                const height = dotHeight;
-                tallestRhythm = Math.max(tallestRhythm, height);
-            }
-        }
-        console.log("4. TRh:", tallestRhythm);
+                    // Calculate minimum space used by note heads
+                    const lastInstr = instructions[i - 1];
+                    let maxLastInstrRight;
+                    if (lastInstr.type === RenderInstruction.GROUP) {
+                        maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                    } else {
+                        maxLastInstrRight = 0;  // RESTs take up no space to the right
+                    }
+                    let maxInstrLeft = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+                    const headWith = maxLastInstrRight + maxInstrLeft;
 
-        // Fifth, calculate the tallest rest
-        let tallestRest = 0;
-        for (let i=0; i<instructions.length; i++) {
-            const instr = instructions[i];
-            if (instr.type === RenderInstruction.REST) {
-                if (instr.ticks === 0) {  // Is crotchet rest?
-                    tallestRest = Math.max(tallestRest, 10);
+                    // Figure out the actual width
+                    const width = Math.max(rhythmWidth, headWith);
+                    x += width;
+
+                    // If GROUP_END then exit
+                    if (type === RenderInstruction.GROUP_END) {
+                        break;
+                    }
+                    lastGroupI = i;
                 } else {
-                    tallestRest = Math.max(tallestRest, 5 * instr.ticks);
+                    throw "Unexpected instruction type";
+                }
+                instructionXs.push(x);
+                if (type === RenderInstruction.REST) {
+                    // Account for rest dots if we have them
+                    const dotWidth = 5 * instr.dots - 5 * instr.ticks - 5;
+                    if (dotWidth > 0) {
+                        x += dotWidth;
+                    }
+                }
+                i++;
+            }
+        } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+            // These don't take up any width
+        } else {  // GROUP_ENDs intentionally come here, it should be a GROUP
+            throw "Unexpected instruction type";
+        }
+        instructionXs.push(x);
+        // Shift x along for any extra padding we want
+        if (type === RenderInstruction.FLAG) {
+            // Acount for flags and dots
+            const flagWidth = (instr.flags == 0) ? 0 : 5;
+            const dotWidth = instr.dots * 2 + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            x += Math.max(flagWidth, dotWidth);
+        } else if (type === RenderInstruction.REST) {
+            // Account for width of dots if longer than rest
+            const dotWidth = (instr.dots * 2) + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            const restWidth = 5 * instr.ticks;
+            x += Math.max(restWidth, dotWidth) - restWidth;  // Only add that which extends further than rest width
+        } else if (type === RenderInstruction.GROUP_END) {
+            // Account for dots
+            const dotWidth = (instr.dots * 2) + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            x += dotWidth;
+        } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+            // These don't take up any width
+        } else {  // GROUPs intentionally come here, it should be a GROUP_END
+            throw "Unexpected instruction type";
+        }   
+    }
+    let width = x;
+    console.log("1. IX:", instructionXs, "W:", width);
+
+            
+    // Second, calculate which drumIDs exist on the same beat
+    const drumCollisions = {};  // Maps from drumID to set of drumIDs
+    for (let i=0; i<instructions.length; i++) {
+        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
+
+        for (let j=0; j<instructions[i].drums.length; j++) {
+            for (let k=0; k<instructions[i].drums.length; k++) {
+                if (j != k) {
+                    const jID = instructions[i].drums[j];
+                    const kID = instructions[i].drums[k];
+                    if (drumCollisions[jID] === undefined) {
+                        drumCollisions[jID] = new Set();
+                    }
+                    drumCollisions[jID].add(kID);
                 }
             }
         }
-        console.log("5. TRe", tallestRest);
+    }
+    console.log("2. DC:", drumCollisions);
+
+    // Third, calculate the relative (to the anchor of the head above it) Y of each drum
+    const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
+    let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
+    for (let i=0; i<USED_DRUMS.length; i++) {  
+        const currentDrum = USED_DRUMS[i];
+        let y = parseInt(currentDrum.dataset.beamSpacing) + amountShifted;  // Add amount shifted to retain minimum distance between notes like kicks and snares
         
-        // Sixth, combind height information and return
-        const headHeight = parseInt(USED_DRUMS[0].dataset.sizeUp) + drumYs[drumYs.length - 1] + parseInt(USED_DRUMS[USED_DRUMS.length - 1].dataset.sizeDown);  // Distance from top of top drum to bottom of last drum
-        const underRhythmHeight = Math.max(tallestRest, headHeight);  // Height of stuff under beams
-            
-        const restCenterY = tallestRhythm + (underRhythmHeight / 2);
-        const height = tallestRhythm + underRhythmHeight;
-        
-         // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
-        const drumYsMap = {};
-        for (let i=0; i<drumYs.length; i++) {
-            drumYsMap[USED_DRUMS[i].id] = drumYs[i] + (underRhythmHeight - headHeight) / 2 + parseInt(USED_DRUMS[0].dataset.sizeUp) + tallestRhythm;            
+        // Check if this drum will colide with a drum above it
+        for (let j=0; j<drumYs.length; j++) {
+            if (drumCollisions[currentDrum.id] !== undefined && drumCollisions[currentDrum.id].has(USED_DRUMS[j].id)) {  // Does i exist in the same beat as j (and hence have potentially actually colide)?
+                if (y - parseInt(currentDrum.dataset.sizeUp) < drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown)) {  // Does i actually colide with j?
+                    // Shift i down so it doesn't collide with j.
+                    const newY = drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown) + parseInt(currentDrum.dataset.sizeUp);
+                    amountShifted += newY - y;
+                    y = newY;
+                }
+            }
+            // Carry on looping as we may collide with another drum at the same height as j but is taller
         }
 
-        let ret = {
-            instructionXs,
-            drumYs: drumYsMap,
-            restCenterY,
-            width,
-            height
-        };
-        console.log("6. RE:", ret);
-        return ret;
-    });
+        drumYs.push(y);
+    }
+    console.log("3. DY:", drumYs);
+    
+    // Fourth, calculate the tallest beam + dots
+    let tallestRhythm = 0;
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.GROUP) {
+            const fullBeamHeight = instr.full_beams * 2;
+            const dotHeight = (instr.dots === 0) ? 0 : 2;
+            const brokenBeamHeight = Math.abs(instr.broken_beams) * 2;
+            let height;
+            if (instr.broken_beams < 0) {  // Dots under broken beams
+                height = fullBeamHeight + brokenBeamHeight + dotHeight;
+            } else {  // Dots next to broken beams
+                height = fullBeamHeight + Math.max(brokenBeamHeight, dotHeight);
+            }
+            tallestRhythm = Math.max(tallestRhythm, height);
+        } else if (instr.type === RenderInstruction.FLAG) {
+            const flagHeight = 5 * instr.flags;
+            const dotHeight = (instr.dots === 0) ? 0 : 5;
+            const height = flagHeight + dotHeight + 2;  // Dots can't be at very top or touch flags
+            tallestRhythm = Math.max(tallestRhythm, height);
+        } else if (instr.type === RenderInstruction.GROUP_END) {
+            const dotHeight = (instr.dots === 0) ? 0 : 5;
+            const height = dotHeight;
+            tallestRhythm = Math.max(tallestRhythm, height);
+        }
+    }
+    console.log("4. TRh:", tallestRhythm);
+
+    // Fifth, calculate the tallest rest, also count the rests
+    let tallestRest = 0;
+    let restCount = 0;
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.REST) {
+            restCount += 1;
+            if (instr.ticks === 0) {  // Is crotchet rest?
+                tallestRest = Math.max(tallestRest, 15);
+            } else {
+                tallestRest = Math.max(tallestRest, 5 * instr.ticks);
+            }
+        }
+    }
+    console.log("5. TRe", tallestRest);
+    
+    // Sixth, combind height information and return
+    let headHeight;
+    if (USED_DRUMS.length != 0) {
+        headHeight = parseInt(USED_DRUMS[0].dataset.sizeUp) + drumYs[drumYs.length - 1] + parseInt(USED_DRUMS[USED_DRUMS.length - 1].dataset.sizeDown);  // Distance from top of top drum to bottom of last drum
+    } else {
+        headHeight = 0;
+    }
+    const underRhythmHeight = Math.max(tallestRest, headHeight);  // Height of stuff under beams
+        
+    const restCenterY = tallestRhythm + (underRhythmHeight / 2);
+    const restCenterYs = new Array(restCount).fill(restCenterY);
+    const height = tallestRhythm + underRhythmHeight;
+    
+     // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
+    const drumYsMap = {};
+    for (let i=0; i<drumYs.length; i++) {
+        drumYsMap[USED_DRUMS[i].id] = drumYs[i] + (underRhythmHeight - headHeight) / 2 + parseInt(USED_DRUMS[0].dataset.sizeUp) + tallestRhythm;            
+    }
+
+    let ret = {
+        instructionXs,
+        drumYs: drumYsMap,
+        restCenterYs,
+        width,
+        height
+    };
+    console.log("6. RE:", ret);
+    return ret;
+}
+
+function drawDots(svg, x, y, n) {
+    // Draw n dots, starting at x, y, and add them to the svg
+    for (let _=0; _<n; _++) {
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("r", "0.6");  // Six seems to look about like 1 stroke-width
+        dot.setAttribute("cx", x);
+        dot.setAttribute("cy", y);
+        svg.appendChild(dot);
+        x += 2;
+    }
+}
+
+function draw(instructions, spacing) {
+    // Draws the given instructions (the result from preRenderScoreComponent) using the spacing information (from calculateSpacing).
+    // Returns a svg node.
+    // This does not add any event bindings.
+    
+    // Create SVG node
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", `${spacing.width}mm`);
+    svg.setAttribute("height", `${spacing.height}mm`);
+    svg.setAttribute("viewBox", `0 0 ${spacing.width} ${spacing.height}`)
+    
+    // Add content to SVG
+    const path = [];  // Array holding parts of the paths
+    
+    let lastGroupI = null;  // Index of last group, null we aren't in a group of GROUPs (so if it's been ended).
+    let restI = 0;  // How many rests we have hit so far
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.REST) {
+            let right = spacing.instructionXs[i];
+            let centerY = spacing.restCenterYs[restI];
+            
+            path.push(`M${right} ${centerY}`);
+            if (instr.ticks === 0) {  // Is it a crotchet rest?
+                path.push("m-5 -7.5 l5 5 l-5 5 l5 5");
+                if (instr.dots !== 0) throw "Crotchet rest cannot have dots";
+            } else {
+                path.push(`m-${5 * instr.ticks} ${5 * instr.ticks / 2}`)
+                for (let _=0; _<instr.ticks; _++) {
+                    path.push("l5 -5 m-2.5 2.5 l-2.5 -2.5 m5 0");
+                }
+                drawDots(svg, right - 5 * (instr.ticks) + 2, centerY + 5 * instr.ticks / 2, instr.dots);
+            }
+
+
+            restI++;
+        } else if ([RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instr.type)) {
+            // Draw heads
+            const anchorX = spacing.instructionXs[i];
+            let highestAnchorY = 0;  // Lowest down, but highest number
+            for (let drumI=0; drumI<instr.drums.length; drumI++) {
+                const anchorY = spacing.drumYs[instr.drums[drumI]];
+                highestAnchorY = Math.max(highestAnchorY, anchorY);
+                
+                const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                use.setAttribute("transform", `translate(${anchorX} ${anchorY})`);
+                use.setAttribute("href", `#${instr.drums[drumI]}`);
+                svg.appendChild(use);
+            }
+
+            // Draw stem
+            path.push(`M${anchorX} 0 l0 ${highestAnchorY}`);
+            
+            // Draw flags if we need to
+            if (instr.type === RenderInstruction.FLAG) {
+                const lastAnchorX = spacing.instructionXs[i];
+                for (let n=0; n<instr.flags; n++) {
+                    path.push(`M${lastAnchorX} ${n * 5} l5 5`);
+                }
+            }
+
+            // Draw beams if we need to
+            if (instr.type === RenderInstruction.GROUP || instr.type === RenderInstruction.GROUP_END) {
+                if (lastGroupI != null) {  // Is there an unended group before that needs beams from it to here?
+                    // We want to draw beams from the last group to the current group.
+                    // The last group stores the beaming information we need
+                    const full_beams = instructions[lastGroupI].full_beams;
+                    const broken_beams = instructions[lastGroupI].broken_beams;
+                    const lastAnchorX = spacing.instructionXs[lastGroupI];
+                    let y = 0;
+                    for (let _=0; _<full_beams; _++) {  // Full beams
+                        path.push(`M${lastAnchorX} ${y} L${anchorX} ${y}`);
+                        y += 2;
+                    }
+                    for (let _=0; _<broken_beams; _++) {  // Right half beams
+                        path.push(`M${anchorX - 5} ${y} L${anchorX} ${y}`);
+                        y += 2;
+                    }
+                    for (let _=0; _>broken_beams; _--) {  // Left half beams
+                        path.push(`M${lastAnchorX} ${y} L${lastAnchorX + 5} ${y}`);
+                        y += 2;
+                    }
+                }  
+                // Update last group accordingly
+                if (instr.type === RenderInstruction.GROUP_END) {
+                    lastGroupI = null;  // Not in a group of GROUPs anymore so set to null
+                } else {
+                    lastGroupI = i;
+                }
+            }
+            
+            // Draw dots
+            let y = 0;
+            if (instr.type === RenderInstruction.GROUP) {
+                y += 2 * (Math.max(0, -instr.broken_beams) + instr.full_beams);  // It draws next to right beams and under left beams
+            } else if (instr.type === RenderInstruction.FLAG) {
+                y += 5 * instr.flags + 2;
+            }
+            drawDots(svg, anchorX + 2, y, instr.dots);
+        } else {
+            throw "Unexpected instruction type"
+        }
+    }
+
+    // Convert path to an actual node and add it
+    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathNode.setAttribute("d", path.join(" "));
+    svg.appendChild(pathNode);
+
+    // Return it
+    return svg;
 }
 
 function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
-    let instructions = preRenderScoreComponent(componentID);
-    let spacing = calculateSpacing(instructions);
-    //draw(instructions, spacing);
+    const instructions = preRenderScoreComponent(componentID);
+    const spacing = calculateSpacing(instructions);
+    const svg = draw(instructions, spacing);
+    return svg;
 }   
 
 
@@ -587,7 +724,7 @@ export function renderComponent(componentType, componentID) {
     if (componentType !== "score-component") throw "Not Implemented";
     
     // Now let's render it ----------------------------------
-    let svg = renderScoreComponent(componentID);
-    //svg.setAttribute("id", componentType + "_" + componentID);
-    //document.getElementById("component-container").appendChild(svg);
+    const svg = renderScoreComponent(componentID);
+    svg.setAttribute("id", componentType + "_" + componentID);
+    document.getElementById("component-container").appendChild(svg);
 }
