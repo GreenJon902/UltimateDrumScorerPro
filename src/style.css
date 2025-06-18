@@ -156,14 +156,27 @@ body > * {
 }
 
 svg {
+	overflow: visible;
+	background: rgba(0, 255, 0, 0.2);
+}
+
+svg path, g path {
 	fill: none;
 	stroke: black;
 	stroke-width: 1;
-	background: rgba(0, 255, 0, 0.2);
-	overflow: visible;
 }
 
-svg circle {
+svg circle, g circle {
 	fill: black;
 	stroke: none;
+}
+
+svg text {
+	fill: black;
+	stroke: none;
+	font-style: italic;
+	font-weight: bold;
+	text-anchor: middle;
+	dominant-baseline: middle;
+	font-size: 5px;
 }
