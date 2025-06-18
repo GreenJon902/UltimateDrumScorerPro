@@ -1,6 +1,4 @@
 import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator} from "./files.js";
-import {getDrumSymbolID, getDrumY} from "./drums.js";
-import {getSymbolPath, getSymbolTop, getSymbolBottom, getSymbolLeft, getSymbolRight} from "./symbols.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -305,203 +303,477 @@ function preRenderScoreComponent(componentID) {
     return renderInstructions;
 }
 
+function loadDrumsSVG() {
+    // Loads the SVG information for each of the drums, returns an array ordered in height to draw at, and a map from drumID to svg node.
+    // Return is {array, map}.
 
-function drawDots(svg, x, y, dotNumber) {
-    // Draws dotNumber dots starting at x, y in svg.
+    // Get SVG
+    let drumsSVG = Array.from(document.getElementById("drums").getElementById("defs").children);
+    // Make a map from drumID to node too
+    const drumsSVGMap = {};
+    for (let i=0; i<drumsSVG.length; i++) {
+        drumsSVGMap[drumsSVG[i].id] = drumsSVG[i];
+    }
+    // Return
+    return {array: drumsSVG, map: drumsSVGMap};
+}
+
+function calculateSpacing(instructions) {
+    // Returns some information on how to draw the given instructions.
+    // It returns {
+    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
+    //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
+    //     restCenterYs: [int] - The y line where rests should be centered on. The index is the number of the rest as they come in instructions.
+    //     contractCenterYs: [int] - The y line where contracts should be centered on. The index is the number of the contract (one for each pair) as they come in instructions.
+    //     stemStartYs: [int] - The y level where stems (and hence beams and flags and dots) should be start being drawn on (so the top). The index is the number of the stem as they come in instructions.
+    //     width: int, height: int  - The width and height of the SVG to be drawn
+    //  }
+
+    let {array: DRUMS, map: DRUMS_MAP} = loadDrumsSVG();
     
-    for (let n=0; n<dotNumber; n++) {
+    // Get a list of the DRUMS that are. Order is preserved.
+    const usedDrumsSet = new Set();
+    instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).forEach(instruction => instruction.drums.forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
+    const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
+    
+    // First, calculate the spacing between each instruction
+    const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
+    let x = 0;
+    for (let i=0; i<instructions.length; i++) {
+        let instr = instructions[i];  // If i is changed then this should be changed to reflect that
+        let type = instr.type;  // If i is changed then this should be changed to reflect that
+        /*const lastType = (i > 0) ? instructions[i - 1].type : null;*/
+        // We need x to be the stem or the right edge of a rest, so shift it along
+        if (type === RenderInstruction.FLAG/* || (type === RenderInstruction.GROUP && lastType !== RenderInstruction.GROUP)*/) {
+            // Account for width of note heads
+            const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+            x += headWidth
+        } else if (type === RenderInstruction.REST) {
+            // Account for width of rest
+            if (instr.ticks == 0) {  // Is crotchet rest
+                x += 5;
+            } else {  // Is non-crotechet rest
+                x += 5 * instr.ticks;  
+            }
+        } else if (type === RenderInstruction.GROUP) {
+            // Account for width of note heads (before first stem in group)
+            const headWidth = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+            x += headWidth
+            instructionXs.push(x);
+
+            // Save the current group for later
+            let lastGroupI = i;
+            i ++;
+            while (true) {
+                instr = instructions[i];
+                type = instructions[i].type;
+                if (type === RenderInstruction.REST) {
+                    // Account for right of last note heads
+                    const lastInstr = instructions[i - 1];
+                    if (lastInstr.type === RenderInstruction.GROUP) {
+                        const maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                        x += maxLastInstrRight;
+                    }
+
+                    // Account for width of rest
+                    if (instr.ticks == 0) {  // Is crotchet rest
+                        throw "Cannot have crotchet rest after un-ended GROUP";
+                    } else {  // Is non-crotechet rest
+                        x += 5 * instr.ticks;  
+                    }
+                } else if (type === RenderInstruction.GROUP || type === RenderInstruction.GROUP_END) {
+                    // Calculate minimum rhythmWidth
+                    const lastGroupInstr = instructions[lastGroupI];
+                    const dotWidth = lastGroupInstr.dots * 2 + ((lastGroupInstr.dots === 0) ? 0 : 2);  // Add extra space if there are dots so they don't collide with next thing
+                    let rhythmWidth;
+                    if (lastGroupInstr.broken_beams < 0) {  // Are broken beams on left?
+                        const brokenBeamWidth = 5 + 5;  // Plus five so broken beams don't connect to current stem  
+                        rhythmWidth = Math.max(dotWidth, brokenBeamWidth);
+                    } else if (lastGroupInstr.broken_beams > 0) {  // Are broken beams on right?
+                        const brokenBeamWidth = 5 + ((lastGroupInstr.dots === 0) ? 5 : 0);  // Plus five so broken beams don't connect to last stem. If dots then won't connect anyway
+                        rhythmWidth = dotWidth + brokenBeamWidth;
+                    } else {  // No broken beams
+                        rhythmWidth = dotWidth;
+                    }
+
+                    // Calculate minimum space used by note heads
+                    const lastInstr = instructions[i - 1];
+                    let maxLastInstrRight;
+                    if (lastInstr.type === RenderInstruction.GROUP) {
+                        maxLastInstrRight = Math.max(...lastInstr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
+                    } else {
+                        maxLastInstrRight = 0;  // RESTs take up no space to the right
+                    }
+                    let maxInstrLeft = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+                    const headWidth = maxLastInstrRight + maxInstrLeft;
+
+                    // Figure out the actual width
+                    let width;
+                    if (x - instructionXs[lastGroupI] + headWidth >= rhythmWidth) {  // Is the distance including rests bigger than rhythmWidth?
+                        width = headWidth;
+                    } else {
+                        width = rhythmWidth;
+                    }
+                    x += width;
+
+                    // If GROUP_END then exit
+                    if (type === RenderInstruction.GROUP_END) {
+                        break;
+                    }
+                    lastGroupI = i;
+                } else {
+                    throw "Unexpected instruction type";
+                }
+                instructionXs.push(x);
+                if (type === RenderInstruction.REST) {
+                    // Account for rest dots if we have them
+                    const dotWidth = 2 + 2 * instr.dots - 5 * instr.ticks;
+                    if (dotWidth > 0) {
+                        x += dotWidth;
+                    }
+                }
+                i++;
+            }
+        } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+            // These don't take up any width
+        } else {  // GROUP_ENDs intentionally come here, it should be a GROUP
+            throw "Unexpected instruction type";
+        }
+        instructionXs.push(x);
+        // Shift x along for any extra padding we want
+        if (type === RenderInstruction.FLAG) {
+            // Acount for flags and dots
+            const flagWidth = (instr.flags == 0) ? 0 : 5;
+            const dotWidth = instr.dots * 2 + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            x += Math.max(flagWidth, dotWidth);
+        } else if (type === RenderInstruction.REST) {
+            // Account for width of dots if longer than rest
+            const dotWidth = (instr.dots * 2) + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            const restWidth = 5 * instr.ticks;
+            x += Math.max(restWidth, dotWidth) - restWidth;  // Only add that which extends further than rest width
+        } else if (type === RenderInstruction.GROUP_END) {
+            // Account for dots
+            const dotWidth = (instr.dots * 2) + ((instr.dots === 0) ? 0 : 2);  // +2 if dots so doesn't collide with thing after
+            x += dotWidth;
+        } else if (type === RenderInstruction.CONTRACT_START || type === RenderInstruction.CONTRACT_END) {
+            // These don't take up any width
+        } else {  // GROUPs intentionally come here, it should be a GROUP_END
+            throw "Unexpected instruction type";
+        }   
+    }
+    let width = x;
+    console.log("1. IX:", instructionXs, "W:", width);
+
+            
+    // Second, calculate which drumIDs exist on the same beat
+    const drumCollisions = {};  // Maps from drumID to set of drumIDs
+    for (let i=0; i<instructions.length; i++) {
+        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
+
+        for (let j=0; j<instructions[i].drums.length; j++) {
+            for (let k=0; k<instructions[i].drums.length; k++) {
+                if (j != k) {
+                    const jID = instructions[i].drums[j];
+                    const kID = instructions[i].drums[k];
+                    if (drumCollisions[jID] === undefined) {
+                        drumCollisions[jID] = new Set();
+                    }
+                    drumCollisions[jID].add(kID);
+                }
+            }
+        }
+    }
+    console.log("2. DC:", drumCollisions);
+
+    // Third, calculate the relative (to the anchor of the head above it) Y of each drum
+    const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
+    let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
+    for (let i=0; i<USED_DRUMS.length; i++) {  
+        const currentDrum = USED_DRUMS[i];
+        let y = parseInt(currentDrum.dataset.beamSpacing) + amountShifted;  // Add amount shifted to retain minimum distance between notes like kicks and snares
+        
+        // Check if this drum will colide with a drum above it
+        for (let j=0; j<drumYs.length; j++) {
+            if (drumCollisions[currentDrum.id] !== undefined && drumCollisions[currentDrum.id].has(USED_DRUMS[j].id)) {  // Does i exist in the same beat as j (and hence have potentially actually colide)?
+                if (y - parseInt(currentDrum.dataset.sizeUp) < drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown)) {  // Does i actually colide with j?
+                    // Shift i down so it doesn't collide with j.
+                    const newY = drumYs[j] + parseInt(USED_DRUMS[j].dataset.sizeDown) + parseInt(currentDrum.dataset.sizeUp);
+                    amountShifted += newY - y;
+                    y = newY;
+                }
+            }
+            // Carry on looping as we may collide with another drum at the same height as j but is taller
+        }
+
+        drumYs.push(y);
+    }
+    console.log("3. DY:", drumYs);
+    
+    // Fourth, calculate the tallest beam + dots
+    let tallestRhythm = 0;
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.GROUP) {
+            const fullBeamHeight = instr.full_beams * 2;
+            const dotHeight = (instr.dots === 0) ? 0 : 2;
+            const brokenBeamHeight = Math.abs(instr.broken_beams) * 2;
+            let height;
+            if (instr.broken_beams < 0) {  // Dots under broken beams
+                height = fullBeamHeight + brokenBeamHeight + dotHeight;
+            } else {  // Dots next to broken beams
+                height = fullBeamHeight + Math.max(brokenBeamHeight, dotHeight);
+            }
+            tallestRhythm = Math.max(tallestRhythm, height);
+        } else if (instr.type === RenderInstruction.FLAG) {
+            const flagHeight = 5 * instr.flags;
+            const dotHeight = (instr.dots === 0) ? 0 : 5;
+            const height = flagHeight + dotHeight + 2;  // Dots can't be at very top or touch flags
+            tallestRhythm = Math.max(tallestRhythm, height);
+        } else if (instr.type === RenderInstruction.GROUP_END) {
+            const dotHeight = (instr.dots === 0) ? 0 : 5;
+            const height = dotHeight;
+            tallestRhythm = Math.max(tallestRhythm, height);
+        }
+    }
+    console.log("4. TRh:", tallestRhythm);
+
+    // Fifth, calculate the tallest rest, also count the rests
+    let tallestRest = 0;
+    let restCount = 0;
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.REST) {
+            restCount += 1;
+            if (instr.ticks === 0) {  // Is crotchet rest?
+                tallestRest = Math.max(tallestRest, 15);
+            } else {
+                tallestRest = Math.max(tallestRest, 5 * instr.ticks);
+            }
+        }
+    }
+    console.log("5. TRe:", tallestRest);
+    
+    // Sixth, find out if we have any contracts we need to account for, and how many there are
+    let contractCount = 0;
+    for (let i=0; i<instructions.length; i++) {
+        if (instructions[i].type === RenderInstruction.CONTRACT_START) {  // All contracts that open should close so only need to check open
+            contractCount += 1;
+        }
+    }
+    console.log("6. CC:", contractCount);
+
+    // Seventh, find out how many stems there are
+    let stemCount = 0;
+    for (let i=0; i<instructions.length; i++) {
+        if ([RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) {
+            stemCount += 1;
+        }
+    }
+    console.log("7. SC:", stemCount);
+    
+    // Eighth, combind height information and return
+    const contractHeight = (contractCount === 0) ? 0 : 5;
+
+    let headHeight;
+    if (USED_DRUMS.length != 0) {
+        headHeight = parseInt(USED_DRUMS[0].dataset.sizeUp) + drumYs[drumYs.length - 1] + parseInt(USED_DRUMS[USED_DRUMS.length - 1].dataset.sizeDown);  // Distance from top of top drum to bottom of last drum
+    } else {
+        headHeight = 0;
+    }
+    const underRhythmHeight = Math.max(tallestRest, headHeight);  // Height of stuff under beams
+        
+    const restCenterY = contractHeight + tallestRhythm + (underRhythmHeight / 2);
+    const restCenterYs = new Array(restCount).fill(restCenterY);
+    const height = contractHeight + tallestRhythm + underRhythmHeight;
+    
+    const contractCenterYs = new Array(contractCount).fill(contractHeight / 2);
+    const stemStartYs = new Array(stemCount).fill(contractHeight);
+    
+     // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
+    const drumYsMap = {};
+    for (let i=0; i<drumYs.length; i++) {
+        drumYsMap[USED_DRUMS[i].id] = drumYs[i] + (underRhythmHeight - headHeight) / 2 + parseInt(USED_DRUMS[0].dataset.sizeUp) + tallestRhythm + contractHeight;            
+    }
+
+    let ret = {
+        instructionXs,
+        drumYs: drumYsMap,
+        restCenterYs,
+        contractCenterYs,
+        stemStartYs,
+        width,
+        height
+    };
+    console.log("8. RE:", ret);
+    return ret;
+}
+
+function drawDots(svg, x, y, n) {
+    // Draw n dots, starting at x, y, and add them to the svg
+    for (let _=0; _<n; _++) {
         const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        dot.setAttribute("r", "2");
-        dot.setAttribute("cx", x + 5 * n);
+        dot.setAttribute("r", "0.6");  // Six seems to look about like 1 stroke-width
+        dot.setAttribute("cx", x);
         dot.setAttribute("cy", y);
         svg.appendChild(dot);
+        x += 2;
     }
 }
 
-function drawNoteHeads(svg, x, drumIDs) {
-	// Draws note head(s) to the svg.
-	// The new x-coordinate is returned. It also returns lowestSubdivisionY - the lowest note-head's stem connection point, and lowestSubdivisionYDrumBottom - the distance the lowest note-head's goes below lowestSubdivisionYDrumBottom
-    x += 20;  // Note heads draw backwards to increment x beforehand
-    let lowestSubdivisionY = 0;
-    let lowestSubdivisionYDrumBottom = 0;
-    for (let drumIndex = 0; drumIndex < drumIDs.length; drumIndex++) {
-        const drumID = drumIDs[drumIndex];
-        const symbolID = getDrumSymbolID(drumID);
-        const drumY = getDrumY(drumID);
-        const pathString = getSymbolPath(symbolID);
-        const left = getSymbolLeft(symbolID);
-        const right = getSymbolRight(symbolID);
-        const top = getSymbolTop(symbolID);
-        const bottom = getSymbolBottom(symbolID);
-         if (drumY > lowestSubdivisionY) {
-            lowestSubdivisionY = drumY;
-            lowestSubdivisionYDrumBottom = bottom;
-             }
-        const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        pathNode.setAttribute("d", pathString);
-        pathNode.setAttribute("stroke", "black");
-        pathNode.setAttribute("stroke-width", "3");
-        pathNode.setAttribute("fill", "none");
-        svg.appendChild(pathNode);
-        pathNode.setAttribute("transform", "translate(" + x + " " + drumY + ")")
+function draw(instructions, spacing) {
+    // Draws the given instructions (the result from preRenderScoreComponent) using the spacing information (from calculateSpacing).
+    // Returns a svg node.
+    // This does not add any event bindings.
+    
+    // Create SVG node
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", `${spacing.width}mm`);
+    svg.setAttribute("height", `${spacing.height}mm`);
+    svg.setAttribute("viewBox", `0 0 ${spacing.width} ${spacing.height}`)
+    
+    // Add content to SVG
+    const path = [];  // Array holding parts of the paths
+    
+    let lastGroupI = null;  // Index of last group, null we aren't in a group of GROUPs (so if it's been ended).
+    let currentContractI = null;  // Index of the current contract's CONTRACT_START, or null if we're not in a contract.
+    let restI = 0;  // How many rests we have hit so far
+    let stemI = 0;  // How many stems we have hit so far
+    let contractI = 0;  // How many contracts we have hit so far
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        if (instr.type === RenderInstruction.REST) {
+            let right = spacing.instructionXs[i];
+            let centerY = spacing.restCenterYs[restI];
+            
+            path.push(`M${right} ${centerY}`);
+            if (instr.ticks === 0) {  // Is it a crotchet rest?
+                path.push("m-5 -7.5 l5 5 l-5 5 l5 5");
+                if (instr.dots !== 0) throw "Crotchet rest cannot have dots";
+            } else {
+                path.push(`m-${5 * instr.ticks} ${5 * instr.ticks / 2}`)
+                for (let _=0; _<instr.ticks; _++) {
+                    path.push("l5 -5 m-2.5 2.5 l-2.5 -2.5 m5 0");
+                }
+                drawDots(svg, right - 5 * (instr.ticks) + 2, centerY + 5 * instr.ticks / 2, instr.dots);
+            }
+
+
+            restI++;
+        } else if ([RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instr.type)) {
+            // Draw heads
+            const anchorX = spacing.instructionXs[i];
+            let highestAnchorY = 0;  // Lowest down, but highest number
+            for (let drumI=0; drumI<instr.drums.length; drumI++) {
+                const anchorY = spacing.drumYs[instr.drums[drumI]];
+                highestAnchorY = Math.max(highestAnchorY, anchorY);
+                
+                const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                use.setAttribute("transform", `translate(${anchorX} ${anchorY})`);
+                use.setAttribute("href", `#${instr.drums[drumI]}`);
+                svg.appendChild(use);
+            }
+
+            // Draw stem
+            path.push(`M${anchorX} ${spacing.stemStartYs[stemI]} L${anchorX} ${highestAnchorY}`);
+            
+            // Draw flags if we need to
+            if (instr.type === RenderInstruction.FLAG) {
+                const lastAnchorX = spacing.instructionXs[i];
+                for (let n=0; n<instr.flags; n++) {
+                    path.push(`M${lastAnchorX} ${spacing.stemStartYs[stemI] + n * 5} l5 5`);
+                }
+            }
+
+            // Draw beams if we need to
+            if (instr.type === RenderInstruction.GROUP || instr.type === RenderInstruction.GROUP_END) {
+                if (lastGroupI != null) {  // Is there an unended group before that needs beams from it to here?
+                    // We want to draw beams from the last group to the current group.
+                    // The last group stores the beaming information we need
+                    const full_beams = instructions[lastGroupI].full_beams;
+                    const broken_beams = instructions[lastGroupI].broken_beams;
+                    const lastAnchorX = spacing.instructionXs[lastGroupI];
+                    let y = spacing.stemStartYs[stemI];
+                    for (let _=0; _<full_beams; _++) {  // Full beams
+                        path.push(`M${lastAnchorX} ${y} L${anchorX} ${y}`);
+                        y += 2;
+                    }
+                    for (let _=0; _<broken_beams; _++) {  // Right half beams
+                        path.push(`M${anchorX - 5} ${y} L${anchorX} ${y}`);
+                        y += 2;
+                    }
+                    for (let _=0; _>broken_beams; _--) {  // Left half beams
+                        path.push(`M${lastAnchorX} ${y} L${lastAnchorX + 5} ${y}`);
+                        y += 2;
+                    }
+                }  
+                // Update last group accordingly
+                if (instr.type === RenderInstruction.GROUP_END) {
+                    lastGroupI = null;  // Not in a group of GROUPs anymore so set to null
+                } else {
+                    lastGroupI = i;
+                }
+            }
+            
+            // Draw dots
+            let y = spacing.stemStartYs[stemI];
+            if (instr.type === RenderInstruction.GROUP) {
+                y += 2 * (Math.max(0, -instr.broken_beams) + instr.full_beams);  // It draws next to right beams and under left beams
+            } else if (instr.type === RenderInstruction.FLAG) {
+                y += 5 * instr.flags + 2;
+            }
+            drawDots(svg, anchorX + 2, y, instr.dots);
+            
+            // Update trackers
+            stemI += 1;
+        } else if (instr.type === RenderInstruction.CONTRACT_START) {
+            if (currentContractI !== null) throw "Tried to start CONTRACT inside of CONTRACT";
+            currentContractI = i;
+        } else if (instr.type === RenderInstruction.CONTRACT_END) {
+            if (currentContractI === null) throw "Tried to end CONTRACT when not inside of CONTRACT";
+            const centerY = spacing.contractCenterYs[contractI];
+            const startX = spacing.instructionXs[currentContractI];
+            const endX = spacing.instructionXs[i];
+            const centerX = (startX + endX) / 2;
+            
+            // Create text node
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.innerHTML = instructions[i].ratio.toString();
+            text.setAttribute("x", centerX);
+            text.setAttribute("y", centerY);
+            svg.appendChild(text);
+            
+            // Create hooks if we need them
+            if (instructions[i].hooks) {
+                const htw = 2 * text.innerHTML.length;  // Half of text width
+                path.push(`M${startX} ${centerY + 2.5} l0 -2.5 L${centerX - htw} ${centerY} M${centerX + htw} ${centerY} L${endX} ${centerY} l0 2.5`);
+            }
+            
+            // Update trackers
+            currentContractI = null;
+            contractI += 1;
+        } else {
+            throw "Unexpected instruction type"
+        }
     }
-    return {x, lowestSubdivisionY, lowestSubdivisionYDrumBottom};
+
+    // Convert path to an actual node and add it
+    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathNode.setAttribute("d", path.join(" "));
+    svg.appendChild(pathNode);
+
+    // Return it
+    return svg;
 }
 
 function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
-    let instructions = preRenderScoreComponent(componentID);
-    console.log(instructions);
-    // TODO: Process sizing first?
-    // Then draw.
-    
-    
-    // PoC renderer
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.classList.add("score-component");
-    
-
-    function drawRest(svg, path, instructions, i, y) {
-        if (instructions[i].ticks == 0) {
-            path += "M" + x + " " + y + " L" + (x + 5) + " " + (y + 10) + " L" + x + " " + (y + 15) + " L" + (x + 5) + " " + (y + 20) + " ";
-            x += 5;
-            if (instructions[i].dots != 0) throw "We can't draw dots on a crotchet rest";
-        } else {
-            const count = instructions[i].ticks;
-            path += "M" + x + " " + (y + count * 10) + " L" + (x + count * 10) + " " + y + " ";
-            for (let n=0; n < count; n++) {
-                path += "M" + (x + 5 + n * 10) + " " + (y + (count - n) * 10 - 5) + " L" + (x + n * 10) + " " + (y + (count - n) * 10 - 10) + " ";
-            }
-            drawDots(svg, x + 10, y + count * 10 - 5, instructions[i].dots);
-            x += Math.max(count * 10, instructions[i].dots * 10 + 10);
-        }
-
-        return path;
-    }
-
-
-    let i = 0;
-    let x = 0;
-    let height = 50;  // Min height 50
-    let lastBeamPath = "";
-    let path = "";
-    let currentContractStartX = null;  // The starting x-coordinate of the current CONTRACT, or null if we are not in a contract
-    while (i < instructions.length) {
-        if (instructions[i].type === RenderInstruction.REST) {
-           path = drawRest(svg, path, instructions, i, 0); 
-        } else if (instructions[i].type === RenderInstruction.FLAG) {
-            let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
-            const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
-            height = Math.max(height, newHeight);
-            x = newX;
-            path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
-            for (let n=0; n < instructions[i].flags; n++) {
-                path += "M" + x + " " + (n * 10) + " L" + (x + 10) + " " + (n * 10 + 10) + " ";
-            }
-            drawDots(svg, x + 5, instructions[i].flags * 10 + 20, instructions[i].dots)
-            x += Math.max(5, instructions[i].dots * 5 + 5);
-        } else if (instructions[i].type === RenderInstruction.GROUP) {
-            while (instructions[i].type !== RenderInstruction.GROUP_END) {
-                if (instructions[i].type === RenderInstruction.FLAG) {
-                    throw "Found flag in the middle of a GROUP";
-                } else if (instructions[i].type === RenderInstruction.REST) {
-                    path = drawRest(svg, path, instructions, i, 50);
-                    x += 10;  // Spacing
-                } else if (instructions[i].type === RenderInstruction.GROUP) {
-                    let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
-                    const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
-                    height = Math.max(height, newHeight);
-                    x = newX;
-                    path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
-                    lastBeamPath = "";
-
-                    path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
-                    let y = 0;
-                    for (let n = 0; n< instructions[i].full_beams; n++) {
-                        lastBeamPath += "M" + x + " " + y + " Lx " + y + " ";
-                        y += 5;
-                    }
-                    for (let n = 0; n> instructions[i].broken_beams; n--) {
-                        path += "M" + x + " " + y + " L" + (x + 10) + " " + y + " ";
-                        y += 5;
-                    }
-                     for (let n = 0; n< instructions[i].broken_beams; n++) {
-                        lastBeamPath += "MsubX " + y + " Lx " + y + " ";
-                        y += 5;
-                    }
-                    drawDots(svg, x + 5, y, instructions[i].dots);
-
-                    x += Math.max((instructions[i].broken_beams == 0) ? 10 : 20, instructions[i].dots * 5 + 5);
-                } else {
-                    throw "Unexpected instruction type " + instructions[i].type;
-                }
-
-                i += 1;
-            }
-            
-            // Draw GROUP_END
-            let {x: newX, lowestSubdivisionY, lowestSubdivisionYDrumBottom} = drawNoteHeads(svg, x, instructions[i].drums);
-            const newHeight = lowestSubdivisionY + lowestSubdivisionYDrumBottom;
-            height = Math.max(height, newHeight);
-            x = newX;
-
-            path += lastBeamPath.replaceAll("subX", (x-10).toString()).replaceAll("x", x.toString());
-            lastBeamPath = "";
-            path += "M" + x + " 0 " + "L" + x + " " + lowestSubdivisionY;
-            drawDots(svg, x + 5, 0, instructions[i].dots);
-        } else if (instructions[i].type === RenderInstruction.CONTRACT_START) {
-            if (currentContractStartX != null) {
-                throw "Cannot start contract when it's already open";
-            }
-            currentContractStartX = x;
-        } else if (instructions[i].type === RenderInstruction.CONTRACT_END) {
-            if (currentContractStartX == null) {
-                throw "Cannot end un-opened contract";
-            }
-            // Create text to say what the subdivision is
-            const centerX = (currentContractStartX + x) / 2;
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.style.fontStyle = "italic";
-            text.style.fontWeight = "bold";
-            text.style.textAnchor = "middle";
-            text.style.dominantBaseline = "hanging";
-            text.innerHTML = instructions[i].ratio.toString();
-            text.setAttribute("x", centerX);
-            svg.appendChild(text);  // Needs to be before text.getBBox()
-            let bbox = {width: 5 * text.innerHTML.length, height: 17};  //TODO: fix this -  text.getBBox();
-            text.setAttribute("y", "-" + bbox.height + "px");
-            // Draw hooks if we want them
-            if (instructions[i].hooks) {
-                path += "M" + currentContractStartX + " -2 L" + currentContractStartX + " " + (-bbox.height / 2) + " L" + (centerX - bbox.width / 2 - 5) + " " + (-bbox.height / 2) + " ";
-                path += "M" + (centerX + bbox.width / 2 + 5) + " " + (-bbox.height / 2) + " L" + x + " " + (-bbox.height / 2) + " L" + x + " -2 ";
-            }
-            currentContractStartX = null;
-        } else {
-            throw "Unexpected instruction type " + instructions[i].type;
-        }
-        x += 10;  // Spacing
-        i++;
-    }
-    x -= 10;  // Don't need the last spacing
-    path = path.trim();  // It has a space as the last character
-
-    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    pathNode.setAttribute("d", path);
-    pathNode.setAttribute("stroke", "black");
-    pathNode.setAttribute("stroke-width", "3");
-    pathNode.setAttribute("fill", "none");
-    svg.appendChild(pathNode);
-    
-    svg.style.left = "20px";
-    svg.style.top = "20px";
-    svg.setAttribute("viewBox", "-10 -10 " + (x + 20) + " 150");
-    svg.setAttribute("width", x + 20);
-    svg.setAttribute("height", 150 + 20);
-
+    const instructions = preRenderScoreComponent(componentID);
+    const spacing = calculateSpacing(instructions);
+    const svg = draw(instructions, spacing);
     return svg;
+}   
 
-}
 
 
 export function renderComponent(componentType, componentID) {
@@ -516,7 +788,7 @@ export function renderComponent(componentType, componentID) {
     if (componentType !== "score-component") throw "Not Implemented";
     
     // Now let's render it ----------------------------------
-    let svg = renderScoreComponent(componentID);
+    const svg = renderScoreComponent(componentID);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
 }
