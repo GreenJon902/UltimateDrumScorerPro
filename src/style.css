@@ -158,6 +158,8 @@ body > * {
 svg {
 	overflow: visible;
 	background: rgba(0, 255, 0, 0.2);
+	transition: background 0.3s, border-color 0.3s;
+	border-color: rgba(255, 127, 0, 0);
 }
 
 svg path, g path {
@@ -179,4 +181,11 @@ svg text {
 	text-anchor: middle;
 	dominant-baseline: middle;
 	font-size: 5px;
+}
+
+svg:hover {
+	background: rgba(255, 127, 0, 0.2);
+	border: 1mm solid;
+	border-color: rgba(255, 127, 0, 0.9);
+	border-radius: 3mm;
 }
