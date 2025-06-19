@@ -35,9 +35,6 @@
     
         <div id="rendered-pane">
             <div id="component-container">
-				<svg viewBox="-10 -10 20 20" style="width:20mm; height:20mm;"> 	
-					<use href="drums.svg#high-hat">
-				</svg>
             </div>
         </div>
         <div id="editor-pane">
@@ -47,8 +44,13 @@
     
     <script type="module">
     import {loadJSON} from "./files.js";
-    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
-    [{"drums":["kick", "snare"],"decorations":[]}, {"drums":[],"decorations":[]}
+    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
+    [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+    ]]}, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
+    [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
     ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
     ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
     ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
@@ -58,7 +60,7 @@
     setEditComponent("score-component", "score-component-0")
     import {renderComponent} from "./rendered.js";
     renderComponent("score-component", "score-component-0");
-    //renderComponent("score-component", "score-component-1");
+    renderComponent("score-component", "score-component-1");
 
     </script> 
 </html>

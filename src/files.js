@@ -52,26 +52,26 @@ export function getScoreComponentEnabledDecorations(componentID) {
 
 export function getScoreComponentX(componentID) {
     // Returns the X coordinate of this score component.
-    // The returned value multiplied by the parent's width is the x-coordinate.
+    // This is in mm from the left edge of the page.
     return CURRENT_PROJECT["score-components"][componentID]["x"];
 }
 
 export function setScoreComponentX(componentID, value) {
     // Sets the X coordinate of this score component.
-    // The value multiplied by the parent's width is the x-coordinate.
+    // This is in mm from the left edge of the page.
     CURRENT_PROJECT["score-components"][componentID]["x"] = value;
 }
 
 export function getScoreComponentY(componentID) {
     // Returns the Y coordinate of this score component.
-    // The returned value multiplied by the parent's height is the y-coordinate.
+    // This is in mm from the top edge of the page.
     return CURRENT_PROJECT["score-components"][componentID]["y"];
 }
 
 
 export function setScoreComponentY(componentID, value) {
     // Sets the Y coordinate of this score component.
-    // The returned value multiplied by the parent's height is the y-coordinate.
+    // This is in mm from the top edge of the page.
     CURRENT_PROJECT["score-components"][componentID]["y"] = value;
 }
 

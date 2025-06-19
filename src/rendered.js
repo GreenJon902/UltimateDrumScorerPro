@@ -1,4 +1,5 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator} from "./files.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getScoreComponentX, getScoreComponentY, setScoreComponentX, setScoreComponentY} from "./files.js";
+import {setEditComponent} from "./editor.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -774,6 +775,34 @@ function renderScoreComponent(componentID) {
     return svg;
 }   
 
+function attachEvents(componentID, svg) {
+    // Attach the event handlers for the given component
+    
+    const container = document.getElementById("component-container");
+    svg.onmousedown = (downEvent) => {
+        const svgRect = svg.getBoundingClientRect();
+        const parentRect = container.getBoundingClientRect();
+        let moved = false;
+        document.onmousemove = (moveEvent) => {
+            const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
+            const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
+            setScoreComponentX(componentID, newX);
+            setScoreComponentY(componentID, newY);
+            svg.style.left = (newX * 100) + "%";
+            svg.style.top = (newY * 100) + "%";
+
+            moved = true;
+        }
+        document.onmouseup = (upEvent) => {
+            document.onmousemove = null;
+            document.onmouseup = null;
+            
+            if (!moved) {
+                setEditComponent("score-component", componentID);
+            }
+        }
+    }
+}
 
 
 export function renderComponent(componentType, componentID) {
@@ -791,4 +820,7 @@ export function renderComponent(componentType, componentID) {
     const svg = renderScoreComponent(componentID);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
+    svg.style.left = (getScoreComponentX(componentID) * 100) + "%";
+    svg.style.top = (getScoreComponentY(componentID) * 100) + "%";
+    attachEvents(componentID, svg);
 }
