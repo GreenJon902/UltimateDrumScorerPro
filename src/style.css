@@ -107,23 +107,44 @@ body {
     position: absolute;
 }
 
-#component-container {
-    position: relative;
-    width: 210mm;
-	height: 297mm;
-	margin: auto;
-	background: white;
-}
-
 #rendered-pane, #editor-pane {
     box-sizing: border-box;
     border-radius: 1ch;
     background: #262626;
 }
 
+#component-container {
+    position: relative;
+    width: 210mm;
+	height: 297mm;
+	background: white;
+	margin: auto;
+}
+
 #rendered-pane {
-	overflow: scroll;
+	position: relative;
+	overflow: hidden;
+}
+
+#rendered-pane-padding {
 	padding: 1ch;
+	overflow: auto;
+	box-sizing: border-box;
+	width: 100%;
+  	height: 100%;
+}
+
+.scroll {
+	overflow: auto;
+}
+
+#component-controls {
+	position: absolute;
+	right: 1ch;
+	bottom: 1ch;
+	z-index: 10;
+	display: flex;
+    flex-direction: column;
 }
 
 #editor-pane {
@@ -132,10 +153,17 @@ body {
 	display: flex;
 	overflow-x: auto;
 	align-items: flex-start;
+	gap: 1ch;
 }
 
 #editor-pane > * {
 	flex: 0 0 auto;
+}
+
+#editor-pane > .text-component-text-content {
+	flex-grow: 1;
+	height: 100%;
+    box-sizing: border-box;
 }
 
 body > * {
@@ -158,6 +186,11 @@ body > * {
 svg {
 	overflow: visible;
 	background: rgba(0, 255, 0, 0.2);
+	transition: background 0.1s, border-color 0.1s;
+	border: 1mm solid;
+	border-radius: 3mm;
+	border-color: rgba(255, 127, 0, 0);
+	position: absolute;
 }
 
 svg path, g path {
@@ -179,4 +212,10 @@ svg text {
 	text-anchor: middle;
 	dominant-baseline: middle;
 	font-size: 5px;
+	white-space: preserve;
+}
+
+svg:hover {
+	background: rgba(255, 127, 0, 0.2);
+	border-color: rgba(255, 127, 0, 0.9);
 }

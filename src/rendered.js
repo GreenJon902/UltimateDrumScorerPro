@@ -1,4 +1,5 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator} from "./files.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY} from "./files.js";
+import {setEditComponent} from "./editor.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -774,7 +775,48 @@ function renderScoreComponent(componentID) {
     return svg;
 }   
 
+function attachEvents(componentType, componentID, svg) {
+    // Attach the event handlers for the given component
+    
+    const container = document.getElementById("component-container");
+    svg.onmousedown = (downEvent) => {
+        const svgRect = svg.getBoundingClientRect();
+        const parentRect = container.getBoundingClientRect();
+        let moved = false;
+        document.onmousemove = (moveEvent) => {
+            const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
+            const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
+            setComponentX(componentType, componentID, newX);
+            setComponentY(componentType, componentID, newY);
+            svg.style.left = (newX * 100) + "%";
+            svg.style.top = (newY * 100) + "%";
 
+            moved = true;
+        }
+        document.onmouseup = (upEvent) => {
+            document.onmousemove = null;
+            document.onmouseup = null;
+            
+            if (!moved) {
+                setEditComponent(componentType, componentID);
+            }
+        }
+    }
+}
+
+function renderTextComponent(componentID) {
+    // Renders a text component. This returns a svg node.
+    // This does not attach the event handling stuff.
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.innerHTML = getTextComponentTextContent(componentID);
+    text.style.fontSize = getTextComponentFontSize(componentID) + "mm";
+    svg.appendChild(text);
+    svg.setAttribute("width", "100");  
+    svg.setAttribute("height", "100");  // TODO: Propper value
+    return svg;
+
+}
 
 export function renderComponent(componentType, componentID) {
 	// Render the given component. If it already exists then it will be removed.
@@ -785,10 +827,18 @@ export function renderComponent(componentType, componentID) {
         old.remove();
     }
 
-    if (componentType !== "score-component") throw "Not Implemented";
+    const renderFunc = {
+        "score-component": renderScoreComponent,
+        "text-component": renderTextComponent
+    }[componentType];
     
+    if (renderFunc === undefined) throw "Not Implemented";
+
     // Now let's render it ----------------------------------
-    const svg = renderScoreComponent(componentID);
+    const svg = renderFunc(componentID);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
+    svg.style.left = (getComponentX(componentType, componentID) * 100) + "%";
+    svg.style.top = (getComponentY(componentType, componentID) * 100) + "%";
+    attachEvents(componentType, componentID, svg);
 }

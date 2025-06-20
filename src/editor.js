@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -10,11 +10,42 @@ export function setEditComponent(componentType, componentID) {
         editor.removeChild(editor.children[0]);
     }
 
-    if (componentType !== "score-component") throw "Not Implemented";
+    const editFunc = {
+        "score-component": editScoreComponent,
+        "text-component": editTextComponent
+    }[componentType];
+
+    if (editFunc === undefined) throw "Not Implemented";
+    editFunc(componentID);
+}
+
+function editTextComponent(componentID) {
+    // Set up the editor to be editing the given component.
+    let editor = document.getElementById("editor-pane");
     
+    // Text-component options
+    const div = document.createElement("div");
+    createNumberBoxesWithText(div, "text-component", componentID, {text: "Font Size:&nbsp", getter: getTextComponentFontSize, setter: setTextComponentFontSize, min: 1, size: 1});
+    editor.appendChild(div);
+
+    // Actual text content
+    const text = document.createElement("textarea");
+    text.classList.add("text-component-text-content");
+    text.oninput = function () {
+        setTextComponentTextContent(componentID, text.value);
+        renderComponent("text-component", componentID);
+    }
+    text.value = getTextComponentTextContent(componentID);
+    editor.appendChild(text);
+}
+    
+function editScoreComponent(componentID) {
+    // Set up the editor to be editing the given component.
+    let editor = document.getElementById("editor-pane");
+
     // Score-component options
     const div = document.createElement("div");
-    createNumberBoxesWithText(div, componentID, 
+    createNumberBoxesWithText(div, "score-component", componentID, 
         {text: "Time Signature:&nbsp;", getter: getScoreComponentTimeSignatureNumerator, setter: setScoreComponentTimeSignatureNumerator, min: 1, size: 2}, 
         {text: "&nbsp;/&nbsp;", getter: getScoreComponentTimeSignatureDenominator, setter: setScoreComponentTimeSignatureDenominator, min: 1, size: 2}
     );
@@ -50,7 +81,7 @@ function createSpacingTableData(row, classNames) {
 }
 
 
-function createNumberBoxesWithText(div, componentID, ...boxes) {  // TODO: Only redraw if we have to
+function createNumberBoxesWithText(div, componentType, componentID, ...boxes) {  // TODO: Only redraw if we have to
     // Creates a (or multiple) input fields that have some text beforehand.
     // These will validate to only allow numbers above a certain value to be entered. When calling the setter, this will have already parsed the integer.
     // The boxes should be objects with this format {text: String, type: String, getter: Callable<componentID>, setter: Callable<componentID, value: int>, min: int, size: int}.
@@ -78,8 +109,8 @@ function createNumberBoxesWithText(div, componentID, ...boxes) {  // TODO: Only 
             return boxes[i].getter(componentID);
         }, (value) => {
             boxes[i].setter(componentID, value);
-            setEditComponent("score-component", componentID);  // Redraw the editor
-            renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
+            setEditComponent(componentType, componentID);  // Redraw the editor
+            renderComponent(componentType, componentID);  // Re-render it in the rendered-pane
 
         }, ["score-sequencer-option-box"], 1, boxes[i].size);
 
