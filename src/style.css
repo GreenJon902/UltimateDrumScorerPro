@@ -153,10 +153,17 @@ body {
 	display: flex;
 	overflow-x: auto;
 	align-items: flex-start;
+	gap: 1ch;
 }
 
 #editor-pane > * {
 	flex: 0 0 auto;
+}
+
+#editor-pane > .text-component-text-content {
+	flex-grow: 1;
+	height: 100%;
+    box-sizing: border-box;
 }
 
 body > * {
@@ -205,6 +212,7 @@ svg text {
 	text-anchor: middle;
 	dominant-baseline: middle;
 	font-size: 5px;
+	white-space: preserve;
 }
 
 svg:hover {

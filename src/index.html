@@ -36,7 +36,7 @@
         <div id="rendered-pane">
         	<div id="component-controls">
 	    		<button type="button" onclick="newScoreComponent()">+S</button>
-	    		<button type="button">+T</button>
+	    		<button type="button" onclick="newTextComponent()">+T</button>
 	    	</div>
         	<div id="rendered-pane-padding">
 			    <div id="component-container">
@@ -50,7 +50,7 @@
     
     <script type="module">
     import {renderComponent} from "./rendered.js";
-    import {loadJSON, createNewScoreComponent} from "./files.js";
+    import {loadJSON, createNewScoreComponent, createNewTextComponent} from "./files.js";
     import {setEditComponent} from "./editor.js";
     
     // Load temp project during dev and setup
@@ -71,12 +71,18 @@
     renderComponent("score-component", "score-component-0");
     renderComponent("score-component", "score-component-1");
     
-    // Expose some functions for use in buttons
+    // Functions for buttons, declare as window. so is accessable in their scope
    	window.newScoreComponent = function() {
    		// Create a new score component, render it and set it as the current edit
    		const id = createNewScoreComponent();
    		renderComponent("score-component", id);
    		setEditComponent("score-component", id);
+   	}
+   	window.newTextComponent = function() {
+   		// Create a new text component, render it and set it as the current edit
+   		const id = createNewTextComponent();
+   		renderComponent("text-component", id);
+   		setEditComponent("text-component", id);
    	}
     </script> 
 </html>

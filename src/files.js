@@ -12,15 +12,22 @@ export function listScoreComponents() {
     return Object.keys(CURRENT_PROJECT["score-components"]);
 }
 
+function findUniqueID(prefix, object) {
+    // Finds the first n (starting at 0) such that object[prefix + "-" + n] is undefined. It returns prefix + "-" + n.
+    let idNo = 0;
+    while (object[prefix + idNo] !== undefined) {
+        idNo += 1;
+    }
+    const id = prefix + idNo;
+    return id;
+
+}
+
 export function createNewScoreComponent() {
     // Create a new empty score-component and return it's component ID.
     
     // Find a new unique ID.
-    let idNo = 0;
-    while (CURRENT_PROJECT["score-components"]["score-component-" + idNo] !== undefined) {
-        idNo += 1;
-    }
-    const id = "score-component-" + idNo;
+    const id = findUniqueID("score-component", CURRENT_PROJECT["score-components"]);
 
     // Create the new score component
     CURRENT_PROJECT["score-components"][id] = {
@@ -76,29 +83,29 @@ export function getScoreComponentEnabledDecorations(componentID) {
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["enabled-decorations"]);  // Clone array
 }
 
-export function getScoreComponentX(componentID) {
-    // Returns the X coordinate of this score component.
+export function getComponentX(componentType, componentID) {
+    // Returns the X coordinate of this component.
     // This is in mm from the left edge of the page.
-    return CURRENT_PROJECT["score-components"][componentID]["x"];
+    return CURRENT_PROJECT[componentType + "s"][componentID]["x"];
 }
 
-export function setScoreComponentX(componentID, value) {
-    // Sets the X coordinate of this score component.
+export function setComponentX(componentType, componentID, value) {
+    // Sets the X coordinate of this component.
     // This is in mm from the left edge of the page.
-    CURRENT_PROJECT["score-components"][componentID]["x"] = value;
+    CURRENT_PROJECT[componentType + "s"][componentID]["x"] = value;
 }
 
-export function getScoreComponentY(componentID) {
-    // Returns the Y coordinate of this score component.
+export function getComponentY(componentType, componentID) {
+    // Returns the Y coordinate of this component.
     // This is in mm from the top edge of the page.
-    return CURRENT_PROJECT["score-components"][componentID]["y"];
+    return CURRENT_PROJECT[componentType + "s"][componentID]["y"];
 }
 
 
-export function setScoreComponentY(componentID, value) {
-    // Sets the Y coordinate of this score component.
+export function setComponentY(componentType, componentID, value) {
+    // Sets the Y coordinate of this component.
     // This is in mm from the top edge of the page.
-    CURRENT_PROJECT["score-components"][componentID]["y"] = value;
+    CURRENT_PROJECT[componentType + "s"][componentID]["y"] = value;
 }
 
 export function getScoreComponentLeftDecoration(componentID) {
@@ -167,4 +174,35 @@ function addRemoveFromArray(array, item, shouldContain) {
     }
 
 }
+
+export function listTextComponents() {
+    // Returns an array of all the text component IDs
+    return Object.keys(CURRENT_PROJECT["text-components"]);
+}
+
+export function createNewTextComponent() {
+    // Create a new empty text-component and return s component ID.
+    const id = findUniqueID("text-component", CURRENT_PROJECT["text-components"]);
+    CURRENT_PROJECT["text-components"][id] = {
+        "x": 0, "y": 0,
+        "font-size": 3,
+        "text-content": ""
+    };
+    return id;
+}
+
+export function getTextComponentFontSize(componentID) {
+    return CURRENT_PROJECT["text-components"][componentID]["font-size"];
+}
+export function setTextComponentFontSize(componentID, newFontSize) {
+    CURRENT_PROJECT["text-components"][componentID]["font-size"] = newFontSize;
+}
+export function getTextComponentTextContent(componentID) {
+    return CURRENT_PROJECT["text-components"][componentID]["text-content"];
+}
+export function setTextComponentTextContent(componentID, newTextContent) {
+    CURRENT_PROJECT["text-components"][componentID]["text-content"] = newTextContent;
+}
+
+
 
