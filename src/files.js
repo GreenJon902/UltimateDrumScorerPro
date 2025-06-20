@@ -12,6 +12,32 @@ export function listScoreComponents() {
     return Object.keys(CURRENT_PROJECT["score-components"]);
 }
 
+export function createNewScoreComponent() {
+    // Create a new empty score-component and return it's component ID.
+    
+    // Find a new unique ID.
+    let idNo = 0;
+    while (CURRENT_PROJECT["score-components"]["score-component-" + idNo] !== undefined) {
+        idNo += 1;
+    }
+    const id = "score-component-" + idNo;
+
+    // Create the new score component
+    CURRENT_PROJECT["score-components"][id] = {
+        "x": 0, "y": 0,
+        "time-signature-denomenator": 4,
+        "enabled-drums": ["snare", "kick"],
+        "score-content": [
+            [{"drums": [], "decorations": []}],
+            [{"drums": [], "decorations": []}],
+            [{"drums": [], "decorations": []}],
+            [{"drums": [], "decorations": []}]
+        ]
+    };
+
+    return id;
+}
+
 export function getScoreComponentTimeSignatureNumerator(componentID) {
     // Returns the top of the time-signature of this component.
     return CURRENT_PROJECT["score-components"][componentID]["score-content"].length;
