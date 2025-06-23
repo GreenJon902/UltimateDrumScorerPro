@@ -319,6 +319,19 @@ function loadDrumsSVG() {
     return {array: drumsSVG, map: drumsSVGMap};
 }
 
+function getTextSize(string, fontSize) {
+	const svg = document.getElementById("text-svg");
+	const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.innerHTML = string;
+    text.style.fontSize = fontSize + "px";  // The SVG scales 1px to 1mm so use px
+    svg.appendChild(text);
+    const bbox = text.getBBox();
+    const mmToPx = 1;//parseFloat(window.getComputedStyle(svg, null).height);  // SVG height is 1mm, so we can use it to scale pixels to mm
+    const size = {left: bbox.x / mmToPx, up: bbox.y / mmToPx, width: bbox.width / mmToPx, height: bbox.height / mmToPx};
+    //svg.removeChild(text);
+    return size;
+}
+
 function calculateSpacing(instructions) {
     // Returns some information on how to draw the given instructions.
     // It returns {
@@ -810,10 +823,12 @@ function renderTextComponent(componentID) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.innerHTML = getTextComponentTextContent(componentID);
-    text.style.fontSize = getTextComponentFontSize(componentID) + "mm";
+    text.style.fontSize = getTextComponentFontSize(componentID) + "px";  // The SVG scales 1px to 1mm so use px
     svg.appendChild(text);
-    svg.setAttribute("width", "100");  
-    svg.setAttribute("height", "100");  // TODO: Propper value
+    const size = getTextSize(getTextComponentTextContent(componentID), getTextComponentFontSize(componentID));
+    svg.setAttribute("width", size.width + "mm");  
+    svg.setAttribute("height", size.height + "mm");
+    svg.setAttribute("viewBox", `${size.left} ${size.up} ${size.width} ${size.height}`);  // Center text in viewbox and scale 1px to 1mm
     return svg;
 
 }
