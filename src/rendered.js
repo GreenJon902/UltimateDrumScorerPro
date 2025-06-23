@@ -394,18 +394,27 @@ function calculateSpacing(instructions) {
                 
                 // If we have drawn broken-beams then we need a minimum space between them and the next / last stem (so they don't join and look like full beams)
                 if (lastGroupInstr.broken_beams !== 0) {
-                    maxRythmWidth = Math.max(maxRythmWidth, 10);  // 5 for beam, 5 for spacing
+                    maxRythmWidth = Math.max(maxRythmWidth, 7);  // 5 for beam, 2 for spacing
                 }
 
                 // If we need more space for rhythm stuff than we already have then add it
                 x += Math.max(0, maxRythmWidth - currentDistance);
             }
-        } else if ([RenderInstruction.CONTRACT_START, RenderInstruction.CONTRACT_END].includes(instr.type)) {
-            // CONTRACTs don't take up any space
+        } else if (RenderInstruction.CONTRACT_START === instr.type) {
+            // CONTRACT_STARTs don't take up any space, however we don't want the hooks to join to the last hooks so add spacing if the last instruction is a CONTRACT_END
+            if (instructions[i-1].type === RenderInstruction.CONTRACT_END) {
+                x += 2;
+            }
+        } else if (instr.type === RenderInstruction.CONTRACT_END) {
+            // If we have hooks, then we want the hooks to be slightly after
+            // If the last note had a stem then this has already been added
+            if (instructions[i-1].type === RenderInstruction.REST) {
+                x += 2;
+            }
         } else {
             throw "Unexpected instruction type";
         }
-
+        
         // Save the x-coord
         instructionXs.push(x);
 
@@ -421,6 +430,9 @@ function calculateSpacing(instructions) {
             // Account for head rights
             const maxHeadRight = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
             x += maxHeadRight;
+
+            // Add some padding
+            x += 2;
 
             // If this is a GROUP then rhythm spacing is calculated on the next GROUP or GROUP_END, otherwise:
             // Calculate spacing used by dots or flags
@@ -438,7 +450,10 @@ function calculateSpacing(instructions) {
                 x += Math.max(0, rhythmWidth - maxHeadRight);
             }
         } else if (RenderInstruction.CONTRACT_START === instr.type) {
-            // CONTRACT_STARTs don't take up any space
+            // If we have hooks then take up 2 for the hook
+            if (instr.hooks) {
+                x += 2;
+            }
         } else if (RenderInstruction.CONTRACT_END === instr.type) {
             // Account for width of contract text and hooks if need be
             const contractStart = instructions[currentContractI];
