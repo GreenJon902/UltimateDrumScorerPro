@@ -24,9 +24,9 @@ class RenderInstruction {
     //         - ticks
     //         - dots
     //     CONTRACT-START:
-    //     CONTRACT-END:
     //         - ratio
     //         - hooks
+    //     CONTRACT-END:
     // 
     // drums: A string array of the drumIDs to draw.
     // decorations: A string array of the symbolIDs to draw.
@@ -78,9 +78,9 @@ class RenderInstruction {
             this.ticks = args[0];
             this.dots = args[1];
         } else if (type === RenderInstruction.CONTRACT_START) {
-        } else if (type === RenderInstruction.CONTRACT_END) {
             this.ratio = args[0];
             this.hooks = args[1];
+        } else if (type === RenderInstruction.CONTRACT_END) {
         } else {
             throw "Unkown type " + type;
         }
@@ -225,7 +225,8 @@ function preRenderScoreComponent(componentID) {
         // Add the CONTRACT-START (if we need it)
         const isStandardSubdivision = relativeSubdivisions == 2**Math.floor(Math.log2(relativeSubdivisions));  // Is subdivisions a power of two?
         if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
-            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START));
+            const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
+            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_START, relativeSubdivisions, needsHooks));
         }
 
         // Draw the actual content
@@ -293,8 +294,7 @@ function preRenderScoreComponent(componentID) {
         
         // Add the CONTRACT-END (if we need it)
         if (!isStandardSubdivision) {  // We only need to tell the reader what the subdivision is for non-standard ones
-            const needsHooks = nonEmptySGroups[0] != 0 || nonEmptySGroups[nonEmptySGroups.length - 1] != sGroups.length - 1;  // If we start or end with a rest then we will need hooks (as this algorithm will produce only one group of GROUPs per beat.
-            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END, relativeSubdivisions, needsHooks));
+            renderInstructions.push(new RenderInstruction(RenderInstruction.CONTRACT_END));
         }
 
     }
@@ -738,13 +738,13 @@ function draw(instructions, spacing) {
             
             // Create text node
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.innerHTML = instructions[i].ratio.toString();
+            text.innerHTML = instructions[currentContractI].ratio.toString();
             text.setAttribute("x", centerX);
             text.setAttribute("y", centerY);
             svg.appendChild(text);
             
             // Create hooks if we need them
-            if (instructions[i].hooks) {
+            if (instructions[currentContractI].hooks) {
                 const htw = 2 * text.innerHTML.length;  // Half of text width
                 path.push(`M${startX} ${centerY + 2.5} l0 -2.5 L${centerX - htw} ${centerY} M${centerX + htw} ${centerY} L${endX} ${centerY} l0 2.5`);
             }
