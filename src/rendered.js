@@ -323,7 +323,9 @@ function getTextSize(string, fontSize) {
 	const svg = document.getElementById("text-svg");
 	const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.innerHTML = string;
-    text.style.fontSize = fontSize + "px";  // The SVG scales 1px to 1mm so use px
+    if (fontSize !== null) {
+    	text.style.fontSize = fontSize + "px";  // The SVG scales 1px to 1mm so use px
+    }
     svg.appendChild(text);
     const bbox = text.getBBox();
     const mmToPx = 1;//parseFloat(window.getComputedStyle(svg, null).height);  // SVG height is 1mm, so we can use it to scale pixels to mm
@@ -758,7 +760,7 @@ function draw(instructions, spacing) {
             
             // Create hooks if we need them
             if (instructions[currentContractI].hooks) {
-                const htw = 2 * text.innerHTML.length;  // Half of text width
+                const htw = getTextSize(instructions[currentContractI].ratio.toString(), null).width / 2;  // Half of text width
                 path.push(`M${startX} ${centerY + 2.5} l0 -2.5 L${centerX - htw} ${centerY} M${centerX + htw} ${centerY} L${endX} ${centerY} l0 2.5`);
             }
             
