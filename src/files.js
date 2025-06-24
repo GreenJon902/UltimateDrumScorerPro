@@ -34,6 +34,7 @@ export function createNewScoreComponent() {
         "x": 0, "y": 0,
         "time-signature-denomenator": 4,
         "enabled-drums": ["snare", "kick"],
+        "enabled-decorations": ["accent"],
         "rhythm-length-hint": 0,
         "score-content": [
             [{"drums": [], "decorations": []}],
@@ -76,11 +77,13 @@ export function setScoreComponentTimeSignatureDenominator(componentID, value) {
 
 export function getScoreComponentEnabledDrums(componentID) {
     // Returns the IDs of the drums (including cymbals) that are being used by this component.
+    // Not all of the returned IDs are necessarily used, but any that are used will definitely be here.
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["enabled-drums"]);  // Clone array
 }
 
 export function getScoreComponentEnabledDecorations(componentID) {
-    // Returns the IDs of the decorations (e.g. accents) that are being used by this component.
+    // Returns the IDs of the decorations that are being used by this component.
+    // Not all of the returned IDs are necessarily used, but any that are used will definitely be here.
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["enabled-decorations"]);  // Clone array
 }
 
@@ -102,7 +105,6 @@ export function getComponentY(componentType, componentID) {
     return CURRENT_PROJECT[componentType + "s"][componentID]["y"];
 }
 
-
 export function setComponentY(componentType, componentID, value) {
     // Sets the Y coordinate of this component.
     // This is in mm from the top edge of the page.
@@ -119,7 +121,7 @@ export function setScoreComponentRhythmLengthHint(componentID, value) {
     CURRENT_PROJECT["score-components"][componentID]["rhythm-length-hint"] = value;
 }
 
-export function getScoreComponentLeftDecoration(componentID) {
+/*export function getScoreComponentLeftDecoration(componentID) {
 	// Returns the ID of the left decoration (e.g. a repeat marker) of this component or null.
     return CURRENT_PROJECT["score-components"][componentID]["left-decoration"];
 }
@@ -127,7 +129,7 @@ export function getScoreComponentLeftDecoration(componentID) {
 export function getScoreComponentRightDecoration(componentID) {
 	// Returns the ID of the right decoration (e.g. a bar end sign) of this component or null.
     return CURRENT_PROJECT["score-components"][componentID]["right-decoration"];
-}
+}*/
 
 export function getScoreComponentBeatSubdivisionCount(componentID, beatIndex) {
 	// Returns the number of times a given beat is subdivided.
@@ -158,20 +160,36 @@ export function getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, su
 }
 
 export function setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked) {
-	// Sets the IDs of the drums (and cymbals) that are being hit on a specific further-subdivision of subdivision of a component.
+	// Sets the IDs of the drums (and cymbals) that are being hit on a specific subdivision of a component.
+	// If the ID is not in the array returned by getScoreComponentEnabledDrums then it will throw an error.
+	if (!getScoreComponentEnabledDrums(componentID).includes(drumID)) {
+		throw "Tried to remove a drum but id isn't enabled";
+	}
     addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"], drumID, checked);
 }
 
-/*
-export function getScoreComponentFurtherSubdivisionDecoration(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, decorationID) {
-	// Returns whether a given decoration is being used on a specific further-subdivision of subdivision of a component.
-    return CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["decorations"].includes(decorationID);
+
+
+export function getScoreComponentBeatSubdivisionDecoration(componentID, beatIndex, subdivisionIndex, decorationID) {
+	// Returns whether given drum (or cymbal) is being hit on a specific subdivision of a beat of a component.
+    return CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"].includes(decorationID);
 }
 
-export function setScoreComponentFurtherSubdivisionDecoration(componentID, baseSubdivisionIndex, furtherSubdivisionIndex, decorationID, checked) {
-	// Sets the IDs of the decorations that are being used on a specific further-subdivision of subdivision of a component.
-    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][baseSubdivisionIndex][furtherSubdivisionIndex]["decorations"], decorationID, checked);
-}*/
+export function getScoreComponentBeatSubdivisionDecorations(componentID, beatIndex, subdivisionIndex) {
+	// Returns an array of the IDs of the decorations being hit on a specific subdivision of beat of a component.
+    return Array.from(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"]);  // Duplicate array
+}
+
+export function setScoreComponentBeatSubdivisionDecoration(componentID, beatIndex, subdivisionIndex, decorationID, checked) {
+	// Sets the IDs of the decoration that are being hit on a specific subdivision of a component.
+	// If the ID is not in the array returned by getScoreComponentEnabledDecoration then it will throw an error.
+	if (!getScoreComponentEnabledDecorations(componentID).includes(decorationID)) {
+		throw "Tried to remove a drum but id isn't enabled";
+	}
+    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"], decorationID, checked);
+}
+
+
 
 function addRemoveFromArray(array, item, shouldContain) {
     // If shouldContain is true then this function makes sure item is in the given array, otherwise all instances of it are removed from the array
