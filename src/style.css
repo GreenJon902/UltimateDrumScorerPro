@@ -219,3 +219,17 @@ svg:hover {
 	background: rgba(255, 127, 0, 0.2);
 	border-color: rgba(255, 127, 0, 0.9);
 }
+
+@media print {
+	body {
+		visibility: hidden;
+	}
+	
+	#component-container {
+		visibility: visible;
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+
+}
