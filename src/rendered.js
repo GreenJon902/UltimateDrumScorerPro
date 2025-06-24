@@ -1,4 +1,4 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY} from "./files.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY} from "./files.js";
 import {setEditComponent} from "./editor.js";
 
 class RenderInstruction {
@@ -11,18 +11,22 @@ class RenderInstruction {
     //         - full-beams
     //         - broken-beams
     //         - dots
+    //         - length
     //     GROUP-END:
     //         - drums
     //         - decorations
     //         - dots
+    //         - length
     //     FLAG:
     //         - drums
     //         - decorations
     //         - flags
     //         - dots
+    //         - length
     //     REST:
     //         - ticks
     //         - dots
+    //         - length
     //     CONTRACT-START:
     //         - ratio
     //         - hooks
@@ -37,6 +41,7 @@ class RenderInstruction {
     // ticks: The number (zero or positive) of ticks to draw on a rest. Zero means it's a crotchet rest.
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
+    // length: The relative duration of a note compared to the rest of the notes. If a note is twice as long then it should have double the duration.
     // 
     // GROUPs connect to the next GROUP or GROUP-END, so must be followed by at least one of these.
     // A GROUP-END must follow a GROUP.
@@ -65,18 +70,23 @@ class RenderInstruction {
             this.full_beams = args[2];
             this.broken_beams = args[3];
             this.dots = args[4];
+            this.length = args[5];
         } else if (type === RenderInstruction.GROUP_END) {
             this.drums = args[0];
             this.decorations = args[1];
             this.dots = args[2];
+            this.length = args[3];
         } else if (type === RenderInstruction.FLAG) {
             this.drums = args[0];
+            this.length = args[1];
          this.decorations = args[1];
             this.flags = args[2];
             this.dots = args[3];
+            this.length = args[4];
         } else if (type === RenderInstruction.REST) {
             this.ticks = args[0];
             this.dots = args[1];
+            this.length = args[2];
         } else if (type === RenderInstruction.CONTRACT_START) {
             this.ratio = args[0];
             this.hooks = args[1];
@@ -238,7 +248,7 @@ function preRenderScoreComponent(componentID) {
                 const decorations = [];  // TODO: Me
                 if (nonEmptySGroups.length == 1) {
                     // i is the only non-empty sGroup, so draw a FLAG
-                    renderInstructions.push(new RenderInstruction(RenderInstruction.FLAG, drums, decorations, rhythmInfo.beams, rhythmInfo.dots));
+                    renderInstructions.push(new RenderInstruction(RenderInstruction.FLAG, drums, decorations, rhythmInfo.beams, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                 } else if (i != nonEmptySGroups[nonEmptySGroups.length - 1]) {
                     // There are multiple non-empty sGroups, and this is not the last, so draw a GROUP
                     
@@ -251,15 +261,15 @@ function preRenderScoreComponent(componentID) {
                     
                     // Remember, beams go from c to n!
                     if (c == n) {  // Both want the same number of beams. So draw that.
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c < n && nn >= n) {  // Next wants more beams than current will give it, but nextnext is able to supply what it needs. So we only need to draw current (full) beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c < n && nn < n) {  // Next wants more beams than current will give it, and nextnext also won't supply enough. So draw c full (beams) and n-c half-beams on the right
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, n - c, rhythmInfo.dots)); 
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, n - c, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions)); 
                     } else if (c > n && l >= c) {  // If current wants more beams than next will supply, but last can supply enough. So draw n (full) beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, 0, rhythmInfo.dots));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c > n && l < c) {  // If current wants more beams than next will supply, and last can't supply enough beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, -(c - n), rhythmInfo.dots));  // Negative broken-beams means draw on left
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, -(c - n), rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));  // Negative broken-beams means draw on left
                     } else {
                         throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
                     }
@@ -280,13 +290,13 @@ function preRenderScoreComponent(componentID) {
 
                 } else {
                     // There are multiple non-empty sGroups, and this is the last, so draw a GROUP_END
-                    renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, drums, decorations, rhythmInfo.dots));
+                    renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, drums, decorations, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                 }
 
 
             } else {  
                 // This is a rest, so it doesn't affect the beams (they go over it (unless this is at the start or end of the beat but it still doesn't matter)).
-                renderInstructions.push(new RenderInstruction(RenderInstruction.REST, rhythmInfo.beams, rhythmInfo.dots));
+                renderInstructions.push(new RenderInstruction(RenderInstruction.REST, rhythmInfo.beams, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
             }
 
             si += sGroups[i];
@@ -334,8 +344,9 @@ function getTextSize(string, fontSize) {
     return size;
 }
 
-function calculateSpacing(instructions) {
+function calculateSpacing(instructions, rhythmLengthHint) {
     // Returns some information on how to draw the given instructions.
+    // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
     // It returns {
     //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
@@ -344,6 +355,7 @@ function calculateSpacing(instructions) {
     //     stemStartYs: [int] - The y level where stems (and hence beams and flags and dots) should be start being drawn on (so the top). The index is the number of the stem as they come in instructions.
     //     width: int, height: int  - The width and height of the SVG to be drawn
     //  }
+    //  The rhythmLengthMultiplier is a hint for how wide to draw each instruction (excluding contracts) per unit instruction.length.
 
     let {array: DRUMS, map: DRUMS_MAP} = getDrumNodes();
     
@@ -352,12 +364,17 @@ function calculateSpacing(instructions) {
     instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).forEach(instruction => instruction.drums.forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
     const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
     
+    // Zeroth, calculate the sum of the langths of the applicable instructions
+    const componentLength = instructions.filter(instruction => [RenderInstruction.GROUP, RenderInstruction.REST, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type)).map(instruction => instruction.length).reduce((a, b) => (a + b));
+    console.log("0. CL:", componentLength);
+    
     // First, calculate the spacing between each instruction
     const instructionXs = [];  // Where the stem should be drawn, or the right hand edge for rests. Indexes refer to instruction too
     let x = 0;
     let lastX = 0;  // The lastX in instructionXs, or zero if it hasn't got any items yet
     let lastGroupI = null;  // Index of last group, or null if last group is ended (or hasn't started)
     let currentContractI = null;  // Index of CONTRACT_START or null of has been ended (or hasn't started)
+    let lastGGeFRI = null;  // Index of last GROUP, GROUP_END, FLAG, or REST, or null if we have't had one yet
     for (let i=0; i<instructions.length; i++) {
         const instr = instructions[i];
 
@@ -402,7 +419,7 @@ function calculateSpacing(instructions) {
             }
         } else if (RenderInstruction.CONTRACT_START === instr.type) {
             // CONTRACT_STARTs don't take up any space, however we don't want the hooks to join to the last hooks so add spacing if the last instruction is a CONTRACT_END
-            if (instructions[i-1].type === RenderInstruction.CONTRACT_END) {
+            if (i > 0 && instructions[i-1].type === RenderInstruction.CONTRACT_END) {
                 x += 2;
             }
         } else if (instr.type === RenderInstruction.CONTRACT_END) {
@@ -415,6 +432,12 @@ function calculateSpacing(instructions) {
             throw "Unexpected instruction type";
         }
         
+        // If enabled, try and space notes based on their actual length
+        if ([RenderInstruction.REST, RenderInstruction.GROUP, RenderInstruction.FLAG, RenderInstruction.GROUP_END].includes(instr.type) && lastGGeFRI !== null) {  // CONTRACTs should not be affected by this
+            x += Math.max(0, rhythmLengthHint * instructions[lastGGeFRI].length - (x - instructionXs[lastGGeFRI]));
+        }
+
+               
         // Save the x-coord
         instructionXs.push(x);
 
@@ -490,6 +513,9 @@ function calculateSpacing(instructions) {
             currentContractI = i;
         } else if (instr.type === RenderInstruction.CONTRACT_END) {
             currentContractI = null;
+        }
+        if ([RenderInstruction.FLAG, RenderInstruction.REST, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type)) {
+            lastGGeFRI = i;
         }
         lastX = x;
 }
@@ -801,7 +827,7 @@ function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
     const instructions = preRenderScoreComponent(componentID);
-    const spacing = calculateSpacing(instructions);
+    const spacing = calculateSpacing(instructions, getScoreComponentRhythmLengthHint(componentID));
     const svg = draw(instructions, spacing);
     return svg;
 }   
@@ -875,3 +901,5 @@ export function renderComponent(componentType, componentID) {
     svg.style.top = (getComponentY(componentType, componentID) * 100) + "%";
     attachEvents(componentType, componentID, svg);
 }
+
+

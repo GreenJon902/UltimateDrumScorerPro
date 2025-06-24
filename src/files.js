@@ -34,6 +34,7 @@ export function createNewScoreComponent() {
         "x": 0, "y": 0,
         "time-signature-denomenator": 4,
         "enabled-drums": ["snare", "kick"],
+        "rhythm-length-hint": 0,
         "score-content": [
             [{"drums": [], "decorations": []}],
             [{"drums": [], "decorations": []}],
@@ -106,6 +107,16 @@ export function setComponentY(componentType, componentID, value) {
     // Sets the Y coordinate of this component.
     // This is in mm from the top edge of the page.
     CURRENT_PROJECT[componentType + "s"][componentID]["y"] = value;
+}
+
+export function getScoreComponentRhythmLengthHint(componentID) {
+	// Gets the hinted width of a full beat
+    return CURRENT_PROJECT["score-components"][componentID]["rhythm-length-hint"];
+}
+
+export function setScoreComponentRhythmLengthHint(componentID, value) {
+	// Sets the hinted width of a full beat
+    CURRENT_PROJECT["score-components"][componentID]["rhythm-length-hint"] = value;
 }
 
 export function getScoreComponentLeftDecoration(componentID) {

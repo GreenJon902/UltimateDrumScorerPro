@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -48,6 +48,9 @@ function editScoreComponent(componentID) {
     createNumberBoxesWithText(div, "score-component", componentID, 
         {text: "Time Signature:&nbsp;", getter: getScoreComponentTimeSignatureNumerator, setter: setScoreComponentTimeSignatureNumerator, min: 1, size: 2}, 
         {text: "&nbsp;/&nbsp;", getter: getScoreComponentTimeSignatureDenominator, setter: setScoreComponentTimeSignatureDenominator, min: 1, size: 2}
+    );
+    createNumberBoxesWithText(div, "score-component", componentID, 
+        {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
     );
     editor.appendChild(div);
     
@@ -112,7 +115,7 @@ function createNumberBoxesWithText(div, componentType, componentID, ...boxes) { 
             setEditComponent(componentType, componentID);  // Redraw the editor
             renderComponent(componentType, componentID);  // Re-render it in the rendered-pane
 
-        }, ["score-sequencer-option-box"], 1, boxes[i].size);
+        }, ["score-sequencer-option-box"], boxes[i].min, boxes[i].size);
 
         // Add to container
         container.appendChild(span);
