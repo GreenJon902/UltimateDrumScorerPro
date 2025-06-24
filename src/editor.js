@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -61,8 +61,8 @@ function editScoreComponent(componentID) {
     table.classList.add("editor-sequencer-table");
     table.appendChild(scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID));
     createSpacingTableRow(table, ["editor-sequencer-subdivision-decoration-divider"]);
-    //scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeat, setScoreComponentFurtherSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"]);
-    //createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
+    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"]);
+    createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
     scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"]);
     editor.appendChild(table);
 }
@@ -187,7 +187,7 @@ function scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID) {
 
         // Add spacing if required
         if (bi + 1 != numerator) {  // If not last beat
-            createSpacingTableData(tableRow, "editor-sequencer-beat-divider");
+            createSpacingTableData(tableRow, ["editor-sequencer-beat-divider"]);
         }
     }
 
@@ -224,7 +224,7 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
             }
             // Add spacing if required
             if (bi + 1 != numerator) {  // If not last beat
-                createSpacingTableData(tableRow, "editor-sequencer-beat-divider");
+                createSpacingTableData(tableRow, ["editor-sequencer-beat-divider"]);
             }
         }
 

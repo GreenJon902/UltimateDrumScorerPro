@@ -33,11 +33,11 @@ input[type="checkbox"].editor-sequencer-toggle {
 }
 
 td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-decoration {
-    background-color: orange;
+    background-color: #fdda99;
 }
 
 td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-decoration {
-    background-color: orangered;
+    background-color: #ac5f00;
 }
 
 td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-drum {
