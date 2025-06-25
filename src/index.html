@@ -31,6 +31,19 @@
 				</g>
 			</defs>
 		</svg>
+		<svg id="decorations" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+			<defs id="defs">
+				<g id="open" data-width="3" data-height="3">
+					<circle cx="0" cy="0" r="1" style="stroke: black; fill: none;"/>
+				</g>
+				<g id="closed" data-width="3" data-height="3">
+					<path d="M-1.5 0 L1.5 0 M0 -1.5 L0 1.5"/>
+				</g>
+				<g id="accent" data-width="4" data-height="2">
+					<path d="M-2 -1 L2 0 L-2 1"/>
+				</g>
+			</defs>
+		</svg>
 		
 		<svg id="text-svg" xmlns="http://www.w3.org/2000/svg" style="visibility: hidden; height: 1mm;">
 		</svg>
@@ -58,7 +71,7 @@
     
     // Load temp project during dev and setup
     
-    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":30, "enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
+    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":30, "enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
     [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
     ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
     ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}

@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums} from "./files.js";
 import {renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -61,10 +61,33 @@ function editScoreComponent(componentID) {
     table.classList.add("editor-sequencer-table");
     table.appendChild(scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID));
     createSpacingTableRow(table, ["editor-sequencer-subdivision-decoration-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"]);
+    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"], (componentID, beatIndex, subdivisionIndex, decorationID) => (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0));
     createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"]);
+    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentBeatSubdivisionDrum, (componentID, beatIndex, subdivisionIndex, drumID, checked) => {
+        const currentUsedDecorations = getScoreComponentBeatSubdivisionDecorations(componentID, beatIndex, subdivisionIndex);  // Save for if we need it
+        const wereDecorationsRemoved = setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked);  // Actually set the value
+        
+        // If no drums are being used on this subdivison then we're not allowed any subdivisions
+        if (wereDecorationsRemoved) {
+            // Decorations were removed in the file manager so we need to update the buttons
+            for (let i=0; i<currentUsedDecorations.length; i++) {
+                document.getElementById(sequencerToggleID(beatIndex, subdivisionIndex, currentUsedDecorations[i])).checked = false;
+            }
+        }
+        
+        // Disable or enable the buttons as required
+        const shouldBeDisabled = getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0;
+        const enabledDecorations = getScoreComponentEnabledDecorations(componentID);
+        for (let i=0; i<enabledDecorations.length; i++) {
+            document.getElementById(sequencerToggleID(beatIndex, subdivisionIndex, enabledDecorations[i])).disabled = shouldBeDisabled;
+        }
+    }, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"], (componentID, beatIndex, subdivisionIndex, drumID) => false);  
     editor.appendChild(table);
+}
+
+function sequencerToggleID(beatIndex, subdivisionIndex, ID) {
+    // Returns the ID to give to the input node for a given drum / decoration with the given ID.
+    return `editor-sequencer-toggle-${beatIndex}-${subdivisionIndex}-${ID}`;
 }
 
 function createSpacingTableRow(table, classNames) {
@@ -194,12 +217,13 @@ function scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID) {
     return tableRow;
 }
 
-function scoreEditorAddSequencerContents(table, componentID, idGetter, isCheckedGetter, isCheckedSetter, classNames) {
+function scoreEditorAddSequencerContents(table, componentID, idGetter, isCheckedGetter, isCheckedSetter, classNames, disabledGetter) {
     // Adds the toggle buttons for the sequencer to a table.
     // You supply functions idGetter and isCheckedGetter and isCheckedSetter depending if this is drums or decorations.
     //    idGetter(componentID) -> String list of IDs.
     //    isCheckedGetter(componentID, beatIndex, subdivisionIndex, ID) -> Is this drum / decoration hit on this specific subdivision.  The given ID is the id of the drum / decoration
     //    isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, checked)    Sets whether or not a given drum / decoration is set on a given subdivision. The id is the id of the drum / decoration.
+    //    disabledGeter(componentID, beatIndex, subdivisionIndex, ID) -> Should the toggle button (input node) be enabled or disabled. True for disabled.
     // The given classNames will be given to the toggle buttons (and their td containers).
     
     const IDs = idGetter(componentID);
@@ -219,7 +243,7 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
             for (let si = 0; si < numberOfSubdivisions; si++) {  // SI: subdivisionIndex
                 // Create the actual button and add it to the table
                 const enabled = isCheckedGetter(componentID, bi, si, ID);
-                const tableData = scoreEditorCreateSequencerToggleButtonInTd(numberOfSubdivisions, enabled, classNames, isCheckedSetter, bi, si, ID, componentID);
+                const tableData = scoreEditorCreateSequencerToggleButtonInTd(numberOfSubdivisions, enabled, classNames, isCheckedSetter, bi, si, ID, componentID, disabledGetter);
                 tableRow.appendChild(tableData);
             }
             // Add spacing if required
@@ -233,15 +257,18 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
     }
 }
 
-function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, classNames, isCheckedSetter, beatIndex, subdivisionIndex, ID, componentID) {
+function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, classNames, isCheckedSetter, beatIndex, subdivisionIndex, ID, componentID, disabledGetter) {
     // Create a toggle button to be used in the editor for the actual score (turning drums on and off).
     // This returns a table data element with the correct width based of the subdivisionCount.
     // If enabled is true then it will be checked by default.
     // The classes in classNames will be given to both the input and the td.
     // The function isCheckedSetter(componentID, beatIndex, suubdivisonIndex, ID, checked) is used when we toggle the checkbox. The id is the id of the drum / decoration.
     // The given ID is the ID of the drum / decoration.
+    // The toggle button (the input node) is given a html id of the form `editor-sequencer-toggle-${beatIndex}-${subdivisionIndex}-${ID}`.
     const tableData = document.createElement("td");
     const toggleButton = document.createElement("input");
+    toggleButton.id = sequencerToggleID(beatIndex, subdivisionIndex, ID);
+    toggleButton.disabled = disabledGetter(componentID, beatIndex, subdivisionIndex, ID);
     toggleButton.type = "checkbox";
     tableData.classList.add(...classNames);
     toggleButton.classList.add(...classNames);
