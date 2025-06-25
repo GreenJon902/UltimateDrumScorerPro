@@ -149,6 +149,8 @@ export function setScoreComponentBeatSubdivisionCount(componentID, beatIndex, va
     CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex] = array;  // I don't trust JS.
 }
 
+
+
 export function getScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID) {
 	// Returns whether given drum (or cymbal) is being hit on a specific subdivision of a beat of a component.
     return CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"].includes(drumID);
@@ -162,31 +164,52 @@ export function getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, su
 export function setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked) {
 	// Sets the IDs of the drums (and cymbals) that are being hit on a specific subdivision of a component.
 	// If the ID is not in the array returned by getScoreComponentEnabledDrums then it will throw an error.
+	// If this results in there being no drums in this subdivision then all decorations in this subdivision will be cleared too.
+	// Returns true if any decorations were removed, or false if no decorations were removed.
 	if (!getScoreComponentEnabledDrums(componentID).includes(drumID)) {
-		throw "Tried to remove a drum but id isn't enabled";
+		throw "Tried to add/remove a drum but id isn't enabled";
 	}
     addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["drums"], drumID, checked);
+    
+    if (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0) {
+    	return clearScoreComponentBeatSubdivisonDecorations(componentID, beatIndex, subdivisionIndex);
+    }
+    return false;
 }
 
 
 
 export function getScoreComponentBeatSubdivisionDecoration(componentID, beatIndex, subdivisionIndex, decorationID) {
-	// Returns whether given drum (or cymbal) is being hit on a specific subdivision of a beat of a component.
+	// Returns whether given decoration is being used on a specific subdivision of a beat of a component.
+	// There will only be decorations on subdivisions where drums are also used.
     return CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"].includes(decorationID);
 }
 
 export function getScoreComponentBeatSubdivisionDecorations(componentID, beatIndex, subdivisionIndex) {
-	// Returns an array of the IDs of the decorations being hit on a specific subdivision of beat of a component.
+	// Returns an array of the IDs of the decorations being used on a specific subdivision of beat of a component.
+	// There will only be decorations on subdivisions where drums are also used.
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"]);  // Duplicate array
 }
 
 export function setScoreComponentBeatSubdivisionDecoration(componentID, beatIndex, subdivisionIndex, decorationID, checked) {
-	// Sets the IDs of the decoration that are being hit on a specific subdivision of a component.
+	// Sets the IDs of the decoration that are being used on a specific subdivision of a component.
 	// If the ID is not in the array returned by getScoreComponentEnabledDecoration then it will throw an error.
+	// If no drums are used on this subdivision then an error will be thrown.
 	if (!getScoreComponentEnabledDecorations(componentID).includes(decorationID)) {
-		throw "Tried to remove a drum but id isn't enabled";
+		throw "Tried to add/remove a decoration but id isn't enabled";
+	}
+	if (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0) {
+		throw "Tried to update decorations for a subdivison with no drums";
 	}
     addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"], decorationID, checked);
+}
+
+export function clearScoreComponentBeatSubdivisonDecorations(componentID, beatIndex, subdivisionIndex) {
+	// Remove all decorations from a specific subdivision of a component.
+	// Returns true if any were removed, or false if nothing was removed.
+	const prevLength = CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"].length;
+	CURRENT_PROJECT["score-components"][componentID]["score-content"][beatIndex][subdivisionIndex]["decorations"] = [];
+	return prevLength !== 0;
 }
 
 
