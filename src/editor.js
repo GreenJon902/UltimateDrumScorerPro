@@ -1,5 +1,5 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums} from "./files.js";
-import {renderComponent} from "./rendered.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums} from "./files.js";
+import {getSvgNodes, renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
@@ -52,6 +52,23 @@ function editScoreComponent(componentID) {
     createNumberBoxesWithText(div, "score-component", componentID, 
         {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
     );
+    
+    // Selectors for which drums and decorations are enabled
+    div.appendChild(document.createElement("br"));
+    const selectorsText = document.createElement("span");
+    selectorsText.innerHTML = "Enabled Decorations/Drums:";
+    div.appendChild(selectorsText);
+    
+    const selectorsDiv = document.createElement("div");
+    selectorsDiv.classList.add("editor-selectors-container");
+    const decorationIDs = getSvgNodes("decorations").array.map(node => node.id);
+    selectorsDiv.appendChild(createIDSelector(componentID, decorationIDs, id => getScoreComponentEnabledDecoration(componentID, id), (id, value) => setScoreComponentEnabledDecoration(componentID, id, value)));
+
+    const drumIDs = getSvgNodes("drums").array.map(node => node.id);
+    selectorsDiv.appendChild(createIDSelector(componentID, drumIDs, id => getScoreComponentEnabledDrum(componentID, id), (id, value) => setScoreComponentEnabledDrum(componentID, id, value)));
+
+
+    div.appendChild(selectorsDiv);
     editor.appendChild(div);
     
 
@@ -83,6 +100,44 @@ function editScoreComponent(componentID) {
         }
     }, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"], (componentID, beatIndex, subdivisionIndex, drumID) => false);  
     editor.appendChild(table);
+}
+
+function createIDSelector(componentID, idList, getter, setter) {
+    // Creates a bunch of check boxes labled with the given IDs. It uses the getter and setter to see/set if they are enabled.
+    //  idList: [string].
+    //  getter(id: str) -> boolean.
+    //  setter(id: str, value: boolean).
+    // Returns a container table.
+    
+    const container = document.createElement("table");
+    for (let i=0; i<idList.length; i++) {
+        // Create the text to go beforehand
+        const span = document.createElement("span");
+        span.innerHTML = idList[i];
+        span.style.textWrap = "nowrap";
+        
+        // Create the checkbox
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = getter(idList[i]);
+        input.onclick = function () {
+            setter(idList[i], input.checked);
+            setEditComponent("score-component", componentID);  // Redraw editor
+            renderComponent("score-component", componentID);  // Because disabling a line may have removed (e.g.) a drum that was played on that line so the score has changed
+        }
+        
+        // Create row and add to container
+        const row = document.createElement("tr");
+        const td1 = document.createElement("td");
+        const td2 = document.createElement("td");
+        td1.appendChild(span);
+        td2.appendChild(input);
+        row.appendChild(td1);
+        row.appendChild(td2);
+        container.appendChild(row);
+    }
+    
+    return container;
 }
 
 function sequencerToggleID(beatIndex, subdivisionIndex, ID) {
