@@ -442,12 +442,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
                 x += Math.max(0, maxRythmWidth - currentDistance);
             }
             
-            // There might be some decorations to draw
-            if (instr.decorations.length !== 0) {
-                // TODO: Ensure decorations are not too wide
-                // Center decoration between maxHeadLeft and stem (the current x location)
-                decorationXs.push(x - maxLeft / 2);
-            }
+            
 
         } else if (RenderInstruction.CONTRACT_START === instr.type) {
             // CONTRACT_STARTs don't take up any space, however we don't want the hooks to join to the last hooks so add spacing if the last instruction is a CONTRACT_END
@@ -482,6 +477,16 @@ function calculateSpacing(instructions, rhythmLengthHint) {
                 x += dotWidth - currentWidth;  // Plus an extra two so it doesn't collide with the next thing
             }
         } else if ([RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type)) {
+            // There might be some decorations to draw
+            // We do this here because the stem might have been moved by rhythmLengthHint
+            const maxHeadLeft = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeLeft));
+            if (instr.decorations.length !== 0) {
+                // TODO: Ensure decorations are not too wide
+                // Center decoration between maxHeadLeft and stem (the current x location)
+                decorationXs.push(x - maxHeadLeft / 2);
+            }
+
+
             // Account for head rights
             const maxHeadRight = Math.max(...instr.drums.map(id => DRUMS_MAP[id].dataset.sizeRight));
             x += maxHeadRight;
@@ -658,15 +663,17 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     const maxDecorationsHeight = Math.max(0, ...instructions  // Have the 0, ... so if no decorations then is 0
         .filter(instr => [RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type))
         .map(instr => sum(0, ...instr.decorations  // Have the 0, ... so if no decorations then is 0
-            .map(id => parseFloat(DECORATIONS_MAP[id].dataset.height)))));
+            .map(id => parseFloat(DECORATIONS_MAP[id].dataset.height))) + 1 * instr.decorations.length));  // Add 1 for each decoration to add padding between them
     // Now the y-coord we want is the center of the decoration that is drawn on top
     const decorationYs = instructions
         .filter(instr => [RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type))
         .map(instr => instr.decorations)
+        .filter(IDs => IDs.length !== 0)
         .map(IDs => DECORATIONS
             .filter(decoration => IDs.includes(decoration.id))
             .map(decoration => parseFloat(decoration.dataset.height)))
-        .map(heights => maxDecorationsHeight - sum(...heights) + heights[0] / 2);
+        .map(heights => maxDecorationsHeight - sum(0, ...heights) + heights[0] / 2 - 1 * heights.length);  // Have the 0, ... so if no decorations then is 0  // Add -1 for each decoration for the padding between them
+
     console.log("7. MDH:", maxDecorationsHeight, "DY:", decorationYs);
 
     // Eighth, find out how many stems there are
@@ -705,7 +712,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     // Combind decorationXs and Ys
     const decorationPoss = [];
     for (let i=0; i<decorationXs.length; i++) {
-        decorationPoss.push({x: decorationXs[i], y: decorationYs[i]});
+        decorationPoss.push({x: decorationXs[i], y: decorationYs[i] + contractHeight});
     }
     
     // Center decoration's x between head left and stems, and stack on top of eachother
@@ -741,6 +748,8 @@ function draw(instructions, spacing) {
     // Draws the given instructions (the result from preRenderScoreComponent) using the spacing information (from calculateSpacing).
     // Returns a svg node.
     // This does not add any event bindings.
+    
+    const {array: DECORATIONS, map: DECORATIONS_MAP} = getSvgNodes("decorations");
     
     // Create SVG node
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -792,10 +801,28 @@ function draw(instructions, spacing) {
             }
             
             // Draw decorations if we need to
-            if (instr.decoration.length !== 0) {  
-                let y = 0;
+            if (instr.decorations.length !== 0) {  
+                let {x, y} = spacing.decorationPoss[decorationI];
                 
-                for (let i=0; i<)
+                let first = true;  // Is this the first decoration we have drawn
+                for (let i=0; i<DECORATIONS.length; i++) {
+                    const decoration = DECORATIONS[i];
+                    if (instr.decorations.includes(decoration.id)) {  // Loop like this so we can have the correct one draw first
+                        if (first) {  // Y is already at the center location
+                            first = false;
+                        } else {  // Y is at the top of this one, we need to move it to the center
+                            y += parseFloat(decoration.dataset.height) / 2;
+                        }
+
+                        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                        use.setAttribute("transform", `translate(${x} ${y})`);
+                        use.setAttribute("href", `#${decoration.id}`);
+                        svg.appendChild(use);
+
+                        y += parseFloat(decoration.dataset.height) / 2;  // Move y to the bottom of this decoration
+                        y += 1;  // Padding
+                    }
+                }
 
                 // Update tracker
                 decorationI += 1;
