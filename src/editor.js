@@ -78,9 +78,19 @@ function editScoreComponent(componentID) {
     table.classList.add("editor-sequencer-table");
     table.appendChild(scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID));
     createSpacingTableRow(table, ["editor-sequencer-subdivision-decoration-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"], (componentID, beatIndex, subdivisionIndex, decorationID) => (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0));
+    scoreEditorAddSequencerContents(table, componentID, (componentID) => {
+        const enabledIDs = getScoreComponentEnabledDecorations(componentID);
+        return getSvgNodes("decorations").array  // Filter and map this so are ordered correctly
+            .map(node => node.id)
+            .filter(id => enabledIDs.includes(id));
+    }, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"], (componentID, beatIndex, subdivisionIndex, decorationID) => (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0));
     createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, getScoreComponentEnabledDrums, getScoreComponentBeatSubdivisionDrum, (componentID, beatIndex, subdivisionIndex, drumID, checked) => {
+    scoreEditorAddSequencerContents(table, componentID, (componentID) => {
+        const enabledIDs = getScoreComponentEnabledDrums(componentID);
+        return getSvgNodes("drums").array  // Filter and map this so are ordered correctly
+            .map(node => node.id)
+            .filter(id => enabledIDs.includes(id));
+    }, getScoreComponentBeatSubdivisionDrum, (componentID, beatIndex, subdivisionIndex, drumID, checked) => {
         const currentUsedDecorations = getScoreComponentBeatSubdivisionDecorations(componentID, beatIndex, subdivisionIndex);  // Save for if we need it
         const wereDecorationsRemoved = setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked);  // Actually set the value
         
@@ -279,6 +289,7 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
     //    isCheckedGetter(componentID, beatIndex, subdivisionIndex, ID) -> Is this drum / decoration hit on this specific subdivision.  The given ID is the id of the drum / decoration
     //    isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, checked)    Sets whether or not a given drum / decoration is set on a given subdivision. The id is the id of the drum / decoration.
     //    disabledGeter(componentID, beatIndex, subdivisionIndex, ID) -> Should the toggle button (input node) be enabled or disabled. True for disabled.
+    // The ids will be displayed in the order they are returned from the idGetter.
     // The given classNames will be given to the toggle buttons (and their td containers).
     
     const IDs = idGetter(componentID);

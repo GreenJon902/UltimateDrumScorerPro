@@ -317,7 +317,7 @@ function preRenderScoreComponent(componentID) {
     return renderInstructions;
 }
 
-function getSvgNodes(type) {
+export function getSvgNodes(type) {
     // Loads the SVG information for each of the drums/decorations, returns an array ordered in height to draw at, and a map from ID to svg node.
     // The type is the ID of the svg in the html document that contains an element with id="defs" which contains the items we want.
     // Return is {array, map}.
