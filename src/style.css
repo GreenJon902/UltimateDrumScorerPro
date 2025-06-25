@@ -237,3 +237,11 @@ svg:hover {
 	}
 
 }
+
+.editor-selectors-container {
+	display: flex;
+}
+
+.editor-selectors-container > table {
+	height: fit-content;
+}

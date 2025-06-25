@@ -76,15 +76,59 @@ export function setScoreComponentTimeSignatureDenominator(componentID, value) {
 }
 
 export function getScoreComponentEnabledDrums(componentID) {
-    // Returns the IDs of the drums (including cymbals) that are being used by this component.
+    // Returns the IDs of the drums (including cymbals) that are enabled by this component.
     // Not all of the returned IDs are necessarily used, but any that are used will definitely be here.
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["enabled-drums"]);  // Clone array
 }
 
+export function getScoreComponentEnabledDrum(componentID, drumID) {
+    // Returns true if the given drumID is enabled for this component.
+    return CURRENT_PROJECT["score-components"][componentID]["enabled-drums"].includes(drumID);
+}
+
+export function setScoreComponentEnabledDrum(componentID, drumID, value) {
+    // Sets whether the given drumID is enabled for this component.
+    // If the given drum is used then it will be cleared from all subdivisions.
+    
+    // Remove all usages of the drum
+    if (!value) {
+        for (let i=0; i<getScoreComponentTimeSignatureNumerator(componentID); i++) {
+            for (let j=0; j<getScoreComponentBeatSubdivisionCount(componentID, i); j++) {
+                setScoreComponentBeatSubdivisionDrum(componentID, i, j, drumID, false);
+            }
+        }
+    }
+    // Disable drum
+    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["enabled-drums"], drumID, value);
+}
+
 export function getScoreComponentEnabledDecorations(componentID) {
-    // Returns the IDs of the decorations that are being used by this component.
+    // Returns the IDs of the decorations that are enabled by this component.
     // Not all of the returned IDs are necessarily used, but any that are used will definitely be here.
     return Array.from(CURRENT_PROJECT["score-components"][componentID]["enabled-decorations"]);  // Clone array
+}
+
+export function getScoreComponentEnabledDecoration(componentID, decorationID) {
+    // Returns true if the given decorationID is enabled for this component.
+    return CURRENT_PROJECT["score-components"][componentID]["enabled-decorations"].includes(decorationID);
+}
+
+export function setScoreComponentEnabledDecoration(componentID, decorationID, value) {
+    // Sets whether the given decorationID is enabled for this component.
+    // If the given decoration is used then it will be cleared from all subdivisions.
+    
+    // Remove all usages of the decoration
+    if (!value) {
+        for (let i=0; i<getScoreComponentTimeSignatureNumerator(componentID); i++) {
+            for (let j=0; j<getScoreComponentBeatSubdivisionCount(componentID, i); j++) {
+                if (getScoreComponentBeatSubdivisionDrums(componentID, i, j).length !== 0) {  // Can only run on non-empty subdivisions
+                    setScoreComponentBeatSubdivisionDecoration(componentID, i, j, decorationID, false);
+                }
+            }
+        }
+    }
+    // Disable decoration
+    addRemoveFromArray(CURRENT_PROJECT["score-components"][componentID]["enabled-decorations"], decorationID, value);
 }
 
 export function getComponentX(componentType, componentID) {
