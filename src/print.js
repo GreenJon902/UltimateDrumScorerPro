@@ -1,39 +1,7 @@
+// Apparently converting HTML that contains SVGs to PDFs doesn't exist... So I've written it myself.
+// Also, respectfully, jsPDF, I don't come from js so I don't know the norm, but yo crap is a mess.
+
 const MM_TO_PT = 2.83465;
-
-/*class MatrixStack {
-    // Represents a combination of matrix operations that can be pushed and popped too, and can be used to set the PDF matrix (as jsPDF doesn't support pushing and popping matricies).
-    // Therefor the matrix is shaped [a c e]
-    //                               [b d f].
-    // This is connected to a specific jsPDF document, and whenever the matrix changes, the doc's matrix will be set
-
-    constructor(doc) {
-        // Create a new matrix stack, it starts as an identity matrix.
-        this.matrixes = [];  // Holds all of our matricies
-        this.doc = doc;  // Save this
-        
-        this.updateDoc();  // Ensure current matrix is correct
-    }
-
-    pushTranslation(x, y) {
-        // Push a translation matrix to the top of the stack
-        this.matrixes.push([1, 0, 0, 1, x, y]);
-        this.updateDoc();
-    }
-
-    pop() {
-        // Pop the last matrix that was added
-        this.matrixes.pop();
-        this.updateDoc();
-    }
-    
-    updateDoc() {
-        // Update the current transformation of the document with the current matrix stack
-        const finalMatrix = [[1, 0, 0, 1, 0, 0], ...this.matrixes]  // Insert identity beforehand
-            .map(m => this.doc.Matrix(...m))
-            .reduce((a, b) => (this.doc.matrixMult(a, b)));
-        this.doc.setCurrentTransformationMatrix(finalMatrix);
-    }
-}*/
 
 
 export function nodeToPDF(node) {
@@ -45,13 +13,9 @@ export function nodeToPDF(node) {
 
     // Functions to convert from HTML location (in px?) to pdf location (in mm)
     const rootRect = node.getBoundingClientRect();
-    const posConvert = (arg) => {
-        let rect;
-        if (arg instanceof Array) {
-            rect = {x: arg[0], y: arg[1], w: arg[2], height: arg[3]};
-        } else { // Has to be a node then
-            rect = arg.getBoundingClientRect();
-        }
+    const posConvert = (node) => {
+        const rect = node.getBoundingClientRect();
+        
         return {
             x: (rect.x - rootRect.x) / rootRect.width * 210,
             y: (rect.y - rootRect.y) / rootRect.height * 297,
@@ -61,16 +25,9 @@ export function nodeToPDF(node) {
     };
     
     // Fill content
-    addNode(doc, node, posConvert, /*new MatrixStack(doc)*/);
+    addNode(doc, node, posConvert);
 
-
-    doc.rect(0, 0, 20, 20, 'F')
-    doc.setCurrentTransformationMatrix(doc.Matrix(1, 0, 0, 1, 100 * doc.internal.scaleFactor, -100 * doc.internal.scaleFactor));
-    doc.rect(0, 0, 20, 20, 'F');
-
-
-    // Open print dialogue
-    //doc.autoPrint();
+    // Open pdf in a new tab
     doc.save("pdf.pdf");
 }
 
@@ -83,28 +40,23 @@ function pushTranslation(doc, x, y) {
 }
 
 
-function addNode(doc, node, posConvert, /*matrixStack*/) {
+function addNode(doc, node, posConvert) {
     // Add the given node to the document, where width and height are is the size of the whole document.
     //      posConvert(node|[int, int, int, int]) => {x, y, w, h} - Convert the locations of the given node / the [x, y, w, h] to pdf metrics.
-    //      matrixStack: MatrixStack - Tracks the current transformation matrix because jsPDF can't do that for us. This should be connected to the same doc as the one we have been given.
     
     // Save state
     doc.saveGraphicsState();  // We do this for two reasons: a) to allow matrixes to be popped. b) to reduce the impact of changing styling settings (like stroke width and fill)
-    //matrixStack.updateDoc();  // Ensure correct matrix is still here (as changes to graphics state) may unintentially make changes
     
     // Extract some information we may need
     let relativeLocation = posConvert(node);
 
     // If there is a transform then apply it
-    let needToPop = false;
     if (node.getAttribute("transform") !== null) {
-        needToPop = true;
         const transform = node.getAttribute("transform").match("^([a-z]+)\\(([[0-9. -]+]*)\\)$");
         const args = transform[2].split(" ");
         if (transform[1] === "translate") {
             const x = parseFloat(args[0]);
             const y = parseFloat(args[1]);
-            //matrixStack.pushTranslation(x, y);
             pushTranslation(doc, x, y);
         } else {
             throw "Unexpected transform type";
@@ -114,7 +66,7 @@ function addNode(doc, node, posConvert, /*matrixStack*/) {
     // Handle the node
     const nodeName = node.nodeName.toUpperCase();
     if (nodeName === "DIV") {  // Run for each child
-        Array.from(node.children).forEach(childNode => addNode(doc, childNode, posConvert, /*matrixStack*/));
+        Array.from(node.children).forEach(childNode => addNode(doc, childNode, posConvert));
     } else if (nodeName === "SVG") {  // Translate, then run for each child
         // Account for left and top of svg
         pushTranslation(doc, relativeLocation.x, relativeLocation.y);  // TODO: Account for border width
@@ -123,7 +75,7 @@ function addNode(doc, node, posConvert, /*matrixStack*/) {
         pushTranslation(doc, -viewbox[0], -viewbox[1]);
         // TODO: Size of viewbox
         // Draw children
-        Array.from(node.children).forEach(childNode => addNode(doc, childNode, posConvert, /*matrixStack*/));
+        Array.from(node.children).forEach(childNode => addNode(doc, childNode, posConvert));
     } else if (nodeName === "PATH") {  // Convert path to a bunch of individual lines
         // Set up styling
         doc.setLineWidth(1);
@@ -158,7 +110,7 @@ function addNode(doc, node, posConvert, /*matrixStack*/) {
                   
         }
     } else if (nodeName === "USE") {  // Translate, then run for children of def
-        Array.from(document.querySelector(node.getAttribute("href")).children).forEach(childNode => addNode(doc, childNode, posConvert, /*matrixStack*/));
+        Array.from(document.querySelector(node.getAttribute("href")).children).forEach(childNode => addNode(doc, childNode, posConvert));
     } else if (nodeName === "CIRCLE") {  // Just draw a circle, with/without a fill as required
         // Set up styling
         const computedStyle = getComputedStyle(node);
@@ -187,8 +139,5 @@ function addNode(doc, node, posConvert, /*matrixStack*/) {
     }
     
     // Restore state
-    if (needToPop) {
-        //matrixStack.pop();
-    }
     doc.restoreGraphicsState();
 }
