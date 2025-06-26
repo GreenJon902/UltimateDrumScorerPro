@@ -53,6 +53,8 @@
         	<div id="component-controls">
 	    		<button type="button" onclick="newScoreComponent()">+S</button>
 	    		<button type="button" onclick="newTextComponent()">+T</button>
+	    		<br>
+	    		<button type="button" onclick="printContainer()">Print</button>
 	    	</div>
         	<div id="rendered-pane-padding">
 			    <div id="component-container">
@@ -64,10 +66,15 @@
 		</div>
     </body>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
+    
+
+
     <script type="module">
     import {renderComponent} from "./rendered.js";
     import {loadJSON, createNewScoreComponent, createNewTextComponent} from "./files.js";
     import {setEditComponent} from "./editor.js";
+    import {nodeToPDF} from "./print.js";
     
     // Load temp project during dev and setup
     
@@ -99,6 +106,10 @@
    		const id = createNewTextComponent();
    		renderComponent("text-component", id);
    		setEditComponent("text-component", id);
+   	}
+   	window.printContainer = function() {
+   		// Prints the component-container
+   		nodeToPDF(document.getElementById("component-container"));
    	}
     </script> 
 </html>
