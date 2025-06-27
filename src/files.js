@@ -4,7 +4,22 @@ var CURRENT_PROJECT;
 export function loadJSON(data) {
     // Validates and loads the given data as the current project.
     // TODO: Validation
-    CURRENT_PROJECT = data;
+    CURRENT_PROJECT = JSON.parse(JSON.stringify(data));  // Deep-copy the object
+}
+
+export function writeJSON() {
+    // Returns the current project as JSON.
+    return JSON.parse(JSON.stringify(CURRENT_PROJECT));  // Deep-copy the object
+}
+
+export function writeProjectToString() {
+    // Exports the current project as a string that can be imported later by loadProjectFromString().
+    return JSON.stringify(writeJSON());
+}
+
+export function loadProjectFromString(string) {
+    // Loads a string that was exported by writeProjectToString().
+    loadJSON(JSON.parse(string)); 
 }
 
 export function listScoreComponents() {
@@ -272,8 +287,15 @@ function addRemoveFromArray(array, item, shouldContain) {
 }
 
 export function listTextComponents() {
-    // Returns an array of all the text component IDs
+    // Returns an array of all the text component IDs.
     return Object.keys(CURRENT_PROJECT["text-components"]);
+}
+
+export function listComponents() {
+    // Returns an array of all the component IDs.
+    // The format is [[componentType, componentId]...].
+    return [...listScoreComponents().map(id => ["score-component", id]), 
+    		...listTextComponents().map(id => ["text-component", id])];
 }
 
 export function createNewTextComponent() {
