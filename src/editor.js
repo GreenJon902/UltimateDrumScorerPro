@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration} from "./files.js";
 import {getSvgNodes, renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
@@ -60,6 +60,9 @@ function editScoreComponent(componentID) {
         {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
     );
     
+    // Score-component side-decorations
+    addSideDecorationSelectors(div, componentID);
+    
     // Selectors for which drums and decorations are enabled
     div.appendChild(document.createElement("br"));
     const selectorsText = document.createElement("span");
@@ -117,6 +120,58 @@ function editScoreComponent(componentID) {
         }
     }, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"], (componentID, beatIndex, subdivisionIndex, drumID) => false);  
     editor.appendChild(table);
+}
+
+function addSideDecorationSelectors(div, componentID) {
+    // Add the side-decoration selectors for the given component to the given div. 
+    div.appendChild(createSideDecorationSelector("left", 
+        () => getScoreComponentLeftDecoration(componentID), 
+        (value) => {
+            setScoreComponentLeftDecoration(componentID, value);
+            renderComponent("score-component", componentID);
+        }
+    ));
+    div.appendChild(createSideDecorationSelector("right", 
+        () => getScoreComponentRightDecoration(componentID), 
+        (value) => {
+            setScoreComponentRightDecoration(componentID, value);
+            renderComponent("score-component", componentID);
+        }
+    ));
+}
+
+function createSideDecorationSelector(side, getter, setter) {
+    // Creates and returns a div with a fully working option selector for a given side's decorations.
+    // The from getSvgNodes("side-decorations") should have a data-side="left" or "right".
+    // The getter takes no arguements and returns the string id of the decoration. The setter takes the arguement of the id of the new decoration.
+
+    const options = getSvgNodes("side-decorations");
+    const currentSelected = getter();
+    
+    // Create and add nodes
+    const div = document.createElement("div");
+    const text = document.createElement("span");
+    text.innerHTML = side + " Decoration: ";
+    const select = document.createElement("select");
+    ["",  // Insert a 'none-selected' option at the start
+        ...options.array
+            .filter(node => node.dataset.side === side)
+            .map(node => node.id)
+    ]          .forEach(optionName => {  // Add nodes for each option
+            const option = document.createElement("option");
+            option.value = optionName;
+            option.innerHTML = optionName;
+            option.selected = currentSelected === optionName;
+            select.appendChild(option);
+    });
+    div.appendChild(text);
+    div.appendChild(select);
+
+    // Attach bindings
+    select.onchange = () => setter(select.value);
+    
+    // Return div
+    return div;
 }
 
 function createIDSelector(componentID, idList, getter, setter) {

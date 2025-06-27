@@ -44,6 +44,35 @@
 				</g>
 			</defs>
 		</svg>
+		<svg id="side-decorations" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+			<defs id="defs">
+				<g id="start" data-width="5" data-height="15" data-side="left">
+					<path d="M-5 -7.5 l0 15 M-3 -3 l0 6"/>
+					<circle cx="-1" cy="-1.5" r="0.6"/>
+					<circle cx="-1" cy="1.5" r="0.6"/>
+				</g>
+				<g id="repeat-start" data-width="6" data-height="20" data-side="left">
+					<use href="#start" transform="translate(1 0)"/>
+					<path d="M-6 -7 l6 -3 M-6 7 l6 3"/>
+				</g>
+				<g id="option-start" data-width="5" data-height="20" data-side="left">
+					<path d="M0 -10 q-5 10 0 20"/>
+				</g>
+
+				<g id="end" data-width="5" data-height="15" data-side="right">
+					<use href="#start" transform="scale(-1 1) translate(5 0)"/>
+				</g>
+				<g id="repeat-end" data-width="6" data-height="20" data-side="right">
+					<use href="#repeat-start" transform="scale(-1 1) translate(6 0)"/>
+				</g>
+				<g id="option-end" data-width="5" data-height="20" data-side="right">
+					<use href="#option-start" transform="scale(-1 1) translate(5 0)"/>
+				</g>
+				<g id="bar-end" data-width="0" data-height="15" data-side="right">
+					<path d="M0 -7.5 l0 15"/>
+				</g>
+			</defs>
+		</svg>
 		
 		<svg id="text-svg" xmlns="http://www.w3.org/2000/svg" style="visibility: hidden; height: 1mm;">
 		</svg>
@@ -87,7 +116,7 @@
         ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
         ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
         ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ]]}/*, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
+        ]], "left-decoration": "", "right-decoration": ""}/*, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
         [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
         ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
         ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}

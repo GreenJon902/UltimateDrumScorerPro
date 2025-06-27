@@ -1,4 +1,4 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations} from "./files.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration} from "./files.js";
 import {setEditComponent} from "./editor.js";
 
 class RenderInstruction {
@@ -33,6 +33,8 @@ class RenderInstruction {
     //     CONTRACT-END:
     //     DECORATION:
     //         - decorations
+    //     SIDE-DECORATION:
+    //         - side-decoration
     // 
     // drums: A string array of the drumIDs to draw.
     // decorations: A string array of the decorationIDs to draw.
@@ -44,12 +46,14 @@ class RenderInstruction {
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
     // length: The relative duration of a note compared to the rest of the notes. If a note is twice as long then it should have double the duration.
+    // side-decoration:  The side decoration ID of the side decoration to draw. 
     // 
     // GROUPs connect to the next GROUP or GROUP-END, so must be followed by at least one of these.
     // A GROUP-END must follow a GROUP.
     // FLAGs stand alone so should not follow an un-ended GROUP. This means crotchets should be represented using a FLAG with flags=0.
     // Each CONTRACT-START must be closed by a CONTRACT-END, and must be closed before another CONTRACT can start.
     // RESTS and CONTRACTING-START/END can come anywhere between GROUPs and FLAGs.
+    // SIDE-DECORATIONs cannot come within unended groups.
     // 
     // CONTRACT groups are for contracting-ratios, they say notes inside this group (of the length given inside ratio) should be contracted so that they last the length of a single beat.
     
@@ -61,6 +65,7 @@ class RenderInstruction {
     static get CONTRACT_START() {return "CONTRACT_START";}
     static get CONTRACT_END() {return "CONTRACT_END";}
     static get DECORATION() {return "DECORATION";}
+    static get SIDE_DECORATION() {return "SIDE-DECORATION";}
 
     constructor(type, ...args) {
         // Type should be the value in GROUP, GROUP_END...
@@ -93,6 +98,8 @@ class RenderInstruction {
             this.ratio = args[0];
             this.hooks = args[1];
         } else if (type === RenderInstruction.CONTRACT_END) {
+        } else if (type === RenderInstruction.SIDE_DECORATION) {
+            this.side_decoration = args[0];
         } else {
             throw "Unkown type " + type;
         }
@@ -162,6 +169,13 @@ function preRenderScoreComponent(componentID) {
     
     
     const renderInstructions = [];
+    
+    // Add the left decoration
+    const leftDecorationID = getScoreComponentLeftDecoration(componentID);
+    if (leftDecorationID !== "") {
+        renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION,  leftDecorationID));
+    }
+
     // We do each beat separately
     for (let bi=0; bi < numerator; bi++) {  // BI: Beat Index
         const beatSubdivisions = getScoreComponentBeatSubdivisionCount(componentID, bi);
@@ -311,6 +325,14 @@ function preRenderScoreComponent(componentID) {
         }
 
     }
+
+    // Add right decoration
+    const rightDecorationID = getScoreComponentRightDecoration(componentID);
+    if (rightDecorationID !== "") {
+        renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION, rightDecorationID));
+    }
+
+
     
     console.log("5. RI:", renderInstructions)
 
@@ -361,18 +383,20 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     // Returns some information on how to draw the given instructions.
     // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
     // It returns {
-    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST. It is the start and end of a CONTRACT_START/END pair.
+    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST / SIDE_DECORATION. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
     //     restCenterYs: [int] - The y line where rests should be centered on. The index is the number of the rest as they come in instructions.
     //     contractCenterYs: [int] - The y line where contracts should be centered on. The index is the number of the contract (one for each pair) as they come in instructions.
     //     stemStartYs: [int] - The y level where stems (and hence beams and flags and dots) should be start being drawn on (so the top). The index is the number of the stem as they come in instructions.
     //     decorationPoss: [{x: int, y: int}] - The (x,y) where decorations should be start being drawn. The x-coord is the center line to draw them on, the y-coord is the center of the top decoration. The index is the number of the stems with decorations as they come in instructions.
-    //     width: int, height: int  - The width and height of the SVG to be drawn
+    //     width: int, height: int  - The width and height of the SVG to be drawn.
+    //     sideDecorationCenterY: int - The y position that side-decorations should be centered on.
     //  }
     //  The rhythmLengthMultiplier is a hint for how wide to draw each instruction (excluding contracts) per unit instruction.length.
 
     let {array: DRUMS, map: DRUMS_MAP} = getSvgNodes("drums");
     let {array: DECORATIONS, map: DECORATIONS_MAP} = getSvgNodes("decorations");
+    let {array: SIDE_DECORATIONS, map: SIDE_DECORATIONS_MAP} = getSvgNodes("side-decorations");
 
     
     // Get a list of the DRUMS that are. Order is preserved.
@@ -455,6 +479,9 @@ function calculateSpacing(instructions, rhythmLengthHint) {
             if (instructions[i-1].type === RenderInstruction.REST) {
                 x += 2;
             }
+        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+            // We add the whole width here as we want x to be on the right side of the decoration
+            x += parseFloat(SIDE_DECORATIONS_MAP[instr.side_decoration].dataset.width); 
         } else {
             throw "Unexpected instruction type";
         }
@@ -476,6 +503,9 @@ function calculateSpacing(instructions, rhythmLengthHint) {
             if (dotWidth > currentWidth) {
                 x += dotWidth - currentWidth;  // Plus an extra two so it doesn't collide with the next thing
             }
+            
+            // Add some padding
+            x += 2;
         } else if ([RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type)) {
             // There might be some decorations to draw
             // We do this here because the stem might have been moved by rhythmLengthHint
@@ -531,6 +561,8 @@ function calculateSpacing(instructions, rhythmLengthHint) {
                 instructionXs[currentContractI] = instructionXs[currentContractI + 1];  // No hooks so starts with a GROUP so we can get the next x
                 instructionXs[i] = instructionXs[i - 1];  // No hooks so ends with a GROUP_END so we can get last x
             }
+        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+            x += 2;  // Add some padding
         } else {
             throw "Unexpected instruction type"
         }
@@ -632,21 +664,25 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     }
     console.log("4. TRh:", tallestRhythm);
 
-    // Fifth, calculate the tallest rest, also count the rests
-    let tallestRest = 0;
+    // Fifth, calculate the tallest rest / side-decoration, also count the rests and count the side-decorations
+    let tallestRestOrSideDeco = 0;
     let restCount = 0;
+    let sideDecorationCount = 0;
     for (let i=0; i<instructions.length; i++) {
         const instr = instructions[i];
         if (instr.type === RenderInstruction.REST) {
             restCount += 1;
             if (instr.ticks === 0) {  // Is crotchet rest?
-                tallestRest = Math.max(tallestRest, 15);
+                tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, 15);
             } else {
-                tallestRest = Math.max(tallestRest, 5 * instr.ticks);
+                tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, 5 * instr.ticks);
             }
+        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+            sideDecorationCount += 1;
+            tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, parseFloat(SIDE_DECORATIONS_MAP[instr.side_decoration].dataset.height));
         }
     }
-    console.log("5. TRe:", tallestRest);
+    console.log("5. TROSD:", tallestRestOrSideDeco);
     
     // Sixth, find out if we have any contracts we need to account for, and how many there are
     let contractCount = 0;
@@ -694,7 +730,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     } else {
         headHeight = 0;
     }
-    const underRhythmHeight = Math.max(tallestRest, headHeight);  // Height of stuff under beams
+    const underRhythmHeight = Math.max(tallestRestOrSideDeco, headHeight);  // Height of stuff under beams
         
     const restCenterY = contractHeight + tallestRhythm + (underRhythmHeight / 2) + maxDecorationsHeight;
     const restCenterYs = new Array(restCount).fill(restCenterY);
@@ -702,6 +738,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     
     const contractCenterYs = new Array(contractCount).fill(contractHeight / 2);
     const stemStartYs = new Array(stemCount).fill(contractHeight + maxDecorationsHeight);
+    const sideDecorationCenterY = tallestRhythm + contractHeight + maxDecorationsHeight + underRhythmHeight / 2;
     
      // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
     const drumYsMap = {};
@@ -726,7 +763,8 @@ function calculateSpacing(instructions, rhythmLengthHint) {
         stemStartYs,
         decorationPoss,
         width,
-        height
+        height,
+        sideDecorationCenterY
     };
     console.log("9. RE:", ret);
     return ret;
@@ -906,6 +944,11 @@ function draw(instructions, spacing) {
             // Update trackers
             currentContractI = null;
             contractI += 1;
+        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+            const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+            use.setAttribute("href", "#" + instr.side_decoration);
+            use.setAttribute("transform", `translate(${spacing.instructionXs[i]} ${spacing.sideDecorationCenterY})`);
+            svg.appendChild(use);
         } else {
             throw "Unexpected instruction type"
         }

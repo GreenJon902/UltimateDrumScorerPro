@@ -51,6 +51,8 @@ export function createNewScoreComponent() {
         "enabled-drums": ["snare", "kick"],
         "enabled-decorations": ["accent"],
         "rhythm-length-hint": 0,
+        "left-decoration": "",
+        "right-decoration": "",
         "score-content": [
             [{"drums": [], "decorations": []}],
             [{"drums": [], "decorations": []}],
@@ -180,15 +182,25 @@ export function setScoreComponentRhythmLengthHint(componentID, value) {
     CURRENT_PROJECT["score-components"][componentID]["rhythm-length-hint"] = value;
 }
 
-/*export function getScoreComponentLeftDecoration(componentID) {
-	// Returns the ID of the left decoration (e.g. a repeat marker) of this component or null.
+export function getScoreComponentLeftDecoration(componentID) {
+	// Returns the ID of the left decoration (e.g. a repeat marker) of this component or an empty string.
     return CURRENT_PROJECT["score-components"][componentID]["left-decoration"];
 }
 
+export function setScoreComponentLeftDecoration(componentID, value) {
+	// Sets the ID of the left decoration (e.g. a bar end sign) of this component or an empty string.
+    CURRENT_PROJECT["score-components"][componentID]["left-decoration"] = value;
+}
+
 export function getScoreComponentRightDecoration(componentID) {
-	// Returns the ID of the right decoration (e.g. a bar end sign) of this component or null.
+	// Returns the ID of the right decoration (e.g. a repeat marker) of this component or an empty string.
     return CURRENT_PROJECT["score-components"][componentID]["right-decoration"];
-}*/
+}
+
+export function setScoreComponentRightDecoration(componentID, value) {
+	// Sets the ID of the right decoration (e.g. a bar end sign) of this component or an empty string.
+    CURRENT_PROJECT["score-components"][componentID]["right-decoration"] = value;
+}
 
 export function getScoreComponentBeatSubdivisionCount(componentID, beatIndex) {
 	// Returns the number of times a given beat is subdivided.

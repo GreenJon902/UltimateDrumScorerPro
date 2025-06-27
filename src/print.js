@@ -86,6 +86,13 @@ function pushTranslation(doc, x, y) {
     doc.setCurrentTransformationMatrix(doc.Matrix(1, 0, 0, 1, x * doc.internal.scaleFactor, -y * doc.internal.scaleFactor));
 }
 
+function pushScale(doc, x, y) {
+    // Pushes a scale matrix of SF (x, y)mm onto the given jsPDF doc.
+    // This exists because setCurrentTransformationMatrix actually pushes, and I find the naming unintuative.
+    
+    doc.setCurrentTransformationMatrix(doc.Matrix(x, 0, 0, y, 0, 0));
+}
+
 
 function addNode(doc, node, posConvert) {
     // Add the given node to the document, where width and height are is the size of the whole document.
@@ -99,14 +106,21 @@ function addNode(doc, node, posConvert) {
 
     // If there is a transform then apply it
     if (node.getAttribute("transform") !== null) {
-        const transform = node.getAttribute("transform").match(/^([a-z]+)\(([[0-9. -]+]*)\)$/);
-        const args = transform[2].split(" ");
-        if (transform[1] === "translate") {
-            const x = parseFloat(args[0]);
-            const y = parseFloat(args[1]);
-            pushTranslation(doc, x, y);
-        } else {
-            throw "Unexpected transform type";
+        const transforms = Array.from(node.getAttribute("transform").matchAll(/([a-z]+)\(([[0-9. -]+]*)\)/g));
+        for (let i=0; i<transforms.length; i++) {
+            const transform = transforms[i];
+            const args = transform[2].split(" ");
+            if (transform[1] === "translate") {
+                const x = parseFloat(args[0]);
+                const y = parseFloat(args[1]);
+                pushTranslation(doc, x, y);
+            } else if (transform[1] === "scale") {
+                const x = parseFloat(args[0]);
+                const y = parseFloat(args[1]);
+                pushScale(doc, x, y);
+            } else {
+                throw "Unexpected transform type";
+            }
         }
     }
 
@@ -128,28 +142,41 @@ function addNode(doc, node, posConvert) {
         doc.setLineWidth(1);
 
         // Hope the path is correctly formed... and then just parse it
-        const matches = node.getAttribute("d").matchAll(/([a-zA-Z]) *([-0-9.]+) +([-0-9.]+)/g);
+        const matches = node.getAttribute("d").match(/[A-Za-z]|[-0-9\.]+/g);
         let currentX = 0;
         let currentY = 0;
-        for (let match of matches) {
-            const c = match[1];  // The character (e.g. M, l)
-            const argX = parseFloat(match[2]);
-            const argY = parseFloat(match[3]);
+        let currentArgs = [];
+        for (let i=0; i<matches.length;) {  // i is incremented in loop
+            // Get all instruction information
+            const c = matches[i];
+            i++;
+
+            currentArgs = [];  // Empty array
+            while (i<matches.length && matches[i].match(/[A-Za-z]/) === null) {  // While more matches left and match ins't a char
+                currentArgs.push(parseFloat(matches[i]));
+                i++;
+            }
             
+            // Handle instruction
             if (c === "M") {  // Absolute move
-                currentX = argX;
-                currentY = argY;
+                currentX = currentArgs[0];
+                currentY = currentArgs[1];
             } else if (c === "m") {  // Relative move
-                currentY += argY;
-                currentX += argX;      
+                currentX += currentArgs[0];
+                currentY += currentArgs[1];      
             } else if (c === "L") {  // Absolute line
-                doc.line(currentX, currentY, argX, argY);
-                currentY = argY;
-                currentX = argX;      
+                doc.line(currentX, currentY, currentArgs[0], currentArgs[1]);
+                currentX = currentArgs[0];
+                currentY = currentArgs[1];      
             } else if (c === "l") {  // Relative line
-                doc.line(currentX, currentY, currentX + argX, currentY + argY);
-                currentY += argY;
-                currentX += argX;      
+                doc.line(currentX, currentY, currentX + currentArgs[0], currentY + currentArgs[1]);
+                currentX += currentArgs[0];
+                currentY += currentArgs[1];      
+            } else if (c === "q") {  // Relative bezier
+                doc.lines([[0, 0, currentArgs[0], currentArgs[1], currentArgs[2], currentArgs[3]]], currentX, currentY);
+                currentX += currentArgs[2];
+                currentY += currentArgs[3];
+
             } else {
                 throw "Unexpected path character";
             }
