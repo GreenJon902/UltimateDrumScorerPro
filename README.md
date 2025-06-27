@@ -4,14 +4,12 @@ A) I'm pretty sure good drum score programs just don't exist... if they do I can
   
 B) Drum notation is actually stupid. Notation on staff makes sense for an instrument like a violin where if you hit a C or a D it doesn't really mater 'cause that's pretty much the same note, but a top and a snare deserve different symbols. And don't even get me started on cymbals...).
 
-Scope:   
-I don't finish projects, so this is very limited:  
-Bars can be dragged around the page. They show the notes. And they can have a single decoration on both the left and the right side.  
-You can add text. This text can be resized and dragged around the page.  
-Bars can be edited by a grid of buttons. Each row of buttons corresponds to a type of drum.  
-Which drums are selected can be configured. Drums consist of a symbol and a height to draw at.  
-Decorations can also be drawn above the bars (e.g. accent patterns).  
-Time signatures can be n/4 where n is a positive integer.  
-We set a subdivision quantity for each bar, this can be any positive integer.  
-Each subdivision can be further subdivided once into n more sub-subdivisions, where n is a positive integer.  
-You can select an order of bars to be exported as a groove-scribe link (because it has a drum machine already).  
+So what the mission is:
+A simple* yet not limiting (e.g. support for any timesignature/duplet) drum charting program that is fast to use and fast to read. 
+It has no account, no accounts / cloud saving, limited dependance on js frameworks. 
+It runs in a website, so no need to download software.
+Saving it is just downloading a pdf which has embedded metadata so it can be edited by this program.
+It does die if you add more than four bars (ehem groovescribe).
+Art is based on the style my drum teacher used to teach me - reducing unnecessary details without remove information.
+
+*It's simple to me, if your brain is too small then that's on you.
