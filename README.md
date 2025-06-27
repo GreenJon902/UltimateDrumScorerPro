@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro/badge)](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro)
+
 A) I'm pretty sure good drum score programs just don't exist... if they do I can't find one that fits my needs (web-based, no account needed, can do multipage projects, supports all the cymbals and drums I need).  
   
 B) Drum notation is actually stupid. Notation on staff makes sense for an instrument like a violin where if you hit a C or a D it doesn't really mater 'cause that's pretty much the same note, but a top and a snare deserve different symbols. And don't even get me started on cymbals...).
