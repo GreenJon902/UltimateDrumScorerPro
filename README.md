@@ -6,7 +6,7 @@ B) Drum notation is actually stupid. Notation on staff makes sense for an instru
 
 So what the mission is:
 A simple* yet not limiting (e.g. support for any timesignature/duplet) drum charting program that is fast to use and fast to read. 
-It has no account, no accounts / cloud saving, limited dependance on js frameworks. 
+It has no account, no accounts / cloud saving, limited dependance on js frameworks (i have heard of the horrors of the js community... I don't want none of that, leave me alone, please). 
 It runs in a website, so no need to download software.
 Saving it is just downloading a pdf which has embedded metadata so it can be edited by this program.
 It does die if you add more than four bars (ehem groovescribe).
