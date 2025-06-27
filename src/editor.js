@@ -3,13 +3,20 @@ import {getSvgNodes, renderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
+    // If both args are "" then the editor will be cleared and then the function will return.
     
     // First clear the old data
     let editor = document.getElementById("editor-pane");
     while (editor.children.length > 0) {
         editor.removeChild(editor.children[0]);
     }
+    
+    // Special case: if componentType, componentID == "" then just exit
+    if (componentType === "" && componentID === "") {
+        return;
+    }
 
+    // Render new editor
     const editFunc = {
         "score-component": editScoreComponent,
         "text-component": editTextComponent

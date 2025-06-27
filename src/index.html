@@ -47,14 +47,18 @@
 		
 		<svg id="text-svg" xmlns="http://www.w3.org/2000/svg" style="visibility: hidden; height: 1mm;">
 		</svg>
+		
+		<input type="file" id="pdfInput" accept="application/pdf" style="display: none;" />
     	
     
         <div id="rendered-pane">
         	<div id="component-controls">
 	    		<button type="button" onclick="newScoreComponent()">+S</button>
 	    		<button type="button" onclick="newTextComponent()">+T</button>
-	    		<br>
-	    		<button type="button" onclick="printContainer()">Print</button>
+	    	</div>
+	    	<div id="file-controls">
+	    		<button type="button" onclick="saveProject()">Save</button>
+	    		<button type="button" onclick="loadProject()">Load</button>
 	    	</div>
         	<div id="rendered-pane-padding">
 			    <div id="component-container">
@@ -71,45 +75,86 @@
 
 
     <script type="module">
-    import {renderComponent} from "./rendered.js";
-    import {loadJSON, createNewScoreComponent, createNewTextComponent} from "./files.js";
-    import {setEditComponent} from "./editor.js";
-    import {nodeToPDF} from "./print.js";
-    
-    // Load temp project during dev and setup
-    
-    loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":30, "enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
-    [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ]]}/*, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
-    [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-    ]]}*/}});
+        import {renderComponent} from "./rendered.js";
+        import {loadJSON, createNewScoreComponent, createNewTextComponent, listComponents} from "./files.js";
+        import {setEditComponent} from "./editor.js";
+        import {nodeToPDF, loadMetaFromPDFString} from "./print.js";
+        
+        // Load temp project during dev and setup
+        
+        loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":30, "enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
+        [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ]]}/*, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
+        [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
+        ]]}*/}});
 
-    setEditComponent("score-component", "score-component-0")
-    renderComponent("score-component", "score-component-0");
-    //renderComponent("score-component", "score-component-1");
-    
-    // Functions for buttons, declare as window. so is accessable in their scope
-   	window.newScoreComponent = function() {
-   		// Create a new score component, render it and set it as the current edit
-   		const id = createNewScoreComponent();
-   		renderComponent("score-component", id);
-   		setEditComponent("score-component", id);
-   	}
-   	window.newTextComponent = function() {
-   		// Create a new text component, render it and set it as the current edit
-   		const id = createNewTextComponent();
-   		renderComponent("text-component", id);
-   		setEditComponent("text-component", id);
-   	}
-   	window.printContainer = function() {
-   		// Prints the component-container
-   		nodeToPDF(document.getElementById("component-container"));
-   	}
+        setEditComponent("score-component", "score-component-0")
+        renderComponent("score-component", "score-component-0");
+        //renderComponent("score-component", "score-component-1");
+        
+        // Functions for buttons, declare as window. so is accessable in their scope
+        window.newScoreComponent = function() {
+            // Create a new score component, render it and set it as the current edit.
+            const id = createNewScoreComponent();
+            renderComponent("score-component", id);
+            setEditComponent("score-component", id);
+        }
+        window.newTextComponent = function() {
+            // Create a new text component, render it and set it as the current edit.
+            const id = createNewTextComponent();
+            renderComponent("text-component", id);
+            setEditComponent("text-component", id);
+        }
+        window.saveProject = function() {
+            // Saves the project as a PDF with all the content, and with some metadata to allow the pdf to be imported back into the program.
+            // This will open a prompt to ask the user for a file name.
+            const fileName = window.prompt("File name:");
+            if (fileName === null) {
+                return;  // Assume doesn't want to save
+            }
+            nodeToPDF(document.getElementById("component-container"), fileName);
+        }
+        window.loadProject = function() {
+            // Load a pdf containing project metadata back into the program.
+            // This sends a click event to a fileinput node with id "pdfInput".
+            document.getElementById('pdfInput').click();
+        }
+        document.getElementById('pdfInput').addEventListener('change', () => {  // The actual binding for when we need to read a pdf
+            const fileInput = document.getElementById('pdfInput');
+            if (fileInput.files.length === 0) {
+                throw "No files submitted";
+            } else if (fileInput.files.length > 1) {
+                throw "Too many files submitted";
+            } else {
+                const reader = new FileReader();
+                
+                reader.onload = function (e) {  // Actually load result
+                
+                    // Load result into files.js
+                    const binaryString = e.target.result;
+                    try {
+                        loadMetaFromPDFString(binaryString);
+                    } catch (err) {
+                        alert("Failed to load file: " + err);
+                    }
+                    
+                    // Clear old rendered data and re-render new
+                    const componentContainer = document.getElementById("component-container");
+                    componentContainer.removeChild(...componentContainer.children);  // Remove all children
+                    setEditComponent("", "");  // Edit nothing
+                    listComponents().forEach(args => renderComponent(args[0], args[1]));  // Render components
+                    
+                };
+                
+                // Read file, this will result in the onload getting called.
+                reader.readAsBinaryString(fileInput.files[0]);
+            }
+        });
     </script> 
 </html>

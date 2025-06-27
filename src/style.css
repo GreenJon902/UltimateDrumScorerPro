@@ -142,13 +142,21 @@ body {
 	overflow: auto;
 }
 
-#component-controls {
+#component-controls, #file-controls {
 	position: absolute;
-	right: 1ch;
-	bottom: 1ch;
 	z-index: 10;
 	display: flex;
     flex-direction: column;
+}
+
+#component-controls {
+	right: 1ch;
+	bottom: 1ch;
+}
+
+#file-controls {
+	right: 1ch;
+	top: 1ch;
 }
 
 #editor-pane {

@@ -1,11 +1,15 @@
 // Apparently converting HTML that contains SVGs to PDFs doesn't exist... So I've written it myself.
 // Also, respectfully, jsPDF, I don't come from js so I don't know the norm, but yo crap is a mess.
 
+import {loadProjectFromString, writeProjectToString} from "./files.js";
+
+
 const MM_TO_PT = 2.83465;
 
 
-export function nodeToPDF(node) {
-    // Converts the given node into a PDF.
+export function nodeToPDF(node, pdfFileName) {
+    // Converts the given node into a PDF.  This will add some metadata which can be loaded by loadMetaFromPDFString;
+    // The pdf will be given the given the name `${pdfFileName}.pdf`
     // Note: this requires the jsPDF library, and it requires window.jspdf.jsPDF to exist.
     // Note: this expects the given node to have a size set in style.
 
@@ -26,9 +30,52 @@ export function nodeToPDF(node) {
     
     // Fill content
     addNode(doc, node, posConvert);
+    
+    // Attach metadata
+    addMeta(doc);
 
     // Open pdf in a new tab
-    doc.save("pdf.pdf");
+    doc.save(pdfFileName + ".pdf");
+}
+
+function addMeta(doc) {
+    // Attaches the result of writeProjectToString to the doc under the namespace "https://github.com/GreenJon902/UltimateDrumScorerPro".
+    
+    // Get and escape all data
+    const stringData = writeProjectToString();
+    const safeStringData = stringData.replace(/[<>&'"]/g, c => {  
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+
+    // Add to pdf
+    doc.addMetadata(safeStringData, "https://github.com/GreenJon902/UltimateDrumScorerPro");
+}
+
+export function loadMetaFromPDFString(pdfString) {
+    // Loads data written to the pdf by addMeta, this will forward it to loadProjectFromString.
+    // This throws the error string "Malformed PDF" if it fails.
+
+    // Get and unescape data
+    const safeStringData = pdfString.match(/https:\/\/github\.com\/GreenJon902\/UltimateDrumScorerPro"><jspdf:metadata>(.*)<\/jspdf:metadata>/);
+    if (safeStringData === null) {  // Did we find out custom metadata?
+        // Match failed so throw error
+        throw "Malformed PDF";
+    }
+    let stringData = safeStringData[1];  // SafeStringData is a array of groups, so [1] is the group we want
+    stringData = stringData.replace(/&lt;/g, '<');
+    stringData = stringData.replace(/&gt;/g, '>');
+    stringData = stringData.replace(/&amp;/g, '&'); // Must be done before &apos; and &quot;
+    stringData = stringData.replace(/&apos;/g, "'");
+    stringData = stringData.replace(/&quot;/g, '"');
+    
+    // Load as current project
+    loadProjectFromString(stringData);
 }
 
 function pushTranslation(doc, x, y) {
@@ -52,7 +99,7 @@ function addNode(doc, node, posConvert) {
 
     // If there is a transform then apply it
     if (node.getAttribute("transform") !== null) {
-        const transform = node.getAttribute("transform").match("^([a-z]+)\\(([[0-9. -]+]*)\\)$");
+        const transform = node.getAttribute("transform").match(/^([a-z]+)\(([[0-9. -]+]*)\)$/);
         const args = transform[2].split(" ");
         if (transform[1] === "translate") {
             const x = parseFloat(args[0]);
@@ -81,7 +128,7 @@ function addNode(doc, node, posConvert) {
         doc.setLineWidth(1);
 
         // Hope the path is correctly formed... and then just parse it
-        const matches = node.getAttribute("d").matchAll("([a-zA-Z]) *([-0-9.]+) +([-0-9.]+)");
+        const matches = node.getAttribute("d").matchAll(/([a-zA-Z]) *([-0-9.]+) +([-0-9.]+)/g);
         let currentX = 0;
         let currentY = 0;
         for (let match of matches) {
