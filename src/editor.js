@@ -158,6 +158,7 @@ function createComponentDelDupButtons(div, componentType, componentID) {
         setComponentY(componentType, newID, getComponentY(componentType, newID) + 0.1);
         // Render it
         renderComponent(componentType, newID);
+        setEditComponent(componentType, newID);
     }));
 
 }
