@@ -1017,15 +1017,21 @@ function renderTextComponent(componentID) {
 
 }
 
-export function renderComponent(componentType, componentID) {
-	// Render the given component. If it already exists then it will be removed.
-    
-    // First delete it if it already exists
+export function unRenderComponent(componentType, componentID) {
+    // Remove a component if it has been rendered.
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
         old.remove();
     }
+}
 
+export function renderComponent(componentType, componentID) {
+	// Render the given component. If it already exists then it will be removed.
+    
+    // First delete it if it already exists
+    unRenderComponent(componentType, componentID);
+
+    // Now render it
     const renderFunc = {
         "score-component": renderScoreComponent,
         "text-component": renderTextComponent

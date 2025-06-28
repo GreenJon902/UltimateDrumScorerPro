@@ -1,5 +1,5 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration} from "./files.js";
-import {getSvgNodes, renderComponent} from "./rendered.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY} from "./files.js";
+import {getSvgNodes, renderComponent, unRenderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
@@ -34,6 +34,11 @@ function editTextComponent(componentID) {
     const div = document.createElement("div");
     createNumberBoxesWithText(div, "text-component", componentID, {text: "Font Size:&nbsp", getter: getTextComponentFontSize, setter: setTextComponentFontSize, min: 1, size: 1});
     editor.appendChild(div);
+    
+    // Duplicate / delete controls
+    div.appendChild(document.createElement("br"))
+    createComponentDelDupButtons(div, "text-component", componentID);
+
 
     // Actual text content
     const text = document.createElement("textarea");
@@ -63,6 +68,10 @@ function editScoreComponent(componentID) {
     // Score-component side-decorations
     addSideDecorationSelectors(div, componentID);
     
+    // Duplicate / delete controls
+    div.appendChild(document.createElement("br"))
+    createComponentDelDupButtons(div, "score-component", componentID);
+
     // Selectors for which drums and decorations are enabled
     div.appendChild(document.createElement("br"));
     const selectorsText = document.createElement("span");
@@ -79,8 +88,9 @@ function editScoreComponent(componentID) {
 
 
     div.appendChild(selectorsDiv);
-    editor.appendChild(div);
     
+    // Add div of controls to editor
+    editor.appendChild(div);
 
     // Sequencer ----
     // We'll display the sequencer as a table and add it to the editor.
@@ -120,6 +130,36 @@ function editScoreComponent(componentID) {
         }
     }, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"], (componentID, beatIndex, subdivisionIndex, drumID) => false);  
     editor.appendChild(table);
+}
+
+function createButton(text, click) {
+    // Creates and returns a div containing a button with the given text with the given function (which takes no args) put in .onclick.
+    // It returns a div so that buttons will stack on top of eachother.
+    const div = document.createElement("div");
+    const button = document.createElement("button");
+    button.innerHTML = text;
+    button.onclick = click;
+    div.appendChild(button);
+    return div;
+}
+
+function createComponentDelDupButtons(div, componentType, componentID) {
+    // Adds the duplicate and delete buttons to the given div
+    div.appendChild(createButton("Delete", () => {
+        removeScoreComponent(componentType, componentID);
+        setEditComponent("", "");
+        unRenderComponent(componentType, componentID);
+        
+    }));
+    div.appendChild(createButton("Duplicate", () => {
+        const newID = duplicateScoreComponent(componentType, componentID);
+        // Translate the new one a little so we can see it
+        setComponentX(componentType, newID, getComponentX(componentType, newID) + 0.1);
+        setComponentY(componentType, newID, getComponentY(componentType, newID) + 0.1);
+        // Render it
+        renderComponent(componentType, newID);
+    }));
+
 }
 
 function addSideDecorationSelectors(div, componentID) {

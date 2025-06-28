@@ -3,6 +3,7 @@ var CURRENT_PROJECT;
 
 export function loadJSON(data) {
     // Validates and loads the given data as the current project.
+    // This will forget the last project in the process.
     // TODO: Validation
     CURRENT_PROJECT = JSON.parse(JSON.stringify(data));  // Deep-copy the object
 }
@@ -19,6 +20,7 @@ export function writeProjectToString() {
 
 export function loadProjectFromString(string) {
     // Loads a string that was exported by writeProjectToString().
+    // This will forget the last project in the process.
     loadJSON(JSON.parse(string)); 
 }
 
@@ -62,6 +64,21 @@ export function createNewScoreComponent() {
     };
 
     return id;
+}
+
+export function removeScoreComponent(componentType, componentID) {
+    // Removes the component with the given id.
+    delete CURRENT_PROJECT[componentType + "s"][componentID];
+}
+
+export function duplicateScoreComponent(componentType, componentID) {
+    // Duplicates the component with the given id.
+    // Returns the id of the new component
+    const oldComp = CURRENT_PROJECT[componentType + "s"][componentID];
+    const newComp = JSON.parse(JSON.stringify(oldComp));  // Deep copy the object
+    const newID = findUniqueID(componentType, CURRENT_PROJECT[componentType + "s"]);
+    CURRENT_PROJECT[componentType + "s"][newID] = newComp;
+    return newID;
 }
 
 export function getScoreComponentTimeSignatureNumerator(componentID) {
