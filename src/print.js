@@ -198,7 +198,9 @@ function addNode(doc, node, posConvert) {
         doc.circle(cx, cy, r, circleStyle);
     } else if (nodeName === "TEXT") {
         // Set up styling
-        doc.setFont("helvetica", "bolditalic");
+        const isBold = getDeclaredCSSProperty(node, "font-weight") === "bold";
+        const isItalic = getDeclaredCSSProperty(node, "font-style") === "italic";
+        doc.setFont("helvetica", (isBold ? "bold" : "") + (isItalic ? "italic" : ""));
         doc.setFontSize(((node.style.fontSize === "") ? 5 : parseFloat(node.style.fontSize)) * MM_TO_PT);  // Default font-size=5
         // Get location
         let x = parseFloat(node.getAttribute("x"));
@@ -214,4 +216,47 @@ function addNode(doc, node, posConvert) {
     
     // Restore state
     doc.restoreGraphicsState();
+}
+
+function getDeclaredCSSProperty(element, propertyName) {
+    // Returns the value behind propertyName or null if it doesn't exit.
+    // This will only look at values explictly defined by me (e.g. inline css + classes + etc.).
+
+    function getInDeclaration(declaration, propertyName) {
+        // Returns the value behind propertyName in a given CSSDeclaration, else null.
+        const val = declaration.getPropertyValue(propertyName);
+        if (val === "") {
+            return null;
+        } else {
+            return val;
+        }
+    }
+    
+    // First search in inline-css
+    const value = getInDeclaration(element.style, propertyName);
+    if (value !== null) {
+        return value;
+    }
+
+    // Search in styles-sheets
+    for (let i = 0; i<document.styleSheets.length; i++) {
+        const styleSheet = document.styleSheets[i];
+        for (let j = 0; j<styleSheet.cssRules.length; j++) {
+            const cssRule = styleSheet.cssRules[j];
+
+            // Check if this rule applies to element
+            if (!element.matches(cssRule.selectorText)) {
+                continue;
+            }
+            
+            // Check if the property is set
+            const value = getInDeclaration(cssRule.style, propertyName);
+            if (value !== null) {
+                return value;
+            }
+        }
+    }
+
+    // Not found so return null
+    return null;
 }

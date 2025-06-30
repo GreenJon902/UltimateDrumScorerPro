@@ -359,6 +359,7 @@ function getTextSize(string, fontSize) {
 	const svg = document.getElementById("text-svg");
 	const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.innerHTML = string;
+    text.classList.add("tuplet-text");
     if (fontSize !== null) {
     	text.style.fontSize = fontSize + "px";  // The SVG scales 1px to 1mm so use px
     }
@@ -366,7 +367,7 @@ function getTextSize(string, fontSize) {
     const bbox = text.getBBox();
     const mmToPx = 1;//parseFloat(window.getComputedStyle(svg, null).height);  // SVG height is 1mm, so we can use it to scale pixels to mm
     const size = {left: bbox.x / mmToPx, up: bbox.y / mmToPx, width: bbox.width / mmToPx, height: bbox.height / mmToPx};
-    //svg.removeChild(text);
+    svg.removeChild(text);
     return size;
 }
 
@@ -931,6 +932,7 @@ function draw(instructions, spacing) {
             // Create text node
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.innerHTML = instructions[currentContractI].ratio.toString();
+            text.classList.add("tuplet-text");
             text.setAttribute("x", centerX);
             text.setAttribute("y", centerY);
             svg.appendChild(text);

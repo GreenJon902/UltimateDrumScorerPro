@@ -217,14 +217,17 @@ svg circle, g circle {
 }
 
 svg text {
-	fill: black;
-	stroke: none;
-	font-style: italic;
-	font-weight: bold;
-	text-anchor: middle;
-	dominant-baseline: middle;
-	font-size: 5px;
-	white-space: preserve;
+    fill: black;
+    stroke: none;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    white-space: preserve;
+}
+
+svg .tuplet-text {
+    font-style: italic;
+    font-weight: bold;
+    font-size: 5px;
 }
 
 svg:hover {
