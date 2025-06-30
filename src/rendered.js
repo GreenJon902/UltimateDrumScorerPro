@@ -867,15 +867,16 @@ function draw(instructions, spacing) {
                 decorationI += 1;
             }
 
-            // Draw stem
-            path.push(`M${anchorX} ${spacing.stemStartYs[stemI]} L${anchorX} ${highestAnchorY}`);
-            
+            //
+            let minStemEnd = 0;  // The minimum hieght a stem should be
+
             // Draw flags if we need to
             if (instr.type === RenderInstruction.FLAG) {
                 const lastAnchorX = spacing.instructionXs[i];
                 for (let n=0; n<instr.flags; n++) {
                     path.push(`M${lastAnchorX} ${spacing.stemStartYs[stemI] + n * 5} l5 5`);
                 }
+                minStemEnd = Math.max(minStemEnd, spacing.stemStartYs[stemI] + instr.flags * 5 - 5);
             }
 
             // Draw beams if we need to
@@ -899,6 +900,7 @@ function draw(instructions, spacing) {
                         path.push(`M${lastAnchorX} ${y} L${lastAnchorX + 5} ${y}`);
                         y += 2;
                     }
+                    minStemEnd = Math.max(minStemEnd, y);
                 }  
                 // Update last group accordingly
                 if (instr.type === RenderInstruction.GROUP_END) {
@@ -911,11 +913,18 @@ function draw(instructions, spacing) {
             // Draw dots
             let y = spacing.stemStartYs[stemI];
             if (instr.type === RenderInstruction.GROUP) {
-                y += 2 * (Math.max(0, -instr.broken_beams) + instr.full_beams);  // It draws next to right beams and under left beams
+                const diff = 2 * (Math.max(0, -instr.broken_beams) + instr.full_beams);  // It draws next to right beams and under left beams
+                y += diff;
             } else if (instr.type === RenderInstruction.FLAG) {
-                y += 5 * instr.flags + 2;
+                const diff = 5 * instr.flags + 2;
+                y += diff;
             }
+            minStemEnd = Math.max(minStemEnd, y);
             drawDots(svg, anchorX + 2, y, instr.dots);
+            
+            // Draw stem
+            const stemEnd = minStemEnd + (highestAnchorY - minStemEnd) * 0.8;  // So stems are tall enough for the rhythms but don't attach directly to bottom anchor
+            path.push(`M${anchorX} ${spacing.stemStartYs[stemI]} L${anchorX} ${stemEnd}`);
             
             // Update trackers
             stemI += 1;
