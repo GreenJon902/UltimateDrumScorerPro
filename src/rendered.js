@@ -988,6 +988,10 @@ function attachEvents(componentType, componentID, svg) {
     
     const container = document.getElementById("component-container");
     svg.onmousedown = (downEvent) => {
+        if (downEvent.buttons !== 1) {  // Is anything other than a left-click?
+            return;
+        }
+
         const svgRect = svg.getBoundingClientRect();
         const parentRect = container.getBoundingClientRect();
         let moved = false;
