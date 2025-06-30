@@ -426,6 +426,8 @@ function scoreEditorAddSequencerContents(table, componentID, idGetter, isChecked
     }
 }
 
+let stateOfLastClickedToggle = null;
+
 function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, classNames, isCheckedSetter, beatIndex, subdivisionIndex, ID, componentID, disabledGetter) {
     // Create a toggle button to be used in the editor for the actual score (turning drums on and off).
     // This returns a table data element with the correct width based of the subdivisionCount.
@@ -442,10 +444,32 @@ function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, c
     tableData.classList.add(...classNames);
     toggleButton.classList.add(...classNames);
     toggleButton.checked = enabled;
-    toggleButton.onclick = () => {
+    
+    // We want to set up events such that if I toggle one on then drag the mouse, all the ones I drag over turn on (or are no effect if they are already on)
+    function onUpdate() {
         isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, toggleButton.checked);  // Save the new value
         renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
-    };
+    }
+    toggleButton.onmousedown = (e) => {
+        if (e.buttons === 1) {  // So it works for left clicks
+            stateOfLastClickedToggle = toggleButton.checked;
+            toggleButton.checked = !stateOfLastClickedToggle;
+            onUpdate();
+        }
+    }
+    toggleButton.onmouseenter = (e) => {
+        if (e.buttons === 1 && stateOfLastClickedToggle !== null) {  // Is left click pressed and did the drag start on a toggle button?
+            toggleButton.checked = !stateOfLastClickedToggle;
+            onUpdate();
+        }
+    }
+    toggleButton.onclick = (e) => {
+        stateOfLastClickedToggle = null; // So drags must originate on a toggle button
+        e.preventDefault();  // As we change the state with on-mouse-down, without this the default handler will change the state again
+    }
+    
+    
+    
     tableData.style.width = (4 / subdivisionCount) + 'ch';
     tableData.appendChild(toggleButton);
     return tableData;
