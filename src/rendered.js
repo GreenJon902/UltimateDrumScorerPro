@@ -1026,12 +1026,18 @@ function renderTextComponent(componentID) {
     // This does not attach the event handling stuff.
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.innerHTML = getTextComponentTextContent(componentID);
+    const textContent = getTextComponentTextContent(componentID);
+    text.innerHTML = textContent;
     text.style.fontSize = getTextComponentFontSize(componentID) + "px";  // The SVG scales 1px to 1mm so use px
     svg.appendChild(text);
     const size = getTextSize(getTextComponentTextContent(componentID), getTextComponentFontSize(componentID));
-    svg.setAttribute("width", size.width + "mm");  
-    svg.setAttribute("height", size.height + "mm");
+    
+    // Make a default size if it has no content, so it is still selectable
+    const width = (textContent === "") ? 10 : size.width;
+    const height = (textContent === "") ? 5 : size.height; 
+
+    svg.setAttribute("width", width + "mm");  
+    svg.setAttribute("height", height + "mm");
     svg.setAttribute("viewBox", `${size.left} ${size.up} ${size.width} ${size.height}`);  // Center text in viewbox and scale 1px to 1mm
     return svg;
 }
