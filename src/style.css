@@ -118,11 +118,18 @@ body {
 }
 
 #component-container {
-    position: relative;
     width: 210mm;
 	height: 297mm;
 	background: white;
+	transform-origin: left top;
+	position: relative;
+}
+
+#component-container-container {
 	margin: auto;
+	width: 210mm;  /* Default size, will be overridden on first zoom. Same as size of component-container */
+	height: 297mm;
+	position: relative;
 }
 
 #rendered-pane {

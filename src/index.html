@@ -89,9 +89,11 @@
 	    		<button type="button" onclick="saveProject()">Save</button>
 	    		<button type="button" onclick="loadProject()">Load</button>
 	    	</div>
-        	<div id="rendered-pane-padding">
-			    <div id="component-container" onclick="deselectComponents()">
-			    </div>
+        	<div id="rendered-pane-padding" onwheel="handleRenderedScroll(event)">
+			    <div id="component-container-container">
+                    <div id="component-container" onclick="deselectComponents()">
+                    </div>
+                </div>
 	        </div>
         </div>
 		<div id="editor-pane">
@@ -128,6 +130,43 @@
         //renderComponent("score-component", "score-component-1");
         
         // Functions for buttons, declare as window. so is accessable in their scope
+        window.handleRenderedScroll = function(wheelEvent) {
+            // If ctrl pressed: Zooms the rendered pane in or out depending on the given value. Then preventDefault event.
+            // Else: Ignore event.
+            
+            if (wheelEvent.ctrlKey) {  // Only zoom if ctrl pressed
+                wheelEvent.preventDefault();  // Stop page from scrolling
+                
+                const zoomSpeed = 0.001;
+                
+                const cont = document.getElementById("component-container");
+                const contcont = document.getElementById("component-container-container");
+                const scroll = document.getElementById("rendered-pane-padding");
+                
+                // Get and save new scale amount
+                if (!contcont.hasAttribute("data-scale")) contcont.setAttribute("data-scale", "1");  // Set default value if it's not there yet
+                const oldScale = contcont.getAttribute("data-scale");
+                const newScale = oldScale - wheelEvent.deltaY * zoomSpeed;
+                contcont.setAttribute("data-scale", newScale);
+
+                // Put new scale in css
+                document.getElementById("component-container").style.transform = `scale(${newScale})`;
+                
+                // Update size of contcont to be the scaled size of cont
+                const rect = cont.getBoundingClientRect();
+                contcont.style.width = rect.width + "px";
+                contcont.style.height = rect.height + "px";
+                
+                // We want to zoom around the mouse, so update the scrolls of rendered-pane-padding accordingly
+                const xBefore = (wheelEvent.pageX - cont.getBoundingClientRect().left) / oldScale;
+                const xAfter = (wheelEvent.pageX - cont.getBoundingClientRect().left) / newScale;
+                scroll.scrollLeft -= (xAfter - xBefore) * newScale;
+                const yBefore = (wheelEvent.pageY - cont.getBoundingClientRect().top) / oldScale;
+                const yAfter = (wheelEvent.pageY - cont.getBoundingClientRect().top) / newScale;
+                scroll.scrollTop -= (yAfter - yBefore) * newScale;
+            }
+            
+        }
         window.deselectComponents = function() {
             // Set current edit to none.
             setEditComponent("", "");
