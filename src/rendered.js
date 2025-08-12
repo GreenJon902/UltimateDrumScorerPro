@@ -1014,6 +1014,11 @@ function attachEvents(componentType, componentID, svg) {
             }
         }
     }
+    
+    // Stop propagation on all click events -> This means if this svg is clicked, the click won't go to the component-container (which would call deselectComponents which is wrong)
+    svg.onclick = (clickEvent) => {
+        clickEvent.stopPropagation();
+    }
 }
 
 function renderTextComponent(componentID) {
@@ -1033,9 +1038,15 @@ function renderTextComponent(componentID) {
 
 export function setCurrentSelected(componentType, componentID) {
     // This adds the attribute "data-selected" to the given component, this will remove that tag from other components.
+    // If both args are "", then this will remove any "data-selected" tags and then return.
     
     // Remove current data-selected tags
     Array.from(document.getElementById("component-container").children).forEach(child => child.removeAttribute("data-selected"));
+    
+    // Check if there's something to select
+    if (componentType === "" && componentID === "") {
+        return;
+    }
 
     // Add tag to given component
     const svg = document.getElementById(componentType + "_" + componentID);
@@ -1044,17 +1055,21 @@ export function setCurrentSelected(componentType, componentID) {
 
 export function unRenderComponent(componentType, componentID) {
     // Remove a component if it has been rendered.
+    // Returns true if the given component exists and has the tag "data-selected", else false.
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
         old.remove();
+        return old.hasAttribute("data-selected");
     }
+    return false;  // It doesn't exist so it can't be selected
 }
 
 export function renderComponent(componentType, componentID) {
-	// Render the given component. If it already exists then it will be removed.
+	// Render the given component.
+    // If it already exists then it will be first removed, however the "data-selected" attribute will persist.
     
     // First delete it if it already exists
-    unRenderComponent(componentType, componentID);
+    let reselect = unRenderComponent(componentType, componentID);
 
     // Now render it
     const renderFunc = {
@@ -1071,6 +1086,8 @@ export function renderComponent(componentType, componentID) {
     svg.style.left = (getComponentX(componentType, componentID) * 100) + "%";
     svg.style.top = (getComponentY(componentType, componentID) * 100) + "%";
     attachEvents(componentType, componentID, svg);
+    // If it used to be selected, then it should still be selected
+    if (reselect) setCurrentSelected(componentType, componentID);
 }
 
 

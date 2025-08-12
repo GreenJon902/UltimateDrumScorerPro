@@ -90,7 +90,7 @@
 	    		<button type="button" onclick="loadProject()">Load</button>
 	    	</div>
         	<div id="rendered-pane-padding">
-			    <div id="component-container">
+			    <div id="component-container" onclick="deselectComponents()">
 			    </div>
 	        </div>
         </div>
@@ -128,6 +128,10 @@
         //renderComponent("score-component", "score-component-1");
         
         // Functions for buttons, declare as window. so is accessable in their scope
+        window.deselectComponents = function() {
+            // Set current edit to none.
+            setEditComponent("", "");
+        }
         window.newScoreComponent = function() {
             // Create a new score component, render it and set it as the current edit.
             const id = createNewScoreComponent();

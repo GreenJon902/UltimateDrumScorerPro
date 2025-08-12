@@ -4,13 +4,16 @@ import {getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} fro
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
     // This will call rendered.js/setCurrentSelected, so expects the component to have been rendered.
-    // If both args are "" then the editor will be cleared and then the function will return.
+    // If both args are "" then the editor will be cleared, setCurrentSelected called with ("", ""),  and then the function will return.
     
     // First clear the old data
     let editor = document.getElementById("editor-pane");
     while (editor.children.length > 0) {
         editor.removeChild(editor.children[0]);
     }
+    
+    // Tell the renderer to display the given component as selected
+    setCurrentSelected(componentType, componentID);
     
     // Special case: if componentType, componentID == "" then just exit
     if (componentType === "" && componentID === "") {
@@ -25,10 +28,6 @@ export function setEditComponent(componentType, componentID) {
 
     if (editFunc === undefined) throw "Not Implemented";
     editFunc(componentID);
-    
-    // Tell the renderer to display the given component as selected
-    setCurrentSelected(componentType, componentID);
-    
 }
 
 function editTextComponent(componentID) {
