@@ -1029,7 +1029,17 @@ function renderTextComponent(componentID) {
     svg.setAttribute("height", size.height + "mm");
     svg.setAttribute("viewBox", `${size.left} ${size.up} ${size.width} ${size.height}`);  // Center text in viewbox and scale 1px to 1mm
     return svg;
+}
 
+export function setCurrentSelected(componentType, componentID) {
+    // This adds the attribute "data-selected" to the given component, this will remove that tag from other components.
+    
+    // Remove current data-selected tags
+    Array.from(document.getElementById("component-container").children).forEach(child => child.removeAttribute("data-selected"));
+
+    // Add tag to given component
+    const svg = document.getElementById(componentType + "_" + componentID);
+    svg.setAttribute("data-selected", "");
 }
 
 export function unRenderComponent(componentType, componentID) {

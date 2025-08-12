@@ -197,7 +197,6 @@ body > * {
 
 svg {
 	overflow: visible;
-	background: rgba(0, 255, 0, 0.2);
 	transition: background 0.1s, border-color 0.1s;
 	border: 1mm solid;
 	border-radius: 3mm;
@@ -230,8 +229,21 @@ svg .tuplet-text {
     font-size: 5px;
 }
 
-svg:hover {
+svg:not(:hover):not([data-selected]) {
+	background: rgba(0, 255, 0, 0.2);
+}
+
+svg:not(:hover)[data-selected] {
+	background: rgba(212, 255, 0, 0.3);
+}
+
+svg:hover:not([data-selected]) {
 	background: rgba(255, 127, 0, 0.2);
+	border-color: rgba(255, 127, 0, 0.9);
+}
+
+svg:hover[data-selected] {
+	background: rgba(255, 127, 0, 0.3);
 	border-color: rgba(255, 127, 0, 0.9);
 }
 

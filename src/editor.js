@@ -1,8 +1,9 @@
 import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY} from "./files.js";
-import {getSvgNodes, renderComponent, unRenderComponent} from "./rendered.js";
+import {getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
 
 export function setEditComponent(componentType, componentID) {
     // Set the component editing pane to be editing the given component.
+    // This will call rendered.js/setCurrentSelected, so expects the component to have been rendered.
     // If both args are "" then the editor will be cleared and then the function will return.
     
     // First clear the old data
@@ -24,6 +25,10 @@ export function setEditComponent(componentType, componentID) {
 
     if (editFunc === undefined) throw "Not Implemented";
     editFunc(componentID);
+    
+    // Tell the renderer to display the given component as selected
+    setCurrentSelected(componentType, componentID);
+    
 }
 
 function editTextComponent(componentID) {
