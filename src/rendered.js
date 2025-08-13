@@ -1000,33 +1000,32 @@ function attachEvents(componentType, componentID, svg) {
         const initialY = (svgRect.top - parentRect.top + downEvent.clientY - downEvent.clientY) / parentRect.height;
 
         // Add events for dragging and ending drag / for clicking svg
-        let moved = false;
+        let has_moved = false;  // If we move by only a few pixels then that's probably by accident, so ignore that. However if we do actually want to move by a few pixels, this allows us to move it far and then move it exactly to where we want it to be
         document.onmousemove = (moveEvent) => {
             const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
             const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
             
-            // Move the component
-            setComponentX(componentType, componentID, newX);
-            setComponentY(componentType, componentID, newY);
-            svg.style.left = (newX * 100) + "%";
-            svg.style.top = (newY * 100) + "%";
-            
-            // Check if it has moved (alot)
+            // Check if it has moved (alot) from the starting position
             const square_distance = Math.pow((newX - initialX) * parentRect.width, 2) + Math.pow((newY - initialY) * parentRect.height, 2);  // Get's (square of) total distance moved in mm.
             const new_moved = square_distance > Math.pow(5, 2);  // Did it move more than 5 mm?
-            moved ||= new_moved;  // OR: So if we drag it far then drag it back, it will still say moved
+            has_moved ||= new_moved;  // OR: So if we drag it far then drag it back, it will still say has_moved
+            
+            // Move the component
+            if (has_moved) {
+                setComponentX(componentType, componentID, newX);
+                setComponentY(componentType, componentID, newY);
+                svg.style.left = (newX * 100) + "%";
+                svg.style.top = (newY * 100) + "%";
+            }
+            
         }
         document.onmouseup = (upEvent) => {
             // Unbind events as drag / click is over
             document.onmousemove = null;
             document.onmouseup = null;
             
-            
-            
-            // If it didn't move then revert the change and setEditComponent
-            if (!moved) {
-                svg.style.left = (initialX * 100) + "%";
-                svg.style.top = (initialY * 100) + "%";
+            // If it didn't move setEditComponent
+            if (!has_moved) {
                 setEditComponent(componentType, componentID);
             }
         }
