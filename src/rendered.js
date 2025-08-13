@@ -994,22 +994,86 @@ function attachEvents(componentType, componentID, svg) {
 
         const svgRect = svg.getBoundingClientRect();
         const parentRect = container.getBoundingClientRect();
-        let moved = false;
+        
+        // Get initial pos (as 0-1 of way from left to right/top to bottom)
+        const initialX = (svgRect.left - parentRect.left + downEvent.clientX - downEvent.clientX) / parentRect.width;
+        const initialY = (svgRect.top - parentRect.top + downEvent.clientY - downEvent.clientY) / parentRect.height;
+
+        // Add events for dragging and ending drag / for clicking svg
+        let hasMoved = false;  // If we move by only a few pixels then that's probably by accident, so ignore that. However if we do actually want to move by a few pixels, this allows us to move it far and then move it exactly to where we want it to be
+        let lastMoveEventParam = null; // Value passed to last move event, used by keyEventHandler
         document.onmousemove = (moveEvent) => {
+            // Expects moveEvent to be an object with {clientX, clientY, shiftKey}.
+
+            lastMoveEventParam = moveEvent;
+            
+            // Find coords
             const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
             const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
-            setComponentX(componentType, componentID, newX);
-            setComponentY(componentType, componentID, newY);
-            svg.style.left = (newX * 100) + "%";
-            svg.style.top = (newY * 100) + "%";
-
-            moved = true;
+            const dx = Math.abs(newX - initialX);  // Absolute change in x
+            const dy = Math.abs(newY - initialY);
+            
+            // Check if it has moved (alot) from the starting position
+            const squareDistance = Math.pow(dx * parentRect.width, 2) + Math.pow(dy * parentRect.height, 2);  // Get's (square of) total distance moved in mm.
+            const newMoved = squareDistance > Math.pow(5, 2);  // Did it move more than 5 mm?
+            hasMoved ||= newMoved;  // OR: So if we drag it far then drag it back, it will still say has_moved
+            
+            // Move the component
+            const moveX = !(moveEvent.shiftKey && dx < dy);  // If shift is pressed then move in greatest cardinal direction
+            const moveY = !(moveEvent.shiftKey && dy < dx);  // If shift is pressed then move in greatest cardinal direction
+            if (hasMoved && moveX && moveY) {  // Move x,y to new
+                setComponentX(componentType, componentID, newX);
+                setComponentY(componentType, componentID, newY);
+                svg.style.left = (newX * 100) + "%";
+                svg.style.top = (newY * 100) + "%";
+            } else if (hasMoved && moveX) {  // Move x to new, y to initial
+                setComponentX(componentType, componentID, newX);
+                setComponentY(componentType, componentID, initialY);
+                svg.style.left = (newX * 100) + "%";
+                svg.style.top = (initialY * 100) + "%";
+            } else if (hasMoved && moveY) {  // Move x to initial, y to new
+                setComponentX(componentType, componentID, initialX);
+                setComponentY(componentType, componentID, newY);
+                svg.style.left = (initialX * 100) + "%";
+                svg.style.top = (newY * 100) + "%";
+            }
         }
+        const keyEventHandler = (keyEvent, down) => {  // Handle shift being pressed in the middle of a drag
+            if (keyEvent.key == "Shift") {
+                keyEvent.preventDefault();
+                if (lastMoveEventParam !== null) {
+                    if (down) {
+                        // We need to update position of component, the logic for this is in the move event, so just use that (if we haven't yet moved then shift wouldn't change anything so ignore)
+                        // We create this object as the param so we can set shiftKey to true
+                        document.onmousemove({
+                            clientX: lastMoveEventParam.clientX,
+                            clientY: lastMoveEventParam.clientY,
+                            shiftKey: true
+                        });  
+                    } else {
+                        // Same idea, just shift released so move to where mouse is
+                        document.onmousemove({
+                            clientX: lastMoveEventParam.clientX,
+                            clientY: lastMoveEventParam.clientY,
+                            shiftKey: false
+                        });  
+                    }
+                }
+            }
+        }
+        const keydownEventHandler = (e) => keyEventHandler(e, true);
+        const keyupEventHandler = (e) => keyEventHandler(e, false);
+        document.addEventListener("keydown", keydownEventHandler);
+        document.addEventListener("keyup", keyupEventHandler);
         document.onmouseup = (upEvent) => {
+            // Unbind events as drag / click is over
             document.onmousemove = null;
+            document.removeEventListener("keydown", keydownEventHandler);
+            document.removeEventListener("keyup", keyupEventHandler);
             document.onmouseup = null;
             
-            if (!moved) {
+            // If it didn't move setEditComponent
+            if (!hasMoved) {
                 setEditComponent(componentType, componentID);
             }
         }
