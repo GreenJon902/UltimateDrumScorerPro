@@ -176,7 +176,7 @@
                 // Get new scale amount
                 if (!contcont.hasAttribute("data-scale")) contcont.setAttribute("data-scale", "1");  // Set default value if it's not there yet
                 const oldScale = contcont.getAttribute("data-scale");
-                const newScale = oldScale - wheelEvent.deltaY * zoomSpeed;
+                const newScale = Math.max(0, oldScale - wheelEvent.deltaY * zoomSpeed);  // Max as can't be negative
                 
                 // Actually set scale amount to node
                 updateRenderedScale(newScale);
