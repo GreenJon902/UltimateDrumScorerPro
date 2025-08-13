@@ -13,3 +13,16 @@ It does die if you add more than four bars (ehem groovescribe).
 Art is based on the style my drum teacher used to teach me - reducing unnecessary details without remove information.
 
 *It's simple to me, if your brain is too small then that's on you.
+
+# Keyboard shortcuts / control stuff
+### Rendered pane
+| Key | Action |
+| - | - |
+| <kbd>Wheel</kbd> | Scroll vertically |
+| <kbd>Shift</kbd> + <kbd>Wheel</kbd> | Scroll horizontally |
+| <kbd>Ctrl</kbd> + <kbd>Wheel</kbd> | Zoom |
+| <kbd>Ctrl</kbd> + <kbd>0</kbd> | Reset Zoom |
+| Component + <kbd>Drag</kbd> | Drag component |
+| Component + <kbd>Shift</kbd> + <kbd>Drag</kbd> | Drag component along cardinal axis |
+| Component + <kbd>Left Click</kbd> | Select |
+| !Component + <kbd>Left Click</kbd> | Deselect |
