@@ -994,22 +994,39 @@ function attachEvents(componentType, componentID, svg) {
 
         const svgRect = svg.getBoundingClientRect();
         const parentRect = container.getBoundingClientRect();
+        
+        // Get initial pos (as 0-1 of way from left to right/top to bottom)
+        const initialX = (svgRect.left - parentRect.left + downEvent.clientX - downEvent.clientX) / parentRect.width;
+        const initialY = (svgRect.top - parentRect.top + downEvent.clientY - downEvent.clientY) / parentRect.height;
+
+        // Add events for dragging and ending drag / for clicking svg
         let moved = false;
         document.onmousemove = (moveEvent) => {
             const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
             const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
+            
+            // Move the component
             setComponentX(componentType, componentID, newX);
             setComponentY(componentType, componentID, newY);
             svg.style.left = (newX * 100) + "%";
             svg.style.top = (newY * 100) + "%";
-
-            moved = true;
+            
+            // Check if it has moved (alot)
+            const square_distance = Math.pow((newX - initialX) * parentRect.width, 2) + Math.pow((newY - initialY) * parentRect.height, 2);  // Get's (square of) total distance moved in mm.
+            const new_moved = square_distance > Math.pow(5, 2);  // Did it move more than 5 mm?
+            moved ||= new_moved;  // OR: So if we drag it far then drag it back, it will still say moved
         }
         document.onmouseup = (upEvent) => {
+            // Unbind events as drag / click is over
             document.onmousemove = null;
             document.onmouseup = null;
             
+            
+            
+            // If it didn't move then revert the change and setEditComponent
             if (!moved) {
+                svg.style.left = (initialX * 100) + "%";
+                svg.style.top = (initialY * 100) + "%";
                 setEditComponent(componentType, componentID);
             }
         }
