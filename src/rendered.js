@@ -1004,17 +1004,31 @@ function attachEvents(componentType, componentID, svg) {
         document.onmousemove = (moveEvent) => {
             const newX = (svgRect.left - parentRect.left + moveEvent.clientX - downEvent.clientX) / parentRect.width;
             const newY = (svgRect.top - parentRect.top + moveEvent.clientY - downEvent.clientY) / parentRect.height;
+            const dx = Math.abs(newX - initialX);  // Absolute change in x
+            const dy = Math.abs(newY - initialY);
             
             // Check if it has moved (alot) from the starting position
-            const square_distance = Math.pow((newX - initialX) * parentRect.width, 2) + Math.pow((newY - initialY) * parentRect.height, 2);  // Get's (square of) total distance moved in mm.
+            const square_distance = Math.pow(dx * parentRect.width, 2) + Math.pow(dy * parentRect.height, 2);  // Get's (square of) total distance moved in mm.
             const new_moved = square_distance > Math.pow(5, 2);  // Did it move more than 5 mm?
             has_moved ||= new_moved;  // OR: So if we drag it far then drag it back, it will still say has_moved
             
             // Move the component
-            if (has_moved) {
+            const move_x = !(moveEvent.shiftKey && dx < dy);  // If shift is pressed then move in greatest cardinal direction
+            const move_y = !(moveEvent.shiftKey && dy < dx);  // If shift is pressed then move in greatest cardinal direction
+            if (has_moved && move_x && move_y) {  // Move x,y to new
                 setComponentX(componentType, componentID, newX);
                 setComponentY(componentType, componentID, newY);
                 svg.style.left = (newX * 100) + "%";
+                svg.style.top = (newY * 100) + "%";
+            } else if (has_moved && move_x) {  // Move x to new, y to initial
+                setComponentX(componentType, componentID, newX);
+                setComponentY(componentType, componentID, initialY);
+                svg.style.left = (newX * 100) + "%";
+                svg.style.top = (initialY * 100) + "%";
+            } else if (has_moved && move_y) {  // Move x to initial, y to new
+                setComponentX(componentType, componentID, initialX);
+                setComponentY(componentType, componentID, newY);
+                svg.style.left = (initialX * 100) + "%";
                 svg.style.top = (newY * 100) + "%";
             }
             
