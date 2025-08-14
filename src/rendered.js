@@ -987,9 +987,17 @@ function attachEvents(componentType, componentID, svg) {
     // Attach the event handlers for the given component
     
     const container = document.getElementById("component-container");
-    svg.onmousedown = (downEvent) => {
+    svg.onmousedown = (downEvent, initial=true) => {  // Initial is whether this came directly from an onmousedown, or was just called because this is part of a multiselect
         if (downEvent.buttons !== 1) {  // Is anything other than a left-click?
             return;
+        }
+        
+        // If there is a multiselect (and the clicked is part of that), then the others should be dragged too. Just call their onmousedown events to make this happen
+        if (initial && svg.hasAttribute("data-selected")) {
+            getCurrentSelected()
+                .filter(c => (c.componentType !== componentType || c.componentID !== componentID))  // Remove the initial svg
+                .map(c => document.getElementById(c.componentType + "_" + c.componentID))  // Get the actual nodes
+                .forEach(c => c.onmousedown(downEvent, false));
         }
 
         const svgRect = svg.getBoundingClientRect();
@@ -1002,7 +1010,7 @@ function attachEvents(componentType, componentID, svg) {
         // Add events for dragging and ending drag / for clicking svg
         let hasMoved = false;  // If we move by only a few pixels then that's probably by accident, so ignore that. However if we do actually want to move by a few pixels, this allows us to move it far and then move it exactly to where we want it to be
         let lastMoveEventParam = null; // Value passed to last move event, used by keyEventHandler
-        document.onmousemove = (moveEvent) => {
+        const onmousemove = (moveEvent) => {
             // Expects moveEvent to be an object with {clientX, clientY, shiftKey}.
 
             lastMoveEventParam = moveEvent;
@@ -1041,14 +1049,14 @@ function attachEvents(componentType, componentID, svg) {
                     if (down) {
                         // We need to update position of component, the logic for this is in the move event, so just use that (if we haven't yet moved then shift wouldn't change anything so ignore)
                         // We create this object as the param so we can set shiftKey to true
-                        document.onmousemove({
+                        onmousemove({
                             clientX: lastMoveEventParam.clientX,
                             clientY: lastMoveEventParam.clientY,
                             shiftKey: true
                         });  
                     } else {
                         // Same idea, just shift released so move to where mouse is
-                        document.onmousemove({
+                        onmousemove({
                             clientX: lastMoveEventParam.clientX,
                             clientY: lastMoveEventParam.clientY,
                             shiftKey: false
@@ -1057,22 +1065,43 @@ function attachEvents(componentType, componentID, svg) {
                 }
             }
         }
-        const keydownEventHandler = (e) => keyEventHandler(e, true);
-        const keyupEventHandler = (e) => keyEventHandler(e, false);
-        document.addEventListener("keydown", keydownEventHandler);
-        document.addEventListener("keyup", keyupEventHandler);
-        document.onmouseup = (upEvent) => {
+        const onkeydown = (e) => keyEventHandler(e, true);
+        const onkeyup = (e) => keyEventHandler(e, false);
+        const onmouseup = (upEvent) => {
             // Unbind events as drag / click is over
-            document.onmousemove = null;
-            document.removeEventListener("keydown", keydownEventHandler);
-            document.removeEventListener("keyup", keyupEventHandler);
-            document.onmouseup = null;
+            document.removeEventListener("mousemove", onmousemove);
+            document.removeEventListener("mouseup", onmouseup);
+            document.removeEventListener("keydown", onkeydown);
+            document.removeEventListener("keyup", onkeyup);
             
-            // If it didn't move setEditComponent
-            if (!hasMoved) {
-                setEditComponent(componentType, componentID);
+            // If it didn't move then we clicked it, not dragged it
+            if (!hasMoved && initial) {  // Selection handling is done by initial
+                
+                if (upEvent.shiftKey) {  // This is a multi-select
+                    console.log(1);
+                    toggleCurrentSelected(componentType, componentID);  // Update the tag of the node
+                    console.log(2);
+                    
+                    // If we have none/multiple selected then the editor should be empty, otherwise it should be the selected node
+                    const currentSelected = getCurrentSelected();
+                    if (currentSelected.length == 1) {
+                        setEditComponent(currentSelected[0].componentType, currentSelected[0].componentID);  // This will call setCurrentSelected, but it won't change anything
+                    } else {
+                        setEditComponent("", "", false);  // False so it doesn't call setCurrentSelected("", "") and clear the selection
+                    }
+
+                } else {  // It wasn't a multi-select
+                    setEditComponent(componentType, componentID);  // This will handle the current selection (setCurrentSelected)
+                }
             }
         }
+        
+        // Bind actual events.
+        // We bind like this so we can have a binding for each component (in a multi-select)
+        document.addEventListener("mousemove", onmousemove);
+        document.addEventListener("mouseup", onmouseup);
+        document.addEventListener("keydown", onkeydown);
+        document.addEventListener("keyup", onkeyup);
     }
     
     // Stop propagation on all click events -> This means if this svg is clicked, the click won't go to the component-container (which would call deselectComponents which is wrong)
@@ -1102,6 +1131,23 @@ function renderTextComponent(componentID) {
     return svg;
 }
 
+export function addCurrentSelected(componentType, componentID) {
+    // Adds "data-selected" tag to the given component.
+    const svg = document.getElementById(componentType + "_" + componentID);
+    svg.setAttribute("data-selected", "");
+}
+
+
+export function toggleCurrentSelected(componentType, componentID) {
+    // Adds "data-selected" tag to the given component if it doesn't have it. And removes the tag if it does.
+    const svg = document.getElementById(componentType + "_" + componentID);
+    if (svg.hasAttribute("data-selected")) {
+        svg.removeAttribute("data-selected");
+    } else {
+        addCurrentSelected(componentType, componentID);
+    }
+}
+
 export function setCurrentSelected(componentType, componentID) {
     // This adds the attribute "data-selected" to the given component, this will remove that tag from other components.
     // If both args are "", then this will remove any "data-selected" tags and then return.
@@ -1113,10 +1159,17 @@ export function setCurrentSelected(componentType, componentID) {
     if (componentType === "" && componentID === "") {
         return;
     }
+    
+    // Add tag
+    addCurrentSelected(componentType, componentID);
+}
 
-    // Add tag to given component
-    const svg = document.getElementById(componentType + "_" + componentID);
-    svg.setAttribute("data-selected", "");
+export function getCurrentSelected() {
+    // Returns a list of all currently selected components (components with the tag "data-selected").
+    // This is in the form [{componentType, componentID}].
+    return Array.from(document.getElementById("component-container").children)
+        .filter(child => child.hasAttribute("data-selected"))  // Filter only selected
+        .map(child => ({componentType: child.id.split("_")[0], componentID: child.id.split("_")[1]}));  // Convert to type and ID
 }
 
 export function unRenderComponent(componentType, componentID) {

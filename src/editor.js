@@ -1,10 +1,10 @@
 import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY} from "./files.js";
 import {getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
 
-export function setEditComponent(componentType, componentID) {
+export function setEditComponent(componentType, componentID, doSetCurrentSelected=true) {
     // Set the component editing pane to be editing the given component.
-    // This will call rendered.js/setCurrentSelected, so expects the component to have been rendered.
-    // If both args are "" then the editor will be cleared, setCurrentSelected called with ("", ""),  and then the function will return.
+    // This will call rendered.js/setCurrentSelected if doSetCurrentSelected is true, and expects the component to have been rendered.
+    // If both args are "" then the editor will be cleared, setCurrentSelected called (if doSetCurrentSelected is true) with ("", ""),  and then the function will return.
     
     // First clear the old data
     let editor = document.getElementById("editor-pane");
@@ -12,8 +12,8 @@ export function setEditComponent(componentType, componentID) {
         editor.removeChild(editor.children[0]);
     }
     
-    // Tell the renderer to display the given component as selected
-    setCurrentSelected(componentType, componentID);
+    // Tell the renderer to display the given component as selected (if needed)
+    if (doSetCurrentSelected) setCurrentSelected(componentType, componentID);
     
     // Special case: if componentType, componentID == "" then just exit
     if (componentType === "" && componentID === "") {
