@@ -983,6 +983,24 @@ function renderScoreComponent(componentID) {
     return svg;
 }   
 
+function findScoreComponentSnap(x, y, ignoreList) {
+    // Returns the ID of a ScoreComponent that's within 'snapping' range of the given coordinates.
+    // ComponentIDs in ignoreList will not be considered.
+    // Only components that have been rendered will be considered.
+    // 
+    // Given (x,y) should be (clientX, clientY).
+    // This returns a componentID or null.
+    
+    const children = Array.from(document.getElementById("component-container").children)
+        .filter(c => c.substring(0, 17) === "score-component")  // Is it a ScoreComponent?
+        .filter(c => !ignoreList.has(c.id.substring(16)))  // Is widget ID not in ignoreList?
+        .map(c => [c, c.getBoundingClientRect()])  // Extract bbox for easy calculation
+        .map(c => Math.pow(c[1].right - x, 2) + Math.pow(c[1].top + c[1].height / 2 - y, 2))  // Find distance between each child and (x,y)
+        .filter(c => c[1] < Math.pow(5, 2))  // Filter those under 5mm away
+        .map(c => c[0]);  // We only need the actual children
+    return (children.length) ? children[0].id : null;
+}
+
 function attachEvents(componentType, componentID, svg) {
     // Attach the event handlers for the given component
     
@@ -1018,24 +1036,25 @@ function attachEvents(componentType, componentID, svg) {
             const newMoved = squareDistance > Math.pow(5, 2);  // Did it move more than 5 mm?
             hasMoved ||= newMoved;  // OR: So if we drag it far then drag it back, it will still say has_moved
             
-            // Move the component
-            const moveX = !(moveEvent.shiftKey && dx < dy);  // If shift is pressed then move in greatest cardinal direction
-            const moveY = !(moveEvent.shiftKey && dy < dx);  // If shift is pressed then move in greatest cardinal direction
-            if (hasMoved && moveX && moveY) {  // Move x,y to new
-                setComponentX(componentType, componentID, newX);
-                setComponentY(componentType, componentID, newY);
-                svg.style.left = (newX * 100) + "%";
-                svg.style.top = (newY * 100) + "%";
-            } else if (hasMoved && moveX) {  // Move x to new, y to initial
-                setComponentX(componentType, componentID, newX);
-                setComponentY(componentType, componentID, initialY);
-                svg.style.left = (newX * 100) + "%";
-                svg.style.top = (initialY * 100) + "%";
-            } else if (hasMoved && moveY) {  // Move x to initial, y to new
-                setComponentX(componentType, componentID, initialX);
-                setComponentY(componentType, componentID, newY);
-                svg.style.left = (initialX * 100) + "%";
-                svg.style.top = (newY * 100) + "%";
+            // Move the component (if we've draged a non-negligable amount)
+            if (hasMoved) {
+                
+                // Find the coordinates it will actually move to
+                let finalX, finalY;
+                let snapID;  // The ID of a score component to snap to, else null
+                if (moveEvent.shiftKey) {  // If shift is pressed, then we only move in one direction
+                    [finalX, finalY] = (dx > dy) ? [newX, initialY] : [initialX, newY];
+                } else if (componentType === "score-component" && (snapID = findScoreComponentSnap(newX, newY, []))) {  // If we are close enough to snap to a score component
+                    
+                } else {  // Else move normally
+                    [finalX, finalY] = [newX, newY];
+                }
+
+                // Update the coordinates on the page
+                setComponentX(componentType, componentID, finalX);
+                setComponentY(componentType, componentID, finalY);
+                svg.style.left = (finalX * 100) + "%";
+                svg.style.top = (finalY * 100) + "%";
             }
         }
         const keyEventHandler = (keyEvent, down) => {  // Handle shift being pressed in the middle of a drag
