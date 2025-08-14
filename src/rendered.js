@@ -1,5 +1,5 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration} from "./files.js";
-import {setEditComponent} from "./editor.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration, getLinkedToScoreComponent} from "./files.js";
+import {setEditComponent, setEditComponents} from "./editor.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -380,9 +380,11 @@ function sum(...values) {
     return total;
 }
 
-function calculateSpacing(instructions, rhythmLengthHint) {
+function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     // Returns some information on how to draw the given instructions.
+    // The linkedInstructions is used to calculate vertical sizing information, and is from "linked-score-components". This array should contain all the items in the instructions as well as the extra instructions.
     // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
+    // 
     // It returns {
     //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST / SIDE_DECORATION. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
@@ -408,7 +410,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
             .forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
     const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
     
-    // Zeroth, calculate the sum of the langths of the applicable instructions
+    // Zeroth, calculate the sum of the lengths of the applicable instructions
     const componentLength = sum(...instructions
         .filter(instruction => [RenderInstruction.GROUP, RenderInstruction.REST, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type))
         .map(instruction => instruction.length));
@@ -977,8 +979,13 @@ function draw(instructions, spacing) {
 function renderScoreComponent(componentID) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
+    // This will take linked-score-components into account.
     const instructions = preRenderScoreComponent(componentID);
-    const spacing = calculateSpacing(instructions, getScoreComponentRhythmLengthHint(componentID));
+    const linkedInstructions = Array().concat(  // Get a single array with all instructions from all linked components (including the given component)
+        getLinkedToScoreComponent(componentID)
+            .map(id => preRenderScoreComponent(id))
+    );
+    const spacing = calculateSpacing(instructions, linkedInstructions, getScoreComponentRhythmLengthHint(componentID));
     const svg = draw(instructions, spacing);
     return svg;
 }   
@@ -1078,16 +1085,16 @@ function attachEvents(componentType, componentID, svg) {
             if (!hasMoved && initial) {  // Selection handling is done by initial
                 
                 if (upEvent.shiftKey) {  // This is a multi-select
-                    console.log(1);
                     toggleCurrentSelected(componentType, componentID);  // Update the tag of the node
-                    console.log(2);
                     
                     // If we have none/multiple selected then the editor should be empty, otherwise it should be the selected node
                     const currentSelected = getCurrentSelected();
                     if (currentSelected.length == 1) {
                         setEditComponent(currentSelected[0].componentType, currentSelected[0].componentID);  // This will call setCurrentSelected, but it won't change anything
-                    } else {
+                    } else if (currentSelected.length == 0) {
                         setEditComponent("", "", false);  // False so it doesn't call setCurrentSelected("", "") and clear the selection
+                    } else {  // There are multiple selected
+                        setEditComponents(currentSelected);
                     }
 
                 } else {  // It wasn't a multi-select

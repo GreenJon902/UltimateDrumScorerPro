@@ -351,5 +351,69 @@ export function setTextComponentTextContent(componentID, newTextContent) {
     CURRENT_PROJECT["text-components"][componentID]["text-content"] = newTextContent;
 }
 
+export function linkScoreComponents(componentIDs) {
+    // Links the given score-component's spacing information.
+    // The given array should be of the form [componentID].
+    // Any of the components already linked will be unlinked from those previous links.
+    // The given componentIDs should exist, be of length > 1, and not contain duplicates
+    
+    const newLink = new Array();
+    for (let i=0; i<componentIDs.length; i++) {
+        const id = componentIDs[i];
+        
+        // Remove the previous link (if applicable)
+        removeScoreComponentFromLink(id);
 
+        // Check for duplicates
+        if (newLink.includes(id)) throw "Tried to link duplicate componentIDs";
 
+        // Add it to the new link
+        newLink.push(id);
+    }
+    
+    // Check there are enough components in newLink
+    if (newLink.length < 2) throw "Tried to add too few componentIDs to a link";
+    
+    // Add the newLink to the project
+    CURRENT_PROJECT["linked-score-components"].push(newLink);
+}
+
+export function removeScoreComponentFromLink(componentID) {
+    // Removes the given id from any score component links.
+
+    for (let i=0; i<CURRENT_PROJECT["linked-score-components"].length; i++) {
+        const lsc = CURRENT_PROJECT["linked-score-components"][i];
+        if (lsc.includes(componentID)) {
+            lsc.splice(lsc.indexOf(componentID), 1);  // Remove id from array
+            
+            // A link array of length one means nothing so prune if necessary
+            if (lsc.length < 2) {
+                CURRENT_PROJECT["linked-score-components"].splice(i, 1);
+                i--;  // We removed current i, so we don't want to increment. i--++ = i
+                // Don't stop looping incase componentID is used multiple times (which there shouldn't be), but check anyway
+            }
+        }
+    }
+}
+
+export function isScoreComponentLinked(componentID) {
+    // Returns true if componentID is linked, otherwise false
+    for (let i=0; i<CURRENT_PROJECT["linked-score-components"].length; i++) {
+        if (CURRENT_PROJECT["linked-score-components"][i].includes(componentID)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function getLinkedToScoreComponent(componentID) {
+    // Returns the full array of components linked to the given component. This will include the given component.
+    // If the given component is not linked then an array containing only the componentID will be returned.
+     
+    for (let i=0; i<CURRENT_PROJECT["linked-score-components"].length; i++) {
+        if (CURRENT_PROJECT["linked-score-components"][i].includes(componentID)) {
+            return Array.from(CURRENT_PROJECT["linked-score-components"][i]);
+        }
+    }
+    return Array(componentID);
+}
