@@ -1,19 +1,24 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY} from "./files.js";
-import {getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
+import {addCurrentSelected, getCurrentSelected, getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
 
-export function setEditComponent(componentType, componentID) {
-    // Set the component editing pane to be editing the given component.
-    // This will call rendered.js/setCurrentSelected, so expects the component to have been rendered.
-    // If both args are "" then the editor will be cleared, setCurrentSelected called with ("", ""),  and then the function will return.
-    
-    // First clear the old data
+function clearEditorPane() {
+    // Removes all nodes from the "editor-pane".
     let editor = document.getElementById("editor-pane");
     while (editor.children.length > 0) {
         editor.removeChild(editor.children[0]);
     }
+}
+
+export function setEditComponent(componentType, componentID, doSetCurrentSelected=true) {
+    // Set the component editing pane to be editing the given component.
+    // This will call rendered.js/setCurrentSelected if doSetCurrentSelected is true, and expects the component to have been rendered.
+    // If both args are "" then the editor will be cleared, setCurrentSelected called (if doSetCurrentSelected is true) with ("", ""),  and then the function will return.
     
-    // Tell the renderer to display the given component as selected
-    setCurrentSelected(componentType, componentID);
+    // First clear the old data
+    clearEditorPane();
+    
+    // Tell the renderer to display the given component as selected (if needed)
+    if (doSetCurrentSelected) setCurrentSelected(componentType, componentID);
     
     // Special case: if componentType, componentID == "" then just exit
     if (componentType === "" && componentID === "") {
@@ -28,6 +33,26 @@ export function setEditComponent(componentType, componentID) {
 
     if (editFunc === undefined) throw "Not Implemented";
     editFunc(componentID);
+}
+
+export function setEditComponents(components) {
+    // Set up the editing pane for the given componentIDs, or clear it if there is an invalid combination.
+    // components should be of the form [{componentType, componentID}].
+    
+    clearEditorPane();
+    
+    // At the moment the only valid option is setting up a link
+    if (components.filter(c => c.componentType === "score-component").length != components.length) {  // Check if all given components are score-components
+        return;
+    }
+    // Create UI:
+    document.getElementById("editor-pane").appendChild(createButton(
+        "Link Vertically",
+        () => {
+            linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
+            renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
+        }
+    ));
 }
 
 function editTextComponent(componentID) {
@@ -75,6 +100,23 @@ function editScoreComponent(componentID) {
     // Duplicate / delete controls
     div.appendChild(document.createElement("br"))
     createComponentDelDupButtons(div, "score-component", componentID);
+    
+    // Link controls
+    if (isScoreComponentLinked(componentID)) {  // We only need these if it's linked
+        div.appendChild(document.createElement("br"))
+        
+        // Add a button to remove from link, and button to select all in current link group
+        div.appendChild(createButton("Remove From Link", () => {
+            removeScoreComponentFromLink(componentID);  // Remove from file manager
+            setEditComponent("score-component", componentID);  // Update the edit pane
+            renderComponent("score-component", componentID);  // This will trigger the re-rendering of them all in the old group
+        }));
+        div.appendChild(createButton("Select All In Link", () => {
+            setCurrentSelected("", "");  // Remove all current selected
+            getLinkedToScoreComponent(componentID).forEach(id => addCurrentSelected("score-component", id));  // Add each item that should be selected
+            setEditComponents(getCurrentSelected()); // Update editor. There must be multiple selected right now
+        }));
+    }
 
     // Selectors for which drums and decorations are enabled
     div.appendChild(document.createElement("br"));
@@ -150,9 +192,9 @@ function createButton(text, click) {
 function createComponentDelDupButtons(div, componentType, componentID) {
     // Adds the duplicate and delete buttons to the given div
     div.appendChild(createButton("Delete", () => {
-        removeScoreComponent(componentType, componentID);
         setEditComponent("", "");
         unRenderComponent(componentType, componentID);
+        removeScoreComponent(componentType, componentID);  // Has to be after unRender as per doc
         
     }));
     div.appendChild(createButton("Duplicate", () => {

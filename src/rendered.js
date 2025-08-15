@@ -1,5 +1,5 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration} from "./files.js";
-import {setEditComponent} from "./editor.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration, getLinkedToScoreComponent, isScoreComponentLinked} from "./files.js";
+import {setEditComponent, setEditComponents} from "./editor.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
@@ -380,9 +380,11 @@ function sum(...values) {
     return total;
 }
 
-function calculateSpacing(instructions, rhythmLengthHint) {
+function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     // Returns some information on how to draw the given instructions.
+    // The linkedInstructions is used to calculate vertical sizing information, and is from "linked-score-components". This array should contain all the items in the instructions as well as the extra instructions.
     // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
+    // 
     // It returns {
     //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST / SIDE_DECORATION. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
@@ -402,13 +404,13 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     
     // Get a list of the DRUMS that are. Order is preserved.
     const usedDrumsSet = new Set();
-    instructions
+    linkedInstructions
         .filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type))
         .forEach(instruction => instruction.drums
             .forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
     const USED_DRUMS = Array.from(DRUMS).filter(drum => usedDrumsSet.has(drum));
     
-    // Zeroth, calculate the sum of the langths of the applicable instructions
+    // Zeroth, calculate the sum of the lengths of the applicable instructions
     const componentLength = sum(...instructions
         .filter(instruction => [RenderInstruction.GROUP, RenderInstruction.REST, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type))
         .map(instruction => instruction.length));
@@ -595,14 +597,14 @@ function calculateSpacing(instructions, rhythmLengthHint) {
             
     // Second, calculate which drumIDs exist on the same beat
     const drumCollisions = {};  // Maps from drumID to set of drumIDs
-    for (let i=0; i<instructions.length; i++) {
-        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
+    for (let i=0; i<linkedInstructions.length; i++) {
+        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(linkedInstructions[i].type)) continue;
 
-        for (let j=0; j<instructions[i].drums.length; j++) {
-            for (let k=0; k<instructions[i].drums.length; k++) {
+        for (let j=0; j<linkedInstructions[i].drums.length; j++) {
+            for (let k=0; k<linkedInstructions[i].drums.length; k++) {
                 if (j != k) {
-                    const jID = instructions[i].drums[j];
-                    const kID = instructions[i].drums[k];
+                    const jID = linkedInstructions[i].drums[j];
+                    const kID = linkedInstructions[i].drums[k];
                     if (drumCollisions[jID] === undefined) {
                         drumCollisions[jID] = new Set();
                     }
@@ -613,7 +615,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     }
     console.log("2. DC:", drumCollisions);
 
-    // Third, calculate the relative (to the anchor of the head above it) Y of each drum
+    // Third, calculate the Y of each drum anchor
     const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
     let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
     for (let i=0; i<USED_DRUMS.length; i++) {  
@@ -639,8 +641,8 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     
     // Fourth, calculate the tallest beam + dots
     let tallestRhythm = 0;
-    for (let i=0; i<instructions.length; i++) {
-        const instr = instructions[i];
+    for (let i=0; i<linkedInstructions.length; i++) {
+        const instr = linkedInstructions[i];
         if (instr.type === RenderInstruction.GROUP) {
             const fullBeamHeight = instr.full_beams * 2;
             const dotHeight = (instr.dots === 0) ? 0 : 2;
@@ -669,8 +671,8 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     let tallestRestOrSideDeco = 0;
     let restCount = 0;
     let sideDecorationCount = 0;
-    for (let i=0; i<instructions.length; i++) {
-        const instr = instructions[i];
+    for (let i=0; i<linkedInstructions.length; i++) {
+        const instr = linkedInstructions[i];
         if (instr.type === RenderInstruction.REST) {
             restCount += 1;
             if (instr.ticks === 0) {  // Is crotchet rest?
@@ -686,18 +688,14 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     console.log("5. TROSD:", tallestRestOrSideDeco);
     
     // Sixth, find out if we have any contracts we need to account for, and how many there are
-    let contractCount = 0;
-    for (let i=0; i<instructions.length; i++) {
-        if (instructions[i].type === RenderInstruction.CONTRACT_START) {  // All contracts that open should close so only need to check open
-            contractCount += 1;
-        }
-    }
-    console.log("6. CC:", contractCount);
+    const contractCount = instructions.filter(instr => instr.type === RenderInstruction.CONTRACT_START).length;
+    const linkedContractCount = linkedInstructions.filter(instr => instr.type === RenderInstruction.CONTRACT_START).length;
+    console.log("6. CC:", contractCount, "LCC:", linkedContractCount);
     
     // Seventh, find the relative (y to the top of the top decoration) y-levels of decorations. And also find the height of space that decorations take up
     
     // First we need to know the max height decorations may take up on a subdivision
-    const maxDecorationsHeight = Math.max(0, ...instructions  // Have the 0, ... so if no decorations then is 0
+    const maxDecorationsHeight = Math.max(0, ...linkedInstructions  // Have the 0, ... so if no decorations then is 0
         .filter(instr => [RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type))
         .map(instr => sum(0, ...instr.decorations  // Have the 0, ... so if no decorations then is 0
             .map(id => parseFloat(DECORATIONS_MAP[id].dataset.height))) + 1 * instr.decorations.length));  // Add 1 for each decoration to add padding between them
@@ -723,7 +721,7 @@ function calculateSpacing(instructions, rhythmLengthHint) {
     console.log("8. SC:", stemCount);
     
     // Ninth, combind height information and return
-    const contractHeight = (contractCount === 0) ? 0 : 5;
+    const contractHeight = (linkedContractCount === 0) ? 0 : 5;
 
     let headHeight;
     if (USED_DRUMS.length != 0) {
@@ -974,22 +972,66 @@ function draw(instructions, spacing) {
     return svg;
 }
 
-function renderScoreComponent(componentID) {
-    // Renders a score component. This returns a svg node.
+function rerenderLinkedScoreComponents(componentID, ignoreGiven=true) {
+    // Re-renders score components linked to the given component that are not the given component.
+    // If ignoreGiven is true, then the given componentID won't be rerendered.
+
+    const componentIDs = getLinkedToScoreComponent(componentID);
+    if (ignoreGiven) componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
+    
+    [...new Set(componentIDs)]  // Set to remove duplicates, array so can filter
+        .filter(id => document.getElementById("score-component_" + id) != null)  // If it hasn't been drawn then there's no need to redraw it
+        .forEach(id => renderComponent("score-component", id, false));  // False as we don't need them to trigger re-renders
+}
+
+function renderScoreComponent(componentID, initial) {
+    // Renders a score component. This returns a svg node, and a callback to be ran after it is added to the component-container (or null).
     // This does not attach the event handling stuff.
+    // When initial is true, this will trigger the re-renderering of any existing linked-score-components
+    
+    // Render this component
     const instructions = preRenderScoreComponent(componentID);
-    const spacing = calculateSpacing(instructions, getScoreComponentRhythmLengthHint(componentID));
+    const linkedInstructions = Array().concat(  // Get a single array with all instructions from all linked components (including the given component)
+        ...getLinkedToScoreComponent(componentID)
+            .filter(id => document.getElementById("score-component_" + id))
+            .map(id => preRenderScoreComponent(id)),
+        instructions  // We need our instructions in there too
+    );
+    const spacing = calculateSpacing(instructions, linkedInstructions, getScoreComponentRhythmLengthHint(componentID));
     const svg = draw(instructions, spacing);
-    return svg;
+    
+    // If this svg is linked then add one of the other components in the group
+    // This is used if this component is unlinked, so we know which group needs to be re-rendered 
+    // We only need one as each component can be in a max of one groups
+    if (isScoreComponentLinked(componentID)) {
+        const linked = getLinkedToScoreComponent(componentID);
+        linked.splice(linked.indexOf(componentID), 1); // Remove this component
+        const anotherID = linked[0];  // Get any value
+        svg.setAttribute("data-linked", anotherID);
+    }
+    
+    // Re-render any others that have been drawn already
+    // Do this after so that re-renderered will take this component into account
+    const callback = (initial && isScoreComponentLinked(componentID)) ? () => rerenderLinkedScoreComponents(componentID) : null;
+    
+    return [svg, callback];
 }   
 
 function attachEvents(componentType, componentID, svg) {
     // Attach the event handlers for the given component
     
     const container = document.getElementById("component-container");
-    svg.onmousedown = (downEvent) => {
+    svg.onmousedown = (downEvent, initial=true) => {  // Initial is whether this came directly from an onmousedown, or was just called because this is part of a multiselect
         if (downEvent.buttons !== 1) {  // Is anything other than a left-click?
             return;
+        }
+        
+        // If there is a multiselect (and the clicked is part of that), then the others should be dragged too. Just call their onmousedown events to make this happen
+        if (initial && svg.hasAttribute("data-selected")) {
+            getCurrentSelected()
+                .filter(c => (c.componentType !== componentType || c.componentID !== componentID))  // Remove the initial svg
+                .map(c => document.getElementById(c.componentType + "_" + c.componentID))  // Get the actual nodes
+                .forEach(c => c.onmousedown(downEvent, false));
         }
 
         const svgRect = svg.getBoundingClientRect();
@@ -1002,7 +1044,7 @@ function attachEvents(componentType, componentID, svg) {
         // Add events for dragging and ending drag / for clicking svg
         let hasMoved = false;  // If we move by only a few pixels then that's probably by accident, so ignore that. However if we do actually want to move by a few pixels, this allows us to move it far and then move it exactly to where we want it to be
         let lastMoveEventParam = null; // Value passed to last move event, used by keyEventHandler
-        document.onmousemove = (moveEvent) => {
+        const onmousemove = (moveEvent) => {
             // Expects moveEvent to be an object with {clientX, clientY, shiftKey}.
 
             lastMoveEventParam = moveEvent;
@@ -1018,24 +1060,20 @@ function attachEvents(componentType, componentID, svg) {
             const newMoved = squareDistance > Math.pow(5, 2);  // Did it move more than 5 mm?
             hasMoved ||= newMoved;  // OR: So if we drag it far then drag it back, it will still say has_moved
             
-            // Move the component
-            const moveX = !(moveEvent.shiftKey && dx < dy);  // If shift is pressed then move in greatest cardinal direction
-            const moveY = !(moveEvent.shiftKey && dy < dx);  // If shift is pressed then move in greatest cardinal direction
-            if (hasMoved && moveX && moveY) {  // Move x,y to new
-                setComponentX(componentType, componentID, newX);
+            // Move the component (if hasMoved)
+            if (hasMoved) {
+                
+                // If shift is pressed, then we only move in one direction
+                const moveX = !(moveEvent.shiftKey && dx < dy);  
+                const moveY = !(moveEvent.shiftKey && dy < dx); 
+                
+                const finalX = (moveX) ? newX : initialX;
+                const finalY = (moveY) ? newY : initialY;
+
+                setComponentX(componentType, componentID, finalX);
                 setComponentY(componentType, componentID, newY);
-                svg.style.left = (newX * 100) + "%";
-                svg.style.top = (newY * 100) + "%";
-            } else if (hasMoved && moveX) {  // Move x to new, y to initial
-                setComponentX(componentType, componentID, newX);
-                setComponentY(componentType, componentID, initialY);
-                svg.style.left = (newX * 100) + "%";
-                svg.style.top = (initialY * 100) + "%";
-            } else if (hasMoved && moveY) {  // Move x to initial, y to new
-                setComponentX(componentType, componentID, initialX);
-                setComponentY(componentType, componentID, newY);
-                svg.style.left = (initialX * 100) + "%";
-                svg.style.top = (newY * 100) + "%";
+                svg.style.left = (finalX * 100) + "%";
+                svg.style.top = (finalY * 100) + "%";
             }
         }
         const keyEventHandler = (keyEvent, down) => {  // Handle shift being pressed in the middle of a drag
@@ -1045,14 +1083,14 @@ function attachEvents(componentType, componentID, svg) {
                     if (down) {
                         // We need to update position of component, the logic for this is in the move event, so just use that (if we haven't yet moved then shift wouldn't change anything so ignore)
                         // We create this object as the param so we can set shiftKey to true
-                        document.onmousemove({
+                        onmousemove({
                             clientX: lastMoveEventParam.clientX,
                             clientY: lastMoveEventParam.clientY,
                             shiftKey: true
                         });  
                     } else {
                         // Same idea, just shift released so move to where mouse is
-                        document.onmousemove({
+                        onmousemove({
                             clientX: lastMoveEventParam.clientX,
                             clientY: lastMoveEventParam.clientY,
                             shiftKey: false
@@ -1061,22 +1099,43 @@ function attachEvents(componentType, componentID, svg) {
                 }
             }
         }
-        const keydownEventHandler = (e) => keyEventHandler(e, true);
-        const keyupEventHandler = (e) => keyEventHandler(e, false);
-        document.addEventListener("keydown", keydownEventHandler);
-        document.addEventListener("keyup", keyupEventHandler);
-        document.onmouseup = (upEvent) => {
+        const onkeydown = (e) => keyEventHandler(e, true);
+        const onkeyup = (e) => keyEventHandler(e, false);
+        const onmouseup = (upEvent) => {
             // Unbind events as drag / click is over
-            document.onmousemove = null;
-            document.removeEventListener("keydown", keydownEventHandler);
-            document.removeEventListener("keyup", keyupEventHandler);
-            document.onmouseup = null;
+            document.removeEventListener("mousemove", onmousemove);
+            document.removeEventListener("mouseup", onmouseup);
+            document.removeEventListener("keydown", onkeydown);
+            document.removeEventListener("keyup", onkeyup);
             
-            // If it didn't move setEditComponent
-            if (!hasMoved) {
-                setEditComponent(componentType, componentID);
+            // If it didn't move then we clicked it, not dragged it
+            if (!hasMoved && initial) {  // Selection handling is done by initial
+                
+                if (upEvent.shiftKey) {  // This is a multi-select
+                    toggleCurrentSelected(componentType, componentID);  // Update the tag of the node
+                    
+                    // If we have none/multiple selected then the editor should be empty, otherwise it should be the selected node
+                    const currentSelected = getCurrentSelected();
+                    if (currentSelected.length == 1) {
+                        setEditComponent(currentSelected[0].componentType, currentSelected[0].componentID);  // This will call setCurrentSelected, but it won't change anything
+                    } else if (currentSelected.length == 0) {
+                        setEditComponent("", "", false);  // False so it doesn't call setCurrentSelected("", "") and clear the selection
+                    } else {  // There are multiple selected
+                        setEditComponents(currentSelected);
+                    }
+
+                } else {  // It wasn't a multi-select
+                    setEditComponent(componentType, componentID);  // This will handle the current selection (setCurrentSelected)
+                }
             }
         }
+        
+        // Bind actual events.
+        // We bind like this so we can have a binding for each component (in a multi-select)
+        document.addEventListener("mousemove", onmousemove);
+        document.addEventListener("mouseup", onmouseup);
+        document.addEventListener("keydown", onkeydown);
+        document.addEventListener("keyup", onkeyup);
     }
     
     // Stop propagation on all click events -> This means if this svg is clicked, the click won't go to the component-container (which would call deselectComponents which is wrong)
@@ -1085,9 +1144,10 @@ function attachEvents(componentType, componentID, svg) {
     }
 }
 
-function renderTextComponent(componentID) {
-    // Renders a text component. This returns a svg node.
+function renderTextComponent(componentID, _) {
+    // Renders a text component. This returns a svg node and null.
     // This does not attach the event handling stuff.
+    // This ignores the last arg.
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     const textContent = getTextComponentTextContent(componentID);
@@ -1103,7 +1163,24 @@ function renderTextComponent(componentID) {
     svg.setAttribute("width", width + "mm");  
     svg.setAttribute("height", height + "mm");
     svg.setAttribute("viewBox", `${size.left} ${size.up} ${size.width} ${size.height}`);  // Center text in viewbox and scale 1px to 1mm
-    return svg;
+    return [svg, null];
+}
+
+export function addCurrentSelected(componentType, componentID) {
+    // Adds "data-selected" tag to the given component.
+    const svg = document.getElementById(componentType + "_" + componentID);
+    svg.setAttribute("data-selected", "");
+}
+
+
+export function toggleCurrentSelected(componentType, componentID) {
+    // Adds "data-selected" tag to the given component if it doesn't have it. And removes the tag if it does.
+    const svg = document.getElementById(componentType + "_" + componentID);
+    if (svg.hasAttribute("data-selected")) {
+        svg.removeAttribute("data-selected");
+    } else {
+        addCurrentSelected(componentType, componentID);
+    }
 }
 
 export function setCurrentSelected(componentType, componentID) {
@@ -1117,29 +1194,55 @@ export function setCurrentSelected(componentType, componentID) {
     if (componentType === "" && componentID === "") {
         return;
     }
-
-    // Add tag to given component
-    const svg = document.getElementById(componentType + "_" + componentID);
-    svg.setAttribute("data-selected", "");
+    
+    // Add tag
+    addCurrentSelected(componentType, componentID);
 }
 
-export function unRenderComponent(componentType, componentID) {
+export function getCurrentSelected() {
+    // Returns a list of all currently selected components (components with the tag "data-selected").
+    // This is in the form [{componentType, componentID}].
+    return Array.from(document.getElementById("component-container").children)
+        .filter(child => child.hasAttribute("data-selected"))  // Filter only selected
+        .map(child => ({componentType: child.id.split("_")[0], componentID: child.id.split("_")[1]}));  // Convert to type and ID
+}
+
+export function unRenderComponent(componentType, componentID, initial=true) {
     // Remove a component if it has been rendered.
     // Returns true if the given component exists and has the tag "data-selected", else false.
+    // If initial is true then linked-score-components may be re-rendered
+    // This expects the given component to still exist in the files (so linked score-components can be handled).
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
         old.remove();
+        
+        // Handle linked-score-components
+        if (componentType === "score-component") {
+            if (isScoreComponentLinked(componentID) && initial) rerenderLinkedScoreComponents(componentID);  // If initial as this only needs to be called once
+            
+            // Check if the component switched groups
+            if (old.hasAttribute("data-linked")) {
+                const oldGroup = old.getAttribute("data-linked");
+                const oldGroupIDs = getLinkedToScoreComponent(oldGroup);
+                if (!oldGroupIDs.includes(componentID)) {
+                    rerenderLinkedScoreComponents(oldGroupIDs[0], false);  // Rerender of any in that group will rerender the whole group
+                }
+            }
+        }
+        
         return old.hasAttribute("data-selected");
     }
+
     return false;  // It doesn't exist so it can't be selected
 }
 
-export function renderComponent(componentType, componentID) {
+export function renderComponent(componentType, componentID, initial=true) {
 	// Render the given component.
     // If it already exists then it will be first removed, however the "data-selected" attribute will persist.
+    // See individual component render functions for usage of initial. 
     
     // First delete it if it already exists
-    let reselect = unRenderComponent(componentType, componentID);
+    let reselect = unRenderComponent(componentType, componentID, initial);
 
     // Now render it
     const renderFunc = {
@@ -1150,7 +1253,7 @@ export function renderComponent(componentType, componentID) {
     if (renderFunc === undefined) throw "Not Implemented";
 
     // Now let's render it ----------------------------------
-    const svg = renderFunc(componentID);
+    const [svg, callback] = renderFunc(componentID, initial);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
     svg.style.left = (getComponentX(componentType, componentID) * 100) + "%";
@@ -1158,6 +1261,9 @@ export function renderComponent(componentType, componentID) {
     attachEvents(componentType, componentID, svg);
     // If it used to be selected, then it should still be selected
     if (reselect) setCurrentSelected(componentType, componentID);
+    
+    // Run callback if not null
+    if (callback != null) callback();
 }
 
 

@@ -114,20 +114,22 @@
         // Load temp project during dev and setup
         
         loadJSON({"drums":{"kick":{"symbol":"slanted-line","y":0},"snare":{"symbol":"slanted-line","y":10}},"decorations":{"high-hat-open":{"symbol":"+"},"high-hat-close":{"symbol":"o"}},"text-components":{"text-component-0":{"x":10,"y":30,"font-size":13,"text":"TestingTesting123"}},"score-components":{"score-component-0":{"x":0.1,"y":0,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":30, "enabled-drums":/*["kick", "snare", "snare2"]*/["crash", "ride", "hi-hat", /*"high-rack-tom", "low-rack-tom", */"snare", "kick"],"score-content":[
-        [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ]], "left-decoration": "", "right-decoration": ""}/*, "score-component-1":{"x":0.1,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["high-hat-open","high-hat-closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
-        [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ], [{"drums":[],"decorations":[]}, {"drums":[],"decorations":[]}
-        ]]}*/}});
+        [{"drums":["hi-hat"],"decorations":[]}
+        ]], "left-decoration": "repeat-start", "right-decoration": "bar-end"}, "score-component-1":{"x":0.18,"y":0,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
+        [{"drums":["hi-hat", "snare"],"decorations":[]}
+        ]], "left-decoration": "", "right-decoration": "repeat-end"},
+        
+        "score-component-2": {"x":0.18,"y":0.1,"time-signature-denomenator":4,"enabled-decorations":["open","closed"],"rhythm-length-hint":1, "enabled-drums":["crash", "ride", "hi-hat", "high-rack-tom", "low-rack-tom", "snare", "kick"],"score-content":[
+        [{"drums":["hi-hat"],"decorations":[]}
+        ]], "left-decoration": "", "right-decoration": ""}},
 
-        renderComponent("score-component", "score-component-0");
+
+        "linked-score-components": [["score-component-0", "score-component-1"]]});
+
+        renderComponent("score-component", "score-component-0");  
         setEditComponent("score-component", "score-component-0");
-        //renderComponent("score-component", "score-component-1");
+        renderComponent("score-component", "score-component-1");
+        renderComponent("score-component", "score-component-2");
         
         function updateRenderedScale(newScale) {
             // Update the zoom and all related properties of the rendered pane
@@ -176,7 +178,7 @@
                 // Get new scale amount
                 if (!contcont.hasAttribute("data-scale")) contcont.setAttribute("data-scale", "1");  // Set default value if it's not there yet
                 const oldScale = contcont.getAttribute("data-scale");
-                const newScale = oldScale - wheelEvent.deltaY * zoomSpeed;
+                const newScale = Math.max(0, oldScale - wheelEvent.deltaY * zoomSpeed);  // Max as can't be negative
                 
                 // Actually set scale amount to node
                 updateRenderedScale(newScale);
@@ -244,7 +246,7 @@
                     const componentContainer = document.getElementById("component-container");
                     componentContainer.removeChild(...componentContainer.children);  // Remove all children
                     setEditComponent("", "");  // Edit nothing
-                    listComponents().forEach(args => renderComponent(args[0], args[1]));  // Render components
+                    listComponents().forEach(args => renderComponent(args[0], args[1]));
                     
                 };
                 
