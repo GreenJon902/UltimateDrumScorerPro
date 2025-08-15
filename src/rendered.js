@@ -1,4 +1,4 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration, getLinkedToScoreComponent} from "./files.js";
+import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration, getLinkedToScoreComponent, isScoreComponentLinked} from "./files.js";
 import {setEditComponent, setEditComponents} from "./editor.js";
 
 class RenderInstruction {
@@ -404,7 +404,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     
     // Get a list of the DRUMS that are. Order is preserved.
     const usedDrumsSet = new Set();
-    instructions
+    linkedInstructions
         .filter(instruction => [RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instruction.type))
         .forEach(instruction => instruction.drums
             .forEach(drumID => usedDrumsSet.add(DRUMS_MAP[drumID])));
@@ -597,14 +597,14 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
             
     // Second, calculate which drumIDs exist on the same beat
     const drumCollisions = {};  // Maps from drumID to set of drumIDs
-    for (let i=0; i<instructions.length; i++) {
-        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(instructions[i].type)) continue;
+    for (let i=0; i<linkedInstructions.length; i++) {
+        if (![RenderInstruction.GROUP, RenderInstruction.GROUP_END, RenderInstruction.FLAG].includes(linkedInstructions[i].type)) continue;
 
-        for (let j=0; j<instructions[i].drums.length; j++) {
-            for (let k=0; k<instructions[i].drums.length; k++) {
+        for (let j=0; j<linkedInstructions[i].drums.length; j++) {
+            for (let k=0; k<linkedInstructions[i].drums.length; k++) {
                 if (j != k) {
-                    const jID = instructions[i].drums[j];
-                    const kID = instructions[i].drums[k];
+                    const jID = linkedInstructions[i].drums[j];
+                    const kID = linkedInstructions[i].drums[k];
                     if (drumCollisions[jID] === undefined) {
                         drumCollisions[jID] = new Set();
                     }
@@ -615,7 +615,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     }
     console.log("2. DC:", drumCollisions);
 
-    // Third, calculate the relative (to the anchor of the head above it) Y of each drum
+    // Third, calculate the Y of each drum anchor
     const drumYs = [];  // Index matches to USED-DRUMS, value is anchor Y.
     let amountShifted = 0;  // The total amount that the (current) bottom drum has been shifted down.
     for (let i=0; i<USED_DRUMS.length; i++) {  
@@ -641,8 +641,8 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     
     // Fourth, calculate the tallest beam + dots
     let tallestRhythm = 0;
-    for (let i=0; i<instructions.length; i++) {
-        const instr = instructions[i];
+    for (let i=0; i<linkedInstructions.length; i++) {
+        const instr = linkedInstructions[i];
         if (instr.type === RenderInstruction.GROUP) {
             const fullBeamHeight = instr.full_beams * 2;
             const dotHeight = (instr.dots === 0) ? 0 : 2;
@@ -671,8 +671,8 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     let tallestRestOrSideDeco = 0;
     let restCount = 0;
     let sideDecorationCount = 0;
-    for (let i=0; i<instructions.length; i++) {
-        const instr = instructions[i];
+    for (let i=0; i<linkedInstructions.length; i++) {
+        const instr = linkedInstructions[i];
         if (instr.type === RenderInstruction.REST) {
             restCount += 1;
             if (instr.ticks === 0) {  // Is crotchet rest?
@@ -688,18 +688,14 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     console.log("5. TROSD:", tallestRestOrSideDeco);
     
     // Sixth, find out if we have any contracts we need to account for, and how many there are
-    let contractCount = 0;
-    for (let i=0; i<instructions.length; i++) {
-        if (instructions[i].type === RenderInstruction.CONTRACT_START) {  // All contracts that open should close so only need to check open
-            contractCount += 1;
-        }
-    }
-    console.log("6. CC:", contractCount);
+    const contractCount = instructions.filter(instr => instr.type === RenderInstruction.CONTRACT_START).length;
+    const linkedContractCount = linkedInstructions.filter(instr => instr.type === RenderInstruction.CONTRACT_START).length;
+    console.log("6. CC:", contractCount, "LCC:", linkedContractCount);
     
     // Seventh, find the relative (y to the top of the top decoration) y-levels of decorations. And also find the height of space that decorations take up
     
     // First we need to know the max height decorations may take up on a subdivision
-    const maxDecorationsHeight = Math.max(0, ...instructions  // Have the 0, ... so if no decorations then is 0
+    const maxDecorationsHeight = Math.max(0, ...linkedInstructions  // Have the 0, ... so if no decorations then is 0
         .filter(instr => [RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type))
         .map(instr => sum(0, ...instr.decorations  // Have the 0, ... so if no decorations then is 0
             .map(id => parseFloat(DECORATIONS_MAP[id].dataset.height))) + 1 * instr.decorations.length));  // Add 1 for each decoration to add padding between them
@@ -725,7 +721,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     console.log("8. SC:", stemCount);
     
     // Ninth, combind height information and return
-    const contractHeight = (contractCount === 0) ? 0 : 5;
+    const contractHeight = (linkedContractCount === 0) ? 0 : 5;
 
     let headHeight;
     if (USED_DRUMS.length != 0) {
@@ -976,17 +972,48 @@ function draw(instructions, spacing) {
     return svg;
 }
 
-function renderScoreComponent(componentID) {
+function rerenderLinkedScoreComponents(componentID) {
+    // Re-renders score components linked to the given component that are not the given component.
+
+    const componentIDs = getLinkedToScoreComponent(componentID);
+    componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
+    
+    // If this used to be linked, then the ones it was linked to need to be updated too
+    const old = document.getElementById("score-component_" + componentID);
+    if (old !== null && old.hasAttribute("data-current-linked")) {
+        componentIDs.push(...old.getAttribute("data-current-linked").split(" "));
+        componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
+    }
+    
+    [...new Set(componentIDs)]  // Set to remove duplicates, array so can filter
+        .filter(id => document.getElementById("score-component_" + id) != null)  // If it hasn't been drawn then there's no need to redraw it
+        .forEach(id => renderComponent("score-component", id, false));  // False as we don't need them to trigger re-renders
+}
+
+function renderScoreComponent(componentID, initial) {
     // Renders a score component. This returns a svg node.
     // This does not attach the event handling stuff.
-    // This will take linked-score-components into account.
+    // When initial is true, this will trigger the re-renderering of any existing linked-score-components
+    
+    // Render this component
     const instructions = preRenderScoreComponent(componentID);
     const linkedInstructions = Array().concat(  // Get a single array with all instructions from all linked components (including the given component)
-        getLinkedToScoreComponent(componentID)
-            .map(id => preRenderScoreComponent(id))
+        ...getLinkedToScoreComponent(componentID)
+            .map(id => preRenderScoreComponent(id)),
+        instructions  // We need our instructions in there too
     );
     const spacing = calculateSpacing(instructions, linkedInstructions, getScoreComponentRhythmLengthHint(componentID));
     const svg = draw(instructions, spacing);
+    
+    // Attach linked data if it exists. This is used to figure out what this component used to be linked to after componentID has already changed
+    if (isScoreComponentLinked(componentID)) {
+        svg.setAttribute("data-current-linked", getLinkedToScoreComponent(componentID).join(" "));
+    }
+
+    // Re-render any others that have been drawn already
+    // Do this after so that re-renderered will take this component into account
+    if (initial && isScoreComponentLinked(componentID)) rerenderLinkedScoreComponents(componentID);
+    
     return svg;
 }   
 
@@ -1117,9 +1144,10 @@ function attachEvents(componentType, componentID, svg) {
     }
 }
 
-function renderTextComponent(componentID) {
+function renderTextComponent(componentID, _) {
     // Renders a text component. This returns a svg node.
     // This does not attach the event handling stuff.
+    // This ignores the last arg.
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     const textContent = getTextComponentTextContent(componentID);
@@ -1179,23 +1207,30 @@ export function getCurrentSelected() {
         .map(child => ({componentType: child.id.split("_")[0], componentID: child.id.split("_")[1]}));  // Convert to type and ID
 }
 
-export function unRenderComponent(componentType, componentID) {
+export function unRenderComponent(componentType, componentID, initial=true) {
     // Remove a component if it has been rendered.
     // Returns true if the given component exists and has the tag "data-selected", else false.
+    // If initial is true then linked-score-components may be re-rendered
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
         old.remove();
+        
+        // If linked-score-components
+        if (componentType === "score-component" && isScoreComponentLinked(componentID) && initial) rerenderLinkedScoreComponents(componentID);
+        
         return old.hasAttribute("data-selected");
     }
+
     return false;  // It doesn't exist so it can't be selected
 }
 
-export function renderComponent(componentType, componentID) {
+export function renderComponent(componentType, componentID, initial=true) {
 	// Render the given component.
     // If it already exists then it will be first removed, however the "data-selected" attribute will persist.
+    // See individual component render functions for usage of initial. 
     
     // First delete it if it already exists
-    let reselect = unRenderComponent(componentType, componentID);
+    let reselect = unRenderComponent(componentType, componentID, initial);
 
     // Now render it
     const renderFunc = {
@@ -1206,7 +1241,7 @@ export function renderComponent(componentType, componentID) {
     if (renderFunc === undefined) throw "Not Implemented";
 
     // Now let's render it ----------------------------------
-    const svg = renderFunc(componentID);
+    const svg = renderFunc(componentID, initial);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
     svg.style.left = (getComponentX(componentType, componentID) * 100) + "%";

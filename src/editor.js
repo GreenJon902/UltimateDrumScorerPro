@@ -50,7 +50,7 @@ export function setEditComponents(components) {
         "Link Vertically",
         () => {
             linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
-            // TODO: Rerender all components
+            renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
         }
     ));
 }
@@ -191,7 +191,7 @@ function createButton(text, click) {
 function createComponentDelDupButtons(div, componentType, componentID) {
     // Adds the duplicate and delete buttons to the given div
     div.appendChild(createButton("Delete", () => {
-        removeScoreComponent(componentType, componentID);
+        removeScoreComponent(componentType, componentID);  
         setEditComponent("", "");
         unRenderComponent(componentType, componentID);
         
