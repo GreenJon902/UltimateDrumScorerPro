@@ -26,3 +26,4 @@ Art is based on the style my drum teacher used to teach me - reducing unnecessar
 | Component + <kbd>Shift</kbd> + <kbd>Drag</kbd> | Drag component along cardinal axis |
 | Component + <kbd>Left Click</kbd> | Select |
 | !Component + <kbd>Left Click</kbd> | Deselect |
+| Component + <kbd>Shift</kbd> + <kbd>Left Click</kbd> | Multi select/deselect |
