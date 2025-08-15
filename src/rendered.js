@@ -972,18 +972,12 @@ function draw(instructions, spacing) {
     return svg;
 }
 
-function rerenderLinkedScoreComponents(componentID) {
+function rerenderLinkedScoreComponents(componentID, ignoreGiven=true) {
     // Re-renders score components linked to the given component that are not the given component.
+    // If ignoreGiven is true, then the given componentID won't be rerendered.
 
     const componentIDs = getLinkedToScoreComponent(componentID);
-    componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
-    
-    // If this used to be linked, then the ones it was linked to need to be updated too
-    const old = document.getElementById("score-component_" + componentID);
-    if (old !== null && old.hasAttribute("data-current-linked")) {
-        componentIDs.push(...old.getAttribute("data-current-linked").split(" "));
-        componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
-    }
+    if (ignoreGiven) componentIDs.splice(componentIDs.indexOf(componentID), 1);  // Remove self from array
     
     [...new Set(componentIDs)]  // Set to remove duplicates, array so can filter
         .filter(id => document.getElementById("score-component_" + id) != null)  // If it hasn't been drawn then there's no need to redraw it
@@ -991,7 +985,7 @@ function rerenderLinkedScoreComponents(componentID) {
 }
 
 function renderScoreComponent(componentID, initial) {
-    // Renders a score component. This returns a svg node.
+    // Renders a score component. This returns a svg node, and a callback to be ran after it is added to the component-container (or null).
     // This does not attach the event handling stuff.
     // When initial is true, this will trigger the re-renderering of any existing linked-score-components
     
@@ -999,22 +993,28 @@ function renderScoreComponent(componentID, initial) {
     const instructions = preRenderScoreComponent(componentID);
     const linkedInstructions = Array().concat(  // Get a single array with all instructions from all linked components (including the given component)
         ...getLinkedToScoreComponent(componentID)
+            .filter(id => document.getElementById("score-component_" + id))
             .map(id => preRenderScoreComponent(id)),
         instructions  // We need our instructions in there too
     );
     const spacing = calculateSpacing(instructions, linkedInstructions, getScoreComponentRhythmLengthHint(componentID));
     const svg = draw(instructions, spacing);
     
-    // Attach linked data if it exists. This is used to figure out what this component used to be linked to after componentID has already changed
+    // If this svg is linked then add one of the other components in the group
+    // This is used if this component is unlinked, so we know which group needs to be re-rendered 
+    // We only need one as each component can be in a max of one groups
     if (isScoreComponentLinked(componentID)) {
-        svg.setAttribute("data-current-linked", getLinkedToScoreComponent(componentID).join(" "));
+        const linked = getLinkedToScoreComponent(componentID);
+        linked.splice(linked.indexOf(componentID), 1); // Remove this component
+        const anotherID = linked[0];  // Get any value
+        svg.setAttribute("data-linked", anotherID);
     }
-
+    
     // Re-render any others that have been drawn already
     // Do this after so that re-renderered will take this component into account
-    if (initial && isScoreComponentLinked(componentID)) rerenderLinkedScoreComponents(componentID);
+    const callback = (initial && isScoreComponentLinked(componentID)) ? () => rerenderLinkedScoreComponents(componentID) : null;
     
-    return svg;
+    return [svg, callback];
 }   
 
 function attachEvents(componentType, componentID, svg) {
@@ -1145,7 +1145,7 @@ function attachEvents(componentType, componentID, svg) {
 }
 
 function renderTextComponent(componentID, _) {
-    // Renders a text component. This returns a svg node.
+    // Renders a text component. This returns a svg node and null.
     // This does not attach the event handling stuff.
     // This ignores the last arg.
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1163,7 +1163,7 @@ function renderTextComponent(componentID, _) {
     svg.setAttribute("width", width + "mm");  
     svg.setAttribute("height", height + "mm");
     svg.setAttribute("viewBox", `${size.left} ${size.up} ${size.width} ${size.height}`);  // Center text in viewbox and scale 1px to 1mm
-    return svg;
+    return [svg, null];
 }
 
 export function addCurrentSelected(componentType, componentID) {
@@ -1211,12 +1211,24 @@ export function unRenderComponent(componentType, componentID, initial=true) {
     // Remove a component if it has been rendered.
     // Returns true if the given component exists and has the tag "data-selected", else false.
     // If initial is true then linked-score-components may be re-rendered
+    // This expects the given component to still exist in the files (so linked score-components can be handled).
     let old = document.getElementById(componentType + "_" + componentID);
     if (old !== null) {
         old.remove();
         
-        // If linked-score-components
-        if (componentType === "score-component" && isScoreComponentLinked(componentID) && initial) rerenderLinkedScoreComponents(componentID);
+        // Handle linked-score-components
+        if (componentType === "score-component") {
+            if (isScoreComponentLinked(componentID) && initial) rerenderLinkedScoreComponents(componentID);  // If initial as this only needs to be called once
+            
+            // Check if the component switched groups
+            if (old.hasAttribute("data-linked")) {
+                const oldGroup = old.getAttribute("data-linked");
+                const oldGroupIDs = getLinkedToScoreComponent(oldGroup);
+                if (!oldGroupIDs.includes(componentID)) {
+                    rerenderLinkedScoreComponents(oldGroupIDs[0], false);  // Rerender of any in that group will rerender the whole group
+                }
+            }
+        }
         
         return old.hasAttribute("data-selected");
     }
@@ -1241,7 +1253,7 @@ export function renderComponent(componentType, componentID, initial=true) {
     if (renderFunc === undefined) throw "Not Implemented";
 
     // Now let's render it ----------------------------------
-    const svg = renderFunc(componentID, initial);
+    const [svg, callback] = renderFunc(componentID, initial);
     svg.setAttribute("id", componentType + "_" + componentID);
     document.getElementById("component-container").appendChild(svg);
     svg.style.left = (getComponentX(componentType, componentID) * 100) + "%";
@@ -1249,6 +1261,9 @@ export function renderComponent(componentType, componentID, initial=true) {
     attachEvents(componentType, componentID, svg);
     // If it used to be selected, then it should still be selected
     if (reselect) setCurrentSelected(componentType, componentID);
+    
+    // Run callback if not null
+    if (callback != null) callback();
 }
 
 

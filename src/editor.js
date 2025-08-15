@@ -109,6 +109,7 @@ function editScoreComponent(componentID) {
         div.appendChild(createButton("Remove From Link", () => {
             removeScoreComponentFromLink(componentID);  // Remove from file manager
             setEditComponent("score-component", componentID);  // Update the edit pane
+            renderComponent("score-component", componentID);  // This will trigger the re-rendering of them all in the old group
         }));
         div.appendChild(createButton("Select All In Link", () => {
             setCurrentSelected("", "");  // Remove all current selected
@@ -191,9 +192,9 @@ function createButton(text, click) {
 function createComponentDelDupButtons(div, componentType, componentID) {
     // Adds the duplicate and delete buttons to the given div
     div.appendChild(createButton("Delete", () => {
-        removeScoreComponent(componentType, componentID);  
         setEditComponent("", "");
         unRenderComponent(componentType, componentID);
+        removeScoreComponent(componentType, componentID);  // Has to be after unRender as per doc
         
     }));
     div.appendChild(createButton("Duplicate", () => {
