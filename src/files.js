@@ -66,7 +66,7 @@ export function createNewScoreComponent() {
     return id;
 }
 
-export function removeScoreComponent(componentType, componentID) {
+export function removeComponent(componentType, componentID) {
     // Removes the component with the given id.
     // If this is a "score-component" then removeScoreComponentFromLink will be called.
     if (componentType === "score-component") removeScoreComponentFromLink(componentID);

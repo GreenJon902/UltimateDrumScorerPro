@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
 import {addCurrentSelected, getCurrentSelected, getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
 
 function clearEditorPane() {
@@ -41,18 +41,36 @@ export function setEditComponents(components) {
     
     clearEditorPane();
     
-    // At the moment the only valid option is setting up a link
-    if (components.filter(c => c.componentType === "score-component").length != components.length) {  // Check if all given components are score-components
-        return;
+    const div = document.createElement("div");
+    
+    // Is it only score-components selected?
+    if (components.filter(c => c.componentType === "score-component").length == components.length) {  // Check if all given components are score-components
+    
+        // Add a link button
+        div.appendChild(createButton(
+            "Link Vertically",
+            () => {
+                linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
+                renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
+            }
+        ));
     }
-    // Create UI:
-    document.getElementById("editor-pane").appendChild(createButton(
-        "Link Vertically",
+
+    // Add a delete button
+    div.appendChild(createButton(
+        "Delete",
         () => {
-            linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
-            renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
+            setEditComponent("", "");
+            components.forEach(c => {
+                unRenderComponent(c.componentType, c.componentID);
+                removeComponent(c.componentType, c.componentID);  // Has to be after unRender as per doc
+            })
         }
     ));
+    
+
+    // Add div to doc
+    document.getElementById("editor-pane").appendChild(div);
 }
 
 function editTextComponent(componentID) {
@@ -230,7 +248,7 @@ function createComponentDelDupButtons(div, componentType, componentID) {
     div.appendChild(createButton("Delete", () => {
         setEditComponent("", "");
         unRenderComponent(componentType, componentID);
-        removeScoreComponent(componentType, componentID);  // Has to be after unRender as per doc
+        removeComponent(componentType, componentID);  // Has to be after unRender as per doc
         
     }));
     div.appendChild(createButton("Duplicate", () => {
