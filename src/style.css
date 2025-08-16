@@ -135,6 +135,7 @@ body {
 #rendered-pane {
 	position: relative;
 	overflow: hidden;
+    flex: 1;
 }
 
 #rendered-pane-padding {
@@ -169,10 +170,19 @@ body {
 #editor-pane {
 	padding: 1ch;
 	color: white;
-	display: flex;
 	overflow-x: auto;
 	align-items: flex-start;
 	gap: 1ch;
+    flex: 0 1 auto;
+    max-height: 50vh;
+}
+
+#editor-pane:has(*) {
+    display: flex;
+}
+
+#editor-pane:not(:has(*)) {
+    display: none;
 }
 
 #editor-pane > * {
@@ -186,7 +196,6 @@ body {
 }
 
 body > * {
-	flex: 1;
 } 
 
 .editor-sequencer-table {

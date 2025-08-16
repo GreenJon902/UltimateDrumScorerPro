@@ -508,7 +508,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
             }
             
             // Add some padding
-            x += 2;
+            x += 1;
         } else if ([RenderInstruction.FLAG, RenderInstruction.GROUP, RenderInstruction.GROUP_END].includes(instr.type)) {
             // There might be some decorations to draw
             // We do this here because the stem might have been moved by rhythmLengthHint
@@ -525,7 +525,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
             x += maxHeadRight;
 
             // Add some padding
-            x += 2;
+            x += 1;
 
             // If this is a GROUP then rhythm spacing is calculated on the next GROUP or GROUP_END, otherwise:
             // Calculate spacing used by dots or flags
@@ -565,7 +565,7 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
                 instructionXs[i] = instructionXs[i - 1];  // No hooks so ends with a GROUP_END so we can get last x
             }
         } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
-            x += 2;  // Add some padding
+            x += 1;  // Add some padding
         } else {
             throw "Unexpected instruction type"
         }

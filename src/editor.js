@@ -1,4 +1,4 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeScoreComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
+import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
 import {addCurrentSelected, getCurrentSelected, getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
 
 function clearEditorPane() {
@@ -41,18 +41,36 @@ export function setEditComponents(components) {
     
     clearEditorPane();
     
-    // At the moment the only valid option is setting up a link
-    if (components.filter(c => c.componentType === "score-component").length != components.length) {  // Check if all given components are score-components
-        return;
+    const div = document.createElement("div");
+    
+    // Is it only score-components selected?
+    if (components.filter(c => c.componentType === "score-component").length == components.length) {  // Check if all given components are score-components
+    
+        // Add a link button
+        div.appendChild(createButton(
+            "Link Vertically",
+            () => {
+                linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
+                renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
+            }
+        ));
     }
-    // Create UI:
-    document.getElementById("editor-pane").appendChild(createButton(
-        "Link Vertically",
+
+    // Add a delete button
+    div.appendChild(createButton(
+        "Delete",
         () => {
-            linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
-            renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
+            setEditComponent("", "");
+            components.forEach(c => {
+                unRenderComponent(c.componentType, c.componentID);
+                removeComponent(c.componentType, c.componentID);  // Has to be after unRender as per doc
+            })
         }
     ));
+    
+
+    // Add div to doc
+    document.getElementById("editor-pane").appendChild(div);
 }
 
 function editTextComponent(componentID) {
@@ -93,6 +111,7 @@ function editScoreComponent(componentID) {
     createNumberBoxesWithText(div, "score-component", componentID, 
         {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
     );
+    createSetAllSubdivisionBoxWithText(div, componentID);
     
     // Score-component side-decorations
     addSideDecorationSelectors(div, componentID);
@@ -103,7 +122,6 @@ function editScoreComponent(componentID) {
     
     // Link controls
     if (isScoreComponentLinked(componentID)) {  // We only need these if it's linked
-        div.appendChild(document.createElement("br"))
         
         // Add a button to remove from link, and button to select all in current link group
         div.appendChild(createButton("Remove From Link", () => {
@@ -189,12 +207,48 @@ function createButton(text, click) {
     return div;
 }
 
+function createSetAllSubdivisionBoxWithText(div, componentID) {
+    // Creates a label and a text box that will set all the subdivisionCounts for the given component.
+    
+    const span = document.createElement("span");
+    span.innerHTML = "Set All Subdivisions:&nbsp;"
+    span.style.textWrap = "nowrap";
+    
+    const input = document.createElement("input");
+    input.classList.add("score-sequencer-option-box");
+    input.size = "2";
+    input.oninput = () => {
+        input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
+    }
+    input.onchange = () => {
+        if (input.value == '') {  // If empty then don't do anything
+            return;
+        }
+        
+        // Set all subdivisions
+        const n = getScoreComponentTimeSignatureNumerator(componentID);
+        for (let i=0; i<n; i++) {
+            setScoreComponentBeatSubdivisionCount(componentID, i, parseInt(input.value));
+        }
+        
+        // Trigger redraw of editor and rendered
+        setEditComponent("score-component", componentID);
+        renderComponent("score-component", componentID);
+    };
+    
+    const container = document.createElement("div");
+    container.appendChild(span);
+    container.appendChild(input);
+    container.style.display = "flex";
+    div.appendChild(container);
+}
+
 function createComponentDelDupButtons(div, componentType, componentID) {
     // Adds the duplicate and delete buttons to the given div
     div.appendChild(createButton("Delete", () => {
         setEditComponent("", "");
         unRenderComponent(componentType, componentID);
-        removeScoreComponent(componentType, componentID);  // Has to be after unRender as per doc
+        removeComponent(componentType, componentID);  // Has to be after unRender as per doc
         
     }));
     div.appendChild(createButton("Duplicate", () => {
@@ -211,14 +265,14 @@ function createComponentDelDupButtons(div, componentType, componentID) {
 
 function addSideDecorationSelectors(div, componentID) {
     // Add the side-decoration selectors for the given component to the given div. 
-    div.appendChild(createSideDecorationSelector("left", 
+    div.appendChild(createSideDecorationSelector("left", "Left",
         () => getScoreComponentLeftDecoration(componentID), 
         (value) => {
             setScoreComponentLeftDecoration(componentID, value);
             renderComponent("score-component", componentID);
         }
     ));
-    div.appendChild(createSideDecorationSelector("right", 
+    div.appendChild(createSideDecorationSelector("right", "Right",
         () => getScoreComponentRightDecoration(componentID), 
         (value) => {
             setScoreComponentRightDecoration(componentID, value);
@@ -227,10 +281,11 @@ function addSideDecorationSelectors(div, componentID) {
     ));
 }
 
-function createSideDecorationSelector(side, getter, setter) {
+function createSideDecorationSelector(side, displaySide, getter, setter) {
     // Creates and returns a div with a fully working option selector for a given side's decorations.
     // The from getSvgNodes("side-decorations") should have a data-side="left" or "right".
     // The getter takes no arguements and returns the string id of the decoration. The setter takes the arguement of the id of the new decoration.
+    // The displaySide is the one that is used to annotate the box.
 
     const options = getSvgNodes("side-decorations");
     const currentSelected = getter();
@@ -238,7 +293,7 @@ function createSideDecorationSelector(side, getter, setter) {
     // Create and add nodes
     const div = document.createElement("div");
     const text = document.createElement("span");
-    text.innerHTML = side + " Decoration: ";
+    text.innerHTML = displaySide + " Decoration: ";
     const select = document.createElement("select");
     ["",  // Insert a 'none-selected' option at the start
         ...options.array
