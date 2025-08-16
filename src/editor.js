@@ -93,6 +93,7 @@ function editScoreComponent(componentID) {
     createNumberBoxesWithText(div, "score-component", componentID, 
         {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
     );
+    createSetAllSubdivisionBoxWithText(div, componentID);
     
     // Score-component side-decorations
     addSideDecorationSelectors(div, componentID);
@@ -103,7 +104,6 @@ function editScoreComponent(componentID) {
     
     // Link controls
     if (isScoreComponentLinked(componentID)) {  // We only need these if it's linked
-        div.appendChild(document.createElement("br"))
         
         // Add a button to remove from link, and button to select all in current link group
         div.appendChild(createButton("Remove From Link", () => {
@@ -187,6 +187,42 @@ function createButton(text, click) {
     button.onclick = click;
     div.appendChild(button);
     return div;
+}
+
+function createSetAllSubdivisionBoxWithText(div, componentID) {
+    // Creates a label and a text box that will set all the subdivisionCounts for the given component.
+    
+    const span = document.createElement("span");
+    span.innerHTML = "Set All Subdivisions:&nbsp;"
+    span.style.textWrap = "nowrap";
+    
+    const input = document.createElement("input");
+    input.classList.add("score-sequencer-option-box");
+    input.size = "2";
+    input.oninput = () => {
+        input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
+    }
+    input.onchange = () => {
+        if (input.value == '') {  // If empty then don't do anything
+            return;
+        }
+        
+        // Set all subdivisions
+        const n = getScoreComponentTimeSignatureNumerator(componentID);
+        for (let i=0; i<n; i++) {
+            setScoreComponentBeatSubdivisionCount(componentID, i, parseInt(input.value));
+        }
+        
+        // Trigger redraw of editor and rendered
+        setEditComponent("score-component", componentID);
+        renderComponent("score-component", componentID);
+    };
+    
+    const container = document.createElement("div");
+    container.appendChild(span);
+    container.appendChild(input);
+    container.style.display = "flex";
+    div.appendChild(container);
 }
 
 function createComponentDelDupButtons(div, componentType, componentID) {
