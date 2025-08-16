@@ -247,14 +247,14 @@ function createComponentDelDupButtons(div, componentType, componentID) {
 
 function addSideDecorationSelectors(div, componentID) {
     // Add the side-decoration selectors for the given component to the given div. 
-    div.appendChild(createSideDecorationSelector("left", 
+    div.appendChild(createSideDecorationSelector("left", "Left",
         () => getScoreComponentLeftDecoration(componentID), 
         (value) => {
             setScoreComponentLeftDecoration(componentID, value);
             renderComponent("score-component", componentID);
         }
     ));
-    div.appendChild(createSideDecorationSelector("right", 
+    div.appendChild(createSideDecorationSelector("right", "Right",
         () => getScoreComponentRightDecoration(componentID), 
         (value) => {
             setScoreComponentRightDecoration(componentID, value);
@@ -263,10 +263,11 @@ function addSideDecorationSelectors(div, componentID) {
     ));
 }
 
-function createSideDecorationSelector(side, getter, setter) {
+function createSideDecorationSelector(side, displaySide, getter, setter) {
     // Creates and returns a div with a fully working option selector for a given side's decorations.
     // The from getSvgNodes("side-decorations") should have a data-side="left" or "right".
     // The getter takes no arguements and returns the string id of the decoration. The setter takes the arguement of the id of the new decoration.
+    // The displaySide is the one that is used to annotate the box.
 
     const options = getSvgNodes("side-decorations");
     const currentSelected = getter();
@@ -274,7 +275,7 @@ function createSideDecorationSelector(side, getter, setter) {
     // Create and add nodes
     const div = document.createElement("div");
     const text = document.createElement("span");
-    text.innerHTML = side + " Decoration: ";
+    text.innerHTML = displaySide + " Decoration: ";
     const select = document.createElement("select");
     ["",  // Insert a 'none-selected' option at the start
         ...options.array
