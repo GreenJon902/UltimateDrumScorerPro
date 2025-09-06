@@ -317,7 +317,7 @@
                     
                     // Clear old rendered data and re-render new
                     const componentContainer = document.getElementById("component-container");
-                    componentContainer.removeChild(...componentContainer.children);  // Remove all children
+                    Array.from(componentContainer.children).forEach(c => c.remove());  // Remove all children
                     setEditComponent("", "");  // Edit nothing
                     listComponents().forEach(args => renderComponent(args[0], args[1]));
                     
