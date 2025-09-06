@@ -24,23 +24,52 @@
 				<g id="crash" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="0">
 					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
 				</g>
+				<g id="crash-2" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="2.5">
+					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
+				</g>
+				<g id="trash" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="2.5">
+					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
+                    <circle cx="-1.5" cy="1.5" r="2.5" style="stroke: black; fill: none;"/>
+				</g>
 				<g id="ride" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
 					<path d="M-3.5 2 L0 0 M-3.5 0 L0 2"/>
+				</g>
+				<g id="ride-bell" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
+					<path d="M-3.5 2 L0 2 L-1.75 0 Z"/>
+				</g>
+				<g id="cow-bell" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
+					<path d="M-3.5 2 L0 2 L-1.75 0 Z" style="fill:black"/>
 				</g>
 				<g id="hi-hat" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="5">
 					<path d="M-3.5 3.5 L0 0 M-3.5 0 L0 3.5"/>
 				</g>
 				
+				<g id="high-rack-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="6">
+					<path d="M-3.5 3.5 L0 0 M-3.5 3.5 Q-4 -0.5 0 0 Q0.5 4 -3.5 3.5"/>
+				</g>
+				<g id="low-rack-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="8.5">
+                    <use href="#high-rack-tom"/>
+				</g>
+                
 				<g id="snare" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="10">
 					<path d="M-3.5 3.5 L0 0"/>
 				</g>
-				
-				<g id="snare2" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="7">
-					<use href="#snare"/>
+				<g id="flam-snare" data-size-up="0" data-size-down="3.5" data-size-left="4" data-size-right="0" data-beam-spacing="10">
+					<path d="M-3 3 L0 0 M-4 3.5 Q-4 1 -2.5 1"/>
 				</g>
-			
+                
+				<g id="high-floor-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="13">
+                    <use href="#high-rack-tom"/>
+				</g>
+				<g id="low-floor-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="15.5">
+                    <use href="#high-rack-tom"/>
+				</g>
+				
 				<g id="kick" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="20">
 					<use href="#snare"/>
+				</g>
+				<g id="hi-hat-kick" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="20">
+					<use href="#hi-hat"/>
 				</g>
 			</defs>
 		</svg>
@@ -48,6 +77,10 @@
 			<defs id="defs">
 				<g id="open" data-width="3" data-height="3">
 					<circle cx="0" cy="0" r="1" style="stroke: black; fill: none;"/>
+				</g>
+				<g id="loose" data-width="3" data-height="3">
+					<circle cx="0" cy="0" r="1" style="stroke: black; fill: none;"/>
+					<path d="M-1.5 1.5 L1.5 -1.5"/>
 				</g>
 				<g id="closed" data-width="3" data-height="3">
 					<path d="M-1.5 0 L1.5 0 M0 -1.5 L0 1.5"/>
@@ -133,12 +166,12 @@
                     "x": 0, "y": 0,
                     "time-signature-denomenator": "4",
                     "rhythm-length-hint": 23,
-                    "enabled-drums": ["crash", "kick", "snare"],
+                    "enabled-drums": ["crash", "kick", "snare", "high-rack-tom"],
                     "enabled-decorations": ["accent", "closed"],
                     "left-decoration": "repeat-start", "right-decoration": "bar-end",
                     "score-content": [
                         [
-                            {"drums": ["kick", "crash"], "decorations": ["closed"]},
+                            {"drums": ["kick", "crash", "high-rack-tom"], "decorations": ["closed"]},
                             {"drums": ["kick"], "decorations": []},
                             {"drums": ["kick"], "decorations": []},
                             {"drums": ["kick"], "decorations": []}
