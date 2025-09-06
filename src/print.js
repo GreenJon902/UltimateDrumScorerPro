@@ -145,6 +145,7 @@ function addNode(doc, node, posConvert) {
         const matches = node.getAttribute("d").match(/[A-Za-z]|[-0-9\.]+/g);
         let currentX = 0;
         let currentY = 0;
+        let lastMoveX, lastMoveY;  // Location just after last move command. Used for path closing
         let currentArgs = [];
         for (let i=0; i<matches.length;) {  // i is incremented in loop
             // Get all instruction information
@@ -161,9 +162,13 @@ function addNode(doc, node, posConvert) {
             if (c === "M") {  // Absolute move
                 currentX = currentArgs[0];
                 currentY = currentArgs[1];
+                lastMoveX = currentX;
+                lastMoveY = currentY;
             } else if (c === "m") {  // Relative move
                 currentX += currentArgs[0];
                 currentY += currentArgs[1];      
+                lastMoveX = currentX;
+                lastMoveY = currentY;
             } else if (c === "L") {  // Absolute line
                 doc.line(currentX, currentY, currentArgs[0], currentArgs[1]);
                 currentX = currentArgs[0];
@@ -172,11 +177,18 @@ function addNode(doc, node, posConvert) {
                 doc.line(currentX, currentY, currentX + currentArgs[0], currentY + currentArgs[1]);
                 currentX += currentArgs[0];
                 currentY += currentArgs[1];      
+            } else if (c === "Q") {  // Absolute bezier
+                doc.lines([[0, 0, currentArgs[0] - currentX, currentArgs[1] - currentY, currentArgs[2] - currentX, currentArgs[3] - currentY]], currentX, currentY);  // Subtract currentX and currentY as points are all relative to initial coords (currentX, currentY)
+                currentX = currentArgs[2];
+                currentY = currentArgs[3];
             } else if (c === "q") {  // Relative bezier
                 doc.lines([[0, 0, currentArgs[0], currentArgs[1], currentArgs[2], currentArgs[3]]], currentX, currentY);
                 currentX += currentArgs[2];
                 currentY += currentArgs[3];
-
+            } else if (c === "z" || c === "Z") {  // Close path
+                doc.line(currentX, currentY, lastMoveX, lastMoveY);
+                currentX = lastMoveX;
+                currentY = lastMoveY;
             } else {
                 throw "Unexpected path character";
             }
