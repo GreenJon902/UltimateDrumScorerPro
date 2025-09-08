@@ -1260,7 +1260,7 @@ export function renderComponent(componentType, componentID, initial=true) {
     svg.style.top = (getComponentY(componentType, componentID) * 100) + "%";
     attachEvents(componentType, componentID, svg);
     // If it used to be selected, then it should still be selected
-    if (reselect) setCurrentSelected(componentType, componentID);
+    if (reselect) addCurrentSelected(componentType, componentID);  // Use add so it doesn't reset the whole selection
     
     // Run callback if not null
     if (callback != null) callback();

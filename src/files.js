@@ -5,7 +5,9 @@ export function loadJSON(data) {
     // Validates and loads the given data as the current project.
     // This will forget the last project in the process.
     // TODO: Validation
-    CURRENT_PROJECT = JSON.parse(JSON.stringify(data));  // Deep-copy the object
+    const project = JSON.parse(JSON.stringify(data));  // Deep-copy the object
+    if (project["project-version"] !== "v4-0.1") throw "Unsupported project version";
+    CURRENT_PROJECT = project;
 }
 
 export function writeJSON() {
