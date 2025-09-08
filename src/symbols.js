@@ -205,6 +205,7 @@ class SvgInstruction {
         } else if (type === SvgInstruction.PUSH_TRANSFORM) {
             this.transform = args[0];
         } else if (type === SvgInstruction.POP_TRANSFORM) {
+            // There are no args for this
         } else if (type === SvgInstruction.PUSH_ANCHORED_TRANSFORM) {
             this.horizAnchor = args[0];
             this.vertAnchor = args[1];
