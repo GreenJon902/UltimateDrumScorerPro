@@ -1,150 +1,153 @@
-# Event Design
-## Classes-ish
-### StateManager
+# Class Diagrams
 ```
-StateManager
-	- loadComponentsFromJson(json)
-	- createEmptyComponent(select)
-	- setToggleState(beatI, subdivisionI, toggleId, state)
-	- setSelected(componentId...)
-	- drag(dx, dy)
-```
-
-`StateManager#createEmptyComponent` - `select` is whether it's selected by default (will deselect others).  
-`StateManager#setSelected` - Pass no arguments to select nothing.  
-`StateManager#drag` - Positions are relative to last position of the mouse.  
-
-### Handler
-```
-Handler
-	- addComponent(componentId)
-	- removeComponent(componentId)
-	- getComponentHandler(componentId) -> (S)ComponentHandler
-EditorHandler
-	- addComponent(componentId)
-	- removeComponent(componentId)
-	- getComponentHandler(componentId) -> (S)ComponentHandler
-ComponentHandler
-	- setSelected(isSelected)
-TextComponentHandler : ComponentHandler
-	- setText(text)
-	- setFontSize(fontSize)
-ScoreComponentHandler : ComponentHandler
-	- addBeat(beatI, [linkId])
-	- removeBeat(beatI, [linkId])
-	- addToggles(toggleId, [linkId])
-	- removeToggles(toggleId, [linkId])
-	- setX(x, [linkId])
-	- setY(y, [linkId])
-	- setTimeSignatureDenomenator(timeSignatureDenomenator, [linkId])
-	- setRhythmLengthHint(rhythmLengthHit, [linkId])
-	- setLeftDecoration(leftDecorationId, [linkId])
-	- setRightDecoration(rightDecorationId, [linkId])
-	- addLink(linkId)
-	- removeLink(linkId)
-	- getToggleHandler(beatI, subdivisionI, toggleId) -> ScoreComponentToggleHandler
-ScoreComponentToggleHandler
-	- setState(state)
+ComponentManager - Stores persistant state of entities.
+	- Events:
+		- Component(Added|Removed) {componentId}
+		- BeforeComponentRemoved {componentId}
+		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint)Changed {componentId, newValue}
+		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
+		- ComponentToggleChanged {componentId, beatI, subdivisionI, toggleId, newValue}
+		- ComponentToggleEnabledStateChanged {componentId, toggleId, newValue}
+	- Methods:
+		- CreateEmptyComponent (typeId) -> componentId
+		- RemoveComponent(componentId)
+		- DuplicateComponent(componentId) -> newComponentId
+		- ToggleComponentToggle(componentId, beatI, subdivisionI, toggleId)
+		- ToggleComponentToggleEnabledState(componentId, toggleId)
+		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint)(componentId, newValue)
+		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
+SelectionManager - Stores temporary state of selection.
+	- Events:
+		- SelectionStateChanged {componentId, selectionState}
+	- Methods:
+		- ToggleSelectionState(componentId, multiselect)
+		- Select(componentIds...) - Will unselect all other selected components.
+		- ClearSelection()
+DragManager - Stores temporary state of drag.
+	- Events:
+		- Drag(Start|End) {componentIds}
+		- DragMove {componentIds, delta} - componentIds will remain the same as DragStart until ended.
+	- Methods
+		- startDrag(componentId, cardinal) - Id is id of component that was clicked. Cardinal is whether to lock movement to cardinal directions, what is passed is initial value.
+		- moveDrag(<delta>)
+		- endDrag()
+		- setCardinal(cardinal) - Cardinal is whether to lock movement to cardinal directions.
 ```
 
-`Handler#addComponent` - Creates an empty component.  
-`Handler#addComponent` - Apart from the following, the initial values for a component are [undefined](## "Their values don't matter, as they will be overwritten before the next frame."). Components: selected is false. Score-components: `"enabled-toggles"` is empty, `"score-content"` is empty.  
-`ScoreComponentHandler#addBeat` - The given index is the position that the new beat will be in the list.  
-`ScoreComponentHandler#addBeat`, `ScoreComponentHandler#addToggles` - The initial states for any toggles is [undefined](## "The value doesn't matter, as it will be overwritten before the next frame.").  
-`ScoreComponentHandler#setLeftDecoration`, `ScoreComponent#setRightDecoration` - The argument can be null for none.  
-`ScoreComponentHandler#addBeat`, `ScoreComponentHandler#removeBeat`, `ScoreComponentHandler#addToggles`, `ScoreComponentHandler#removeToggles`, `ScoreComponentHandler#setX`, `ScoreComponentHandler#setY`, `ScoreComponentHandler#setTimeSignatureDenomenator`, `ScoreComponentHandler#setRhythmLengthHintsetLeftDecoration`, `ScoreComponentHandler#setRightDecoration` - The optional `linkId` is null for this event was done to this component, or is a local id of the component that this was done to. The refered to `linkId` will always have first been added through `ScoreComponentHandler#addLink`.   
-`ScoreComponentHandler#addLink` - This should create a new local component with the same initial values as it would have from `Handler#addComponent`.  
-`ScoreComponentHandler#addLink`, `ScoreComponentHandler#addBeat`, `ScoreComponentHandler#removeBeat`, `ScoreComponentHandler#addToggles`, `ScoreComponentHandler#removeToggles`, `ScoreComponentHandler#setX`, `ScoreComponentHandler#setY`, `ScoreComponentHandler#setTimeSignatureDenomenator`, `ScoreComponentHandler#setRhythmLengthHintsetLeftDecoration`, `ScoreComponentHandler#setRightDecoration` - The copy of this component should be stored locally. The linkId is arbitary, and may not be a real id, however it will be kept constant for between being added and removed for a given `ScoreComponentHandler`.  
-
-## Some general rules
-Component's handlers are expected to keep track of all the data that they need. This means they should store their own copy (either in JS or in HTML) of the current data. Component's handlers should not communicate with oneanother, but should act only on the data that they themselves store.  
-The handlers event functions will be called in an order that the changes are made. A handler's internal state should be consistant with itself before and after an event function is called, however during the call it may be inconsistant. When a frame is drawn, the handler's should have got everything consistant with the `StateManager`.  
-When the user tells the editor to update a component, the editor should not yet make any changes. Instead it tells the `StateManager` what it wants done. The `StateManager` can then tell the editor and render the changes that have been made.  
-
-## Examples so you can understand better
-### Project loading process:
-1.
+# Processes
+## Loading components
 ```
-index.html:
-  Creates `StateManager` with functions to create `Handler`s from `renderer.js` and `editor.js`.
-StateManager:
-	Calls functions to create given handlers, with self as only arg.
-	Saves these into itself.
+1. ComponentManager updates state internally.
+2. ComponentManager emits ComponentAdded for each component added.
 ```
-2.
+## Adding a <type>-component
 ```
-index.html:
-StateManager:
-	For each component:
-		Calls `Handler#addComponent`.
-		If component is a text-component:
-			Call `setText` and `setFontSize` on `Handler#getComponentHandler(...)`.
-		If component is a score-component:
-			Call `addBeat` and `addToggles` on `Handler#getComponentHandler(...)` for each beat and toggle-type respectively.
-			Call `setX`, `setY`, `setTimeSignatureDenomenator`, `setRhythmLengthHint` and `setLeftDecoration`, `setRightDecoration` on `Handler#getComponentHandler(...)`.
-			For each subdivision and toggle-type:
-				Call `Handler#getComponentHandler(...).getToggleHandler(...).setState`.
-		For each score-component:
-			For each score-component that is linked to the first:
-				Call `Handler#getComponentHandler(...).getToggleHandler(...).addLink` with some arbitary id.
-				Call all the setters to make this local copy of the component consistant with what it should be.
-renderer.js, editor.js:
-	Caches or handles events as they come through.
-	Handling can mean building a local copy of the component data, or drawing it, or disgarding the event if we don't need it.
+1. Add component button pressed.
+	2. ComponentManager.createEmptyComponent(<type>).
+		3. ComponentManager creates said component internally with id <id>.
+		4. ComponentManager emits ComponentAdded {<id>}.
+			5. Renderer renders <id>.
+	6. SelectionManager.select(<id>).
+		7. SelectionManager updates internally.
+		8. SelectionManager emits SelectionStateChanged for all affected components.
+			9a. Renderer responds accordingly.
+			9b. Editor switches to <id>.
 ```
-3.
-```renderer.js, editor.js:
-	Just before the frame is drawn, handle any cached events. Some events may be able to consume others (if their outcome is the same then only run one, etc.).
+## Removing a component
 ```
-
-### Score-component addition process:
-1.
+1. Remove component button pressed for component with id <id>.
+	2. ComponentManager.removeComponent(<id>).
+		3. ComponentManager emits BeforeComponentRemoved.
+			4. SelectionManager internally unselects <id> (if selected).
+				5. SelectionManager emits SelectionStateChanged.
+					6a. Editor responds accordingly.
+					6b. Renderer responds accordingly.
+			7. Renderer responds accordingly.
+		8. ComponentManager removes component internally and silently drops links.
+		9. ComponentManager emits ComponentRemoved.	
 ```
-index.html:
-	This calls `StateManager#createEmptyComponent` with select true.
+## Duplicating a component.
 ```
-2.
+1. Duplicate component button pressed for component with id <id>.
+	2. ComponentManager.duplicateComponent(<id>) -> <newId>.
+		3. ComponentManager updates state internally.
+		4. ComponentManager emits ComponentAdded {<id>}.
+			5. Renderer responds accordingly.
+		5. SelectionManager.select(<newId>)
+			6. SelectionManager updates internally.
+			7. SelectionManager emits SelectionStateChanged for all affected components.
+				8a. Renderer responds accordingly.
+				8b. Editor switches to <id>.
 ```
-StateManager:
-	Creates an empty component of the corrent type internally. StateManager decides most default values.
-	Calls `Handler#addComponent`.
-	Call the setters functions with the default values.
-	Call `ScoreComponentHandler#setSelect` on other selected components to deselect them.
-	Call `ScoreComponentHandler#setSelect` on this to select it.
+## Modifying a component
 ```
-
-### Score-component deletion process:
-1.
+1. Toggle pressed on <id>.
+	2. State of toggle not changed.
+	3. ComponentManager.toggleComponentToggle(<id>, ...).
+		4. ComponentManager updates internal state.
+		5. ComponentManager emits ComponentToggleChanged.
+			6a. Renderer responds accordingly.
+			6b. Editor updates toggle state.
 ```
-index.html:
-	This calls `StateManager#removeComponent`.
+## Adding/remove a toggle from component in editor
 ```
-2.
+1. Component is <componentId>. Toggle is <toggleId>. Click happens in editor.
+	2. Toggles shown not changed.
+	3. ComponentManager.toggleComponentToggleEnabledState(<compId>, <toggleId>).
+		4. ComponentManager adds or removes toggles internally.
+		5. ComponentManager emits ComponentToggleEnabledStateChanged.
+			6. Editor responds accordingly.
 ```
-StateManager:
-	Call `ScoreComponentHandler#removeLink` on all linked score-components.
-	Remove links internally.
-	If it is selected:
-		Call `ScoreComponentHandler#setSelect` to deselect it.
-	Call `Handler#removeComponent`.
-	Remove the component internally.
+## Clicking on a component
 ```
-
-### Score-component score-content modification process:
-1.
+1. <id> clicked on.
+2. Mouse has not moved (much).
+3. <shift> is true if shift is pressed.
+4. Renderer calls SelectionManager.toggleSelectionState(<id>, multiselect=<shift>)
+	5. SelectionManager updates itself internally.
+	6. SelectionManager emits SelectionStateChanged as required.
+		7a. Renderer responds accordingly.
+		7b. Editor responds accordingly.
 ```
-ScoreComponentToggleHandler:
-	This calls `StateManager#setToggleState` with the beatI, subdivisionI, toggleId and the desired state.
-	This does not update its state.
+## Dragging a component
 ```
-2.
+1. <id> clicked on.
+	2. Mouse has moved (much).
+	3. <shift> is true if shift is pressed.
+	4. Renderer calls DragManager.startDrag(<id>, cardinal=<shift>)
+		5. <selected> is set to current SelectionManager.getSelection().
+		6. DragManager emits DragStart {<selection>}.
+			7. Renderer adds "translate" to each of <selection>'s style.
+8a. Mouse moves by <delta>mm.
+	9. Renderer calls DragManager.moveDrag(<delta>)
+		10. DragManager updates state internally.
+		11. DragManager emits DragMove {<selected>, <delta>}.
+			12. Renderer responds accordingly.
+8b. Shift pressed/unpressed -> <shift>.
+	9. Renderer calls DragManager.setCardinal(<shift>)
+		10. DragManager calculates <delta>.
+		11. DragManager updates state internally.
+		12. DragManager emits DragMove {<selected>, <delta>}.
+			13. Renderer responds accordingly.
+14. Mouse relased.
+	14. Renderer calls DragManager.endDrag()
+		15. DragManager updates state internally.
+		16. DragManager calls ComponentManager.set(X|Y)(...).
+			17. ComponentManager updates state internally.
+			18. ComponentManager emits Component(X|Y)Changed.
+				19. Renderer responds accordingly.
+		20. DragManager emits DragEnd {<selected>}.
+			21. Renderer removes "translate" from selected components styles.
 ```
-StateManager:
-	Update state internally.
-	Call `ScoreComponentToggleHandler#setState`.
-	Call `ScoreComponentToggleHandler#setState` on all linked score-components.
+## Linking components
 ```
-
-## Key
-`(S)` - Some subclass.
-`someArg...` - Vararg.
+1. <ids> are selected.
+2. Linked pressed in editor.
+	3. ComponentManager.AddVertGroup(<ids>)
+		4. ComponentManager internally removes any <ids> from any pre-existing groups, and destroys length 1 or 0 groups.
+		5. ComponentManager emits ComponentVertGroupChanged for any changed groups.
+			6. Renderer responds accordingly.
+		7. ComponentManager internally adds a group for <ids>.
+		8. ComponentManager emits ComponentVertGroupChanged for created group.
+			9. Renderer responds accordingly.
+```

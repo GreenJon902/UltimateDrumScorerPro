@@ -1,153 +1,29 @@
-# Class Diagrams
-```
-ComponentManager - Stores persistant state of entities.
-	- Events:
-		- Component(Added|Removed) {componentId}
-		- BeforeComponentRemoved {componentId}
-		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint)Changed {componentId, newValue}
-		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
-		- ComponentToggleChanged {componentId, beatI, subdivisionI, toggleId, newValue}
-		- ComponentToggleEnabledStateChanged {componentId, toggleId, newValue}
-	- Methods:
-		- CreateEmptyComponent (typeId) -> componentId
-		- RemoveComponent(componentId)
-		- DuplicateComponent(componentId) -> newComponentId
-		- ToggleComponentToggle(componentId, beatI, subdivisionI, toggleId)
-		- ToggleComponentToggleEnabledState(componentId, toggleId)
-		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint)(componentId, newValue)
-		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
-SelectionManager - Stores temporary state of selection.
-	- Events:
-		- SelectionStateChanged {componentId, selectionState}
-	- Methods:
-		- ToggleSelectionState(componentId, multiselect)
-		- Select(componentIds...) - Will unselect all other selected components.
-		- ClearSelection()
-DragManager - Stores temporary state of drag.
-	- Events:
-		- Drag(Start|End) {componentIds}
-		- DragMove {componentIds, delta} - componentIds will remain the same as DragStart until ended.
-	- Methods
-		- startDrag(componentId, cardinal) - Id is id of component that was clicked. Cardinal is whether to lock movement to cardinal directions, what is passed is initial value.
-		- moveDrag(<delta>)
-		- endDrag()
-		- setCardinal(cardinal) - Cardinal is whether to lock movement to cardinal directions.
-```
+[![CodeFactor](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro/badge)](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro)
 
-# Processes
-## Loading components
-```
-1. ComponentManager updates state internally.
-2. ComponentManager emits ComponentAdded for each component added.
-```
-## Adding a <type>-component
-```
-1. Add component button pressed.
-	2. ComponentManager.createEmptyComponent(<type>).
-		3. ComponentManager creates said component internally with id <id>.
-		4. ComponentManager emits ComponentAdded {<id>}.
-			5. Renderer renders <id>.
-	6. SelectionManager.select(<id>).
-		7. SelectionManager updates internally.
-		8. SelectionManager emits SelectionStateChanged for all affected components.
-			9a. Renderer responds accordingly.
-			9b. Editor switches to <id>.
-```
-## Removing a component
-```
-1. Remove component button pressed for component with id <id>.
-	2. ComponentManager.removeComponent(<id>).
-		3. ComponentManager emits BeforeComponentRemoved.
-			4. SelectionManager internally unselects <id> (if selected).
-				5. SelectionManager emits SelectionStateChanged.
-					6a. Editor responds accordingly.
-					6b. Renderer responds accordingly.
-			7. Renderer responds accordingly.
-		8. ComponentManager removes component internally and silently drops links.
-		9. ComponentManager emits ComponentRemoved.	
-```
-## Duplicating a component.
-```
-1. Duplicate component button pressed for component with id <id>.
-	2. ComponentManager.duplicateComponent(<id>) -> <newId>.
-		3. ComponentManager updates state internally.
-		4. ComponentManager emits ComponentAdded {<id>}.
-			5. Renderer responds accordingly.
-		5. SelectionManager.select(<newId>)
-			6. SelectionManager updates internally.
-			7. SelectionManager emits SelectionStateChanged for all affected components.
-				8a. Renderer responds accordingly.
-				8b. Editor switches to <id>.
-```
-## Modifying a component
-```
-1. Toggle pressed on <id>.
-	2. State of toggle not changed.
-	3. ComponentManager.toggleComponentToggle(<id>, ...).
-		4. ComponentManager updates internal state.
-		5. ComponentManager emits ComponentToggleChanged.
-			6a. Renderer responds accordingly.
-			6b. Editor updates toggle state.
-```
-## Adding/remove a toggle from component in editor
-```
-1. Component is <componentId>. Toggle is <toggleId>. Click happens in editor.
-	2. Toggles shown not changed.
-	3. ComponentManager.toggleComponentToggleEnabledState(<compId>, <toggleId>).
-		4. ComponentManager adds or removes toggles internally.
-		5. ComponentManager emits ComponentToggleEnabledStateChanged.
-			6. Editor responds accordingly.
-```
-## Clicking on a component
-```
-1. <id> clicked on.
-2. Mouse has not moved (much).
-3. <shift> is true if shift is pressed.
-4. Renderer calls SelectionManager.toggleSelectionState(<id>, multiselect=<shift>)
-	5. SelectionManager updates itself internally.
-	6. SelectionManager emits SelectionStateChanged as required.
-		7a. Renderer responds accordingly.
-		7b. Editor responds accordingly.
-```
-## Dragging a component
-```
-1. <id> clicked on.
-	2. Mouse has moved (much).
-	3. <shift> is true if shift is pressed.
-	4. Renderer calls DragManager.startDrag(<id>, cardinal=<shift>)
-		5. <selected> is set to current SelectionManager.getSelection().
-		6. DragManager emits DragStart {<selection>}.
-			7. Renderer adds "translate" to each of <selection>'s style.
-8a. Mouse moves by <delta>mm.
-	9. Renderer calls DragManager.moveDrag(<delta>)
-		10. DragManager updates state internally.
-		11. DragManager emits DragMove {<selected>, <delta>}.
-			12. Renderer responds accordingly.
-8b. Shift pressed/unpressed -> <shift>.
-	9. Renderer calls DragManager.setCardinal(<shift>)
-		10. DragManager calculates <delta>.
-		11. DragManager updates state internally.
-		12. DragManager emits DragMove {<selected>, <delta>}.
-			13. Renderer responds accordingly.
-14. Mouse relased.
-	14. Renderer calls DragManager.endDrag()
-		15. DragManager updates state internally.
-		16. DragManager calls ComponentManager.set(X|Y)(...).
-			17. ComponentManager updates state internally.
-			18. ComponentManager emits Component(X|Y)Changed.
-				19. Renderer responds accordingly.
-		20. DragManager emits DragEnd {<selected>}.
-			21. Renderer removes "translate" from selected components styles.
-```
-## Linking components
-```
-1. <ids> are selected.
-2. Linked pressed in editor.
-	3. ComponentManager.AddVertGroup(<ids>)
-		4. ComponentManager internally removes any <ids> from any pre-existing groups, and destroys length 1 or 0 groups.
-		5. ComponentManager emits ComponentVertGroupChanged for any changed groups.
-			6. Renderer responds accordingly.
-		7. ComponentManager internally adds a group for <ids>.
-		8. ComponentManager emits ComponentVertGroupChanged for created group.
-			9. Renderer responds accordingly.
-```
+A) I'm pretty sure good drum score programs just don't exist... if they do I can't find one that fits my needs (web-based, no account needed, can do multipage projects, supports all the cymbals and drums I need).  
+  
+B) Drum notation is actually stupid. Notation on staff makes sense for an instrument like a violin where if you hit a C or a D it doesn't really mater 'cause that's pretty much the same note, but a top and a snare deserve different symbols. And don't even get me started on cymbals...).
+
+So what the mission is:
+A simple* yet not limiting (e.g. support for any timesignature/duplet) drum charting program that is fast to use and fast to read. 
+It has no account, no accounts / cloud saving, limited dependance on js frameworks (i have heard of the horrors of the js community... I don't want none of that, leave me alone, please). 
+It runs in a website, so no need to download software.
+Saving it is just downloading a pdf which has embedded metadata so it can be edited by this program.
+It does die if you add more than four bars (ehem groovescribe).
+Art is based on the style my drum teacher used to teach me - reducing unnecessary details without remove information.
+
+*It's simple to me, if your brain is too small then that's on you.
+
+# Keyboard shortcuts / control stuff
+### Rendered pane
+| Key | Action |
+| - | - |
+| <kbd>Wheel</kbd> | Scroll vertically |
+| <kbd>Shift</kbd> + <kbd>Wheel</kbd> | Scroll horizontally |
+| <kbd>Ctrl</kbd> + <kbd>Wheel</kbd> | Zoom |
+| <kbd>Ctrl</kbd> + <kbd>0</kbd> | Reset Zoom |
+| Component + <kbd>Drag</kbd> | Drag component |
+| Component + <kbd>Shift</kbd> + <kbd>Drag</kbd> | Drag component along cardinal axis |
+| Component + <kbd>Left Click</kbd> | Select |
+| !Component + <kbd>Left Click</kbd> | Deselect |
+| Component + <kbd>Shift</kbd> + <kbd>Left Click</kbd> | Multi select/deselect |
