@@ -158,13 +158,17 @@ DragManager - Stores temporary state of drag.
 We store all the info in this string, which can be compiled into svg at the start or something idk.
 `action=new_base,base-symbol-id,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+,number-of-groups,[group-id,]+`  
 `action=new_part,part-symbol-id,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
-`action=modifier_explicit,base-symbol-id[_modifier-id]+,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
-`action=modifier_auto,modifier-id,pattern_part_number(,pattern_parts)+,((+|-)delta,>min)-size-left,((+|-)delta,>min)-size-up,((+|-)delta,>min)-size-right,((+|-)delta,>min)-size-down,min-width,min-height,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
-`action=head_contstraint,top-group-id,bottom-group-id,distance`  
+`action=modifier_explicit,base-symbol-id(_modifier-id)+,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+,number-of-groups,[group-id,]+`  
+`action=modifier_auto,modifier-id,pattern_part_number(,pattern_parts)+,(+delta,>min)-size-left,(+delta,>min)-size-up,(+delta,>min)-size-right,(+delta,>min)-size-down,min-width,min-height,number-of-instructions,(instruction-id,(instruction-args,)+)+,number-of-groups,[group-id,]+`  
+`action=head_contstraint,(top-group-id|top-symbol-id),(bottom-group-id|bottom-symbol-id),distance`  
 A `base-symbol-id` is the name of an unmodified head.  
 A `part-symbol-id` is the name of some collection of instructions that can be re-used, but is nothing on it's own.  
 A `modifier-id` is the id of a certain modifier, these may be drawn differently for different heads.
-A `symbol-id` is the name of a (possibly modified) head, formatted `base-symbol-id[_modifier-id]+`. This does not include `part-symbol-id`s.  
+A `symbol-id` is the name of a (possibly modified) head, formatted `base-symbol-id[_modifier-id]+`. This does not include `part-symbol-id`s. If a given `symbol-id` is a modified id, then the corresponding `base-id` must also exist. 
+A `group-id` refers to multiple different `symbol-id`s.
+No duplicate IDs are allowed. This includes `group-id`s being the same as `symbol-id`s.
+
+The `modifier_explicit` is the same as `new_base`, but it has a modified symbol id rather than a base symbol id.
 
 In the `modifier_auto`, the pattern is a collection of include and exclude statements that tells the program what to generate. Later parts take precident. These are the possible options:  
 - `*` - take all `symbol-id`s.  
@@ -173,8 +177,9 @@ In the `modifier_auto`, the pattern is a collection of include and exclude state
 - `symbol-id` - match a specific symbol. 
 - `group-id` - match a specific group.
 - `group-id(_modifier-id)+` - take all `symbol-id`s in the given `group-id` with the given `modifier-id`s. 
-The output of the `modifier_auto` is this: for each matched `symbol-id` that isn't already modified by `modifier-id`, create a new symbol `symbol-id_modifier-id` that is the new instructions on top of the instructions from the old symbol.  
+The output of the `modifier_auto` is this: for each matched `symbol-id`, create a new symbol `symbol-id_modifier-id` that is the new instructions on top of the instructions from the old symbol.  
 The min-width and min-height are centered around the size of the oringonal symbol before we modified it (if this is second modification, then take the size after first modification).
+The created symbols inherit the groups from their parents as well as the new groups.
 
 Possible instructions:  
 - `path`,`path-string`  
@@ -184,10 +189,10 @@ Possible instructions:
 - `push-transform`,`transform-string`  
 - `pop-transform`  
 Extra instructions for `modifier_auto`:  
-- `push-anchored-transform`,(`left`|`middle`|`right`),(`top`|`middle`|`bottom`)  - This is relative to the size of the current symbol that we are modifying.  
+- `push-anchored-transform`,(`left`|`middle`|`right`),(`top`|`middle`|`bottom`)  - This is relative to the size of the current symbol after applying the new sizing information.
 
-The `head_contstraint` means the anchor of the top symbol from `bottom-group-id` must be a minimum of `distance` below the anchor of the bottom symbol from `top-group-id`. If no symbols from `top-group-id` are drawn, then take the bottom of the first symbol that would be drawn above the bottom of `top-group-id`.  
-If the `head_contstraint` `distance` is 0, the `bottom-group-id` will still all be drawn below `top-group-id`. If a constraint is not given then the order they are drawn is undefined behavior, however there should be no conflicts between head constraints.  
+The `head_contstraint` means the anchor of the top symbol from `bottom-group-id` / the `bottom-symbol-id` must be a minimum of `distance` below the anchor of the bottom symbol from `top-group-id` / the `top-symbol-id`. If no symbols from `top-group-id` are drawn, then take the bottom of the first symbol that would be drawn above the bottom of `top-group-id`.  
+If the `head_contstraint` `distance` is 0, the `bottom-group-id` / `bottom-symbol-id` will still all be drawn below `top-group-id` / `top-symbol-id`. If a constraint is not given then the order they are drawn is undefined behavior, however there should be no conflicts between head constraints.  
 
 ## Class Diagram
 ```
