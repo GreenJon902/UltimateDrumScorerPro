@@ -5,6 +5,7 @@ ComponentManager - Stores persistant state of entities.
 		- Component(Added|Removed) {componentId}
 		- BeforeComponentRemoved {componentId}
 		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint)Changed {componentId, newValue}
+		- Component(Left|Right)DecorationChanged {componentId, newId|null}
 		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
 		- ComponentToggleChanged {componentId, beatI, subdivisionI, toggleId, newValue}
 		- ComponentToggleEnabledStateChanged {componentId, toggleId, newValue}
@@ -15,6 +16,7 @@ ComponentManager - Stores persistant state of entities.
 		- ToggleComponentToggle(componentId, beatI, subdivisionI, toggleId)
 		- ToggleComponentToggleEnabledState(componentId, toggleId)
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint)(componentId, newValue)
+		- SetComponent(Left|Right)Decoration(componentId, newId|null)
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
 SelectionManager - Stores temporary state of selection.
 	- Events:
@@ -151,3 +153,37 @@ DragManager - Stores temporary state of drag.
 		8. ComponentManager emits ComponentVertGroupChanged for created group.
 			9. Renderer responds accordingly.
 ```
+
+# New note-head/note-decoration system
+We store all the info in this string, which can be compiled into svg at the start or something idk.
+`action=new_base,base-symbol-id,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+,number-of-groups,[group-id,]+`  
+`action=new_part,part-symbol-id,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
+`action=modifier_explicit,base-symbol-id[_modifier-id]+,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
+`action=modifier_auto,modifier-id,pattern_part_number(,pattern_parts)+,((+|-)delta,>min)-size-left,((+|-)delta,>min)-size-up,((+|-)delta,>min)-size-right,((+|-)delta,>min)-size-down,min-width,min-height,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
+`action=head_contstraint,top-group-id,bottom-group-id,distance`
+A `base-symbol-id` is the name of an unmodified head.  
+A `part-symbol-id` is the name of some collection of instructions that can be re-used, but is nothing on it's own.  
+A `modifier-id` is the id of a certain modifier, these may be drawn differently for different heads.
+A `symbol-id` is the name of a (possibly modified) head, formatted `base-symbol-id[_modifier-id]+`. This does not include `part-symbol-id`s.  
+
+In the `modifier_auto`, the pattern is a collection of include and exclude statements that tells the program what to generate. Later parts take precident. These are the possible options:  
+- `*` - take all `symbol-id`s.  
+- `*(_modifier-id)+` - take all `symbol-id`s with the given `modifier-id`s.  
+- `-` before a statement - to reject all the ones that match.  
+- `symbol-id` - match a specific symbol. 
+- `group-id` - match a specific group.
+- `group-id(_modifier-id)+` - take all `symbol-id`s in the given `group-id` with the given `modifier-id`s. 
+The output of the `modifier_auto` is this: for each matched `symbol-id` that isn't already modified by `modifier-id`, create a new symbol `symbol-id_modifier-id`.  
+
+Possible instructions:  
+- `path`,`path-string`  
+- `circle`,`cx`,`cy`,`r`  
+- `use`,`symbol-id`  
+- `use`,`part-symbol-id`  
+- `push-transform`,`transform-string`  
+- `pop-transform`  
+Extra instructions for `modifier_auto`:  
+- `push-anchored-transform`,(`left`|`middle`|`right`),(`top`|`middle`|`bottom`)  - This is relative to the size of the current symbol that we are modifying.
+
+The `head_contstraint` means the anchor of the top symbol from `bottom-group-id` must be a minimum of `distance` below the anchor of the bottom symbol from `top-group-id`. If no symbols from `top-group-id` are drawn, then take the bottom of the first symbol that would be drawn above the bottom of `top-group-id`.
+If the `head_contstraint` `distance` is 0, the `bottom-group-id` will still all be drawn below `top-group-id`. If a constraint is not given then the order they are drawn is undefined behavior, however there should be no conflicts between head constraints.
