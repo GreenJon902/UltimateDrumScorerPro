@@ -160,7 +160,7 @@ We store all the info in this string, which can be compiled into svg at the star
 `action=new_part,part-symbol-id,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
 `action=modifier_explicit,base-symbol-id[_modifier-id]+,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
 `action=modifier_auto,modifier-id,pattern_part_number(,pattern_parts)+,((+|-)delta,>min)-size-left,((+|-)delta,>min)-size-up,((+|-)delta,>min)-size-right,((+|-)delta,>min)-size-down,min-width,min-height,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
-`action=head_contstraint,top-group-id,bottom-group-id,distance`
+`action=head_contstraint,top-group-id,bottom-group-id,distance`  
 A `base-symbol-id` is the name of an unmodified head.  
 A `part-symbol-id` is the name of some collection of instructions that can be re-used, but is nothing on it's own.  
 A `modifier-id` is the id of a certain modifier, these may be drawn differently for different heads.
@@ -173,7 +173,8 @@ In the `modifier_auto`, the pattern is a collection of include and exclude state
 - `symbol-id` - match a specific symbol. 
 - `group-id` - match a specific group.
 - `group-id(_modifier-id)+` - take all `symbol-id`s in the given `group-id` with the given `modifier-id`s. 
-The output of the `modifier_auto` is this: for each matched `symbol-id` that isn't already modified by `modifier-id`, create a new symbol `symbol-id_modifier-id`.  
+The output of the `modifier_auto` is this: for each matched `symbol-id` that isn't already modified by `modifier-id`, create a new symbol `symbol-id_modifier-id` that is the new instructions on top of the instructions from the old symbol.  
+The min-width and min-height are centered around the size of the oringonal symbol before we modified it (if this is second modification, then take the size after first modification).
 
 Possible instructions:  
 - `path`,`path-string`  
@@ -183,7 +184,17 @@ Possible instructions:
 - `push-transform`,`transform-string`  
 - `pop-transform`  
 Extra instructions for `modifier_auto`:  
-- `push-anchored-transform`,(`left`|`middle`|`right`),(`top`|`middle`|`bottom`)  - This is relative to the size of the current symbol that we are modifying.
+- `push-anchored-transform`,(`left`|`middle`|`right`),(`top`|`middle`|`bottom`)  - This is relative to the size of the current symbol that we are modifying.  
 
-The `head_contstraint` means the anchor of the top symbol from `bottom-group-id` must be a minimum of `distance` below the anchor of the bottom symbol from `top-group-id`. If no symbols from `top-group-id` are drawn, then take the bottom of the first symbol that would be drawn above the bottom of `top-group-id`.
-If the `head_contstraint` `distance` is 0, the `bottom-group-id` will still all be drawn below `top-group-id`. If a constraint is not given then the order they are drawn is undefined behavior, however there should be no conflicts between head constraints.
+The `head_contstraint` means the anchor of the top symbol from `bottom-group-id` must be a minimum of `distance` below the anchor of the bottom symbol from `top-group-id`. If no symbols from `top-group-id` are drawn, then take the bottom of the first symbol that would be drawn above the bottom of `top-group-id`.  
+If the `head_contstraint` `distance` is 0, the `bottom-group-id` will still all be drawn below `top-group-id`. If a constraint is not given then the order they are drawn is undefined behavior, however there should be no conflicts between head constraints.  
+
+## Class Diagram
+```
+Symbols - Loads the symbols from the symbol string and gives the rest of the program access to it.
+	getFullOrder() - Returns an array with all symbols ids in the order from top to bottom. This will have no duplicates and will be consistant with isBelow.
+	isBelow(symbolId1, symbolId2) - Should symbolId2 be drawn beneath symbolId1? The results of this function will be consistant (with itself and getFullOrder) throughout the run of the program.
+	getMinDistanceBetween(symbolId1, symbolId2) - Get's the minimum distance between the anchors of symbolId1 and symbolId2. If symbolId2 should be drawn above symbolId1 then an error is thrown.
+	getSymbolNode(symbolId) - Returns an svg node for the given symbol.
+	getSymbolSize(Left|Right|Up|Down)(symbolId) - Returns the distance from the stem that this symbol goes. This takes into account the extra information in the modifier.
+```
