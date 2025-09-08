@@ -155,6 +155,8 @@ DragManager - Stores temporary state of drag.
 ```
 
 # New note-head/note-decoration system
+PART OF THIS IS NOW OUTDATED AS IT HAS BEEN CHANGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 We store all the info in this string, which can be compiled into svg at the start or something idk.
 `action=new_base,base-symbol-id,size-left,size-up,size-right,size-down,number-of-instructions,(instruction-id,(instruction-args,)+)+,number-of-groups,[group-id,]+`  
 `action=new_part,part-symbol-id,number-of-instructions,(instruction-id,(instruction-args,)+)+`  
