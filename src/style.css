@@ -218,6 +218,8 @@ svg {
 	border-radius: 3mm;
 	border-color: rgba(255, 127, 0, 0);
 	position: absolute;
+	stroke-linecap: round;
+  	stroke-linejoin: round;
 }
 
 svg path, g path {
