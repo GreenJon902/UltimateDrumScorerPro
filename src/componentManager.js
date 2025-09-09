@@ -1,11 +1,57 @@
 import {createEvents, createEvent} from "./managerHelpers.js";
 
 let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
+/*
+ * JSON Format V4-1.0-SNAPSHOT.
+ *
+ * <Root>: {
+ *     "version": "V4-1.0-SNAPSHOT",                 * This is added when we serialize the JSON, and is removed when we deserialize it.
+ *     "components": {component-id: <Component>},
+ *     "vertGroups": [<VertGroup>]
+ * }
+ *
+ * <Component>: {
+ *     "component-type": "text-component",
+ *     "text": str,
+ *     "font-size": positive real,  // TODO: Document what this font size actually means
+ *     "x": real,  // TODO: Document what these coordinates actually mean
+ *     "y": real
+ * }
+ *
+ * <Component>: {
+ *     "component-type": "score-component",
+ *     "x": real,
+ *     "y": real,
+ *     "left-decoration": Nullable<left-decoration-id>,
+ *     "right-decoration": Nullable<right-decoration-id>,
+ *     "time-signature-denomenator": positive int,
+ *     "rhythm-length-hint": non-negative real,
+ *     "score-content": [<Beat>],                    * Must not be empty.
+ *     "enabled-symbols": [symbol-id]                * Ids must be distinct.
+ * }
+ * <Beat>: [<Subdivision>]                           * Must not be empty.
+ * <Subdivision>: [symbol-id]                        * Ids must be distinct.
+ * 
+ * <VertGroup>: [component-id]                       * Ids must be score-components. An ID may only be used once and in only one VertGroup.
+ */
 
 export class ComponentManager {
     // See src/README.md for overview of events and methods.
     // All getters and setters should be validated.
 
+    // Serialization / Deserialization -------------------------------------------------------------------------
+    static loadEmptyProject() {
+        // Loads an empty project into memory.
+        // This overwrites what was previously in there.
+        
+        CURRENT_PROJECT = {
+            "components": {},
+            "vertGroups": []
+        }
+    }
+    
+    // TODO: Serializing and deserializing the project - we need to add and remove the version. Also verify data is formatted correctly and consistant
+    
     // Events --------------------------------------------------------------------------------------------------
     static {
         createEvents(this, "Component", ["Added", "Removed"]);
@@ -15,29 +61,58 @@ export class ComponentManager {
         createEvent(this, "ComponentVertGroupChanged");
         createEvent(this, "ComponentSymbolToggled");
         createEvent(this, "ComponentSymbolEnabledStateChanged");
-        createEvent(this, "Component", ["Beats", "Subdivisions"], ["Added", "Removed"]);
+        createEvents(this, "Component", ["Beats", "Subdivisions"], ["Added", "Removed"]);
     }
 
     // Component General ---------------------------------------------------------------------------------------
+    static #getUniqueComponentId() {
+        // Creates and returns a unique id that can be used for a new component.
+        let n = 0;
+        while (true) {  // Find first n such that component-n does not exist.
+            const newId = "component-" + n;
+            if (!this.componentExists(newId)) return newId;
+            n++;
+        }
+    }
+
     static createEmptyComponent(componentType) {
         // Creates a new component of the given type, returns the id of that component.
         
+        // Get default data for the given componentType
+        let componentData;
         if (componentType === "score-component") {
-            // TODO: Handle this
+            componentData = {
+                "component-type": "score-component",
+                "x": 0,
+                "y": 0,
+                "left-decoration": null,
+                "right-decoration": null,
+                "time-signature-denomenator": 4,
+                "rhythm-length-hint": 0,
+                "score-content": [[[], []], [[], []], [[], []], [[], []]],
+                "enabled-symbols": []
+            }
         } else if (componentType === "text-component") {
-            // TODO Handle this
+            componentData = {
+                "component-type": "text-component",
+                "x": 0,
+                "y": 0,
+                "text": "Hello World!",
+                "font-size": 10
+            }
         } else {
             throw "Unknown componentType " + componentType;
         }
-
-        this.dispatchComponentAdded(componentId);
+        
+        // Add the component to the project under a new id
+        const newId = this.#getUniqueComponentId();
+        CURRENT_PROJECT["components"][newId] = componentData;
+        this.dispatchComponentAdded(newId);
     }
     
     static componentExists(componentId) {
         // Returns true if the given component exists, and false otherwise.
-
-        // TODO: Handle this
-        return componentExists;
+        return componentId in CURRENT_PROJECT["components"];
     }
     
     static getComponentType(componentId) {
@@ -45,17 +120,18 @@ export class ComponentManager {
         // Throws an error if it doesn't exist.
 
         if (!this.componentExists(componentId)) throw "Component " + componentId + " does not exist";
-        // TODO: Handle this
-        return componentType;
+        return CURRENT_PROJECT["components"][componentId]["component-type"];
     }
     
     static removeComponent(componentId) {
         // Removes the given component.
         // If this component does not exist then an error is thrown.
+        // This will silently drop this components membership from a VertGroup (if necessary).
 
         if (!this.componentExists(componentId)) throw "Component " + componentId + " does not exist";
         this.dispatchBeforeComponentRemoved(componentId);
-        // TODO: Handle this
+        delete CURRENT_PROJECT["components"][componentId];
+        // TODO: Handle vert groups
         this.dispatchComponentRemoved(componentId);
     }
 
@@ -64,8 +140,10 @@ export class ComponentManager {
         // If the given component does not exist then an error is thrown.
         
         if (!this.componentExists(componentId)) throw "Component " + componentId + " does not exist";
-        // TODO: Handle this
-        this.dispatchComponentAdded(newComponentId);
+        
+        const newId = this.#getUniqueComponentId();
+        CURRENT_PROJECT["components"][newId] = JSON.parse(JSON.stringify(CURRENT_PROJECT["components"][componentId]));  // Deep copy component by serializing and then deserializing it
+        this.dispatchComponentAdded(newId);
     }
     
     static {
@@ -86,6 +164,8 @@ export class ComponentManager {
         // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
         // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be used.
         // TODO: Handle this and events and validation
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
     }
     
     static getComponentSymbolState(componentId, beatI, subdivisionI, symbolId) {
@@ -137,6 +217,7 @@ export class ComponentManager {
         //      A single event is dispatched after all beats have been removed internally.
         
         // TODO: Handle this and dispatch events and validate args
+        // TODO: Validate that will have at least one beat
     }
     
     static addSubdivisions(componentId, beatI, ...subdivisionIndexes) {
@@ -152,6 +233,7 @@ export class ComponentManager {
         // These are removed in the same order as removeBeats.
         
         // TODO: Handle this and dispatch events and validate args
+        // TODO: Validate that will have at least one subdivision
     }
     
     // Component Text ------------------------------------------------------------------------------------------
@@ -180,16 +262,21 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
     
     // Create getter
     object[getterFuncName] = (componentId) => {
+        // Validate args
         if (!object.componentExists(componentId) || (componentType !== null && object.getComponentType(componentId) !== componentType)) throw "Component does not exist or is wrong type";
-        // TODO: Handle this
-        return value;
+        
+        // Return
+        return CURRENT_PROJECT["components"][componentId][fieldName];
     }
     
     // Create setter
     object[setterFuncName] = (componentId, newValue) => {
+        // Validate args
         if (!object.componentExists(componentId) || (componentType !== null && object.getComponentType(componentId) !== componentType)) throw "Component does not exist or is wrong type";
         if (!validator(newValue)) throw "Validation failed for " + fieldName + " on " + componentId + ", value " + newValue;
-        // TODO: Handle this
+        
+        // Set and dispatch event
+        CURRENT_PROJECT["components"][componentId][fieldName] = newValue;
         object[dispatchFuncName](componentId, newValue);
     }
 }

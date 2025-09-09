@@ -85,7 +85,7 @@ The basic thought process is all data flows through the manager. If the editor u
 					6a. Editor responds accordingly.
 					6b. Renderer responds accordingly.
 			7. Renderer responds accordingly.
-		8. ComponentManager removes component internally and silently drops links.
+		8. ComponentManager removes component internally and silently drops groups.
 		9. ComponentManager emits ComponentRemoved.	
 ```
 ### Duplicating a component.
@@ -95,29 +95,29 @@ The basic thought process is all data flows through the manager. If the editor u
 		3. ComponentManager updates state internally.
 		4. ComponentManager emits ComponentAdded {<id>}.
 			5. Renderer responds accordingly.
-		5. SelectionManager.select(<newId>)
-			6. SelectionManager updates internally.
-			7. SelectionManager emits SelectionStateChanged for all affected components.
-				8a. Renderer responds accordingly.
-				8b. Editor switches to <id>.
+	5. SelectionManager.select(<newId>)
+		6. SelectionManager updates internally.
+		7. SelectionManager emits SelectionStateChanged for all affected components.
+			8a. Renderer responds accordingly.
+			8b. Editor switches to <id>.
 ```
 ### Modifying a component
 ```
 1. Toggle pressed on <id>.
 	2. State of toggle not changed.
-	3. ComponentManager.toggleComponentToggle(<id>, ...).
+	3. ComponentManager.toggleComponentSymbol(<id>, ...).
 		4. ComponentManager updates internal state.
-		5. ComponentManager emits ComponentToggleChanged.
+		5. ComponentManager emits ComponentSymbolToggled.
 			6a. Renderer responds accordingly.
 			6b. Editor updates toggle state.
 ```
-### Adding/remove a toggle from component in editor
+### Adding/remove a symbol from component in editor
 ```
-1. Component is <componentId>. Toggle is <toggleId>. Click happens in editor.
-	2. Toggles shown not changed.
-	3. ComponentManager.toggleComponentToggleEnabledState(<compId>, <toggleId>).
-		4. ComponentManager adds or removes toggles internally (without emitting any events).
-		5. ComponentManager emits ComponentToggleEnabledStateChanged.
+1. Component is <componentId>. Symbol is <symbolId>. Click happens in editor.
+	2. Symbols shown not changed.
+	3. ComponentManager.toggleComponentSymbolEnabledState(<compId>, <symbolId>).
+		4. ComponentManager adds or removes symbols internally (without emitting any events).
+		5. ComponentManager emits ComponentSymbolEnabledStateChanged.
 			6. Editor responds accordingly.
 ```
 ### Clicking on a component
@@ -161,10 +161,10 @@ The basic thought process is all data flows through the manager. If the editor u
 		20. DragManager emits DragEnd {<selected>}.
 			21. Renderer removes "translate" from selected components styles.
 ```
-### Linking components
+### Vertically grouping components
 ```
 1. <ids> are selected.
-2. Linked pressed in editor.
+2. Group pressed in editor.
 	3. ComponentManager.AddVertGroup(<ids>)
 		4. ComponentManager internally removes any <ids> from any pre-existing groups, and destroys length 1 or 0 groups.
 		5. ComponentManager emits ComponentVertGroupChanged for any changed groups.

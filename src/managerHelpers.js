@@ -35,8 +35,10 @@ export function createEvent(object, name) {
     // If an event with this name has already been created then an error is thrown.
     
     const callbackSetName = "_" + name + "Callbacks";
-    const dispatchFuncName = "dispatch" + name + "Changed";
-    const onFuncName = "on" + name + "Changed";
+    const dispatchFuncName = "dispatch" + name;
+    const onFuncName = "on" + name;
+    
+    console.debug(`[createEvent] Creating bindings for ${object.name}<${name}> with the names ${callbackSetName}, ${dispatchFuncName}, ${onFuncName}`);
     
     // Ensure everything that should/shouldn't exist is correct
     if (callbackSetName in object || dispatchFuncName in object || onFuncName in object) throw "Some attribute of the object already exists for " + name;
@@ -51,7 +53,7 @@ export function createEvent(object, name) {
 
     // Create dispatch function
     object[dispatchFuncName] = (...args) => {
-        console.debug(ComponentManager.name + "." + name + " dispatched with (" + args.join() + ")");
+        console.debug(`[createEvent] Event ${object.name}<${name}> dispatched with`, ...args);
         object[callbackSetName].forEach(func => func(...args));  // Call each callback
     }
 }
