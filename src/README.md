@@ -3,7 +3,8 @@ A diagram of the algorithm for the beaming and rhythm stuff:
 ![image](https://github.com/user-attachments/assets/3cbde333-0225-4733-9cd5-972c669230fe)
 
 # Data flow / event processing
-## Class diagrams for managers
+## "Class diagrams" for managers
+Events are bound using on\<EventName\>(some function), and dispatched using dispatch\<EventName\>(your, args).
 ```
 ComponentManager - Stores persistant state of entities.
 	- Events:

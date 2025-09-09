@@ -29,9 +29,29 @@ export function createEvents(object, ...nameParts) {
 export function createEvent(object, name) {
     // Creates an event for the object with the given name.
     // They will be applied to the given object, so that should be a class if you want static method, and an instance if you want instancemethod.
+    // 
+    // The created methods are dispatch<EventName>(...args) and on<EventName>((...args) => {}). Args passed to dispatch go to all bindings.
+    // 
+    // If an event with this name has already been created then an error is thrown.
     
+    const callbackSetName = "_" + name + "Callbacks";
+    const dispatchFuncName = "dispatch" + name + "Changed";
+    const onFuncName = "on" + name + "Changed";
+    
+    // Ensure everything that should/shouldn't exist is correct
+    if (callbackSetName in object || dispatchFuncName in object || onFuncName in object) throw "Some attribute of the object already exists for " + name;
+    
+    // Create callback storage - in theory we could keep this as a local var in this function, but I thought storing it is polite
+    object[callbackArrayName] = new Set();
+
+    // Create binding function
+    object[onFuncName] = (callback) => {
+           object[callbackSetName].add(callback);
+    }
+
     // Create dispatch function
-    object["dispatch" + name] = (...args) => {
-        console.info(ComponentManager.name + "." + name + " dispatched with (" + args.join() + ")");
+    object[dispatchFuncName] = (...args) => {
+        console.debug(ComponentManager.name + "." + name + " dispatched with (" + args.join() + ")");
+        object[callbackSetName].forEach(func => func(...args));  // Call each callback
     }
 }

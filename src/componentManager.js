@@ -98,20 +98,30 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
     // The getter is called getComponent<FieldName>(componentId), the setter is called setComponent<FieldName>(componentId, newValue), the called is dispatchComponent<FieldName>Changed(componentId, newValue).
     // 
     // This expects the methods componentExists(componentId)->bool and getComponentType(componentId)->componentType to be present in object.
+    // 
+    // If a getter or setter with these names already exists then an error is thrown. If no dispatch function exists then an error is thrown.
+    
+    const dispatchFuncName = "dispatch" + fieldName + "Changed";
+    const getterFuncName = "getComponent" + fieldName;
+    const setterFuncName = "setComponent" + fieldName;
+    
+    // Ensure everything that should/shouldn't exist is correct
+    if (getterFuncName in object || setterFuncName in object) throw "Getter or setter already exists for " + fieldName;
+    if (!(dispatchFuncName in object)) throw "No dispatch function for " + fieldName;
     
     // Create getter
-    object["getComponent" + fieldName] = (componentId) => {
+    object[getterFuncName] = (componentId) => {
         if (!object.componentExists(componentId) || (componentType !== null && object.getComponentType(componentId) !== componentType)) throw "Component does not exist or is wrong type";
         // TODO: Handle this
         return value;
     }
     
     // Create setter
-    object["setComponent" + fieldName] = (componentId, newValue) => {
+    object[setterFuncName] = (componentId, newValue) => {
         if (!object.componentExists(componentId) || (componentType !== null && object.getComponentType(componentId) !== componentType)) throw "Component does not exist or is wrong type";
         if (!validator(newValue)) throw "Validation failed for " + fieldName + " on " + componentId + ", value " + newValue;
         // TODO: Handle this
-        object["dispatchComponent" + fieldName + "Changed"](componentId, newValue);
+        object[dispatchFuncName](componentId, newValue);
     }
 }
 
