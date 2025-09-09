@@ -1,6 +1,8 @@
 import {createEvents, createEvent} from "./managerHelpers.js";
 
-class ComponentManager {
+let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
+
+export class ComponentManager {
     // See src/README.md for overview of events and methods.
     // All getters and setters should be validated.
 
@@ -11,8 +13,9 @@ class ComponentManager {
         createEvents(this, "Component", ["X", "Y", "TimeSignatureDenomenator", "RhythmLengthHint", "Text", "FontSize"], "Changed");
         createEvents(this, "Component", ["Left", "Right"], "DecorationChanged");
         createEvent(this, "ComponentVertGroupChanged");
-        createEvent(this, "ComponentToggleChanged");
-        createEvent(this, "ComponentToggleEnabledStateChanged");
+        createEvent(this, "ComponentSymbolToggled");
+        createEvent(this, "ComponentSymbolEnabledStateChanged");
+        createEvent(this, "Component", ["Beats", "Subdivisions"], ["Added", "Removed"]);
     }
 
     // Component General ---------------------------------------------------------------------------------------
@@ -78,11 +81,77 @@ class ComponentManager {
         createBasicComponentGetterSetter(this, "score-component", "RightDecoration", v => typeof v === "string");  // TODO: Validate id
     }
     
+    static toggleComponentSymbol(componentId, beatI, subdivisionI, symbolId) {
+        // Toggles whether the given symbol is used at the given subdivision of the given beat of the given component.
+        // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
+        // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be used.
+        // TODO: Handle this and events and validation
+    }
+    
+    static getComponentSymbolState(componentId, beatI, subdivisionI, symbolId) {
+        // Gets whether the given symbol is being used in the given subdivision in the given beat on the given component.
+        // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
+        // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be queried.
+        // TODO: Handle this and validation
+    }
+    
+    static getComponentSubdivisonSymbols(componentId, beatI, subdivisionI) {
+        // Returns an immutable set of the symbolIds which are enabled on the given subdivison of the given beat of this given component.
+        // TODO: Handle this and validation and Object.freeze
+    }
+    
+    static toggleComponentSymbolEnabledState(componentId, symbolId) {
+        // Toggles whether the given symbol can be enabled for this component.
+        // This determins whether it is shown in the editor.
+        // If this is disabled, then all enabled beats and subdivisions for this symbol are silently disabled.
+        // TODO: Handle this and events and validation
+    }
+    
+    static getComponentSymbolEnabledState(componentId, symbolId) {
+        // Gets whether the given symbol can be used in the given component.
+        // See toggleComponentSymbolEnabledState for more detail.
+        // TODO: Handle this and validation
+    }
+    
     static addVertGroup(...componentIds) {
         // Creates a vert group for the given components.
         // Any already grouped (from the componentIds) will be removed from those groups.
 
         // TODO: Handle this and dispatch events and validate ids
+    }
+    
+    static addBeats(componentId, numberOfSubdivisions, ...beatIndexes) {
+        // Adds beats at the given indexes to the given component.
+        // Each of the new beats will be empty, but have the given number of subdivisions.
+        // The beats will be inserted at the given indexes in the order that they come.
+        //      E.g. If we have 2 3 4 5 and we insert addBeats(id, 1, 1, 2) then we'd get 2 1 1 3 4 5.
+        //      A single event is dispatched after all beats have been added internally.
+        
+        // TODO: Handle this and dispatch events and validate args
+    }
+    
+    static removeBeats(componentId, ...beatIndex) {
+        // Removes beats at the given indexes from the given component.
+        // The beats will be removed at the given indexes in the order that they come.
+        //      E.g. If we have 2 3 4 5 and we remove removeBeats(id, 1, 2) then we'd get 2 4.
+        //      A single event is dispatched after all beats have been removed internally.
+        
+        // TODO: Handle this and dispatch events and validate args
+    }
+    
+    static addSubdivisions(componentId, beatI, ...subdivisionIndexes) {
+        // Adds subdivisions at the given indexes to the given beat of the given component.
+        // Each of the new subdivisions will be empty.
+        // These are added in the same order as addBeats.
+        
+        // TODO: Handle this and dispatch events and validate args
+    }
+    
+    static removeSubdivisons(componentId, beatI, ...subdivisionIndexes) {
+        // Removes subdivisions at the given indexes from the given beat of the given component.
+        // These are removed in the same order as removeBeats.
+        
+        // TODO: Handle this and dispatch events and validate args
     }
     
     // Component Text ------------------------------------------------------------------------------------------
@@ -101,7 +170,7 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
     // 
     // If a getter or setter with these names already exists then an error is thrown. If no dispatch function exists then an error is thrown.
     
-    const dispatchFuncName = "dispatch" + fieldName + "Changed";
+    const dispatchFuncName = "dispatchComponent" + fieldName + "Changed";
     const getterFuncName = "getComponent" + fieldName;
     const setterFuncName = "setComponent" + fieldName;
     

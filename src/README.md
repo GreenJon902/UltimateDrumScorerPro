@@ -13,19 +13,30 @@ ComponentManager - Stores persistant state of entities.
 		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)Changed {componentId, newValue}
 		- Component(Left|Right)DecorationChanged {componentId, newId|null}
 		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
-		- ComponentToggleChanged {componentId, beatI, subdivisionI, toggleId, newValue}
-		- ComponentToggleEnabledStateChanged {componentId, toggleId, newValue}
+		- ComponentSymbolToggled {componentId, beatI, subdivisionI, toggleId, newValue}
+		- ComponentSymbolEnabledStateChanged {componentId, toggleId, newValue}
+		- ComponentBeatsAdded {componentId, numberOfSubdivisions, ...beatIndexes}
+		- ComponentBeatsRemoved {componentId, ...beatIndexes}
+		- ComponentSubdivisionsAdded {componentId, beatI, ...subdivisionIndexes}
+		- ComponentSubdivisionsRemoved {componentId, beatI, ...subdivisionIndexes}
 	- Methods:
 		- CreateEmptyComponent (typeId) -> componentId
 		- ComponentExists(componentId) -> bool
 		- GetComponentType(componentId) -> component-type
 		- RemoveComponent(componentId)
 		- DuplicateComponent(componentId) -> newComponentId
-		- ToggleComponentToggle(componentId, beatI, subdivisionI, toggleId)
-		- ToggleComponentToggleEnabledState(componentId, toggleId)
+		- ToggleComponentSymbol(componentId, beatI, subdivisionI, symbolId)
+		- GetComponentSymbolState(componentId, beatI, subdivisionI, symbolId) -> bool
+		- GetComponentSubdivisonSymbols(componentId, beatI, subdivisionI) -> Object.freeze(Set<symbol-id>)
+		- ToggleComponentSymbolEnabledState(componentId, symbolId)
+		- GetComponentSymbolEnabledState(componentId, symbolId) -> bool
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId, newValue)
 		- SetComponent(Left|Right)Decoration(componentId, newId|null)
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
+		- AddBeats(componentId, numberOfSubdivisions, ...beatIndexes)
+		- RemoveBeats(componentId, ...beatIndexes)
+		- AddSubdivisions(componentId, beatI, ...subdivisionIndexes)
+		- RemoveSubdivisions(componentId, beatI, ...subdivisionIndexes)
 SelectionManager - Stores temporary state of selection.
 	- Events:
 		- SelectionStateChanged {componentId, selectionState}
@@ -45,12 +56,13 @@ DragManager - Stores temporary state of drag.
 ```
 
 ## Processes
+The basic thought process is all data flows through the manager. If the editor updates something, it can change the state of itself locally (an error will be thrown if it fails) and send this to the ComponentManger, however the renderer listens to and only to the ComponentManger.
 ### Loading components
 ```
 1. ComponentManager updates state internally.
 2. ComponentManager emits ComponentAdded for each component added.
 ```
-### Adding a <type>-component
+### Adding a \<type\>-component
 ```
 1. Add component button pressed.
 	2. ComponentManager.createEmptyComponent(<type>).
@@ -104,7 +116,7 @@ DragManager - Stores temporary state of drag.
 1. Component is <componentId>. Toggle is <toggleId>. Click happens in editor.
 	2. Toggles shown not changed.
 	3. ComponentManager.toggleComponentToggleEnabledState(<compId>, <toggleId>).
-		4. ComponentManager adds or removes toggles internally.
+		4. ComponentManager adds or removes toggles internally (without emitting any events).
 		5. ComponentManager emits ComponentToggleEnabledStateChanged.
 			6. Editor responds accordingly.
 ```
@@ -160,4 +172,11 @@ DragManager - Stores temporary state of drag.
 		7. ComponentManager internally adds a group for <ids>.
 		8. ComponentManager emits ComponentVertGroupChanged for created group.
 			9. Renderer responds accordingly.
+```
+### Adding a beat (/subdivision)
+```
+1. Editor calls ComponentManager.addBeats(<id>, <nos>, 4, 1, 4)
+	2. ComponentManager adds them internally.
+	3. ComponentManager dispatches ComponentBeatsAdded {<nos>, 4, 1, 4}
+		4. Editor and Renderer respond accordingly.
 ```

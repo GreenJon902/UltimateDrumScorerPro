@@ -42,7 +42,7 @@ export function createEvent(object, name) {
     if (callbackSetName in object || dispatchFuncName in object || onFuncName in object) throw "Some attribute of the object already exists for " + name;
     
     // Create callback storage - in theory we could keep this as a local var in this function, but I thought storing it is polite
-    object[callbackArrayName] = new Set();
+    object[callbackSetName] = new Set();
 
     // Create binding function
     object[onFuncName] = (callback) => {
