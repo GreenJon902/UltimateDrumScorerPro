@@ -435,55 +435,57 @@ const parseData = parseSymbolSourceString(SYMBOLS_SOURCE);
 const fullOrder = calculateFullOrder(parseData);
 
 // Create functions to export -------------------------------------
-export function getFullSymbolOrder() {
-    // Returns an array containing the order in which symbols should be drawn where index 0 is the top.
-    return fullOrder;  // This is already frozen
-}
+export class Symbols {
+    static getFullOrder() {
+        // Returns an array containing the order in which symbols should be drawn where index 0 is the top.
+        return fullOrder;  // This is already frozen
+    }
 
-export function isSymbolAbove(symbolId1, symbolId2) {
-    // True if symbolId2 should be drawn above symbolId1.
-    return fullOrder.indexOf(symbolId1) < fullOrder.indexOf(symbolId2);
-}
+    static isAbove(symbolId1, symbolId2) {
+        // True if symbolId2 should be drawn above symbolId1.
+        return fullOrder.indexOf(symbolId1) < fullOrder.indexOf(symbolId2);
+    }
 
-export function getMinDistanceBetweenSymbols(symbolId1, symbolId2) {
-    // Get's the minimum distance between the anchors of the given symbols.
-    // If symbolId2 should be drawn above symbolId1 then an error is thrown.
-    // This will not return indirect constraints (e.g. if a is 10 from b and b is 5 from c, it will not say a is 15 from c (unless you add that externally)).
-    if (isSymbolAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
-    
-    // Find the maximum distance from all the (relevant) constraints
-    const minDistance = Math.max(...Array.from(parseData.constraints).map(constraint => {
-        if (!(matchSymbolIds(constraint.topId, parseData).has(symbolId1) && matchSymbolIds(constraint.bottomId, parseData).has(symbolId2))) {  // If this constraint doesn't refer to both of the given symbols
-            return 0;  // 0 as no constraint
-        } else {
-            return constraint.distance; 
-        }
-    }));
-    
-    return minDistance;
-}
+    static getMinDistance(symbolId1, symbolId2) {
+        // Get's the minimum distance between the anchors of the given symbols.
+        // If symbolId2 should be drawn above symbolId1 then an error is thrown.
+        // This will not return indirect constraints (e.g. if a is 10 from b and b is 5 from c, it will not say a is 15 from c (unless you add that externally)).
+        if (isSymbolAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
+        
+        // Find the maximum distance from all the (relevant) constraints
+        const minDistance = Math.max(...Array.from(parseData.constraints).map(constraint => {
+            if (!(matchSymbolIds(constraint.topId, parseData).has(symbolId1) && matchSymbolIds(constraint.bottomId, parseData).has(symbolId2))) {  // If this constraint doesn't refer to both of the given symbols
+                return 0;  // 0 as no constraint
+            } else {
+                return constraint.distance; 
+            }
+        }));
+        
+        return minDistance;
+    }
 
-export function getSymbolInstructions(symbolId) {
-    // Returns an array of SvgInstruction for the given symbol.
-    return parseData.symbols[symbolId].instructions;
-}
+    static getInstructions(symbolId) {
+        // Returns an array of SvgInstruction for the given symbol.
+        return parseData.symbols[symbolId].instructions;
+    }
 
-export function getSymbolSizeLeft(symbolId) {
-    // Returns the sizeLeft for the given symbol. This is the horizontal distance to the left of the anchor that this symbol takes up.
-    return parseData.symbols[symbolId].sizeLeft;
-}
+    static getSizeLeft(symbolId) {
+        // Returns the sizeLeft for the given symbol. This is the horizontal distance to the left of the anchor that this symbol takes up.
+        return parseData.symbols[symbolId].sizeLeft;
+    }
 
-export function getSymbolSizeRight(symbolId) {
-    // Returns the sizeRight for the given symbol. This is the horizontal distance to the right of the anchor that this symbol takes up.
-    return parseData.symbols[symbolId].sizeRight;
-}
+    static getSizeRight(symbolId) {
+        // Returns the sizeRight for the given symbol. This is the horizontal distance to the right of the anchor that this symbol takes up.
+        return parseData.symbols[symbolId].sizeRight;
+    }
 
-export function getSymbolSizeUp(symbolId) {
-    // Returns the sizeUp for the given symbol. This is the vertical distance above the anchor that this symbol takes up.
-    return parseData.symbols[symbolId].sizeUp;
-}
+    static getSizeUp(symbolId) {
+        // Returns the sizeUp for the given symbol. This is the vertical distance above the anchor that this symbol takes up.
+        return parseData.symbols[symbolId].sizeUp;
+    }
 
-export function getSymbolSizeDown(symbolId) {
-    // Returns the sizeDown for the given symbol. This is the vertical distance below the anchor that this symbol takes up.
-    return parseData.symbols[symbolId].sizeDown;
+    static getSizeDown(symbolId) {
+        // Returns the sizeDown for the given symbol. This is the vertical distance below the anchor that this symbol takes up.
+        return parseData.symbols[symbolId].sizeDown;
+    }
 }
