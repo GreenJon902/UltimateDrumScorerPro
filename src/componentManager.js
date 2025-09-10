@@ -1,5 +1,10 @@
 import {createEvents, createEvent} from "./managerHelpers.js";
 
+
+// TODO: Make ComponentManager operations atomic
+// TODO: Combined logic of AddBeats, RemoveBeats, AddSubdivision and RemoveSubdivision
+
+
 let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
 /*
  * JSON Format V4-1.0-SNAPSHOT.
@@ -7,7 +12,7 @@ let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
  * <Root>: {
  *     "version": "V4-1.0-SNAPSHOT",                 * This is added when we serialize the JSON, and is removed when we deserialize it.
  *     "components": {component-id: <Component>},
- *     "vertGroups": [<VertGroup>]
+ *     "vert-groups": [<VertGroup>]
  * }
  *
  * <Component>: {
@@ -163,34 +168,66 @@ export class ComponentManager {
         // Toggles whether the given symbol is used at the given subdivision of the given beat of the given component.
         // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
         // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be used.
-        // TODO: Handle this and events and validation
+        
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+        if (!(0 <= subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
+        // TODO: Validate symbolId is valid
+        
+        // Handle toggle
+        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI], symbolId);  // Updates array in-place
+        this.dispatchComponentSymbolToggled(componentId, beatI, subdivisionI, symbolId, this.getComponentSymbolState(componentId, beatI, subdivisionI, symbolId));
     }
     
     static getComponentSymbolState(componentId, beatI, subdivisionI, symbolId) {
         // Gets whether the given symbol is being used in the given subdivision in the given beat on the given component.
         // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
         // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be queried.
-        // TODO: Handle this and validation
+        
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+        if (!(0 <= subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
+        // TODO: Validate symbolId is valid
+        
+        return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(symbolId);
     }
     
     static getComponentSubdivisonSymbols(componentId, beatI, subdivisionI) {
         // Returns an immutable set of the symbolIds which are enabled on the given subdivison of the given beat of this given component.
-        // TODO: Handle this and validation and Object.freeze
+        
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+        if (!(0 <= subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
+        
+        return Object.freeze(new Set(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI]));
     }
     
     static toggleComponentSymbolEnabledState(componentId, symbolId) {
         // Toggles whether the given symbol can be enabled for this component.
         // This determins whether it is shown in the editor.
         // If this is disabled, then all enabled beats and subdivisions for this symbol are silently disabled.
-        // TODO: Handle this and events and validation
+        
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        // TODO: Validate symbol id
+        
+        // Handle toggle
+        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["enabled-symbols"], symbolId);  // Updates array in place
+        this.dispatchComponentSymbolEnabledStateChanged(componentId, symbolId, this.getComponentSymbolEnabledState(componentId, symbolId));
     }
     
     static getComponentSymbolEnabledState(componentId, symbolId) {
         // Gets whether the given symbol can be used in the given component.
         // See toggleComponentSymbolEnabledState for more detail.
-        // TODO: Handle this and validation
+         
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        // TODO: Validate symbol id
+        
+        return CURRENT_PROJECT["components"][componentId]["enabled-symbols"].includes(symbolId);
     }
     
     static addVertGroup(...componentIds) {
@@ -200,6 +237,35 @@ export class ComponentManager {
         // TODO: Handle this and dispatch events and validate ids
     }
     
+    static removeFromVertGroup(...componentIds) {
+        // Removes the given components from any vert groups. If a resulting vert group has length 1 then it will be removed.
+        // If componentId is not in a vert group then an error is thrown.
+        
+        // TODO: This
+    }
+    
+    static isInVertGroup(componentId) {
+        // Checks whether the given componentId is in a vertGroup.
+        
+        // Validate
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw "Component does not exist or is of wrong type";
+        
+        // Check if any vertGroup contains the component
+        return [false, ...CURRENT_PROJECT["vert-groups"].map(g => g.includes(componentId))].reduce((a, b) => a || b);
+    }
+
+    static getVertGroup(componentId) {
+        // Returns a frozen set of the componentIds that are in a vert group with the given componentId.
+        // If componentId is not in a vert group then an error is thrown.
+        
+        // Validate
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw "Component does not exist or is of wrong type";
+        if (!this.isInVertGroup(componentId)) throw "Given component not in vertGroup";
+        
+        // Find the group
+        return Object.freeze(new Set(CURRENT_PROJECT["vert-groups"].filter(g => g.includes(componentId))[0]));
+    }
+    
     static addBeats(componentId, numberOfSubdivisions, ...beatIndexes) {
         // Adds beats at the given indexes to the given component.
         // Each of the new beats will be empty, but have the given number of subdivisions.
@@ -207,17 +273,52 @@ export class ComponentManager {
         //      E.g. If we have 2 3 4 5 and we insert addBeats(id, 1, 1, 2) then we'd get 2 1 1 3 4 5.
         //      A single event is dispatched after all beats have been added internally.
         
-        // TODO: Handle this and dispatch events and validate args
+        // Validate componentId and numberOfSubdivisions
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (numberOfSubdivisions <= 0) throw "NumberOfSubdivisions must be above 0";
+        
+        // Add beats
+        for (let i=0; i<beatIndexes; i++) {
+            let bi = beatIndexes[i];
+            
+            // Validate beat index
+            if (!(0 <= bi && bi <= this.getComponentBeatCount(componentId))) throw "BeatI out of range";  // <= on upper bound as we might want to add such that it's the last item
+            
+            // Create the new beat's content. Do this each time so each is it's own object
+            let newContent = new Array();
+            for (let j=0; j<numberOfSubdivisions; j++) newContent.push(new Array());
+            
+            // Add beat
+            CURRENT_PROJECT["components"][componentId]["score-content"].splice(bi, 0, ...newContent)
+        }
+        
+        // Dispatch event
+        this.dispatchComponentBeatsAdded(componentId, numberOfSubdivisions, Object.freeze(new Array(beatIndexes)));
     }
     
-    static removeBeats(componentId, ...beatIndex) {
+    static removeBeats(componentId, ...beatIndexes) {
         // Removes beats at the given indexes from the given component.
         // The beats will be removed at the given indexes in the order that they come.
         //      E.g. If we have 2 3 4 5 and we remove removeBeats(id, 1, 2) then we'd get 2 4.
         //      A single event is dispatched after all beats have been removed internally.
         
-        // TODO: Handle this and dispatch events and validate args
-        // TODO: Validate that will have at least one beat
+        // Validate componentId
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        
+        // Remove beats
+        for (let i=0; i<beatIndexes; i++) {
+            let bi = beatIndexes[i];
+            
+            // Validate beat index and ensure component won't be empty afterwards
+            if (!(0 <= bi && bi < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+            if (this.getComponentBeatCount(componentId) === 1) throw "There must be at least one beat in a component";
+            
+            // Remove beat
+            CURRENT_PROJECT["components"][componentId]["score-content"].splice(bi, 1);
+        }
+        
+        // Dispatch event
+        this.dispatchComponentBeatsRemoved(componentId, Object.freeze(new Array(beatIndexes)));
     }
     
     static addSubdivisions(componentId, beatI, ...subdivisionIndexes) {
@@ -225,15 +326,63 @@ export class ComponentManager {
         // Each of the new subdivisions will be empty.
         // These are added in the same order as addBeats.
         
-        // TODO: Handle this and dispatch events and validate args
+        // Validate componentId and beatI
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";  
+        
+        // Add beats
+        for (let i=0; i<subdivisionIndexes; i++) {
+            let si = subdivisionIndexes[i];
+            
+            // Validate subdivision index
+            if (!(0 <= si && si <= this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";  // <= on upper bound as we might want to add such that it's the last item
+            
+            // Add subdivison
+            CURRENT_PROJECT["components"][componentId]["score-content"][beatI].splice(si, 0, new Array());
+        }
+        
+        // Dispatch event
+        this.dispatchComponentSubdivisionAdded(componentId, beatI, Object.freeze(new Array(subdivisionIndexes)));
     }
     
     static removeSubdivisons(componentId, beatI, ...subdivisionIndexes) {
         // Removes subdivisions at the given indexes from the given beat of the given component.
         // These are removed in the same order as removeBeats.
         
-        // TODO: Handle this and dispatch events and validate args
-        // TODO: Validate that will have at least one subdivision
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";  
+        
+        // Remove beats
+        for (let i=0; i<subdivisionIndexes; i++) {
+            let si = subdivisionIndexes[i];
+            
+            // Validate subdivision index and beat won't be empty afterwards
+            if (!(0 <= si && si < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";  
+            if (this.getComponentBeatSubdivisionCount(componentId, beatI) === 1) throw "There must be at least one subdivision in a beat";
+            
+            // Remove subdivison
+            CURRENT_PROJECT["components"][componentId]["score-content"][beatI].splice(si, 1);
+        }
+        
+        // Dispatch event
+        this.dispatchComponentSubdivisionRemoved(componentId, beatI, Object.freeze(new Array(subdivisionIndexes)));
+    }
+    
+    static getComponentBeatCount(componentId) {
+        // Get's the number of beats - the timeSignatureNumerator - of the given component.
+
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw "Component does not exist or is wrong type";
+        return CURRENT_PROJECT["components"][componentId]["score-content"].length;
+    }
+    
+    static getComponentBeatSubdivisionCount(componentId, beatI) {
+        // Get's the number of subdivisions in the given beat of the given component.
+
+        // Validate args
+        if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw "Component does not exist or is wrong type";
+        if (!(0 <= beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+
+        return CURRENT_PROJECT["components"][componentId]["score-content"].length;
     }
     
     // Component Text ------------------------------------------------------------------------------------------
@@ -281,3 +430,17 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
     }
 }
 
+function toggleArrayItem(array, item) {
+    // If item is already in array then (all instances of) it is(/are) removed, otherwise it is added.
+    // This is done to the given array object.
+
+    if (array.includes(item)) {
+        // Already there so remove
+        while (array.includes(item)) {  // While loop to remove all occurances
+            array.splice(array.indexOf(item), 1);
+        }
+    } else {
+        // Not there so add
+        array.push(item);
+    }
+}

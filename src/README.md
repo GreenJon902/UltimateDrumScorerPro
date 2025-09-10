@@ -13,8 +13,8 @@ ComponentManager - Stores persistant state of entities.
 		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)Changed {componentId, newValue}
 		- Component(Left|Right)DecorationChanged {componentId, newId|null}
 		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
-		- ComponentSymbolToggled {componentId, beatI, subdivisionI, toggleId, newValue}
-		- ComponentSymbolEnabledStateChanged {componentId, toggleId, newValue}
+		- ComponentSymbolToggled {componentId, beatI, subdivisionI, symbolId, newValue}
+		- ComponentSymbolEnabledStateChanged {componentId, symbolId, newValue}
 		- ComponentBeatsAdded {componentId, numberOfSubdivisions, ...beatIndexes}
 		- ComponentBeatsRemoved {componentId, ...beatIndexes}
 		- ComponentSubdivisionsAdded {componentId, beatI, ...subdivisionIndexes}
@@ -33,10 +33,15 @@ ComponentManager - Stores persistant state of entities.
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId, newValue)
 		- SetComponent(Left|Right)Decoration(componentId, newId|null)
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
+		- RemoveFromVertGroup(...componentIds) - Any vertGroups of length 1 will be removed.
+		- IsInVertGroup(componentId) -> bool
+		- GetVertGroup(componentId) -> Object.freeze(Set<component-id>)
 		- AddBeats(componentId, numberOfSubdivisions, ...beatIndexes)
 		- RemoveBeats(componentId, ...beatIndexes)
 		- AddSubdivisions(componentId, beatI, ...subdivisionIndexes)
 		- RemoveSubdivisions(componentId, beatI, ...subdivisionIndexes)
+		- GetComponentBeatCount(componentId) -> int
+		- GetComponentBeatSubdivisionCount(componentId, beatI) -> int
 SelectionManager - Stores temporary state of selection.
 	- Events:
 		- SelectionStateChanged {componentId, selectionState}
