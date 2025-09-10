@@ -232,15 +232,68 @@ export class ComponentManager {
     static addVertGroup(...componentIds) {
         // Creates a vert group for the given components.
         // Any already grouped (from the componentIds) will be removed from those groups.
+        // Note: This method is not properly atomic, if the dispatched remove events fail then the add events will not be called.
 
-        // TODO: Handle this and dispatch events and validate ids
+        // Validate componentIds
+        componentIds.forEach(id => {if (!this.componentExists(id) || this.getComponentType(id) !== "score-component") throw "Component does not exist or is not score-component"; })
+        
+        // Remove any componentIds that are already grouped
+        this.removeFromVertGroup(false, ...componentIds);
+        
+        // Add new group
+        componentIds = Array.from(new Set(componentIds));
+        CURRENT_PROJECT["vert-groups"].push(componentIds);  // Remove duplicates. We need an array (and not a set) in the JSON
+        this.dispatchComponentVertGroupChanged(null, Object.freeze(new Set(componentIds)));
     }
     
-    static removeFromVertGroup(...componentIds) {
+    static removeFromVertGroup(...args) {
         // Removes the given components from any vert groups. If a resulting vert group has length 1 then it will be removed.
-        // If componentId is not in a vert group then an error is thrown.
+        // If a componentId is not in a vert group and the requireInGroup flag is set then an error is thrown.
+        // 
+        // The args are either (requireInGroup: boolean, ...componentIds) or (...componentIds)
         
-        // TODO: This
+        // Handle args
+        args = new Array(args);  // Duplicate as we edit
+        const requireInGroup = (args.length > 0 && typeof args[0] === "boolean") ? args.shift() : true; 
+        const componentIds = args;
+        
+        // Validate componentIds exist and are score components
+        componentIds.forEach(id => { if (!this.componentExists(id) || this.getComponentType(id) !== "score-component") throw "Component does not exist or is not score-component"; });
+        // Validate components are already in vert groups (if flag is set)
+        if (requireInGroup) componentIds.forEach(id => { if (!this.isInVertGroup(id)) throw "Component not in vertGroup"; });
+        
+        // Copy vert-groups so this method is atomic
+        const newVertGroups = JSON.parse(JSON.stringify(CURRENT_PROJECT["vert-groups"]));  // Need to deep copy
+        
+        // We need to track which groups have changed (for the events)
+        const modifiedBefore = new Array();  // Index of before corrosponds to index of after
+        const modifiedAfter = new Array();
+        
+        // Remove from vertGroup
+        for (let vgi=0; vgi<newVertGroups.length; vgi++) {
+            // Remove any as needed
+            const vgBefore = new Set(newVertGroups[vgi]);
+            const vgAfter = vgBefore.difference(new Set(componentIds));  // Remove all of the given componentIds from vgBefore   
+            
+            // If any were removed then handle that
+            if (vgAfter.length === 1) {  // Destroy group
+                newVertGroups.splice(vgi, 1);
+                vgi--;  // We removed the current vgi so we don't need to change the index
+                modifiedBefore.push(Object.freeze(vgBefore));
+                modifiedAfter.push(null);
+            
+            } else if (vgBefore.length !== vgAfter.length) {  // Replace group
+                newVertGroups[vgi] = vgAfter;
+                modifiedBefore.push(Object.freeze(vgBefore));
+                modifiedAfter.push(Object.freeze(new Set(vgAfter)));  // Duplicate set object as we store vgAfter (in CURRENT_PROJECT) and don't want the one we store frozen
+            }
+        }
+        
+        // Commit changes
+        CURRENT_PROJECT["vert-groups"] = newVertGroups;
+        for (let i=0; i<modifiedBefore.length; i++) {
+            this.dispatchComponentVertGroupChanged(modifiedBefore[i], modifiedAfter[i]);
+        }
     }
     
     static isInVertGroup(componentId) {
