@@ -50,6 +50,7 @@ SelectionManager - Stores temporary state of selection.
 		- ToggleSelectionState(componentId, multiselect)
 		- Select(componentIds...) - Will unselect all other selected components.
 		- ClearSelection()
+		- IsSelected(componentId) -> bool
 DragManager - Stores temporary state of drag.
 	- Events:
 		- Drag(Start|End) {componentIds}
