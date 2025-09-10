@@ -1,33 +1,60 @@
 export class SelectionManager {
     // See src/README.md for overview of events and methods.
     
+    static #currentSelection = new Set();
+    
     static {
         createEvents(this, "SelectionStateChanged");
     }
 
     static toggleSelectionState(componentId, multiselect) {
-        // Toggles whether the given component is selected. 
-        // If multiselect is false then this will deselect all other components.
-
-        // TODO: This
+        // Toggles(ish) whether the given component is selected. 
+        // If multiselect is true then the rest of the selection will be unaffected.
+        // If multiselect is false then the rest of the selection will be removed, but if there were other things selected then the given component will always be selected afterwards.
+        
+        if (multiselect) {
+            // Toggle just componentId and ignore rest
+            if (this.#currentSelection.has(componentId)) {
+                this.#currentSelection.delete(componentId);
+            } else {
+                this.#currentSelection.add(componentId);
+            }
+            this.dispatchSelectionStateChanged(componentId, this.isSelected(componentId));
+            
+        } else {
+            if (this.#currentSelection.size !== 1) {  // If others are selected then always select componentId (and deselect others). If nothing is selected then select componentId.
+                this.select(componentId);  // Handles events
+            } else  { // Only 1 is selected
+                if (this.isSelected(componentId)) {  
+                    // We're toggling the only thing selected so just clear selection
+                    this.clearSelection();  // Handles events
+                } else {  // Something else is selected
+                    // Clear selection and replace it with componentId
+                    this.select(componentId);  // Handles events
+                }
+            }
+        }
     }
 
     static select(...componentIds) {
         // Unselects all selected components and selects the given components.
         // If componentIds is empty then this is the same as clearSelection().
 
-        // TODO: This
+        const lastSelection = this.#currentSelection;  // Save current selection for events
+        this.#currentSelection = new Set(componentIds);  // Clear current selection
+        
+        // Dispatch events to components whose states changed
+        lastSelection.difference(this.#currentSelection).forEach(id => this.dispatchSelectionStateChanged(id, false));
+        this.#currentSelection.difference(lastSelection).forEach(id => this.dispatchSelectionStateChanged(id, true));
     }
 
     static clearSelection() {
         // Unselects all selected components.
-        
-        // TODO: This
+        this.select();  // Selects none
     }
     
     static isSelected(componentId) {
         // Returns true if the given component is currently selected.
-
-        // TODO: This
+        return this.#currentSelection.has(componentId);
     }
 }
