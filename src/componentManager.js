@@ -455,7 +455,7 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw "Component does not exist or is wrong type";
         if (!(0 <= beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
 
-        return CURRENT_PROJECT["components"][componentId]["score-content"].length;
+        return CURRENT_PROJECT["components"][componentId]["score-content"][beatI].length;
     }
     
     // Component Text ------------------------------------------------------------------------------------------
