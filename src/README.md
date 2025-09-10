@@ -51,15 +51,17 @@ SelectionManager - Stores temporary state of selection.
 		- Select(componentIds...) - Will unselect all other selected components.
 		- ClearSelection()
 		- IsSelected(componentId) -> bool
+		- GetSelection() -> Object.freeze(Set<component-id>)
 DragManager - Stores temporary state of drag.
 	- Events:
 		- Drag(Start|End) {componentIds}
-		- DragMove {componentIds, delta} - componentIds will remain the same as DragStart until ended.
+		- DragMove {componentIds, totalDeltaX, totalDeltaY} - componentIds will remain the same as DragStart until ended. Delta is relative to start position.
 	- Methods
-		- startDrag(componentId, cardinal) - Id is id of component that was clicked. Cardinal is whether to lock movement to cardinal directions, what is passed is initial value.
-		- moveDrag(<delta>)
+		- startDrag(cardinal) - Cardinal is whether to lock movement to cardinal directions, what is passed is initial value.
+		- moveDrag(deltaX, deltaY) - Delta is relative to last time moveDrag was called.
 		- endDrag()
 		- setCardinal(cardinal) - Cardinal is whether to lock movement to cardinal directions.
+		- isDragging() -> bool
 ```
 
 ## Processes

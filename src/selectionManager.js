@@ -60,4 +60,9 @@ export class SelectionManager {
         // Returns true if the given component is currently selected.
         return this.#currentSelection.has(componentId);
     }
+    
+    static getSelection() {
+        // Returns a frozen set of all selected componentIds.
+        return Object.freeze(new Set(this.#currentSelection));
+    }
 }
