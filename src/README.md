@@ -4,7 +4,8 @@ A diagram of the algorithm for the beaming and rhythm stuff:
 
 # Data flow / event processing
 ## "Class diagrams" for managers
-Events are bound using on\<EventName\>(some function), and dispatched using dispatch\<EventName\>(your, args).
+Events are bound using on\<EventName\>(some function), and dispatched using dispatch\<EventName\>(your, args).  
+Operations within managers should be atomic.  
 ```
 ComponentManager - Stores persistant state of entities.
 	- Events:

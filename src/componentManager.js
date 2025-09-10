@@ -1,7 +1,6 @@
 import {createEvents, createEvent} from "./managerHelpers.js";
 
 
-// TODO: Make ComponentManager operations atomic
 // TODO: Combined logic of AddBeats, RemoveBeats, AddSubdivision and RemoveSubdivision
 
 
@@ -277,22 +276,26 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (numberOfSubdivisions <= 0) throw "NumberOfSubdivisions must be above 0";
         
+        // Copy beats array so action is atomic (incase validation fails in middle)
+        const newBeats = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"]);  // Only needs to be a shallow copy
+        
         // Add beats
         for (let i=0; i<beatIndexes; i++) {
             let bi = beatIndexes[i];
             
             // Validate beat index
-            if (!(0 <= bi && bi <= this.getComponentBeatCount(componentId))) throw "BeatI out of range";  // <= on upper bound as we might want to add such that it's the last item
+            if (!(0 <= bi && bi <= newBeats.length)) throw "BeatI out of range";  // <= on upper bound as we might want to add such that it's the last item
             
             // Create the new beat's content. Do this each time so each is it's own object
             let newContent = new Array();
             for (let j=0; j<numberOfSubdivisions; j++) newContent.push(new Array());
             
             // Add beat
-            CURRENT_PROJECT["components"][componentId]["score-content"].splice(bi, 0, ...newContent)
+            newBeats.splice(bi, 0, ...newContent)
         }
         
-        // Dispatch event
+        // Finalise action
+        CURRENT_PROJECT["components"][componentId]["score-content"] = newBeats;
         this.dispatchComponentBeatsAdded(componentId, numberOfSubdivisions, Object.freeze(new Array(beatIndexes)));
     }
     
@@ -305,19 +308,23 @@ export class ComponentManager {
         // Validate componentId
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         
+        // Copy beats array so action is atomic (incase validation fails in middle)
+        const newBeats = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"]);  // Only needs to be a shallow copy
+        
         // Remove beats
         for (let i=0; i<beatIndexes; i++) {
             let bi = beatIndexes[i];
             
             // Validate beat index and ensure component won't be empty afterwards
-            if (!(0 <= bi && bi < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
+            if (!(0 <= bi && bi < newBeats.length)) throw "BeatI out of range";
             if (this.getComponentBeatCount(componentId) === 1) throw "There must be at least one beat in a component";
             
             // Remove beat
-            CURRENT_PROJECT["components"][componentId]["score-content"].splice(bi, 1);
+            newBeats.splice(bi, 1);
         }
         
-        // Dispatch event
+        // Finalise action
+        CURRENT_PROJECT["components"][componentId]["score-content"] = newBeats;
         this.dispatchComponentBeatsRemoved(componentId, Object.freeze(new Array(beatIndexes)));
     }
     
@@ -330,18 +337,22 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";  
         
+        // Copy subdivisions array so action is atomic (incase validation fails in middle)
+        const newSubdivisions = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"][beatI]);  // Only needs to be a shallow copy
+        
         // Add beats
         for (let i=0; i<subdivisionIndexes; i++) {
             let si = subdivisionIndexes[i];
             
             // Validate subdivision index
-            if (!(0 <= si && si <= this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";  // <= on upper bound as we might want to add such that it's the last item
+            if (!(0 <= si && si <= newSubdivisions.length)) throw "SubdivisionI out of range";  // <= on upper bound as we might want to add such that it's the last item
             
             // Add subdivison
-            CURRENT_PROJECT["components"][componentId]["score-content"][beatI].splice(si, 0, new Array());
+            newSubdivisions.splice(si, 0, new Array());
         }
         
-        // Dispatch event
+        // Finalise action
+        CURRENT_PROJECT["components"][componentId]["score-content"][beatI] = newSubdivisions;
         this.dispatchComponentSubdivisionAdded(componentId, beatI, Object.freeze(new Array(subdivisionIndexes)));
     }
     
@@ -349,22 +360,27 @@ export class ComponentManager {
         // Removes subdivisions at the given indexes from the given beat of the given component.
         // These are removed in the same order as removeBeats.
         
+        // Validate componentId and beatI
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";  
+        
+        // Copy subdivisions array so action is atomic (incase validation fails in middle)
+        const newSubdivisions = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"][beatI]);  // Only needs to be a shallow copy
         
         // Remove beats
         for (let i=0; i<subdivisionIndexes; i++) {
             let si = subdivisionIndexes[i];
             
             // Validate subdivision index and beat won't be empty afterwards
-            if (!(0 <= si && si < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";  
+            if (!(0 <= si && si < newSubdivisions)) throw "SubdivisionI out of range";  
             if (this.getComponentBeatSubdivisionCount(componentId, beatI) === 1) throw "There must be at least one subdivision in a beat";
             
             // Remove subdivison
-            CURRENT_PROJECT["components"][componentId]["score-content"][beatI].splice(si, 1);
+            newSubdivisions.splice(si, 1);
         }
         
-        // Dispatch event
+        // Finalise action
+        CURRENT_PROJECT["components"][componentId]["score-content"][beatI] = newSubdivisions;
         this.dispatchComponentSubdivisionRemoved(componentId, beatI, Object.freeze(new Array(subdivisionIndexes)));
     }
     
