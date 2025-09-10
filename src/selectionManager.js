@@ -1,3 +1,6 @@
+import {createEvent} from "./managerHelpers.js";
+
+
 export class SelectionManager {
     // See src/README.md for overview of events and methods.
     
