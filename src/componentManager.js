@@ -112,6 +112,8 @@ export class ComponentManager {
         const newId = this.#getUniqueComponentId();
         CURRENT_PROJECT["components"][newId] = componentData;
         this.dispatchComponentAdded(newId);
+        
+        return newId;
     }
     
     static componentExists(componentId) {
@@ -148,6 +150,8 @@ export class ComponentManager {
         const newId = this.#getUniqueComponentId();
         CURRENT_PROJECT["components"][newId] = JSON.parse(JSON.stringify(CURRENT_PROJECT["components"][componentId]));  // Deep copy component by serializing and then deserializing it
         this.dispatchComponentAdded(newId);
+        
+        return newId;
     }
     
     static {
