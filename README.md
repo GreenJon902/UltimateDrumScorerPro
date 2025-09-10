@@ -9,7 +9,7 @@ A simple* yet not limiting (e.g. support for any timesignature/duplet) drum char
 It has no account, no accounts / cloud saving, limited dependance on js frameworks (i have heard of the horrors of the js community... I don't want none of that, leave me alone, please). 
 It runs in a website, so no need to download software.
 Saving it is just downloading a pdf which has embedded metadata so it can be edited by this program.
-It does die if you add more than four bars (ehem groovescribe).
+It does not die if you add more than four bars (ehem groovescribe).
 Art is based on the style my drum teacher used to teach me - reducing unnecessary details without remove information.
 
 *It's simple to me, if your brain is too small then that's on you.
