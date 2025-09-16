@@ -1,4 +1,4 @@
-import {createEvent} from "./managerHelpers.js";
+import {createEvents} from "./managerHelpers.js";
 
 
 export class SelectionManager {

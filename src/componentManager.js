@@ -156,16 +156,16 @@ export class ComponentManager {
     }
     
     static {
-        createBasicComponentGetterSetter(this, null, "X", v => typeof v === "number");
-        createBasicComponentGetterSetter(this, null, "Y", v => typeof v === "number");
+        createBasicComponentGetterSetter(this, null, "X", "x", v => typeof v === "number");
+        createBasicComponentGetterSetter(this, null, "Y", "y", v => typeof v === "number");
     }
     
     // Component Score -----------------------------------------------------------------------------------------
     static {
-        createBasicComponentGetterSetter(this, "score-component", "TimeSignatureDenomenator", v => typeof v === "number" && v % 1 === 0 && v > 0);  // Positive integer
-        createBasicComponentGetterSetter(this, "score-component", "RhythmLengthHint", v => typeof v === "number" && v > 0);  // Positive real
-        createBasicComponentGetterSetter(this, "score-component", "LeftDecoration", v => typeof v === "string");  // TODO: Validate id
-        createBasicComponentGetterSetter(this, "score-component", "RightDecoration", v => typeof v === "string");  // TODO: Validate id
+        createBasicComponentGetterSetter(this, "score-component", "TimeSignatureDenomenator", "time-signature-denomenator", v => typeof v === "number" && v % 1 === 0 && v > 0);  // Positive integer
+        createBasicComponentGetterSetter(this, "score-component", "RhythmLengthHint", "rhythm-length-hint", v => typeof v === "number" && v > 0);  // Positive real
+        createBasicComponentGetterSetter(this, "score-component", "LeftDecoration", "left-decoration", v => typeof v === "string");  // TODO: Validate id
+        createBasicComponentGetterSetter(this, "score-component", "RightDecoration", "right-decoration", v => typeof v === "string");  // TODO: Validate id
     }
     
     static toggleComponentSymbol(componentId, beatI, subdivisionI, symbolId) {
@@ -461,15 +461,16 @@ export class ComponentManager {
     
     // Component Text ------------------------------------------------------------------------------------------
     static {
-        createBasicComponentGetterSetter(this, "text-component", "Text", v => typeof v === "string");  // Some string
-        createBasicComponentGetterSetter(this, "text-component", "FontSize", v => typeof v === "number" && v > 0);  // Positive real
+        createBasicComponentGetterSetter(this, "text-component", "Text", "text", v => typeof v === "string");  // Some string
+        createBasicComponentGetterSetter(this, "text-component", "FontSize", "font-size", v => typeof v === "number" && v > 0);  // Positive real
     }
 }
 
-function createBasicComponentGetterSetter(object, componentType, fieldName, validator) {
+function createBasicComponentGetterSetter(object, componentType, fieldName, jsonFieldName, validator) {
     // Creates a getter and a setter on the object for the given fieldName. If componentType is given (not null) then it will only work for that componentType.
     // The validator is called on the setter value, and an error is thrown if it returns false.
     // The getter is called getComponent<FieldName>(componentId), the setter is called setComponent<FieldName>(componentId, newValue), the called is dispatchComponent<FieldName>Changed(componentId, newValue).
+    // The jsonFieldName is the key to use when storing and getting from CURRENT_PROJECT.
     // 
     // This expects the methods componentExists(componentId)->bool and getComponentType(componentId)->componentType to be present in object.
     // 
@@ -489,7 +490,7 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
         if (!object.componentExists(componentId) || (componentType !== null && object.getComponentType(componentId) !== componentType)) throw "Component does not exist or is wrong type";
         
         // Return
-        return CURRENT_PROJECT["components"][componentId][fieldName];
+        return CURRENT_PROJECT["components"][componentId][jsonFieldName];
     }
     
     // Create setter
@@ -499,7 +500,7 @@ function createBasicComponentGetterSetter(object, componentType, fieldName, vali
         if (!validator(newValue)) throw "Validation failed for " + fieldName + " on " + componentId + ", value " + newValue;
         
         // Set and dispatch event
-        CURRENT_PROJECT["components"][componentId][fieldName] = newValue;
+        CURRENT_PROJECT["components"][componentId][jsonFieldName] = newValue;
         object[dispatchFuncName](componentId, newValue);
     }
 }

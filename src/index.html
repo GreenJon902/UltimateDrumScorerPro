@@ -5,126 +5,10 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-    
-        <!-- 
-            A note on the sizing: This is designed such that we can fit two (decorated) (four beat) bars of 16 quaternote kicks in a single line.
-            
-            DataUsed:
-                - Repeat Start/End: 6
-                - Bar End: 0 
-                - Kick: x
-                - Padding: 2
-            ∴ 6 + 2 * (16 * (2 + x) + 2) + 6 = 210
-            ⇒ 32x = 130
-            ⇒ x = 4.0625 ≈ 4 ≈ 3.5
-            ∴ x = 3.5
-        -->
-		<svg id="drums" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-			<defs id="defs">
-				<g id="crash" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="0">
-					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
-				</g>
-				<g id="crash-2" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="2.5">
-					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
-				</g>
-				<g id="trash" data-size-up="1" data-size-down="4" data-size-left="4" data-size-right="1" data-beam-spacing="2.5">
-					<path d="M0 0 L-3 3 M-3 0 L0 3 M-4 1.5 L1 1.5 M-1.5 -1 L-1.5 4"/>
-                    <circle cx="-1.5" cy="1.5" r="2.5" style="stroke: black; fill: none;"/>
-				</g>
-				<g id="ride" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
-					<path d="M-3.5 2 L0 0 M-3.5 0 L0 2"/>
-				</g>
-				<g id="ride-bell" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
-					<path d="M-3.5 2 L0 2 L-1.75 0 Z"/>
-				</g>
-				<g id="cow-bell" data-size-up="0" data-size-down="2" data-size-left="3.5" data-size-right="0" data-beam-spacing="2.5">
-					<path d="M-3.5 2 L0 2 L-1.75 0 Z" style="fill:black"/>
-				</g>
-				<g id="hi-hat" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="5">
-					<path d="M-3.5 3.5 L0 0 M-3.5 0 L0 3.5"/>
-				</g>
-				
-				<g id="high-rack-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="6">
-					<path d="M-3.5 3.5 L0 0 M-3.5 3.5 Q-4 -0.5 0 0 Q0.5 4 -3.5 3.5"/>
-				</g>
-				<g id="low-rack-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="8.5">
-                    <use href="#high-rack-tom"/>
-				</g>
-                
-				<g id="snare" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="10">
-					<path d="M-3.5 3.5 L0 0"/>
-				</g>
-				<g id="flam-snare" data-size-up="0" data-size-down="3.5" data-size-left="4" data-size-right="0" data-beam-spacing="10">
-					<path d="M-3 3 L0 0 M-4 3.5 Q-4 1 -2.5 1"/>
-				</g>
-                
-				<g id="high-floor-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="13">
-                    <use href="#high-rack-tom"/>
-				</g>
-				<g id="low-floor-tom" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="15.5">
-                    <use href="#high-rack-tom"/>
-				</g>
-				
-				<g id="kick" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="20">
-					<use href="#snare"/>
-				</g>
-				<g id="hi-hat-kick" data-size-up="0" data-size-down="3.5" data-size-left="3.5" data-size-right="0" data-beam-spacing="20">
-					<use href="#hi-hat"/>
-				</g>
-			</defs>
-		</svg>
-		<svg id="decorations" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-			<defs id="defs">
-				<g id="open" data-width="3" data-height="3">
-					<circle cx="0" cy="0" r="1" style="stroke: black; fill: none;"/>
-				</g>
-				<g id="loose" data-width="3" data-height="3">
-					<circle cx="0" cy="0" r="1" style="stroke: black; fill: none;"/>
-					<path d="M-1.5 1.5 L1.5 -1.5"/>
-				</g>
-				<g id="closed" data-width="3" data-height="3">
-					<path d="M-1.5 0 L1.5 0 M0 -1.5 L0 1.5"/>
-				</g>
-				<g id="accent" data-width="4" data-height="2">
-					<path d="M-2 -1 L2 0 L-2 1"/>
-				</g>
-			</defs>
-		</svg>
-		<svg id="side-decorations" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-			<defs id="defs">
-				<g id="start" data-width="5" data-height="15" data-side="left">
-					<path d="M-5 -7.5 l0 15 M-3 -3 l0 6"/>
-					<circle cx="-1" cy="-1.5" r="0.6"/>
-					<circle cx="-1" cy="1.5" r="0.6"/>
-				</g>
-				<g id="repeat-start" data-width="6" data-height="20" data-side="left">
-					<use href="#start" transform="translate(1 0)"/>
-					<path d="M-6 -7 l6 -3 M-6 7 l6 3"/>
-				</g>
-				<g id="option-start" data-width="3" data-height="20" data-side="left">
-					<path d="M0 -10 q-5 10 0 20"/>
-				</g>
-
-				<g id="end" data-width="5" data-height="15" data-side="right">
-					<use href="#start" transform="scale(-1 1) translate(5 0)"/>
-				</g>
-				<g id="repeat-end" data-width="7" data-height="20" data-side="right">
-					<use href="#repeat-start" transform="scale(-1 1) translate(6 0)"/>
-				</g>
-				<g id="option-end" data-width="1" data-height="20" data-side="right">
-					<use href="#option-start" transform="scale(-1 1) translate(1 0)"/>
-				</g>
-				<g id="bar-end" data-width="1" data-height="15" data-side="right">
-					<path d="M1 -7.5 l0 15"/>
-				</g>
-			</defs>
-		</svg>
-		
 		<svg id="text-svg" xmlns="http://www.w3.org/2000/svg" style="visibility: hidden; height: 1mm;">
 		</svg>
 		
 		<input type="file" id="pdfInput" accept="application/pdf" style="display: none;" />
-    	
     
         <div id="rendered-pane">
         	<div id="component-controls">
@@ -137,107 +21,38 @@
 	    	</div>
         	<div id="rendered-pane-padding" onwheel="handleRenderedScroll(event)">
 			    <div id="component-container-container">
-                    <div id="component-container" onclick="deselectComponents()">
+                    <div id="component-container">
                     </div>
                 </div>
 	        </div>
         </div>
 		<div id="editor-pane">
-
 		</div>
     </body>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
-    
-
-
     <script type="module">
-        import {renderComponent} from "./rendered.js";
-        import {loadJSON, createNewScoreComponent, createNewTextComponent, listComponents} from "./files.js";
-        import {setEditComponent} from "./editor.js";
-        import {nodeToPDF, loadMetaFromPDFString} from "./print.js";
+        import {ComponentManager} from "./componentManager.js";
+        import {SelectionManager} from "./selectionManager.js";
+        import {attachEditor} from "./editor.js";
         
-        // Load temp project during dev and setup
-        
-        loadJSON({
-        	"project-version": "v4-0.1",
-            "text-components": {},
-            "score-components": {
-                "score-component-0": {
-                    "x": 0, "y": 0,
-                    "time-signature-denomenator": "4",
-                    "rhythm-length-hint": 23,
-                    "enabled-drums": ["crash", "kick", "snare", "high-rack-tom"],
-                    "enabled-decorations": ["accent", "closed"],
-                    "left-decoration": "repeat-start", "right-decoration": "bar-end",
-                    "score-content": [
-                        [
-                            {"drums": ["kick", "crash", "high-rack-tom"], "decorations": ["closed"]},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash", "snare"], "decorations": ["accent"]},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ]
-                    ]
-                },
-                "score-component-1": {
-                    "x": 0.49, "y": 0,
-                    "time-signature-denomenator": "4",
-                    "rhythm-length-hint": 23,
-                    "enabled-drums": ["crash", "kick", "snare"],
-                    "enabled-decorations": ["accent", "open"],
-                    "left-decoration": "", "right-decoration": "repeat-end",
-                    "score-content": [
-                        [
-                            {"drums": ["kick", "crash"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash"], "decorations": []},
-                            {"drums": ["kick", "snare"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick", "snare"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash", "snare"], "decorations": ["accent"]},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []},
-                            {"drums": ["kick"], "decorations": []}
-                        ],
-                        [
-                            {"drums": ["kick", "crash"], "decorations": []},
-                            {"drums": ["kick", "hi-hat"], "decorations": ["open"]},
-                            {"drums": ["kick", "hi-hat"], "decorations": ["open"]},
-                            {"drums": ["kick", "hi-hat"], "decorations": ["open"]}
-                        ]
-                    ]
-                }
-            },
-            "linked-score-components": [["score-component-0", "score-component-1"]]
-        });
+        // FOR DEBUGGING ----
+        globalThis.CM = ComponentManager;
+        window.SM = SelectionManager;
+        // ------------------
 
-        renderComponent("score-component", "score-component-0");  
-        renderComponent("score-component", "score-component-1");
+        ComponentManager.loadEmptyProject();
+        const textId = ComponentManager.createEmptyComponent("text-component");
+        SelectionManager.select(textId);
         
+        attachEditor(document.getElementById("editor-pane"));
+        
+        
+        
+
+
+
+
         function updateRenderedScale(newScale) {
             // Update the zoom and all related properties of the rendered pane
 
