@@ -1,4 +1,5 @@
 import {createEvents} from "./managerHelpers.js";
+import {ComponentManager} from "./componentManager.js";
 
 
 export class SelectionManager {
@@ -8,6 +9,13 @@ export class SelectionManager {
     
     static {
         createEvents(this, "SelectionStateChanged");
+    }
+    
+    static {
+        // Deselect selected components when they are being removed
+        ComponentManager.onBeforeComponentRemoved(id => {
+            if (this.isSelected(id)) this.toggleSelectionState(id, true);
+        })
     }
 
     static toggleSelectionState(componentId, multiselect) {

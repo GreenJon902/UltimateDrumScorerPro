@@ -19,10 +19,16 @@ export function attachEditor(editorPane) {
     // The editorPane should a div and only be used for this.
     
     selectionStateChanged(editorPane);  // Triggers a full redraw, regardless of current state
+    
+    SelectionManager.onSelectionStateChanged(() => selectionStateChanged(editorPane));
+    
+    // Add bindings to COmponentManager to make sure that content in selectors is always representative of the manager's storage
+    ComponentManager.onComponentTextChanged((componentId, newValue) => componentFieldChanged(editorPane, "Text", componentId, newValue));
+    ComponentManager.onComponentFontSizeChanged((componentId, newValue) => componentFieldChanged(editorPane, "FontSize", componentId, newValue));
 }
 
 function selectionStateChanged(editorPane, ..._) {
-    // Listens to SelectionManager-SelectionStateCahnged.
+    // Listens to SelectionManager-SelectionStateChanged.
     // This method takes the editorPane node, and ignores any other arguements given.
     
     const currentSelection = SelectionManager.getSelection();
@@ -44,8 +50,15 @@ function selectionStateChanged(editorPane, ..._) {
 }
 
 function changeWithComponentManager(node, componentId, fieldName) {
-    // Attaches the necessary information to node such that when ComponentManager releases a simple event, the value of the node will be updated (when it fits the componentId and fieldName).
-    node.dataset.ComponentManagerBinding = componentId + "_" + fieldName;  // This makes them easily identifiable for the event bindings to update values
+    // Marks the given node as needing to be updated when a given component's field is updated.
+    // Related to componentFIeldChanged.
+    node.dataset.componentManagerBinding = componentId + "_" + fieldName;  // This makes them easily identifiable for the event bindings to update values
+}
+
+function componentFieldChanged(editorPane, fieldName, componentId, newValue) {
+    // Called when ComponentManager fires an event and we may need to update an option in the editor.
+    // Related to changeWithComponentManager.
+    editorPane.querySelectorAll("*[data-component-manager-binding=\"" + componentId + "_" + fieldName + "\"]").forEach(node => { node.value = newValue; });
 }
 
 function createFullTextComponentEditor(editorPane, componentId) {
@@ -170,3 +183,5 @@ function getUniqueId() {
         n++;
     }
 }
+
+
