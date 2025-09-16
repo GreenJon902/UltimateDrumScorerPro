@@ -36,11 +36,6 @@
         import {SelectionManager} from "./selectionManager.js";
         import {attachEditor} from "./editor.js";
         
-        // FOR DEBUGGING ----
-        globalThis.CM = ComponentManager;
-        window.SM = SelectionManager;
-        // ------------------
-
         ComponentManager.loadEmptyProject();
         const textId = ComponentManager.createEmptyComponent("text-component");
         SelectionManager.select(textId);
