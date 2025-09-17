@@ -50,6 +50,7 @@ export function attachEditor(editorPane) {
     ["Text", "FontSize", "TimeSignatureDenomenator", "RhythmLengthHint", "LeftDecoration", "RightDecoration"].forEach(field => {
         ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => componentFieldChanged(editorPane, field, componentId, newValue));
     });
+    ComponentManager.onComponentVertGroupChanged((before, after) => vertGroupChanged(editorPane, before, after));
 }
 
 function selectionStateChanged(editorPane, ..._) {
@@ -74,14 +75,33 @@ function selectionStateChanged(editorPane, ..._) {
     }
 }
 
+function vertGroupChanged(editorPane, before, after) {
+    // Called when the componentManager dispatches a COmponentVertGroupChanged.
+    // This will find any nodes with data-only-when-grouped="<componentId>" and change their display css as required.
+    
+    // Clean input data
+    if (before === null) before = new Set();
+    if (after === null) after = new Set();
+    
+    // Get ids now not in a group and ids now in a group
+    const removed = before.difference(after);
+    const added = after.difference(before);
+    
+    // Handle display css
+    removed.forEach(id => editorPane.querySelectorAll("*[data-only-when-grouped=\"" + id + "\"]").forEach(node => node.style.setProperty("display", "none")));
+    added.forEach(id => editorPane.querySelectorAll("*[data-only-when-grouped=\"" + id + "\"]").forEach(node => node.style.removeProperty("display")));
+}
+
 function changeWithComponentManager(node, componentId, fieldName) {
     // Marks the given node as needing to be updated when a given component's field is updated.
+    // This is done by adding the arg data-component-manager-binding = "componentId_fieldName".
     // Related to componentFIeldChanged.
     node.dataset.componentManagerBinding = componentId + "_" + fieldName;  // This makes them easily identifiable for the event bindings to update values
 }
 
 function componentFieldChanged(editorPane, fieldName, componentId, newValue) {
     // Called when ComponentManager fires an event and we may need to update an option in the editor.
+    // This looks for anything with the arg data-component-manager-binding = "componentId_fieldName".
     // Related to changeWithComponentManager.
     editorPane.querySelectorAll("*[data-component-manager-binding=\"" + componentId + "_" + fieldName + "\"]").forEach(node => { node.value = newValue; });
 }
@@ -113,23 +133,42 @@ function createTextEditorOptions(editorPane, componentId) {
     // This adds a new child to the given editorPane, and also returns the added child.
     
     const div = document.createElement("div");
-    createEditorTextOption(div, componentId, "Font Size", "FontSize", ...POSITIVE_REAL);
+    createBasicTextOption(div, componentId, "Font Size", "FontSize", ...POSITIVE_REAL);
     createBreak(div);
-    createEditorDeleteDuplicate(div, componentId);
+    createDeleteDuplicate(div, componentId);
     editorPane.appendChild(div);
     return div;
 }
 
-function createEditorDeleteDuplicate(container, componentId) {
+function createDeleteDuplicate(container, componentId) {
     // Creates the delete and duplicate buttons for the given component inside the given container.
-    createEditorButton(container, "Delete", () => ComponentManager.removeComponent(componentId));
-    createEditorButton(container, "Duplicate", () => {
+    createButton(container, "Delete", () => ComponentManager.removeComponent(componentId));
+    createButton(container, "Duplicate", () => {
         const newId = ComponentManager.duplicateComponent(componentId);
         SelectionManager.select(newId);
     });
 }
 
-function createEditorButton(container, text, callback) {
+function createVertGroupControls(container, componentId) {
+    // Creates the buttons to control an individual components vertical group.
+    // This should be called for every score-component, regardless of whether it is currently grouped.
+    // This will add the buttons to the container.
+    // This will add the args data-only-when-grouped = "componentId", and will have `display: none` set if componentId is not grouped. 
+    
+    // Create buttons
+    const removeButton = createButton(container, "Remove From VertGroup", () => ComponentManager.removeFromVertGroup(componentId));
+    const showButton = createButton(container, "Show All In VertGroup", () => SelectionManager.select(...ComponentManager.getVertGroup(componentId)));
+    // Add custom tags
+    removeButton.dataset.onlyWhenGrouped = componentId;
+    showButton.dataset.onlyWhenGrouped = componentId;
+    // Hide if necessary
+    if (!ComponentManager.isInVertGroup(componentId)) {
+        removeButton.style.display = "none";
+        showButton.style.display = "none";
+    }
+}
+
+function createButton(container, text, callback) {
     // Creates a button in container with the given text that calls the given callback.
     // This also returns the button.
     const button = document.createElement("button");
@@ -147,12 +186,13 @@ function createBreak(container) {
     return break_;
 }
 
-function createEditorTextOption(container, componentId, label, optionName, cleaner, caster) {
-    // Creates and adds nodes to the container for the given option. Label will be displayed to the user. 
+function createBasicTextOption(container, componentId, label, optionName, cleaner, caster) {
+    // Creates a text field with a label that corrosponds to a 'first-level' field in a component. E.g. RhythmLengthHint
+    //
     // User input will be passed through the cleaner - func(str) => str. This should, for example, remove all non-numeric characters. But can allow invalid values (like empty or too small values).
     // User input will be passed through the caster before being stored. func(str) => T/undefined. T is the type the ComponentManager takes, or undefined if you want to go back to what it was before.
     // This expects ComponentManager.(get|set)Component<OptionName> and ComponentManager-Component<optionName>Changed to exist.
-    // The created node will also be returned.
+    // The created node will be added, as well as being returned.
     
     
     // Create the input
@@ -177,14 +217,16 @@ function createEditorTextOption(container, componentId, label, optionName, clean
     // Cerate action option structure
     const inputId = getUniqueId();
     const div = document.createElement("div");
-    createEditorOptionLabel(div, label, inputId);
+    createOptionLabel(div, label, inputId);
     div.appendChild(input);
     container.appendChild(div);
     return div;
 }
 
-function createEditorSelectOption(container, componentId, label, optionName, options) {
-    // See createEditorTextOption. This works on <select> nodes though.
+function createBasicSelectOption(container, componentId, label, optionName, options) {
+    // Creates a <select> field with a label that corrosponds to a 'first-level' field in a component. E.g. RhythmLengthHint
+    // 
+    // See createBasicTextOption. This works on <select> nodes though.
     // This will add another option for no-selection, which will be null.
 
     // Create the select
@@ -203,13 +245,13 @@ function createEditorSelectOption(container, componentId, label, optionName, opt
     // Cerate action option structure
     const inputId = getUniqueId();
     const div = document.createElement("div");
-    createEditorOptionLabel(div, label, inputId);
+    createOptionLabel(div, label, inputId);
     div.appendChild(select);
     container.appendChild(div);
     return div;
 }
 
-function createEditorOptionLabel(container, labelText, id) {
+function createOptionLabel(container, labelText, id) {
     // Adds a label for the given id.
     
     const label = document.createElement("label");
@@ -234,12 +276,13 @@ function createScoreEditorOptions(container, componentId) {
     // Creates the options for a score-component editor and adds it to the given container. This returns the created node.
     
     const div = document.createElement("div");
-    createEditorTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_REAL);
-    createEditorTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
-    createEditorSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // Get options for a proper source
-    createEditorSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // Get options for a proper source
+    createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_REAL);
+    createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
+    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // Get options for a proper source
+    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // Get options for a proper source
     createBreak(div);
-    createEditorDeleteDuplicate(div, componentId);
+    createDeleteDuplicate(div, componentId);
+    createVertGroupControls(div, componentId);
     container.appendChild(div);
     return div;
 }

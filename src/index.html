@@ -36,6 +36,11 @@
         import {SelectionManager} from "./selectionManager.js";
         import {attachEditor} from "./editor.js";
         
+        // DEBUG STUFF -------------
+        window.CM = ComponentManager;
+        window.SM = SelectionManager;
+        // -------------------------
+        
         ComponentManager.loadEmptyProject();
         const id = ComponentManager.createEmptyComponent("score-component");
         SelectionManager.select(id);

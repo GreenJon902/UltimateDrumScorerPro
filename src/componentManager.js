@@ -51,7 +51,7 @@ export class ComponentManager {
         
         CURRENT_PROJECT = {
             "components": {},
-            "vertGroups": []
+            "vert-groups": []
         }
     }
     
@@ -258,7 +258,7 @@ export class ComponentManager {
         // The args are either (requireInGroup: boolean, ...componentIds) or (...componentIds)
         
         // Handle args
-        args = new Array(args);  // Duplicate as we edit
+        args = new Array(...args);  // Duplicate as we edit
         const requireInGroup = (args.length > 0 && typeof args[0] === "boolean") ? args.shift() : true; 
         const componentIds = args;
         
@@ -281,13 +281,13 @@ export class ComponentManager {
             const vgAfter = vgBefore.difference(new Set(componentIds));  // Remove all of the given componentIds from vgBefore   
             
             // If any were removed then handle that
-            if (vgAfter.length === 1) {  // Destroy group
+            if (vgAfter.size === 1) {  // Destroy group
                 newVertGroups.splice(vgi, 1);
                 vgi--;  // We removed the current vgi so we don't need to change the index
                 modifiedBefore.push(Object.freeze(vgBefore));
                 modifiedAfter.push(null);
             
-            } else if (vgBefore.length !== vgAfter.length) {  // Replace group
+            } else if (vgBefore.size !== vgAfter.size) {  // Replace group
                 newVertGroups[vgi] = vgAfter;
                 modifiedBefore.push(Object.freeze(vgBefore));
                 modifiedAfter.push(Object.freeze(new Set(vgAfter)));  // Duplicate set object as we store vgAfter (in CURRENT_PROJECT) and don't want the one we store frozen
