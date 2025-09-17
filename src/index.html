@@ -37,8 +37,8 @@
         import {attachEditor} from "./editor.js";
         
         ComponentManager.loadEmptyProject();
-        const textId = ComponentManager.createEmptyComponent("text-component");
-        SelectionManager.select(textId);
+        const id = ComponentManager.createEmptyComponent("score-component");
+        SelectionManager.select(id);
         
         attachEditor(document.getElementById("editor-pane"));
         

@@ -10,7 +10,31 @@ const POSITIVE_REAL = [
     x => {
         // CASTER
         x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
-        return (x > 0) ? parseFloat(x) : undefined;
+        return (x > 0) ? parseFloat(x) : undefined;  // Check positive and not empty
+    }
+];
+const NON_NEG_REAL = [
+    x => { 
+        // CLEANER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return x;
+    },
+    x => {
+        // CASTER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return (x >= 0 && x !== "") ? parseFloat(x) : undefined;  // Check non-neg and not empty
+    }
+];
+const POSITIVE_INT = [
+    x => { 
+        // CLEANER
+        x = x.replace(/[^0-9]/g, "");  // Remove non-number characers 
+        return x;
+    },
+    x => {
+        // CASTER
+        x = x.replace(/[^0-9]/g, "");  // Remove non-number characers 
+        return (x > 0) ? parseInt(x) : undefined;  // Check positive and not empty
     }
 ];
 
@@ -23,8 +47,9 @@ export function attachEditor(editorPane) {
     SelectionManager.onSelectionStateChanged(() => selectionStateChanged(editorPane));
     
     // Add bindings to COmponentManager to make sure that content in selectors is always representative of the manager's storage
-    ComponentManager.onComponentTextChanged((componentId, newValue) => componentFieldChanged(editorPane, "Text", componentId, newValue));
-    ComponentManager.onComponentFontSizeChanged((componentId, newValue) => componentFieldChanged(editorPane, "FontSize", componentId, newValue));
+    ["Text", "FontSize", "TimeSignatureDenomenator", "RhythmLengthHint", "LeftDecoration", "RightDecoration"].forEach(field => {
+        ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => componentFieldChanged(editorPane, field, componentId, newValue));
+    });
 }
 
 function selectionStateChanged(editorPane, ..._) {
@@ -90,8 +115,8 @@ function createTextEditorOptions(editorPane, componentId) {
     const div = document.createElement("div");
     createEditorTextOption(div, componentId, "Font Size", "FontSize", ...POSITIVE_REAL);
     createBreak(div);
-    editorPane.appendChild(div);
     createEditorDeleteDuplicate(div, componentId);
+    editorPane.appendChild(div);
     return div;
 }
 
@@ -158,6 +183,32 @@ function createEditorTextOption(container, componentId, label, optionName, clean
     return div;
 }
 
+function createEditorSelectOption(container, componentId, label, optionName, options) {
+    // See createEditorTextOption. This works on <select> nodes though.
+    // This will add another option for no-selection, which will be null.
+
+    // Create the select
+    const select = document.createElement("select");
+    ["", ...options].forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.innerText = name;
+        select.appendChild(option);
+    });
+    select.value = ComponentManager["getComponent" + optionName](componentId);
+    // Event saving value
+    select.onchange = () => ComponentManager["setComponent" + optionName](componentId, select.value);
+    changeWithComponentManager(select, componentId, optionName);
+    
+    // Cerate action option structure
+    const inputId = getUniqueId();
+    const div = document.createElement("div");
+    createEditorOptionLabel(div, label, inputId);
+    div.appendChild(select);
+    container.appendChild(div);
+    return div;
+}
+
 function createEditorOptionLabel(container, labelText, id) {
     // Adds a label for the given id.
     
@@ -169,8 +220,28 @@ function createEditorOptionLabel(container, labelText, id) {
     return label;
 }
 
-function createFullScoreComponentEditor(editorPane) {
-    throw "Not implemented"
+function createFullScoreComponentEditor(editorPane, componentId) {
+    // Creates the options for the editor for the given score component.
+    // This adds a new child to the given editorPane, and also returns the added child.
+    
+    const div = document.createElement("div");
+    createScoreEditorOptions(div, componentId);
+    editorPane.appendChild(div);
+    return div;
+}
+
+function createScoreEditorOptions(container, componentId) {
+    // Creates the options for a score-component editor and adds it to the given container. This returns the created node.
+    
+    const div = document.createElement("div");
+    createEditorTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_REAL);
+    createEditorTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
+    createEditorSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // Get options for a proper source
+    createEditorSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // Get options for a proper source
+    createBreak(div);
+    createEditorDeleteDuplicate(div, componentId);
+    container.appendChild(div);
+    return div;
 }
 
 function getUniqueId() {
