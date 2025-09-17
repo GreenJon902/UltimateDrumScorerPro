@@ -276,13 +276,57 @@ function createScoreEditorOptions(container, componentId) {
     // Creates the options for a score-component editor and adds it to the given container. This returns the created node.
     
     const div = document.createElement("div");
-    createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_REAL);
+    createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value));
+    createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
     createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
     createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // Get options for a proper source
     createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // Get options for a proper source
     createBreak(div);
     createDeleteDuplicate(div, componentId);
     createVertGroupControls(div, componentId);
+    container.appendChild(div);
+    return div;
+}
+
+function numeratorBoxChanged(componentId, value) {
+    // Called when the user updates the timeSignatureNumerator box in the editor.
+    // This returns the cleaned value.
+
+    value = POSITIVE_INT[1](value);  // This is the new beat count
+    const currentBeatCount = ComponentManager.getComponentBeatCount(componentId);
+    if (value === undefined) return currentBeatCount;
+    
+    if (value > currentBeatCount) {
+        ComponentManager.addBeats(componentId, 1, ...Array.from({length: value - currentBeatCount}, (e, i) => i + currentBeatCount));  // Just add to end of beats for now.  TODO: Better way of doing this. TODO: Adding two subidivisions always doesn't make sense
+    } else {
+        ComponentManager.removeBeats(componentId, ...Array.from({length: currentBeatCount - value}, (e, i) => currentBeatCount - 1 - i)); // Just remove from end for now.  TODO: Better combination to remove
+    }
+        
+    return value;
+}
+
+function createTextOption(container, label, cleaner, currentValue, callback) {
+    // Creates a text box with the given label, where input is passed through the cleaner (str => str). When the value is to be saved, the callback is used. The return value of the callback is put inside the text box. CurrentValue is used as the intial value.
+    // The created node is added to the container, and also returned.
+    
+    // Create the input
+    const input = document.createElement("input");
+    input.value = currentValue;
+    // Event for when user types or removes a character
+    input.oninput = () => {
+        const cleanedValue = cleaner(input.value);
+        input.value = cleanedValue;
+    };
+    // Event for saving value
+    input.onchange = () => {
+        input.value = callback(input.value); 
+    }
+    
+    // Cerate action option structure
+    const inputId = getUniqueId();
+    const div = document.createElement("div");
+    createOptionLabel(div, label, inputId);
+    div.appendChild(input);
     container.appendChild(div);
     return div;
 }

@@ -375,7 +375,7 @@ export class ComponentManager {
             
             // Validate beat index and ensure component won't be empty afterwards
             if (!(0 <= bi && bi < newBeats.length)) throw "BeatI out of range";
-            if (newSubdivisions.length === 1) throw "There must be at least one beat in a component";
+            if (newBeats.length === 1) throw "There must be at least one beat in a component";
             
             // Remove beat
             newBeats.splice(bi, 1);
