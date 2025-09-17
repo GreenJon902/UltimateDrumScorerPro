@@ -279,8 +279,8 @@ function createScoreEditorOptions(container, componentId) {
     createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value));
     createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
     createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
-    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // Get options for a proper source
-    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // Get options for a proper source
+    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // TODO: Get options for a proper source
+    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // TODO: Get options for a proper source
     createBreak(div);
     createDeleteDuplicate(div, componentId);
     createVertGroupControls(div, componentId);
