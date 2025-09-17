@@ -46,7 +46,7 @@ export function attachEditor(editorPane) {
     
     SelectionManager.onSelectionStateChanged(() => selectionStateChanged(editorPane));
     
-    // Add bindings to COmponentManager to make sure that content in selectors is always representative of the manager's storage
+    // Add bindings to ComponentManager to make sure that content in selectors is always representative of the manager's storage
     ["Text", "FontSize", "TimeSignatureDenomenator", "RhythmLengthHint", "LeftDecoration", "RightDecoration"].forEach(field => {
         ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => componentFieldChanged(editorPane, field, componentId, newValue));
     });
@@ -76,7 +76,7 @@ function selectionStateChanged(editorPane, ..._) {
 }
 
 function vertGroupChanged(editorPane, before, after) {
-    // Called when the componentManager dispatches a COmponentVertGroupChanged.
+    // Called when the componentManager dispatches a ComponentVertGroupChanged.
     // This will find any nodes with data-only-when-grouped="<componentId>" and change their display css as required.
     
     // Clean input data
@@ -279,6 +279,7 @@ function createScoreEditorOptions(container, componentId) {
     createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value));
     createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
     createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
+    createTextOption(div, "Set All Subdivisions", POSITIVE_INT[0], "", value => setAllSubdivisionsBoxChanged(componentId, value));
     createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // TODO: Get options for a proper source
     createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // TODO: Get options for a proper source
     createBreak(div);
@@ -286,6 +287,33 @@ function createScoreEditorOptions(container, componentId) {
     createVertGroupControls(div, componentId);
     container.appendChild(div);
     return div;
+}
+
+function setAllSubdivisionsBoxChanged(componentId, value) {
+    // Called when the user updates the setAllSubdivisions box in the editor.
+    // This returns an empty string.
+    
+    value = POSITIVE_INT[1](value);
+    
+    for (let i=0; i<ComponentManager.getComponentBeatCount(componentId); i++) {
+        setComponentBeatSubdivisionCount(componentId, i, value);
+    }
+    
+    return "";  // Leave box empty / don't save value
+}
+
+function setComponentBeatSubdivisionCount(componentId, beatI, value) {
+    // Adds or removes subdivisions from the given component on the given beat so that we have the given amount (`value`).
+
+    const currentSubdivisionCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
+    
+    if (value > currentSubdivisionCount) {
+        ComponentManager.addSubdivisions(componentId, beatI, ...Array.from({length: value - currentSubdivisionCount}, (e, i) => i + currentSubdivisionCount));  // Just add to end of beat for now.  TODO: Better way of doing this
+    } else if (value < currentSubdivisionCount) {
+        ComponentManager.removeSubdivisons(componentId, beatI, ...Array.from({length: currentSubdivisionCount - value}, (e, i) => currentSubdivisionCount - 1 - i)); // Just remove from end for now.  TODO: Better combination to remove
+    }
+        
+    return value;
 }
 
 function numeratorBoxChanged(componentId, value) {
@@ -298,7 +326,7 @@ function numeratorBoxChanged(componentId, value) {
     
     if (value > currentBeatCount) {
         ComponentManager.addBeats(componentId, 1, ...Array.from({length: value - currentBeatCount}, (e, i) => i + currentBeatCount));  // Just add to end of beats for now.  TODO: Better way of doing this. TODO: Adding two subidivisions always doesn't make sense
-    } else {
+    } else if (value < currentBeatCount) {
         ComponentManager.removeBeats(componentId, ...Array.from({length: currentBeatCount - value}, (e, i) => currentBeatCount - 1 - i)); // Just remove from end for now.  TODO: Better combination to remove
     }
         
