@@ -144,7 +144,7 @@ function createTextEditorTextBox(editorPane, componentId) {
     textarea.onchange = () => {
         ComponentManager.setComponentText(componentId, textarea.value);
     }
-    changeWithComponentManager(textarea, componentId, "Text");
+    createLinkFromComponentManager(textarea, componentId, "basic", "Text");
     editorPane.appendChild(textarea);
     return textarea;
 }
