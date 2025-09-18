@@ -192,7 +192,7 @@ export class ComponentManager {
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
-        if (!(0 <= subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
+        if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
         // TODO: Validate symbolId is valid
         
         return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(symbolId);
