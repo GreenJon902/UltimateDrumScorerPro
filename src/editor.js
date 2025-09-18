@@ -49,10 +49,10 @@ export function attachEditor(editorPane) {
     
     // Add bindings to ComponentManager to make sure that content in selectors is always representative of the manager's storage
     ["Text", "FontSize", "TimeSignatureDenomenator", "RhythmLengthHint", "LeftDecoration", "RightDecoration"].forEach(field => {
-        ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => componentFieldChanged(editorPane, field, componentId, newValue));
+        ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => linkFromComponentManagerCalled(editorPane, "basic", componentId, field, newValue));
     });
-    ComponentManager.onComponentVertGroupChanged((before, after) => vertGroupChanged(editorPane, before, after));
-    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => ComponentSymbolEnabledStateChanged(editorPane, componentId, symbolId, newValue));
+    ComponentManager.onComponentVertGroupChanged((before, after) => linkFromComponentManagerCalled(editorPane, "vertGroup", before, after));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
 }
 
 function selectionStateChanged(editorPane, ..._) {
@@ -77,40 +77,54 @@ function selectionStateChanged(editorPane, ..._) {
     }
 }
 
-function vertGroupChanged(editorPane, before, after) {
-    // Called when the componentManager dispatches a ComponentVertGroupChanged.
-    // This will find any nodes with data-only-when-grouped="<componentId>" and change their display css as required.
+function createLinkFromComponentManager(node, componentId, method, ...args) {
+    // Marks the given node to be updated after a certain event from the component manager.
+    // These links will only be ran for the given componentId.
+    // There are multiple ways (method) the given node can be updated:
+    //     "basic": Updates the node's value field with the newValue from the event. Args: FieldName.
+    //     "enabledState": Updates the node's checked field depending if this node is in a vertGroup.  Args: SymbolId.
+    //     "vertGroup": Adds/removes "display: none;" from the node's style depending whether the symbol is enabled or not. Args:.
     
-    // Clean input data
-    if (before === null) before = new Set();
-    if (after === null) after = new Set();
-    
-    // Get ids now not in a group and ids now in a group
-    const removed = before.difference(after);
-    const added = after.difference(before);
-    
-    // Handle display css
-    removed.forEach(id => editorPane.querySelectorAll("*[data-only-when-grouped=\"" + id + "\"]").forEach(node => node.style.setProperty("display", "none")));
-    added.forEach(id => editorPane.querySelectorAll("*[data-only-when-grouped=\"" + id + "\"]").forEach(node => node.style.removeProperty("display")));
+    node.dataset.cmLink = "true";
+    node.dataset.cmMethod = method;
+    node.dataset.cmComponentId = componentId;
+
+    if (method === "basic") {
+        node.dataset.cmFieldName = args[0];
+    } else if (method === "vertGroup") {
+        // No args
+    } else if (method === "enabledState") {
+        node.dataset.cmSymbolId = args[0]; 
+    } else {
+        throw "Unknown method"
+    }
 }
 
-function changeWithComponentManager(node, componentId, fieldName) {
-    // Marks the given node as needing to be updated when a given component's field is updated.
-    // This is done by adding the arg data-component-manager-binding = "componentId_fieldName".
-    // Related to componentFIeldChanged.
-    node.dataset.componentManagerBinding = componentId + "_" + fieldName;  // This makes them easily identifiable for the event bindings to update values
-}
+function linkFromComponentManagerCalled(editorPane, method, ...args) {
+    // The counterpart for createLinkFromComponentManager - this is what changes the nodes after we recieve an event.
+    // Methods:
+    //     "basic": Args: componentId, fieldName, newValue.
+    //     "vertGroup": Args: oldGroup, newGroup.
+    //     "enabledState": Args: componentId, symbolId, newValue.
+    
+    const baseQuery = "*[data-cm-link=\"true\"][data-cm-method=\"" + method + "\"]";
 
-function componentFieldChanged(editorPane, fieldName, componentId, newValue) {
-    // Called when ComponentManager fires an event and we may need to update an option in the editor.
-    // This looks for anything with the arg data-component-manager-binding = "componentId_fieldName".
-    // Related to changeWithComponentManager.
-    editorPane.querySelectorAll("*[data-component-manager-binding=\"" + componentId + "_" + fieldName + "\"]").forEach(node => { node.value = newValue; });
-}
-
-function ComponentSymbolEnabledStateChanged(editorPane, componentId, symbolId, newValue) {
-    // Called when ComponentManager fires an ComponentSymbolEnabledStateChanged event. This updates the checked attribute of anything with the arg data-symbol-binding = "componentId_symbolId".
-    editorPane.querySelectorAll("*[data-symbol-binding=\"" + componentId + "_" + symbolId + "\"]").forEach(node => { node.checked = newValue; });
+    if (method === "basic") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-field-name=\"" + args[1] + "\"]").forEach(node => {
+            node.value = args[2];
+        });
+    } else if (method === "vertGroup") {
+        const oldS = (args[0] === null) ? new Set() : args[0];
+        const newS = (args[1] === null) ? new Set() : args[1];
+        oldS.difference(newS).forEach(id => editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + id + "\"]").forEach(node => node.style.setProperty("display", "none")));
+        newS.difference(oldS).forEach(id => editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + id + "\"]").forEach(node => node.style.removeProperty("display")));
+    } else if (method === "enabledState") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-symbol-id=\"" + args[1] + "\"]").forEach(node => {
+            node.checked = args[2];
+        });
+    } else {
+        throw "Unknown method";
+    }
 }
 
 function createFullTextComponentEditor(editorPane, componentId) {
@@ -164,10 +178,10 @@ function createVertGroupControls(container, componentId) {
     
     // Create buttons
     const removeButton = createButton(container, "Remove From VertGroup", () => ComponentManager.removeFromVertGroup(componentId));
-    const showButton = createButton(container, "Show All In VertGroup", () => SelectionManager.select(...ComponentManager.getVertGroup(componentId)));
-    // Add custom tags
-    removeButton.dataset.onlyWhenGrouped = componentId;
-    showButton.dataset.onlyWhenGrouped = componentId;
+    const showButton = createButton(container, "Select All In VertGroup", () => SelectionManager.select(...ComponentManager.getVertGroup(componentId)));
+    // Add links to component manager
+    createLinkFromComponentManager(removeButton, componentId, "vertGroup");
+    createLinkFromComponentManager(showButton, componentId, "vertGroup");
     // Hide if necessary
     if (!ComponentManager.isInVertGroup(componentId)) {
         removeButton.style.display = "none";
@@ -219,7 +233,7 @@ function createBasicTextOption(container, componentId, label, optionName, cleane
         input.value = castValue; // Make sure data is consistant
         ComponentManager["setComponent" + optionName](componentId, castValue);
     }
-    changeWithComponentManager(input, componentId, optionName);
+    createLinkFromComponentManager(input, componentId, "basic", optionName);
     
     // Cerate action option structure
     const inputId = getUniqueId();
@@ -248,7 +262,7 @@ function createBasicSelectOption(container, componentId, label, optionName, opti
     select.value = ComponentManager["getComponent" + optionName](componentId);
     // Event saving value
     select.onchange = () => ComponentManager["setComponent" + optionName](componentId, select.value);
-    changeWithComponentManager(select, componentId, optionName);
+    createLinkFromComponentManager(select, componentId, "basic", optionName);
     
     // Cerate action option structure
     const inputId = getUniqueId();
@@ -323,7 +337,7 @@ function createEnabledSymbolsOptions(container, componentId) {
         createOptionLabel(labelTd, symbolId, boxId);
         const box = createCheckboxOption(boxTd, ComponentManager.getComponentSymbolEnabledState(componentId, symbolId), () => ComponentManager.toggleComponentSymbolEnabledState(componentId, symbolId));
         box.id = boxId;
-        box.dataset.symbolBinding = componentId + "_" + symbolId;
+        createLinkFromComponentManager(box, componentId, "enabledState", symbolId);
         
         tr.appendChild(labelTd);
         tr.appendChild(boxTd);
