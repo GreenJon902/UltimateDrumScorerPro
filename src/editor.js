@@ -223,6 +223,7 @@ function createBasicTextOption(container, componentId, label, optionName, cleane
     
     // Cerate action option structure
     const inputId = getUniqueId();
+    input.id = inputId;
     const div = document.createElement("div");
     createOptionLabel(div, label, inputId);
     div.appendChild(input);
@@ -251,6 +252,7 @@ function createBasicSelectOption(container, componentId, label, optionName, opti
     
     // Cerate action option structure
     const inputId = getUniqueId();
+    select.id = inputId;
     const div = document.createElement("div");
     createOptionLabel(div, label, inputId);
     div.appendChild(select);
@@ -263,7 +265,7 @@ function createOptionLabel(container, labelText, id) {
     
     const label = document.createElement("label");
     label.innerText = labelText + ": ";
-    label.for = id;
+    label.htmlFor = id;
     container.appendChild(label);
     
     return label;
@@ -399,6 +401,7 @@ function createTextOption(container, label, cleaner, currentValue, callback) {
     
     // Cerate action option structure
     const inputId = getUniqueId();
+    input.id = inputId;
     const div = document.createElement("div");
     createOptionLabel(div, label, inputId);
     div.appendChild(input);
@@ -418,15 +421,14 @@ function createCheckboxOption(container, alreadyChecked, callback) {
     return input;
 }
 
+let _createdIds = 0;
 function getUniqueId() {
     // Gets a unique html id.
+    // No other ids should be of the form "editor-unique-<INT>", else this will break.
 
-    let n = 0;
-    while (true) {
-        const id = "editor-" + n;
-        if (document.getElementById(id) === null) return id;
-        n++;
-    }
+    const id = "editor-" + _createdIds;
+    _createdIds++;
+    return id;
 }
 
 
