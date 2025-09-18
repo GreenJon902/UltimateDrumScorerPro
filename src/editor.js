@@ -307,7 +307,7 @@ function createScoreEditorOptions(container, componentId) {
     // Creates the options for a score-component editor and adds it to the given container. This returns the created node.
     
     const div = document.createElement("div");
-    createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value));
+    createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value)); // TODO: Make link from componentManger to here when number of beats changes
     createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
     createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
     createTextOption(div, "Set All Subdivisions", POSITIVE_INT[0], "", value => setAllSubdivisionsBoxChanged(componentId, value));
