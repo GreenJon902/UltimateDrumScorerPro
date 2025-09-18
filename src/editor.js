@@ -1,5 +1,6 @@
 import {ComponentManager} from "./componentManager.js";
 import {SelectionManager} from "./selectionManager.js";
+import {Symbols} from "./symbols.js";
 
 const POSITIVE_REAL = [
     x => { 
@@ -51,6 +52,7 @@ export function attachEditor(editorPane) {
         ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => componentFieldChanged(editorPane, field, componentId, newValue));
     });
     ComponentManager.onComponentVertGroupChanged((before, after) => vertGroupChanged(editorPane, before, after));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => ComponentSymbolEnabledStateChanged(editorPane, componentId, symbolId, newValue));
 }
 
 function selectionStateChanged(editorPane, ..._) {
@@ -104,6 +106,11 @@ function componentFieldChanged(editorPane, fieldName, componentId, newValue) {
     // This looks for anything with the arg data-component-manager-binding = "componentId_fieldName".
     // Related to changeWithComponentManager.
     editorPane.querySelectorAll("*[data-component-manager-binding=\"" + componentId + "_" + fieldName + "\"]").forEach(node => { node.value = newValue; });
+}
+
+function ComponentSymbolEnabledStateChanged(editorPane, componentId, symbolId, newValue) {
+    // Called when ComponentManager fires an ComponentSymbolEnabledStateChanged event. This updates the checked attribute of anything with the arg data-symbol-binding = "componentId_symbolId".
+    editorPane.querySelectorAll("*[data-symbol-binding=\"" + componentId + "_" + symbolId + "\"]").forEach(node => { node.checked = newValue; });
 }
 
 function createFullTextComponentEditor(editorPane, componentId) {
@@ -252,7 +259,7 @@ function createBasicSelectOption(container, componentId, label, optionName, opti
 }
 
 function createOptionLabel(container, labelText, id) {
-    // Adds a label for the given id.
+    // Adds a label for the given id. Also returns it.
     
     const label = document.createElement("label");
     label.innerText = labelText + ": ";
@@ -260,6 +267,14 @@ function createOptionLabel(container, labelText, id) {
     container.appendChild(label);
     
     return label;
+}
+
+function createSpan(container, spanText) {
+    // Adds a span. Also returns it.
+    const span = document.createElement("span");
+    span.innerText = spanText;
+    container.appendChild(span);
+    return span;
 }
 
 function createFullScoreComponentEditor(editorPane, componentId) {
@@ -285,6 +300,38 @@ function createScoreEditorOptions(container, componentId) {
     createBreak(div);
     createDeleteDuplicate(div, componentId);
     createVertGroupControls(div, componentId);
+    createBreak(div);
+    createEnabledSymbolsOptions(div, componentId);
+    container.appendChild(div);
+    return div;
+}
+
+function createEnabledSymbolsOptions(container, componentId) {
+    // Creates the checkboxes to select which symbols should be enabled.
+    // The created node will be returned, as well as added to the container.
+    // Checkboxes will have data-symbol-binding="componentId_symbolId".
+    
+    // Create the table of checkboxes and labels
+    const table = document.createElement("table");
+    Symbols.getFullOrder().forEach(symbolId => {
+        const tr = document.createElement("tr");
+        const labelTd = document.createElement("td");
+        const boxTd = document.createElement("td");
+        const boxId = getUniqueId();
+        createOptionLabel(labelTd, symbolId, boxId);
+        const box = createCheckboxOption(boxTd, ComponentManager.getComponentSymbolEnabledState(componentId, symbolId), () => ComponentManager.toggleComponentSymbolEnabledState(componentId, symbolId));
+        box.id = boxId;
+        box.dataset.symbolBinding = componentId + "_" + symbolId;
+        
+        tr.appendChild(labelTd);
+        tr.appendChild(boxTd);
+        table.appendChild(tr);
+    });
+    
+    // Construct node heirarchy
+    const div = document.createElement("div");
+    createSpan(div, "Enabled Symbols:");
+    div.appendChild(table);
     container.appendChild(div);
     return div;
 }
@@ -357,6 +404,18 @@ function createTextOption(container, label, cleaner, currentValue, callback) {
     div.appendChild(input);
     container.appendChild(div);
     return div;
+}
+
+function createCheckboxOption(container, alreadyChecked, callback) {
+    // Creates a checkbox which calls the callback(boolean) when modified.
+    // AlreadyChecked is the default value.
+    
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.onclick = callback;
+    input.checked = alreadyChecked;
+    container.appendChild(input);
+    return input;
 }
 
 function getUniqueId() {
