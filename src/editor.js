@@ -381,6 +381,9 @@ function updateSequencerTableContents(table, componentId) {
         table.appendChild(tr);
     }   
     
+    // Add a dividing row
+    table.appendChild(document.createElement("tr"));
+    
     // Add rows for symbols
     const symbolIds = Symbols.getFullOrder().filter(id => ComponentManager.getComponentSymbolEnabledState(componentId, id));  // Use full order so we add columns in the correct order
     for (let i=0; i<symbolIds.length; i++) {
@@ -396,7 +399,8 @@ function updateSequencerTableContents(table, componentId) {
         
         // Create toggles for sequencer
         for (let bi=0; bi<beatCount; bi++) {
-            for (let si=0; si<ComponentManager.getComponentBeatSubdivisionCount(componentId, bi); si++) {
+            const subdivisionCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, bi);
+            for (let si=0; si<subdivisionCount; si++) {
                 // Create actual toggle
                 const input = document.createElement("input");
                 input.type = "checkbox";
@@ -409,6 +413,7 @@ function updateSequencerTableContents(table, componentId) {
                 
                 // Create containing td node
                 const td = document.createElement("td");
+                td.style.width = 4 / subdivisionCount + "ch";  // So sizes are consistant with duration. CSS rules then have a minimum width
                 td.appendChild(input);
                 tr.appendChild(td);
             }
