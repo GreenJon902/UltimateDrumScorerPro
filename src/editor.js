@@ -53,6 +53,13 @@ export function attachEditor(editorPane) {
     });
     ComponentManager.onComponentVertGroupChanged((before, after) => linkFromComponentManagerCalled(editorPane, "vertGroup", before, after));
     ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentSymbolToggled((componentId, bi, si, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "toggle", componentId, bi, si, symbolId, newValue));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentBeatsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentBeatsRemoved((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentSubdivisionsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentSubdivisionsRemoved((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
 }
 
 function selectionStateChanged(editorPane, ..._) {
@@ -84,6 +91,8 @@ function createLinkFromComponentManager(node, componentId, method, ...args) {
     //     "basic": Updates the node's value field with the newValue from the event. Args: FieldName.
     //     "enabledState": Updates the node's checked field depending if this node is in a vertGroup.  Args: SymbolId.
     //     "vertGroup": Adds/removes "display: none;" from the node's style depending whether the symbol is enabled or not. Args:.
+    //     "toggle": Updates the node's checked field depending whether that toggle is selected. Args: beatIndex, subdivisionIndex, symbolId
+    //     "redrawSequencer": Just redraws the whole sequencer. Args:.
     
     node.dataset.cmLink = "true";
     node.dataset.cmMethod = method;
@@ -95,6 +104,12 @@ function createLinkFromComponentManager(node, componentId, method, ...args) {
         // No args
     } else if (method === "enabledState") {
         node.dataset.cmSymbolId = args[0]; 
+    } else if (method === "toggle") {
+        node.dataset.cmBeatIndex = args[0];
+        node.dataset.cmSubdivisionIndex = args[1];
+        node.dataset.cmSymbolId = args[2];
+    } else if (method === "redrawSequencer") {
+        // No args
     } else {
         throw "Unknown method"
     }
@@ -106,6 +121,8 @@ function linkFromComponentManagerCalled(editorPane, method, ...args) {
     //     "basic": Args: componentId, fieldName, newValue.
     //     "vertGroup": Args: oldGroup, newGroup.
     //     "enabledState": Args: componentId, symbolId, newValue.
+    //     "toggle": Args: componentId, beatIndex, subdivisionIndex, beatI, newValue.
+    //     "redrawSequencer": Args: componentId.
     
     const baseQuery = "*[data-cm-link=\"true\"][data-cm-method=\"" + method + "\"]";
 
@@ -122,6 +139,12 @@ function linkFromComponentManagerCalled(editorPane, method, ...args) {
         editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-symbol-id=\"" + args[1] + "\"]").forEach(node => {
             node.checked = args[2];
         });
+    } else if (method === "toggle") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-beat-index=\"" + args[1] + "\"][data-cm-subdivision-index=\"" + args[2] + "\"][data-cm-symbol-id=\"" + args[3] + "\"]").forEach(node => {
+            node.checked = args[4];
+        })
+    } else if (method === "redrawSequencer") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"]").forEach(node => updateSequencerTableContents(node, args[0]));
     } else {
         throw "Unknown method";
     }
@@ -295,13 +318,115 @@ function createSpan(container, spanText) {
 
 function createFullScoreComponentEditor(editorPane, componentId) {
     // Creates the options for the editor for the given score component.
-    // This adds a new child to the given editorPane, and also returns the added child.
+    // This adds the widgets to the editorPane, and assumes it is already free of children.
     
-    const div = document.createElement("div");
-    createScoreEditorOptions(div, componentId);
-    editorPane.appendChild(div);
-    return div;
+    createScoreEditorOptions(editorPane, componentId);
+    createScoreEditorSequencer(editorPane, componentId);
 }
+
+function createScoreEditorSequencer(container, componentId) {
+    // Creates the sequencer for a score-component editor and adds it to the given container. This returns the created node.
+    
+    const table = document.createElement("table");
+    updateSequencerTableContents(table, componentId);
+    container.appendChild(table);
+    return table;
+}
+
+function updateSequencerTableContents(table, componentId) {
+    // Recreates the DOM for the given table to be correct for the given componentId.
+
+    const beatCount = ComponentManager.getComponentBeatCount(componentId);
+
+    // Clear all children
+    table.innerHTML = "";
+    
+    // Add row for subdivisions
+    {
+        const tr = document.createElement("tr");
+        tr.appendChild(document.createElement("td"));  // We need an empty top left corner (over symbol names)
+
+        for (let i=0; i<beatCount; i++) {  // i is beatI
+            // Create subdivision text box
+            const input = document.createElement("input");
+            input.value = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+            input.oninput = () => {
+                // Clean input whenever typed
+                input.value = POSITIVE_INT[0](input.value);
+            }
+            const bi = i;  // So doesn't change in lambda.
+            input.onchange = () => {
+                // Send value to componentManger
+                let cast = POSITIVE_INT[1](input.value);
+                if (cast === undefined) {
+                    cast = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+                }
+                input.value = cast;
+                setComponentBeatSubdivisionCount(componentId, bi, cast);
+            }
+            // We don't need to use createLinkFromComponentManager here, as we will just redraw the whole sequencer from scratch if the structure changes
+            
+            // Create the containing td node
+            const td = document.createElement("td");
+            td.colSpan = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+            td.appendChild(input);
+            tr.appendChild(td);
+            
+            // Create dividing column
+            if (i === beatCount - 1) continue // We don't need a divider after the last column
+            const divider = document.createElement("td");
+            tr.appendChild(divider);
+        }
+        
+        table.appendChild(tr);
+    }   
+    
+    // Add rows for symbols
+    const symbolIds = Symbols.getFullOrder().filter(id => ComponentManager.getComponentSymbolEnabledState(componentId, id));  // Use full order so we add columns in the correct order
+    for (let i=0; i<symbolIds.length; i++) {
+        const tr = document.createElement("tr");
+        const symbolId = symbolIds[i];
+
+        // Create span with symbol name
+        {
+            const td = document.createElement("td");
+            const span = createSpan(td, symbolId); 
+            tr.appendChild(td);
+        }
+        
+        // Create toggles for sequencer
+        for (let bi=0; bi<beatCount; bi++) {
+            for (let si=0; si<ComponentManager.getComponentBeatSubdivisionCount(componentId, bi); si++) {
+                // Create actual toggle
+                const input = document.createElement("input");
+                input.type = "checkbox";
+                input.checked = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);
+                const const_bi = bi;  // So stay same in lambda function
+                const const_si = si;
+                const const_symbolId = symbolId;
+                input.onclick = () => ComponentManager.toggleComponentSymbol(componentId, const_bi, const_si, const_symbolId);
+                createLinkFromComponentManager(input, componentId, "toggle", bi, si, symbolId);  // We need this link as we don't redraw the whole sequencer when a toggle flips
+                
+                // Create containing td node
+                const td = document.createElement("td");
+                td.appendChild(input);
+                tr.appendChild(td);
+            }
+            
+            // Create dividing column
+            if (bi === beatCount - 1) continue // We don't need a divider after the last column
+            const divider = document.createElement("td");
+            tr.appendChild(divider);
+        }
+
+        
+        table.appendChild(tr);
+    }
+    
+    // When table structure changes just redraw whole table
+    createLinkFromComponentManager(table, componentId, "redrawSequencer");
+}
+
 
 function createScoreEditorOptions(container, componentId) {
     // Creates the options for a score-component editor and adds it to the given container. This returns the created node.

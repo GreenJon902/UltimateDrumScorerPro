@@ -44,6 +44,8 @@
         ComponentManager.loadEmptyProject();
         const id = ComponentManager.createEmptyComponent("score-component");
         SelectionManager.select(id);
+        ComponentManager.toggleComponentSymbolEnabledState("component-0", "snare");
+        ComponentManager.toggleComponentSymbolEnabledState("component-0", "kick");
         
         attachEditor(document.getElementById("editor-pane"));
         
