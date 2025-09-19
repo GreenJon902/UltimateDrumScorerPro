@@ -141,7 +141,7 @@ function linkFromComponentManagerCalled(editorPane, method, ...args) {
         });
     } else if (method === "toggle") {
         editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-beat-index=\"" + args[1] + "\"][data-cm-subdivision-index=\"" + args[2] + "\"][data-cm-symbol-id=\"" + args[3] + "\"]").forEach(node => {
-            node.checked = args[4];
+            node.dataset.toggleEnabled = args[4];
         })
     } else if (method === "redrawSequencer") {
         editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"]").forEach(node => updateSequencerTableContents(node, args[0]));
@@ -241,6 +241,7 @@ function createBasicTextOption(container, componentId, label, optionName, cleane
     
     // Create the input
     const input = document.createElement("input");
+    input.size = 2;
     input.value = ComponentManager["getComponent" + optionName](componentId);
     // Event for when user types or removes a character
     input.oninput = () => {
@@ -401,20 +402,12 @@ function updateSequencerTableContents(table, componentId) {
         for (let bi=0; bi<beatCount; bi++) {
             const subdivisionCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, bi);
             for (let si=0; si<subdivisionCount; si++) {
-                // Create actual toggle
-                const input = document.createElement("input");
-                input.type = "checkbox";
-                input.checked = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);
-                const const_bi = bi;  // So stay same in lambda function
-                const const_si = si;
-                const const_symbolId = symbolId;
-                input.onclick = () => ComponentManager.toggleComponentSymbol(componentId, const_bi, const_si, const_symbolId);
-                createLinkFromComponentManager(input, componentId, "toggle", bi, si, symbolId);  // We need this link as we don't redraw the whole sequencer when a toggle flips
-                
-                // Create containing td node
+                // Create a td. We can attach events to this, and use data tags to allow css to style it
                 const td = document.createElement("td");
+                td.dataset.toggleEnabled = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);
+                createLinkFromComponentManager(td, componentId, "toggle", bi, si, symbolId);  // We need this so the tds actually change. We don't redraw everything when a toggle changes
+                addSequencerToggleEvents(table, td, componentId, bi, si, symbolId);
                 td.style.width = 4 / subdivisionCount + "ch";  // So sizes are consistant with duration. CSS rules then have a minimum width
-                td.appendChild(input);
                 tr.appendChild(td);
             }
             
@@ -430,6 +423,36 @@ function updateSequencerTableContents(table, componentId) {
     
     // When table structure changes just redraw whole table
     createLinkFromComponentManager(table, componentId, "redrawSequencer");
+}
+
+function addSequencerToggleEvents(table, td, componentId, bi, si, symbolId) {
+    // Adds the events to the given td for the given component where the beat and subdivision indexes are as given, for the given symbolId.
+    // The table is used for storing metadata on the click.
+    
+    // We want to set up events that allow you to drag the mouse over tds to turn them on/off
+    // However one drag should only ever turn on or off, not both
+
+    // Toggle first, and figure out if we're toggling on or off
+    td.onmousedown = (e) => {
+        if (e.buttons !== 1) return;  // Only allow left clicks
+        ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
+        table.dataset.sequencerCurrentDragNewValue = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);  // Record this so the rest of the drag only goes to what the first one went to
+    }
+    // If dragging, update any toggles that are in the incorret state
+    td.onmouseenter = (e) => {
+        if (e.buttons !== 1) return;  // Only allow left clicks
+        const cndv = table.dataset.sequencerCurrentDragNewValue;
+        if (cndv !== undefined && ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId) !== (cndv === "true")) {
+            ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
+        }
+    }
+    // Remove the currentDragNewValue so if the user starts a new drag - from outside the sequencer -, it won't be recorded
+    if (!table.hasAttribute("data-drag-mouseup-event-added")) {  // Only add event if this is the first time
+        table.setAttribute("data-drag-mouseup-event-added", "");
+        document.addEventListener("mouseup", () => {
+            table.removeAttribute("data-sequencer-current-drag-new-value");
+        });
+    }
 }
 
 
@@ -533,6 +556,7 @@ function createTextOption(container, label, cleaner, currentValue, callback) {
     // Create the input
     const input = document.createElement("input");
     input.value = currentValue;
+    input.size = 2;
     // Event for when user types or removes a character
     input.oninput = () => {
         const cleanedValue = cleaner(input.value);
