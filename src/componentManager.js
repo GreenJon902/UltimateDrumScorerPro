@@ -178,6 +178,7 @@ export class ComponentManager {
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
         // TODO: Validate symbolId is valid
+        if (!this.getComponentSymbolEnabledState(componentId, symbolId)) throw "Tried to use toggle on disabled symbolId";
         
         // Handle toggle
         toggleArrayItem(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI], symbolId);  // Updates array in-place
@@ -194,6 +195,7 @@ export class ComponentManager {
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
         // TODO: Validate symbolId is valid
+        if (!this.getComponentSymbolEnabledState(componentId, symbolId)) throw "Tried to use toggle on disabled symbolId";
         
         return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(symbolId);
     }
@@ -218,6 +220,18 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         // TODO: Validate symbol id
         
+        // Silently drop any removed symbols from the score if we're removing a symbolId
+        if (this.getComponentSymbolEnabledState(componentId, symbolId)) {
+            for (let bi=0; bi<this.getComponentBeatCount(componentId); bi++) {
+                for (let si=0; si<this.getComponentBeatSubdivisionCount(componentId, bi); si++) {
+                    if (this.getComponentSymbolState(componentId, bi, si, symbolId)) {
+                        const array = CURRENT_PROJECT["components"][componentId]["score-content"][bi][si];  // Do action on array so no events are dispatched
+                        array.splice(array.indexOf(symbolId), 1);
+                    }
+                }
+            }
+        }
+
         // Handle toggle
         toggleArrayItem(CURRENT_PROJECT["components"][componentId]["enabled-symbols"], symbolId);  // Updates array in place
         this.dispatchComponentSymbolEnabledStateChanged(componentId, symbolId, this.getComponentSymbolEnabledState(componentId, symbolId));
