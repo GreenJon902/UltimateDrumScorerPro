@@ -130,6 +130,11 @@ export class ComponentManager {
         return CURRENT_PROJECT["components"][componentId]["component-type"];
     }
     
+    static getComponentIds() {
+        // Returns a frozen set of the IDs of all components.
+        return Object.freeze(new Set(Object.keys(CURRENT_PROJECT["components"])))
+    }
+    
     static removeComponent(componentId) {
         // Removes the given component.
         // If this component does not exist then an error is thrown.

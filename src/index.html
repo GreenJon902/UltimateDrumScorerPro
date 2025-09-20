@@ -35,6 +35,7 @@
         import {ComponentManager} from "./componentManager.js";
         import {SelectionManager} from "./selectionManager.js";
         import {attachEditor} from "./editor.js";
+        import {attachRendered} from "./rendered.js";
         
         // DEBUG STUFF -------------
         window.CM = ComponentManager;
@@ -42,12 +43,14 @@
         // -------------------------
         
         ComponentManager.loadEmptyProject();
-        const id = ComponentManager.createEmptyComponent("score-component");
+        //const id = ComponentManager.createEmptyComponent("score-component");
+        const id = ComponentManager.createEmptyComponent("text-component");
         SelectionManager.select(id);
-        ComponentManager.toggleComponentSymbolEnabledState("component-0", "snare");
-        ComponentManager.toggleComponentSymbolEnabledState("component-0", "kick");
+        //ComponentManager.toggleComponentSymbolEnabledState("component-0", "snare");
+        //ComponentManager.toggleComponentSymbolEnabledState("component-0", "kick");
         
         attachEditor(document.getElementById("editor-pane"));
+        attachRendered(document.getElementById("component-container"));
         
         
         

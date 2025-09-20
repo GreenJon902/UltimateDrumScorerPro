@@ -43,6 +43,7 @@ ComponentManager - Stores persistant state of entities.
 		- RemoveSubdivisions(componentId, beatI, ...subdivisionIndexes)
 		- GetComponentBeatCount(componentId) -> int
 		- GetComponentBeatSubdivisionCount(componentId, beatI) -> int
+        - GetComponentIds() -> Object.freeze(Set<component-id>)
 SelectionManager - Stores temporary state of selection.
 	- Events:
 		- SelectionStateChanged {componentId, selectionState}
