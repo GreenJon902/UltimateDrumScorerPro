@@ -1,4 +1,5 @@
 import {ComponentManager} from "./componentManager.js";
+import {compileScoreComponent, calculateScoreComponentSpacing} from "./scoreComponentSvgRenderer.js";
 
 export function attachRendered(componentContainer) {
     // Sets up bindings for the given componentContainer to connect it ot he various managers.
@@ -89,8 +90,8 @@ function createInitialScoreComponent(componentContainer, componentId) {
     // Creates the initial SVG for the given score component.
     // This requires bindings (via updateScoreComponent) to be called whenever component manager changes.
     const svg = createBaseSvg(componentContainer, componentId);
-    const instructions = compile(componentId);
-    const spacing = calculateSpacing(instructions, )
+    const instructions = compileScoreComponent(componentId);
+    const spacing = calculateScoreComponentSpacing(instructions, instructions, 0);
     
 
     componentContainer.appendChild(svg);

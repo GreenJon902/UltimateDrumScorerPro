@@ -205,7 +205,7 @@ export class ComponentManager {
         return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(symbolId);
     }
     
-    static getComponentSubdivisonSymbols(componentId, beatI, subdivisionI) {
+    static getComponentSubdivisionSymbols(componentId, beatI, subdivisionI) {
         // Returns an immutable set of the symbolIds which are enabled on the given subdivison of the given beat of this given component.
         
         // Validate args

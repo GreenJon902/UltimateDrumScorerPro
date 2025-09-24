@@ -1,25 +1,21 @@
-import {getScoreComponentBeatSubdivisionCount, getScoreComponentRhythmLengthHint, getScoreComponentBeatSubdivisionDrums, getScoreComponentTimeSignatureNumerator, getComponentX, getComponentY, getTextComponentFontSize, getTextComponentTextContent, setComponentX, setComponentY, getScoreComponentBeatSubdivisionDecorations, getScoreComponentLeftDecoration, getScoreComponentRightDecoration, getLinkedToScoreComponent, isScoreComponentLinked} from "./files.js";
-import {setEditComponent, setEditComponents} from "./editor.js";
+import {ComponentManager} from "./componentManager.js";
 
 class RenderInstruction {
     // Render instructions are produced by preRenderScoreComponent and are used to tell renderScoreComponent what to draw.
     //
     // There are a couple types of render-instructions (and what they store):
     //     GROUP: 
-    //         - drums
-    //         - decorations
+    //         - symbols
     //         - full-beams
     //         - broken-beams
     //         - dots
     //         - length
     //     GROUP-END:
-    //         - drums
-    //         - decorations
+    //         - symbols
     //         - dots
     //         - length
     //     FLAG:
-    //         - drums
-    //         - decorations
+    //         - symbols
     //         - flags
     //         - dots
     //         - length
@@ -36,8 +32,7 @@ class RenderInstruction {
     //     SIDE-DECORATION:
     //         - side-decoration
     // 
-    // drums: A string array of the drumIDs to draw.
-    // decorations: A string array of the decorationIDs to draw.
+    // symbols: A string array of the symbolIDs to draw.
     // full-beams: The number (non-zero and positive) of full beams to draw between this instruction and the next instruction (with a stem, full beams go over rests).
     // broken-beams: The same full-beams except for broken-beams. This can be signed, where negative means to draw on the left, and positive to the right. It can also be zero - no broken-beams. If dots != 0 then this cannot be negative.
     // dots: The number (zero or positive) of dots that should be drawn after the stem. If broken-beams is negative (broken-beams on the left) then this must be 0 (no dots).
@@ -64,7 +59,6 @@ class RenderInstruction {
     static get REST() {return "REST";}
     static get CONTRACT_START() {return "CONTRACT_START";}
     static get CONTRACT_END() {return "CONTRACT_END";}
-    static get DECORATION() {return "DECORATION";}
     static get SIDE_DECORATION() {return "SIDE-DECORATION";}
 
     constructor(type, ...args) {
@@ -74,22 +68,19 @@ class RenderInstruction {
         this.type = type;
         if (type === RenderInstruction.GROUP) {
             this.drums = args[0];
-            this.decorations = args[1];
-            this.full_beams = args[2];
-            this.broken_beams = args[3];
-            this.dots = args[4];
-            this.length = args[5];
-        } else if (type === RenderInstruction.GROUP_END) {
-            this.drums = args[0];
-            this.decorations = args[1];
-            this.dots = args[2];
-            this.length = args[3];
-        } else if (type === RenderInstruction.FLAG) {
-            this.drums = args[0];
-            this.decorations = args[1];
-            this.flags = args[2];
+            this.full_beams = args[1];
+            this.broken_beams = args[2];
             this.dots = args[3];
             this.length = args[4];
+        } else if (type === RenderInstruction.GROUP_END) {
+            this.drums = args[0];
+            this.dots = args[1];
+            this.length = args[2];
+        } else if (type === RenderInstruction.FLAG) {
+            this.drums = args[0];
+            this.flags = args[1];
+            this.dots = args[2];
+            this.length = args[3];
         } else if (type === RenderInstruction.REST) {
             this.ticks = args[0];
             this.dots = args[1];
@@ -161,29 +152,29 @@ function gcdOfArray(array) {
     return current;
 }
 
-function preRenderScoreComponent(componentID) {
+export function compileScoreComponent(componentID) {
     // Figures out how to actaully draw the score-component.
     // This is like the overall idea, it tells us what we need to draw, not how. Specifically which drums, decorations on each subdivision, and what bars / dots / rests / flags to draw.
 
-    let numerator = getScoreComponentTimeSignatureNumerator(componentID);
+    let numerator = ComponentManager.getComponentBeatCount(componentID);
     
     
     const renderInstructions = [];
     
     // Add the left decoration
-    const leftDecorationID = getScoreComponentLeftDecoration(componentID);
+    const leftDecorationID = ComponentManager.getComponentLeftDecoration(componentID);
     if (leftDecorationID !== "") {
         renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION,  leftDecorationID));
     }
 
     // We do each beat separately
     for (let bi=0; bi < numerator; bi++) {  // BI: Beat Index
-        const beatSubdivisions = getScoreComponentBeatSubdivisionCount(componentID, bi);
+        const beatSubdivisions = ComponentManager.getComponentBeatSubdivisionCount(componentID, bi);
 
         // First, calculate the non-empty subdivision indexes:
         let nonEmptySubdivisionIndexes = [];  // Holds the indexes of non-empty subdivisions in this beat, relative to the start of the beat
         for (let si=0; si < beatSubdivisions; si ++) {  // SI: subdivisionIndex
-            if (getScoreComponentBeatSubdivisionDrums(componentID, bi, si).length != 0) {
+            if (ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si).length != 0) {
                 nonEmptySubdivisionIndexes.push(si);
             }
         }
@@ -240,7 +231,7 @@ function preRenderScoreComponent(componentID) {
         let si = 0;  // SI: subdivisionIndex. This should correspond to the start of the ith (see below) sGroup
         let nonEmptySGroups = [];  // The indexes of sGroups that aren't empty
         for (let i=0; i<sGroups.length; i++) {  // i: Index of curreng sGroup
-            if (getScoreComponentBeatSubdivisionDrums(componentID, bi, si * subdivisionMultiplier).length != 0) { // Is non-empty?
+            if (ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si * subdivisionMultiplier).length != 0) { // Is non-empty?
                 nonEmptySGroups.push(i);
             }
             si += sGroups[i];
@@ -260,8 +251,7 @@ function preRenderScoreComponent(componentID) {
         for (let i=0; i<sGroups.length; i++) {  // i: Index of current sGroup
             const rhythmInfo = calculateRhythmInformation(sGroups[i], relativeSubdivisions);
             if (nonEmptySGroups.includes(i)) {
-                const drums = getScoreComponentBeatSubdivisionDrums(componentID, bi, si * subdivisionMultiplier);
-                const decorations = getScoreComponentBeatSubdivisionDecorations(componentID, bi, si * subdivisionMultiplier);  
+                const drums = ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si * subdivisionMultiplier);
                 
                 if (nonEmptySGroups.length == 1) {
                     // i is the only non-empty sGroup, so draw a FLAG
@@ -278,15 +268,15 @@ function preRenderScoreComponent(componentID) {
                     
                     // Remember, beams go from c to n!
                     if (c == n) {  // Both want the same number of beams. So draw that.
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c < n && nn >= n) {  // Next wants more beams than current will give it, but nextnext is able to supply what it needs. So we only need to draw current (full) beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, c, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c < n && nn < n) {  // Next wants more beams than current will give it, and nextnext also won't supply enough. So draw c full (beams) and n-c half-beams on the right
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, c, n - c, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions)); 
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, c, n - c, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions)); 
                     } else if (c > n && l >= c) {  // If current wants more beams than next will supply, but last can supply enough. So draw n (full) beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, n, 0, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                     } else if (c > n && l < c) {  // If current wants more beams than next will supply, and last can't supply enough beams
-                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, decorations, n, -(c - n), rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));  // Negative broken-beams means draw on left
+                        renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP, drums, n, -(c - n), rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));  // Negative broken-beams means draw on left
                     } else {
                         throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
                     }
@@ -307,7 +297,7 @@ function preRenderScoreComponent(componentID) {
 
                 } else {
                     // There are multiple non-empty sGroups, and this is the last, so draw a GROUP_END
-                    renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, drums, decorations, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
+                    renderInstructions.push(new RenderInstruction(RenderInstruction.GROUP_END, drums, rhythmInfo.dots, rhythmInfo.length / relativeSubdivisions));
                 }
 
 
@@ -327,7 +317,7 @@ function preRenderScoreComponent(componentID) {
     }
 
     // Add right decoration
-    const rightDecorationID = getScoreComponentRightDecoration(componentID);
+    const rightDecorationID = ComponentManager.getComponentRightDecoration(componentID);
     if (rightDecorationID !== "") {
         renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION, rightDecorationID));
     }
@@ -337,22 +327,6 @@ function preRenderScoreComponent(componentID) {
     console.log("5. RI:", renderInstructions)
 
     return renderInstructions;
-}
-
-export function getSvgNodes(type) {
-    // Loads the SVG information for each of the drums/decorations, returns an array ordered in height to draw at, and a map from ID to svg node.
-    // The type is the ID of the svg in the html document that contains an element with id="defs" which contains the items we want.
-    // Return is {array, map}.
-
-    // Get SVG
-    let SVG = Array.from(document.getElementById(type).getElementById("defs").children);
-    // Make a map from drumID to node too
-    const SVGMap = {};
-    for (let i=0; i<SVG.length; i++) {
-        SVGMap[SVG[i].id] = SVG[i];
-    }
-    // Return
-    return {array: SVG, map: SVGMap};
 }
 
 function getTextSize(string, fontSize) {
@@ -380,7 +354,7 @@ function sum(...values) {
     return total;
 }
 
-function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
+export function calculateScoreComponentSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     // Returns some information on how to draw the given instructions.
     // The linkedInstructions is used to calculate vertical sizing information, and is from "linked-score-components". This array should contain all the items in the instructions as well as the extra instructions.
     // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
@@ -391,15 +365,13 @@ function calculateSpacing(instructions, linkedInstructions, rhythmLengthHint) {
     //     restCenterYs: [int] - The y line where rests should be centered on. The index is the number of the rest as they come in instructions.
     //     contractCenterYs: [int] - The y line where contracts should be centered on. The index is the number of the contract (one for each pair) as they come in instructions.
     //     stemStartYs: [int] - The y level where stems (and hence beams and flags and dots) should be start being drawn on (so the top). The index is the number of the stem as they come in instructions.
-    //     decorationPoss: [{x: int, y: int}] - The (x,y) where decorations should be start being drawn. The x-coord is the center line to draw them on, the y-coord is the center of the top decoration. The index is the number of the stems with decorations as they come in instructions.
     //     width: int, height: int  - The width and height of the SVG to be drawn.
     //     sideDecorationCenterY: int - The y position that side-decorations should be centered on.
     //  }
     //  The rhythmLengthMultiplier is a hint for how wide to draw each instruction (excluding contracts) per unit instruction.length.
 
     let {array: DRUMS, map: DRUMS_MAP} = getSvgNodes("drums");
-    let {array: DECORATIONS, map: DECORATIONS_MAP} = getSvgNodes("decorations");
-    let {array: SIDE_DECORATIONS, map: SIDE_DECORATIONS_MAP} = getSvgNodes("side-decorations");
+    //let {array: SIDE_DECORATIONS, map: SIDE_DECORATIONS_MAP} = getSvgNodes("side-decorations");
 
     
     // Get a list of the DRUMS that are. Order is preserved.
@@ -971,4 +943,5 @@ function draw(instructions, spacing) {
     // Return it
     return svg;
 }
+
 
