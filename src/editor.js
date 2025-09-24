@@ -1,577 +1,602 @@
-import {getScoreComponentEnabledDrums, setScoreComponentTimeSignatureNumerator, getScoreComponentEnabledDecoration, setScoreComponentEnabledDecoration, linkScoreComponents, setScoreComponentTimeSignatureDenominator, getScoreComponentTimeSignatureDenominator, getScoreComponentEnabledDrum, setScoreComponentEnabledDrum, getScoreComponentTimeSignatureNumerator, getScoreComponentBeatSubdivisionCount, setScoreComponentBeatSubdivisionCount, getScoreComponentBeatSubdivisionDrum, setScoreComponentBeatSubdivisionDrum, getTextComponentFontSize, setTextComponentFontSize, setTextComponentTextContent, getTextComponentTextContent, getScoreComponentRhythmLengthHint, setScoreComponentRhythmLengthHint, getScoreComponentEnabledDecorations, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, getScoreComponentBeatSubdivisionDecorations, getScoreComponentBeatSubdivisionDrums, getScoreComponentLeftDecoration, setScoreComponentLeftDecoration, getScoreComponentRightDecoration, setScoreComponentRightDecoration, removeComponent, duplicateScoreComponent, setComponentX, getComponentX, setComponentY, getComponentY, isScoreComponentLinked, removeScoreComponentFromLink, getLinkedToScoreComponent} from "./files.js";
-import {addCurrentSelected, getCurrentSelected, getSvgNodes, renderComponent, setCurrentSelected, unRenderComponent} from "./rendered.js";
+import {ComponentManager} from "./componentManager.js";
+import {SelectionManager} from "./selectionManager.js";
+import {Symbols} from "./symbols.js";
 
-function clearEditorPane() {
-    // Removes all nodes from the "editor-pane".
-    let editor = document.getElementById("editor-pane");
-    while (editor.children.length > 0) {
-        editor.removeChild(editor.children[0]);
+const POSITIVE_REAL = [
+    x => { 
+        // CLEANER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return x;
+    },
+    x => {
+        // CASTER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return (x > 0) ? parseFloat(x) : undefined;  // Check positive and not empty
     }
-}
-
-export function setEditComponent(componentType, componentID, doSetCurrentSelected=true) {
-    // Set the component editing pane to be editing the given component.
-    // This will call rendered.js/setCurrentSelected if doSetCurrentSelected is true, and expects the component to have been rendered.
-    // If both args are "" then the editor will be cleared, setCurrentSelected called (if doSetCurrentSelected is true) with ("", ""),  and then the function will return.
-    
-    // First clear the old data
-    clearEditorPane();
-    
-    // Tell the renderer to display the given component as selected (if needed)
-    if (doSetCurrentSelected) setCurrentSelected(componentType, componentID);
-    
-    // Special case: if componentType, componentID == "" then just exit
-    if (componentType === "" && componentID === "") {
-        return;
+];
+const NON_NEG_REAL = [
+    x => { 
+        // CLEANER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return x;
+    },
+    x => {
+        // CASTER
+        x = x.replace(/[^0-9\.]/g, "");  // Remove non-number characers 
+        return (x >= 0 && x !== "") ? parseFloat(x) : undefined;  // Check non-neg and not empty
     }
-
-    // Render new editor
-    const editFunc = {
-        "score-component": editScoreComponent,
-        "text-component": editTextComponent
-    }[componentType];
-
-    if (editFunc === undefined) throw "Not Implemented";
-    editFunc(componentID);
-}
-
-export function setEditComponents(components) {
-    // Set up the editing pane for the given componentIDs, or clear it if there is an invalid combination.
-    // components should be of the form [{componentType, componentID}].
-    
-    clearEditorPane();
-    
-    const div = document.createElement("div");
-    
-    // Is it only score-components selected?
-    if (components.filter(c => c.componentType === "score-component").length == components.length) {  // Check if all given components are score-components
-    
-        // Add a link button
-        div.appendChild(createButton(
-            "Link Vertically",
-            () => {
-                linkScoreComponents(components.map(c => c.componentID));  // This may affect any other score components that used to be linked to a current selected, so re-render all next
-                renderComponent("score-component", components[0].componentID);  // This will trigger the re-rendering of them all
-            }
-        ));
+];
+const POSITIVE_INT = [
+    x => { 
+        // CLEANER
+        x = x.replace(/[^0-9]/g, "");  // Remove non-number characers 
+        return x;
+    },
+    x => {
+        // CASTER
+        x = x.replace(/[^0-9]/g, "");  // Remove non-number characers 
+        return (x > 0) ? parseInt(x) : undefined;  // Check positive and not empty
     }
+];
 
-    // Add a delete button
-    div.appendChild(createButton(
-        "Delete",
-        () => {
-            setEditComponent("", "");
-            components.forEach(c => {
-                unRenderComponent(c.componentType, c.componentID);
-                removeComponent(c.componentType, c.componentID);  // Has to be after unRender as per doc
-            })
-        }
-    ));
+export function attachEditor(editorPane) {
+    // Sets up bindings for the given editorPane to connect it to the various managers.
+    // The editorPane should a div and only be used for this.
     
-
-    // Add div to doc
-    document.getElementById("editor-pane").appendChild(div);
-}
-
-function editTextComponent(componentID) {
-    // Set up the editor to be editing the given component.
-    let editor = document.getElementById("editor-pane");
+    selectionStateChanged(editorPane);  // Triggers a full redraw, regardless of current state
     
-    // Text-component options
-    const div = document.createElement("div");
-    createNumberBoxesWithText(div, "text-component", componentID, {text: "Font Size:&nbsp", getter: getTextComponentFontSize, setter: setTextComponentFontSize, min: 1, size: 1});
-    editor.appendChild(div);
+    SelectionManager.onSelectionStateChanged(() => selectionStateChanged(editorPane));
     
-    // Duplicate / delete controls
-    div.appendChild(document.createElement("br"))
-    createComponentDelDupButtons(div, "text-component", componentID);
-
-
-    // Actual text content
-    const text = document.createElement("textarea");
-    text.classList.add("text-component-text-content");
-    text.oninput = function () {
-        setTextComponentTextContent(componentID, text.value);
-        renderComponent("text-component", componentID);
-    }
-    text.value = getTextComponentTextContent(componentID);
-    editor.appendChild(text);
-}
-    
-function editScoreComponent(componentID) {
-    // Set up the editor to be editing the given component.
-    let editor = document.getElementById("editor-pane");
-
-    // Score-component options
-    const div = document.createElement("div");
-    createNumberBoxesWithText(div, "score-component", componentID, 
-        {text: "Time Signature:&nbsp;", getter: getScoreComponentTimeSignatureNumerator, setter: setScoreComponentTimeSignatureNumerator, min: 1, size: 2}, 
-        {text: "&nbsp;/&nbsp;", getter: getScoreComponentTimeSignatureDenominator, setter: setScoreComponentTimeSignatureDenominator, min: 1, size: 2}
-    );
-    createNumberBoxesWithText(div, "score-component", componentID, 
-        {text: "Rhythm Length Hint:&nbsp;", getter: getScoreComponentRhythmLengthHint, setter: setScoreComponentRhythmLengthHint, min: 0, size: 2}, 
-    );
-    createSetAllSubdivisionBoxWithText(div, componentID);
-    
-    // Score-component side-decorations
-    addSideDecorationSelectors(div, componentID);
-    
-    // Duplicate / delete controls
-    div.appendChild(document.createElement("br"))
-    createComponentDelDupButtons(div, "score-component", componentID);
-    
-    // Link controls
-    if (isScoreComponentLinked(componentID)) {  // We only need these if it's linked
-        
-        // Add a button to remove from link, and button to select all in current link group
-        div.appendChild(createButton("Remove From Link", () => {
-            removeScoreComponentFromLink(componentID);  // Remove from file manager
-            setEditComponent("score-component", componentID);  // Update the edit pane
-            renderComponent("score-component", componentID);  // This will trigger the re-rendering of them all in the old group
-        }));
-        div.appendChild(createButton("Select All In Link", () => {
-            setCurrentSelected("", "");  // Remove all current selected
-            getLinkedToScoreComponent(componentID).forEach(id => addCurrentSelected("score-component", id));  // Add each item that should be selected
-            setEditComponents(getCurrentSelected()); // Update editor. There must be multiple selected right now
-        }));
-    }
-
-    // Selectors for which drums and decorations are enabled
-    div.appendChild(document.createElement("br"));
-    const selectorsText = document.createElement("span");
-    selectorsText.innerHTML = "Enabled Decorations/Drums:";
-    div.appendChild(selectorsText);
-    
-    const selectorsDiv = document.createElement("div");
-    selectorsDiv.classList.add("editor-selectors-container");
-    const decorationIDs = getSvgNodes("decorations").array.map(node => node.id);
-    selectorsDiv.appendChild(createIDSelector(componentID, decorationIDs, id => getScoreComponentEnabledDecoration(componentID, id), (id, value) => setScoreComponentEnabledDecoration(componentID, id, value)));
-
-    const drumIDs = getSvgNodes("drums").array.map(node => node.id);
-    selectorsDiv.appendChild(createIDSelector(componentID, drumIDs, id => getScoreComponentEnabledDrum(componentID, id), (id, value) => setScoreComponentEnabledDrum(componentID, id, value)));
-
-
-    div.appendChild(selectorsDiv);
-    
-    // Add div of controls to editor
-    editor.appendChild(div);
-
-    // Sequencer ----
-    // We'll display the sequencer as a table and add it to the editor.
-    const table = document.createElement("table");
-    table.classList.add("editor-sequencer-table");
-    table.appendChild(scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID));
-    createSpacingTableRow(table, ["editor-sequencer-subdivision-decoration-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, (componentID) => {
-        const enabledIDs = getScoreComponentEnabledDecorations(componentID);
-        return getSvgNodes("decorations").array  // Filter and map this so are ordered correctly
-            .map(node => node.id)
-            .filter(id => enabledIDs.includes(id));
-    }, getScoreComponentBeatSubdivisionDecoration, setScoreComponentBeatSubdivisionDecoration, ["editor-sequencer-toggle", "editor-sequencer-toggle-decoration"], (componentID, beatIndex, subdivisionIndex, decorationID) => (getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0));
-    createSpacingTableRow(table, ["editor-sequencer-decoration-drum-divider"]);
-    scoreEditorAddSequencerContents(table, componentID, (componentID) => {
-        const enabledIDs = getScoreComponentEnabledDrums(componentID);
-        return getSvgNodes("drums").array  // Filter and map this so are ordered correctly
-            .map(node => node.id)
-            .filter(id => enabledIDs.includes(id));
-    }, getScoreComponentBeatSubdivisionDrum, (componentID, beatIndex, subdivisionIndex, drumID, checked) => {
-        const currentUsedDecorations = getScoreComponentBeatSubdivisionDecorations(componentID, beatIndex, subdivisionIndex);  // Save for if we need it
-        const wereDecorationsRemoved = setScoreComponentBeatSubdivisionDrum(componentID, beatIndex, subdivisionIndex, drumID, checked);  // Actually set the value
-        
-        // If no drums are being used on this subdivison then we're not allowed any subdivisions
-        if (wereDecorationsRemoved) {
-            // Decorations were removed in the file manager so we need to update the buttons
-            for (let i=0; i<currentUsedDecorations.length; i++) {
-                document.getElementById(sequencerToggleID(beatIndex, subdivisionIndex, currentUsedDecorations[i])).checked = false;
-            }
-        }
-        
-        // Disable or enable the buttons as required
-        const shouldBeDisabled = getScoreComponentBeatSubdivisionDrums(componentID, beatIndex, subdivisionIndex).length === 0;
-        const enabledDecorations = getScoreComponentEnabledDecorations(componentID);
-        for (let i=0; i<enabledDecorations.length; i++) {
-            document.getElementById(sequencerToggleID(beatIndex, subdivisionIndex, enabledDecorations[i])).disabled = shouldBeDisabled;
-        }
-    }, ["editor-sequencer-toggle", "editor-sequencer-toggle-drum"], (componentID, beatIndex, subdivisionIndex, drumID) => false);  
-    editor.appendChild(table);
-}
-
-function createButton(text, click) {
-    // Creates and returns a div containing a button with the given text with the given function (which takes no args) put in .onclick.
-    // It returns a div so that buttons will stack on top of eachother.
-    const div = document.createElement("div");
-    const button = document.createElement("button");
-    button.innerHTML = text;
-    button.onclick = click;
-    div.appendChild(button);
-    return div;
-}
-
-function createSetAllSubdivisionBoxWithText(div, componentID) {
-    // Creates a label and a text box that will set all the subdivisionCounts for the given component.
-    
-    const span = document.createElement("span");
-    span.innerHTML = "Set All Subdivisions:&nbsp;"
-    span.style.textWrap = "nowrap";
-    
-    const input = document.createElement("input");
-    input.classList.add("score-sequencer-option-box");
-    input.size = "2";
-    input.oninput = () => {
-        input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
-    }
-    input.onchange = () => {
-        if (input.value == '') {  // If empty then don't do anything
-            return;
-        }
-        
-        // Set all subdivisions
-        const n = getScoreComponentTimeSignatureNumerator(componentID);
-        for (let i=0; i<n; i++) {
-            setScoreComponentBeatSubdivisionCount(componentID, i, parseInt(input.value));
-        }
-        
-        // Trigger redraw of editor and rendered
-        setEditComponent("score-component", componentID);
-        renderComponent("score-component", componentID);
-    };
-    
-    const container = document.createElement("div");
-    container.appendChild(span);
-    container.appendChild(input);
-    container.style.display = "flex";
-    div.appendChild(container);
-}
-
-function createComponentDelDupButtons(div, componentType, componentID) {
-    // Adds the duplicate and delete buttons to the given div
-    div.appendChild(createButton("Delete", () => {
-        setEditComponent("", "");
-        unRenderComponent(componentType, componentID);
-        removeComponent(componentType, componentID);  // Has to be after unRender as per doc
-        
-    }));
-    div.appendChild(createButton("Duplicate", () => {
-        const newID = duplicateScoreComponent(componentType, componentID);
-        // Translate the new one a little so we can see it
-        setComponentX(componentType, newID, getComponentX(componentType, newID) + 0.1);
-        setComponentY(componentType, newID, getComponentY(componentType, newID) + 0.1);
-        // Render it
-        renderComponent(componentType, newID);
-        setEditComponent(componentType, newID);
-    }));
-
-}
-
-function addSideDecorationSelectors(div, componentID) {
-    // Add the side-decoration selectors for the given component to the given div. 
-    div.appendChild(createSideDecorationSelector("left", "Left",
-        () => getScoreComponentLeftDecoration(componentID), 
-        (value) => {
-            setScoreComponentLeftDecoration(componentID, value);
-            renderComponent("score-component", componentID);
-        }
-    ));
-    div.appendChild(createSideDecorationSelector("right", "Right",
-        () => getScoreComponentRightDecoration(componentID), 
-        (value) => {
-            setScoreComponentRightDecoration(componentID, value);
-            renderComponent("score-component", componentID);
-        }
-    ));
-}
-
-function createSideDecorationSelector(side, displaySide, getter, setter) {
-    // Creates and returns a div with a fully working option selector for a given side's decorations.
-    // The from getSvgNodes("side-decorations") should have a data-side="left" or "right".
-    // The getter takes no arguements and returns the string id of the decoration. The setter takes the arguement of the id of the new decoration.
-    // The displaySide is the one that is used to annotate the box.
-
-    const options = getSvgNodes("side-decorations");
-    const currentSelected = getter();
-    
-    // Create and add nodes
-    const div = document.createElement("div");
-    const text = document.createElement("span");
-    text.innerHTML = displaySide + " Decoration: ";
-    const select = document.createElement("select");
-    ["",  // Insert a 'none-selected' option at the start
-        ...options.array
-            .filter(node => node.dataset.side === side)
-            .map(node => node.id)
-    ]          .forEach(optionName => {  // Add nodes for each option
-            const option = document.createElement("option");
-            option.value = optionName;
-            option.innerHTML = optionName;
-            option.selected = currentSelected === optionName;
-            select.appendChild(option);
+    // Add bindings to ComponentManager to make sure that content in selectors is always representative of the manager's storage
+    ["Text", "FontSize", "TimeSignatureDenomenator", "RhythmLengthHint", "LeftDecoration", "RightDecoration"].forEach(field => {
+        ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => linkFromComponentManagerCalled(editorPane, "basic", componentId, field, newValue));
     });
-    div.appendChild(text);
-    div.appendChild(select);
+    ComponentManager.onComponentVertGroupChanged((before, after) => linkFromComponentManagerCalled(editorPane, "vertGroup", before, after));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentSymbolToggled((componentId, bi, si, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "toggle", componentId, bi, si, symbolId, newValue));
+    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentBeatsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentBeatsRemoved((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentSubdivisionsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentSubdivisionsRemoved((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+}
 
-    // Attach bindings
-    select.onchange = () => setter(select.value);
+function selectionStateChanged(editorPane, ..._) {
+    // Listens to SelectionManager-SelectionStateChanged.
+    // This method takes the editorPane node, and ignores any other arguements given.
     
-    // Return div
+    const currentSelection = SelectionManager.getSelection();
+
+    // Completely redraw the editorPane
+    editorPane.innerHTML = "";  // Clear children
+    if (currentSelection.size === 0) {
+        // No children so leave editor empty
+    } else if (currentSelection.size === 1) {
+        // 1 child so choose specific editor
+        const theComponentId = currentSelection.values().next().value; // Get first value
+        const _ = {
+            "text-component": createFullTextComponentEditor,
+            "score-component": createFullScoreComponentEditor
+        }[ComponentManager.getComponentType(theComponentId)](editorPane, theComponentId);
+    } else {
+        throw "Not implemented"
+    }
+}
+
+function createLinkFromComponentManager(node, componentId, method, ...args) {
+    // Marks the given node to be updated after a certain event from the component manager.
+    // These links will only be ran for the given componentId.
+    // There are multiple ways (method) the given node can be updated:
+    //     "basic": Updates the node's value field with the newValue from the event. Args: FieldName.
+    //     "enabledState": Updates the node's checked field depending if this node is in a vertGroup.  Args: SymbolId.
+    //     "vertGroup": Adds/removes "display: none;" from the node's style depending whether the symbol is enabled or not. Args:.
+    //     "toggle": Updates the node's checked field depending whether that toggle is selected. Args: beatIndex, subdivisionIndex, symbolId
+    //     "redrawSequencer": Just redraws the whole sequencer. Args:.
+    
+    node.dataset.cmLink = "true";
+    node.dataset.cmMethod = method;
+    node.dataset.cmComponentId = componentId;
+
+    if (method === "basic") {
+        node.dataset.cmFieldName = args[0];
+    } else if (method === "vertGroup") {
+        // No args
+    } else if (method === "enabledState") {
+        node.dataset.cmSymbolId = args[0]; 
+    } else if (method === "toggle") {
+        node.dataset.cmBeatIndex = args[0];
+        node.dataset.cmSubdivisionIndex = args[1];
+        node.dataset.cmSymbolId = args[2];
+    } else if (method === "redrawSequencer") {
+        // No args
+    } else {
+        throw "Unknown method"
+    }
+}
+
+function linkFromComponentManagerCalled(editorPane, method, ...args) {
+    // The counterpart for createLinkFromComponentManager - this is what changes the nodes after we recieve an event.
+    // Methods:
+    //     "basic": Args: componentId, fieldName, newValue.
+    //     "vertGroup": Args: oldGroup, newGroup.
+    //     "enabledState": Args: componentId, symbolId, newValue.
+    //     "toggle": Args: componentId, beatIndex, subdivisionIndex, beatI, newValue.
+    //     "redrawSequencer": Args: componentId.
+    
+    const baseQuery = "*[data-cm-link=\"true\"][data-cm-method=\"" + method + "\"]";
+
+    if (method === "basic") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-field-name=\"" + args[1] + "\"]").forEach(node => {
+            node.value = args[2];
+        });
+    } else if (method === "vertGroup") {
+        const oldS = (args[0] === null) ? new Set() : args[0];
+        const newS = (args[1] === null) ? new Set() : args[1];
+        oldS.difference(newS).forEach(id => editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + id + "\"]").forEach(node => node.style.setProperty("display", "none")));
+        newS.difference(oldS).forEach(id => editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + id + "\"]").forEach(node => node.style.removeProperty("display")));
+    } else if (method === "enabledState") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-symbol-id=\"" + args[1] + "\"]").forEach(node => {
+            node.checked = args[2];
+        });
+    } else if (method === "toggle") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"][data-cm-beat-index=\"" + args[1] + "\"][data-cm-subdivision-index=\"" + args[2] + "\"][data-cm-symbol-id=\"" + args[3] + "\"]").forEach(node => {
+            node.dataset.toggleEnabled = args[4];
+        })
+    } else if (method === "redrawSequencer") {
+        editorPane.querySelectorAll(baseQuery + "[data-cm-component-id=\"" + args[0] + "\"]").forEach(node => updateSequencerTableContents(node, args[0]));
+    } else {
+        throw "Unknown method";
+    }
+}
+
+function createFullTextComponentEditor(editorPane, componentId) {
+    // Creates the editor for the given text component.
+    // This assumes the given editorPane is empty.
+
+    createTextEditorOptions(editorPane, componentId);
+    createTextEditorTextBox(editorPane, componentId);
+}
+
+function createTextEditorTextBox(editorPane, componentId) {
+    // Creates the textbox for the given component.
+    // This returns the created node as well as adding it to the editorPane.
+    
+    const textarea = document.createElement("textarea");
+    textarea.value = ComponentManager.getComponentText(componentId);
+    textarea.onchange = () => {
+        ComponentManager.setComponentText(componentId, textarea.value);
+    }
+    createLinkFromComponentManager(textarea, componentId, "basic", "Text");
+    editorPane.appendChild(textarea);
+    return textarea;
+}
+
+function createTextEditorOptions(editorPane, componentId) {
+    // Creates the options for the editor for the given text component.
+    // This adds a new child to the given editorPane, and also returns the added child.
+    
+    const div = document.createElement("div");
+    createBasicTextOption(div, componentId, "Font Size", "FontSize", ...POSITIVE_REAL);
+    createBreak(div);
+    createDeleteDuplicate(div, componentId);
+    editorPane.appendChild(div);
     return div;
 }
 
-function createIDSelector(componentID, idList, getter, setter) {
-    // Creates a bunch of check boxes labled with the given IDs. It uses the getter and setter to see/set if they are enabled.
-    //  idList: [string].
-    //  getter(id: str) -> boolean.
-    //  setter(id: str, value: boolean).
-    // Returns a container table.
+function createDeleteDuplicate(container, componentId) {
+    // Creates the delete and duplicate buttons for the given component inside the given container.
+    createButton(container, "Delete", () => ComponentManager.removeComponent(componentId));
+    createButton(container, "Duplicate", () => {
+        const newId = ComponentManager.duplicateComponent(componentId);
+        SelectionManager.select(newId);
+    });
+}
+
+function createVertGroupControls(container, componentId) {
+    // Creates the buttons to control an individual components vertical group.
+    // This should be called for every score-component, regardless of whether it is currently grouped.
+    // This will add the buttons to the container.
+    // This will add the args data-only-when-grouped = "componentId", and will have `display: none` set if componentId is not grouped. 
     
-    const container = document.createElement("table");
-    for (let i=0; i<idList.length; i++) {
-        // Create the text to go beforehand
-        const span = document.createElement("span");
-        span.innerHTML = idList[i];
-        span.style.textWrap = "nowrap";
-        
-        // Create the checkbox
-        const input = document.createElement("input");
-        input.type = "checkbox";
-        input.checked = getter(idList[i]);
-        input.onclick = function () {
-            setter(idList[i], input.checked);
-            setEditComponent("score-component", componentID);  // Redraw editor
-            renderComponent("score-component", componentID);  // Because disabling a line may have removed (e.g.) a drum that was played on that line so the score has changed
-        }
-        
-        // Create row and add to container
-        const row = document.createElement("tr");
-        const td1 = document.createElement("td");
-        const td2 = document.createElement("td");
-        td1.appendChild(span);
-        td2.appendChild(input);
-        row.appendChild(td1);
-        row.appendChild(td2);
-        container.appendChild(row);
+    // Create buttons
+    const removeButton = createButton(container, "Remove From VertGroup", () => ComponentManager.removeFromVertGroup(componentId));
+    const showButton = createButton(container, "Select All In VertGroup", () => SelectionManager.select(...ComponentManager.getVertGroup(componentId)));
+    // Add links to component manager
+    createLinkFromComponentManager(removeButton, componentId, "vertGroup");
+    createLinkFromComponentManager(showButton, componentId, "vertGroup");
+    // Hide if necessary
+    if (!ComponentManager.isInVertGroup(componentId)) {
+        removeButton.style.display = "none";
+        showButton.style.display = "none";
     }
+}
+
+function createButton(container, text, callback) {
+    // Creates a button in container with the given text that calls the given callback.
+    // This also returns the button.
+    const button = document.createElement("button");
+    button.innerText = text;
+    button.onclick = callback;
+    container.appendChild(button);
+    return button
+}
+
+function createBreak(container) {
+    // Adds a break element to the end of the given node.
+    // Also returns the break element.
+    const break_ = document.createElement("br");
+    container.appendChild(break_);
+    return break_;
+}
+
+function createBasicTextOption(container, componentId, label, optionName, cleaner, caster) {
+    // Creates a text field with a label that corrosponds to a 'first-level' field in a component. E.g. RhythmLengthHint
+    //
+    // User input will be passed through the cleaner - func(str) => str. This should, for example, remove all non-numeric characters. But can allow invalid values (like empty or too small values).
+    // User input will be passed through the caster before being stored. func(str) => T/undefined. T is the type the ComponentManager takes, or undefined if you want to go back to what it was before.
+    // This expects ComponentManager.(get|set)Component<OptionName> and ComponentManager-Component<optionName>Changed to exist.
+    // The created node will be added, as well as being returned.
     
-    return container;
-}
-
-function sequencerToggleID(beatIndex, subdivisionIndex, ID) {
-    // Returns the ID to give to the input node for a given drum / decoration with the given ID.
-    return `editor-sequencer-toggle-${beatIndex}-${subdivisionIndex}-${ID}`;
-}
-
-function createSpacingTableRow(table, classNames) {
-    // Create an row with the given CSS classes and add it to the table.
-    // The given classNames should be an array of strings.
-    const tr = document.createElement("tr");
-    tr.classList.add(...classNames);
-    table.appendChild(tr);
-}
-
-function createSpacingTableData(row, classNames) {
-    // Create a data node with the given CSS classes and add it to the row.
-    // The given classNames should be an array of strings.
-    const td = document.createElement("td");
-    td.classList.add(...classNames);
-    row.appendChild(td);
-}
-
-
-function createNumberBoxesWithText(div, componentType, componentID, ...boxes) {  // TODO: Only redraw if we have to
-    // Creates a (or multiple) input fields that have some text beforehand.
-    // These will validate to only allow numbers above a certain value to be entered. When calling the setter, this will have already parsed the integer.
-    // The boxes should be objects with this format {text: String, type: String, getter: Callable<componentID>, setter: Callable<componentID, value: int>, min: int, size: int}.
-    //      Text is what to display before the box.
-    //      Type should be "text" or "number".
-    //      The getter and setters should be functions that take the arguements as described, the getter returning the initial value to put in the box.
-    //      Min is the minimum value.
-    //      Size is width to draw the text box
-    // Boxes drawn at the same time will all be put on the same line, contained within a div which will be added to the end of the given div.
-    // Boxes are given the class css class score-sequencer-option-box.
     
-    // Contain within a flex-div so it's all on one line 
-    const container = document.createElement("div");
-    container.style.display = "flex";
-
-    // Create all the boxes and add them to the container 
-    for (let i=0; i<boxes.length; i++) {
-        // Create the text to go beforehand
-        const span = document.createElement("span");
-        span.innerHTML = boxes[i].text;
-        span.style.textWrap = "nowrap";
-        
-        // Create the input field
-        const input = createValidatedIntegerInput(() => {
-            return boxes[i].getter(componentID);
-        }, (value) => {
-            boxes[i].setter(componentID, value);
-            setEditComponent(componentType, componentID);  // Redraw the editor
-            renderComponent(componentType, componentID);  // Re-render it in the rendered-pane
-
-        }, ["score-sequencer-option-box"], boxes[i].min, boxes[i].size);
-
-        // Add to container
-        container.appendChild(span);
-        container.appendChild(input);
-    }
-
-    // Add container to the div
-    div.appendChild(container);
-}
-
-function createValidatedIntegerInput(getter, setter, classes, min, size) {
-    // Returns an input node
-    // Getter is used for the default value, it takes no arguements.
-    // Setter is used to set the value, it takes the new value as an integer.
-    // Classes are the css classes to add, this should be a string list.
-    // Min is the minimum allowed value.
-    // Size is an optional value for the width of the box
-    
-    // Create the input field
+    // Create the input
     const input = document.createElement("input");
-    input.classList.add(...classes);
-    input.value = getter();
-    input.inputMode = "numeric";
-    input.min = min;
-    if (size != null) {
-        input.size = size;
-    }
-    // Bind the update event to call the functions and do validation
+    input.size = 2;
+    input.value = ComponentManager["getComponent" + optionName](componentId);
+    // Event for when user types or removes a character
     input.oninput = () => {
-        input.value = input.value.replace(/[^0-9]/g, '');  // Ensure only number characters
-        if (parseInt(input.value) < min) {  // If below min 
-            input.value = min;
+        const cleanedValue = cleaner(input.value);
+        input.value = cleanedValue;
+    };
+    // Event for saving value
+    input.onchange = () => {
+        let castValue = caster(input.value);
+        if (castValue === undefined) {
+            castValue = ComponentManager["getComponent" + optionName](componentId);  // Get what it used to be
+        }
+        input.value = castValue; // Make sure data is consistant
+        ComponentManager["setComponent" + optionName](componentId, castValue);
+    }
+    createLinkFromComponentManager(input, componentId, "basic", optionName);
+    
+    // Cerate action option structure
+    const inputId = getUniqueId();
+    input.id = inputId;
+    const div = document.createElement("div");
+    createOptionLabel(div, label, inputId);
+    div.appendChild(input);
+    container.appendChild(div);
+    return div;
+}
+
+function createBasicSelectOption(container, componentId, label, optionName, options) {
+    // Creates a <select> field with a label that corrosponds to a 'first-level' field in a component. E.g. RhythmLengthHint
+    // 
+    // See createBasicTextOption. This works on <select> nodes though.
+    // This will add another option for no-selection, which will be null.
+
+    // Create the select
+    const select = document.createElement("select");
+    ["", ...options].forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.innerText = name;
+        select.appendChild(option);
+    });
+    select.value = ComponentManager["getComponent" + optionName](componentId);
+    // Event saving value
+    select.onchange = () => ComponentManager["setComponent" + optionName](componentId, select.value);
+    createLinkFromComponentManager(select, componentId, "basic", optionName);
+    
+    // Cerate action option structure
+    const inputId = getUniqueId();
+    select.id = inputId;
+    const div = document.createElement("div");
+    createOptionLabel(div, label, inputId);
+    div.appendChild(select);
+    container.appendChild(div);
+    return div;
+}
+
+function createOptionLabel(container, labelText, id) {
+    // Adds a label for the given id. Also returns it.
+    
+    const label = document.createElement("label");
+    label.innerText = labelText + ": ";
+    label.htmlFor = id;
+    container.appendChild(label);
+    
+    return label;
+}
+
+function createSpan(container, spanText) {
+    // Adds a span. Also returns it.
+    const span = document.createElement("span");
+    span.innerText = spanText;
+    container.appendChild(span);
+    return span;
+}
+
+function createFullScoreComponentEditor(editorPane, componentId) {
+    // Creates the options for the editor for the given score component.
+    // This adds the widgets to the editorPane, and assumes it is already free of children.
+    
+    createScoreEditorOptions(editorPane, componentId);
+    createScoreEditorSequencer(editorPane, componentId);
+}
+
+function createScoreEditorSequencer(container, componentId) {
+    // Creates the sequencer for a score-component editor and adds it to the given container. This returns the created node.
+    
+    const table = document.createElement("table");
+    updateSequencerTableContents(table, componentId);
+    container.appendChild(table);
+    return table;
+}
+
+function updateSequencerTableContents(table, componentId) {
+    // Recreates the DOM for the given table to be correct for the given componentId.
+
+    const beatCount = ComponentManager.getComponentBeatCount(componentId);
+
+    // Clear all children
+    table.innerHTML = "";
+    
+    // Add row for subdivisions
+    {
+        const tr = document.createElement("tr");
+        tr.appendChild(document.createElement("td"));  // We need an empty top left corner (over symbol names)
+
+        for (let i=0; i<beatCount; i++) {  // i is beatI
+            // Create subdivision text box
+            const input = document.createElement("input");
+            input.value = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+            input.oninput = () => {
+                // Clean input whenever typed
+                input.value = POSITIVE_INT[0](input.value);
+            }
+            const bi = i;  // So doesn't change in lambda.
+            input.onchange = () => {
+                // Send value to componentManger
+                let cast = POSITIVE_INT[1](input.value);
+                if (cast === undefined) {
+                    cast = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+                }
+                input.value = cast;
+                setComponentBeatSubdivisionCount(componentId, bi, cast);
+            }
+            // We don't need to use createLinkFromComponentManager here, as we will just redraw the whole sequencer from scratch if the structure changes
+            
+            // Create the containing td node
+            const td = document.createElement("td");
+            td.colSpan = ComponentManager.getComponentBeatSubdivisionCount(componentId, i);
+            td.appendChild(input);
+            tr.appendChild(td);
+            
+            // Create dividing column
+            if (i === beatCount - 1) continue // We don't need a divider after the last column
+            const divider = document.createElement("td");
+            tr.appendChild(divider);
+        }
+        
+        table.appendChild(tr);
+    }   
+    
+    // Add a dividing row
+    table.appendChild(document.createElement("tr"));
+    
+    // Add rows for symbols
+    const symbolIds = Symbols.getFullOrder().filter(id => ComponentManager.getComponentSymbolEnabledState(componentId, id));  // Use full order so we add columns in the correct order
+    for (let i=0; i<symbolIds.length; i++) {
+        const tr = document.createElement("tr");
+        const symbolId = symbolIds[i];
+
+        // Create span with symbol name
+        {
+            const td = document.createElement("td");
+            const span = createSpan(td, symbolId); 
+            tr.appendChild(td);
+        }
+        
+        // Create toggles for sequencer
+        for (let bi=0; bi<beatCount; bi++) {
+            const subdivisionCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, bi);
+            for (let si=0; si<subdivisionCount; si++) {
+                // Create a td. We can attach events to this, and use data tags to allow css to style it
+                const td = document.createElement("td");
+                td.dataset.toggleEnabled = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);
+                createLinkFromComponentManager(td, componentId, "toggle", bi, si, symbolId);  // We need this so the tds actually change. We don't redraw everything when a toggle changes
+                addSequencerToggleEvents(table, td, componentId, bi, si, symbolId);
+                td.style.width = 4 / subdivisionCount + "ch";  // So sizes are consistant with duration. CSS rules then have a minimum width
+                tr.appendChild(td);
+            }
+            
+            // Create dividing column
+            if (bi === beatCount - 1) continue // We don't need a divider after the last column
+            const divider = document.createElement("td");
+            tr.appendChild(divider);
+        }
+
+        
+        table.appendChild(tr);
+    }
+    
+    // When table structure changes just redraw whole table
+    createLinkFromComponentManager(table, componentId, "redrawSequencer");
+}
+
+function addSequencerToggleEvents(table, td, componentId, bi, si, symbolId) {
+    // Adds the events to the given td for the given component where the beat and subdivision indexes are as given, for the given symbolId.
+    // The table is used for storing metadata on the click.
+    
+    // We want to set up events that allow you to drag the mouse over tds to turn them on/off
+    // However one drag should only ever turn on or off, not both
+
+    // Toggle first, and figure out if we're toggling on or off
+    td.onmousedown = (e) => {
+        if (e.buttons !== 1) return;  // Only allow left clicks
+        ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
+        table.dataset.sequencerCurrentDragNewValue = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);  // Record this so the rest of the drag only goes to what the first one went to
+    }
+    // If dragging, update any toggles that are in the incorret state
+    td.onmouseenter = (e) => {
+        if (e.buttons !== 1) return;  // Only allow left clicks
+        const cndv = table.dataset.sequencerCurrentDragNewValue;
+        if (cndv !== undefined && ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId) !== (cndv === "true")) {
+            ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
         }
     }
-    input.onchange = () => {
-        if (input.value == '') {  // If empty then set to min
-            input.value = min;
-        }
-        setter(parseInt(input.value));  // Dispatch event
-    };
+    // Remove the currentDragNewValue so if the user starts a new drag - from outside the sequencer -, it won't be recorded
+    if (!table.hasAttribute("data-drag-mouseup-event-added")) {  // Only add event if this is the first time
+        table.setAttribute("data-drag-mouseup-event-added", "");
+        document.addEventListener("mouseup", () => {
+            table.removeAttribute("data-sequencer-current-drag-new-value");
+        });
+    }
+}
+
+
+function createScoreEditorOptions(container, componentId) {
+    // Creates the options for a score-component editor and adds it to the given container. This returns the created node.
     
+    const div = document.createElement("div");
+    createTextOption(div, "Time Signature Numerator", POSITIVE_INT[0], ComponentManager.getComponentBeatCount(componentId), value => numeratorBoxChanged(componentId, value)); // TODO: Make link from componentManger to here when number of beats changes
+    createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
+    createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
+    createTextOption(div, "Set All Subdivisions", POSITIVE_INT[0], "", value => setAllSubdivisionsBoxChanged(componentId, value));
+    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // TODO: Get options for a proper source
+    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // TODO: Get options for a proper source
+    createBreak(div);
+    createDeleteDuplicate(div, componentId);
+    createVertGroupControls(div, componentId);
+    createBreak(div);
+    createEnabledSymbolsOptions(div, componentId);
+    container.appendChild(div);
+    return div;
+}
+
+function createEnabledSymbolsOptions(container, componentId) {
+    // Creates the checkboxes to select which symbols should be enabled.
+    // The created node will be returned, as well as added to the container.
+    // Checkboxes will have data-symbol-binding="componentId_symbolId".
+    
+    // Create the table of checkboxes and labels
+    const table = document.createElement("table");
+    Symbols.getFullOrder().forEach(symbolId => {
+        const tr = document.createElement("tr");
+        const labelTd = document.createElement("td");
+        const boxTd = document.createElement("td");
+        const boxId = getUniqueId();
+        createOptionLabel(labelTd, symbolId, boxId);
+        const box = createCheckboxOption(boxTd, ComponentManager.getComponentSymbolEnabledState(componentId, symbolId), () => ComponentManager.toggleComponentSymbolEnabledState(componentId, symbolId));
+        box.id = boxId;
+        createLinkFromComponentManager(box, componentId, "enabledState", symbolId);
+        
+        tr.appendChild(labelTd);
+        tr.appendChild(boxTd);
+        table.appendChild(tr);
+    });
+    
+    // Construct node heirarchy
+    const div = document.createElement("div");
+    createSpan(div, "Enabled Symbols:");
+    div.appendChild(table);
+    container.appendChild(div);
+    return div;
+}
+
+function setAllSubdivisionsBoxChanged(componentId, value) {
+    // Called when the user updates the setAllSubdivisions box in the editor.
+    // This returns an empty string.
+    
+    value = POSITIVE_INT[1](value);
+    
+    for (let i=0; i<ComponentManager.getComponentBeatCount(componentId); i++) {
+        setComponentBeatSubdivisionCount(componentId, i, value);
+    }
+    
+    return "";  // Leave box empty / don't save value
+}
+
+function setComponentBeatSubdivisionCount(componentId, beatI, value) {
+    // Adds or removes subdivisions from the given component on the given beat so that we have the given amount (`value`).
+
+    const currentSubdivisionCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
+    
+    if (value > currentSubdivisionCount) {
+        ComponentManager.addSubdivisions(componentId, beatI, ...Array.from({length: value - currentSubdivisionCount}, (e, i) => i + currentSubdivisionCount));  // Just add to end of beat for now.  TODO: Better way of doing this
+    } else if (value < currentSubdivisionCount) {
+        ComponentManager.removeSubdivisons(componentId, beatI, ...Array.from({length: currentSubdivisionCount - value}, (e, i) => currentSubdivisionCount - 1 - i)); // Just remove from end for now.  TODO: Better combination to remove
+    }
+        
+    return value;
+}
+
+function numeratorBoxChanged(componentId, value) {
+    // Called when the user updates the timeSignatureNumerator box in the editor.
+    // This returns the cleaned value.
+
+    value = POSITIVE_INT[1](value);  // This is the new beat count
+    const currentBeatCount = ComponentManager.getComponentBeatCount(componentId);
+    if (value === undefined) return currentBeatCount;
+    
+    if (value > currentBeatCount) {
+        ComponentManager.addBeats(componentId, 1, ...Array.from({length: value - currentBeatCount}, (e, i) => i + currentBeatCount));  // Just add to end of beats for now.  TODO: Better way of doing this. TODO: Adding two subidivisions always doesn't make sense
+    } else if (value < currentBeatCount) {
+        ComponentManager.removeBeats(componentId, ...Array.from({length: currentBeatCount - value}, (e, i) => currentBeatCount - 1 - i)); // Just remove from end for now.  TODO: Better combination to remove
+    }
+        
+    return value;
+}
+
+function createTextOption(container, label, cleaner, currentValue, callback) {
+    // Creates a text box with the given label, where input is passed through the cleaner (str => str). When the value is to be saved, the callback is used. The return value of the callback is put inside the text box. CurrentValue is used as the intial value.
+    // The created node is added to the container, and also returned.
+    
+    // Create the input
+    const input = document.createElement("input");
+    input.value = currentValue;
+    input.size = 2;
+    // Event for when user types or removes a character
+    input.oninput = () => {
+        const cleanedValue = cleaner(input.value);
+        input.value = cleanedValue;
+    };
+    // Event for saving value
+    input.onchange = () => {
+        input.value = callback(input.value); 
+    }
+    
+    // Cerate action option structure
+    const inputId = getUniqueId();
+    input.id = inputId;
+    const div = document.createElement("div");
+    createOptionLabel(div, label, inputId);
+    div.appendChild(input);
+    container.appendChild(div);
+    return div;
+}
+
+function createCheckboxOption(container, alreadyChecked, callback) {
+    // Creates a checkbox which calls the callback(boolean) when modified.
+    // AlreadyChecked is the default value.
+    
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.onclick = callback;
+    input.checked = alreadyChecked;
+    container.appendChild(input);
     return input;
 }
 
+let _createdIds = 0;
+function getUniqueId() {
+    // Gets a unique html id.
+    // No other ids should be of the form "editor-unique-<INT>", else this will break.
 
-function scoreEditorCreateSequencerBeatSubdivisionControlsTr(componentID) {
-    // Creates a table row containing the controls for managing beat-subdivisions.
-    // It will create a text box for each beat, with colspan being set to the number of subdivisions for formatting.
-    // This will then return the table row.
-    const tableRow = document.createElement("tr");
-    tableRow.append(document.createElement("th"));  // The first column is just descriptors of each drum
-
-    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
-    for (let bi = 0; bi < numerator; bi++) {  // BI: beatIndex
-        const tableData = document.createElement("td");
-        const beatSubdivisionCount = getScoreComponentBeatSubdivisionCount(componentID, bi);
-        tableData.colSpan = beatSubdivisionCount;  // Because we have a column of sequencer toggles for each beat subdivision
-        tableData.classList.add("editor-sequencer-subdivision-control");
-        const textBox = createValidatedIntegerInput(() => {
-            return beatSubdivisionCount;
-        }, (value) => {
-            setScoreComponentBeatSubdivisionCount(componentID, bi, value);  // Save the new value
-            setEditComponent("score-component", componentID);  // Redraw the editor
-            renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
-
-        }, ["editor-sequencer-subdivision-control"], 1, null);
-        tableData.appendChild(textBox);
-        tableRow.appendChild(tableData);
-
-        // Add spacing if required
-        if (bi + 1 != numerator) {  // If not last beat
-            createSpacingTableData(tableRow, ["editor-sequencer-beat-divider"]);
-        }
-    }
-
-    return tableRow;
+    const id = "editor-" + _createdIds;
+    _createdIds++;
+    return id;
 }
 
-function scoreEditorAddSequencerContents(table, componentID, idGetter, isCheckedGetter, isCheckedSetter, classNames, disabledGetter) {
-    // Adds the toggle buttons for the sequencer to a table.
-    // You supply functions idGetter and isCheckedGetter and isCheckedSetter depending if this is drums or decorations.
-    //    idGetter(componentID) -> String list of IDs.
-    //    isCheckedGetter(componentID, beatIndex, subdivisionIndex, ID) -> Is this drum / decoration hit on this specific subdivision.  The given ID is the id of the drum / decoration
-    //    isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, checked)    Sets whether or not a given drum / decoration is set on a given subdivision. The id is the id of the drum / decoration.
-    //    disabledGeter(componentID, beatIndex, subdivisionIndex, ID) -> Should the toggle button (input node) be enabled or disabled. True for disabled.
-    // The ids will be displayed in the order they are returned from the idGetter.
-    // The given classNames will be given to the toggle buttons (and their td containers).
-    
-    const IDs = idGetter(componentID);
-    const numerator = getScoreComponentTimeSignatureNumerator(componentID);
-    for (let index = 0; index < IDs.length; index++) {
-        const ID = IDs[index];
 
-        // Create row and row header
-        const tableRow = document.createElement("tr");
-        const symbolID = document.createElement("th");
-        symbolID.innerText = ID;
-        tableRow.appendChild(symbolID);
-
-        // Add the actual buttons
-        for (let bi = 0; bi < numerator; bi++) {  // BI: beatIndex
-            const numberOfSubdivisions = getScoreComponentBeatSubdivisionCount(componentID, bi);
-            for (let si = 0; si < numberOfSubdivisions; si++) {  // SI: subdivisionIndex
-                // Create the actual button and add it to the table
-                const enabled = isCheckedGetter(componentID, bi, si, ID);
-                const tableData = scoreEditorCreateSequencerToggleButtonInTd(numberOfSubdivisions, enabled, classNames, isCheckedSetter, bi, si, ID, componentID, disabledGetter);
-                tableRow.appendChild(tableData);
-            }
-            // Add spacing if required
-            if (bi + 1 != numerator) {  // If not last beat
-                createSpacingTableData(tableRow, ["editor-sequencer-beat-divider"]);
-            }
-        }
-
-        // Add table row to table
-        table.appendChild(tableRow);
-    }
-}
-
-let stateOfLastClickedToggle = null;
-
-function scoreEditorCreateSequencerToggleButtonInTd(subdivisionCount, enabled, classNames, isCheckedSetter, beatIndex, subdivisionIndex, ID, componentID, disabledGetter) {
-    // Create a toggle button to be used in the editor for the actual score (turning drums on and off).
-    // This returns a table data element with the correct width based of the subdivisionCount.
-    // If enabled is true then it will be checked by default.
-    // The classes in classNames will be given to both the input and the td.
-    // The function isCheckedSetter(componentID, beatIndex, suubdivisonIndex, ID, checked) is used when we toggle the checkbox. The id is the id of the drum / decoration.
-    // The given ID is the ID of the drum / decoration.
-    // The toggle button (the input node) is given a html id of the form `editor-sequencer-toggle-${beatIndex}-${subdivisionIndex}-${ID}`.
-    const tableData = document.createElement("td");
-    const toggleButton = document.createElement("input");
-    toggleButton.id = sequencerToggleID(beatIndex, subdivisionIndex, ID);
-    toggleButton.disabled = disabledGetter(componentID, beatIndex, subdivisionIndex, ID);
-    toggleButton.type = "checkbox";
-    tableData.classList.add(...classNames);
-    toggleButton.classList.add(...classNames);
-    toggleButton.checked = enabled;
-    
-    // We want to set up events such that if I toggle one on then drag the mouse, all the ones I drag over turn on (or are no effect if they are already on)
-    function onUpdate() {
-        isCheckedSetter(componentID, beatIndex, subdivisionIndex, ID, toggleButton.checked);  // Save the new value
-        renderComponent("score-component", componentID);  // Re-render it in the rendered-pane
-    }
-    toggleButton.onmousedown = (e) => {
-        if (e.buttons === 1) {  // So it works for left clicks
-            stateOfLastClickedToggle = toggleButton.checked;
-            toggleButton.checked = !stateOfLastClickedToggle;
-            onUpdate();
-        }
-    }
-    toggleButton.onmouseenter = (e) => {
-        if (e.buttons === 1 && stateOfLastClickedToggle !== null) {  // Is left click pressed and did the drag start on a toggle button?
-            toggleButton.checked = !stateOfLastClickedToggle;
-            onUpdate();
-        }
-    }
-    toggleButton.onclick = (e) => {
-        stateOfLastClickedToggle = null; // So drags must originate on a toggle button
-        e.preventDefault();  // As we change the state with on-mouse-down, without this the default handler will change the state again
-    }
-    
-    
-    
-    tableData.style.width = (4 / subdivisionCount) + 'ch';
-    tableData.appendChild(toggleButton);
-    return tableData;
-}

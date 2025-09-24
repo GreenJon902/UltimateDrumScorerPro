@@ -11,104 +11,8 @@ body {
     flex-direction: column;
     gap: 1ch;
     padding: 1ch;
-}
-
-td.editor-sequencer-toggle {
-  position: relative;
-  padding: 0;
-  height: 25px;
-  cursor: pointer;
-  min-width: 1ch;
-}
-
-input[type="checkbox"].editor-sequencer-toggle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  margin: 0;
-  cursor: pointer;
-}
-
-td:has(input[type="checkbox"]:checked:not(:disabled)).editor-sequencer-toggle-decoration {
-    background-color: #fdda99;
-}
-
-td:has(input[type="checkbox"]:not(:checked):not(:disabled)).editor-sequencer-toggle-decoration {
-    background-color: #ac5f00;
-}
-
-td:has(input[type="checkbox"]:disabled).editor-sequencer-toggle-decoration {
-    visibility: hidden;
-}
-
-td:has(input[type="checkbox"]:checked).editor-sequencer-toggle-drum {
-    background-color: lightgreen;
-}
-
-td:has(input[type="checkbox"]:not(:checked)).editor-sequencer-toggle-drum {
-    background-color: green;
-}
-
-input[inputmode="numeric"]::-webkit-outer-spin-button, input[inputmode="numeric"]::-webkit-inner-spin-button, .score-sequencer-option-box {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-input[type="numeric"], .score-sequencer-option-box {
-	-moz-appearance: textfield;
-}
-
-td.editor-sequencer-subdivision-control {
-    position: relative;
-    padding: 0;
-    height: 25px;
-}
-
-input[inputmode="numeric"].editor-sequencer-subdivision-control {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-input[inputmode="numeric"].editor-sequencer-subdivision-control, .score-sequencer-option-box {
-  border: none;
-  background-color: lightgray;
-  text-align: center;
-  padding: 0px;
-}
-
-.score-sequencer-option-box {
-  border-radius: 0.5ch;
-}
-
-.editor-sequencer-table tr:first-child th + td input {
-	border-top-left-radius: 0.5ch;
-}
-
-.editor-sequencer-table tr:first-child td:last-child input {
-	border-top-right-radius: 0.5ch;
-}
-
-.editor-sequencer-table tr:last-child th + td {
-	border-bottom-left-radius: 0.5ch;
-}
-
-.editor-sequencer-table tr:last-child td:last-child {
-	border-bottom-right-radius: 0.5ch;
-}
-
-body {
     position: absolute;
     box-sizing: border-box;
-}
-
-.score-component {
-    position: absolute;
 }
 
 #rendered-pane, #editor-pane {
@@ -185,30 +89,77 @@ body {
     display: none;
 }
 
-#editor-pane > * {
-	flex: 0 0 auto;
+#editor-pane > div > :not(br) {
+    display: block;
 }
 
-#editor-pane > .text-component-text-content {
-	flex-grow: 1;
-	height: 100%;
-    box-sizing: border-box;
+#editor-pane > table {
+    border-collapse: separate;
+    border-spacing: 1px 1px;
 }
 
-body > * {
-} 
-
-.editor-sequencer-table {
-	border-collapse: separate;
-	border-spacing: 1px 1px;
+#editor-pane > div input, #editor-pane > div select {
+    border: none;
+    border-radius: 0.5ch;
+    background-color: lightgray;
+    text-align: center;
+    padding: 0px;
 }
 
-.editor-sequencer-subdivision-decoration-divider, .editor-sequencer-decoration-drum-divider {
-	height: 1px;
+#editor-pane > table input {
+    border: none;
+    background-color: lightgray;
+    text-align: center;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
 }
 
-.editor-squencer-beat-divider {
-	width: 1px;
+#editor-pane > table td:has(input) {
+    position: relative;
+    padding: 0;
+    height: 25px;
+}
+
+#editor-pane > table tr:not(:has(*)) {
+    height: 1px;
+}
+
+#editor-pane > table td:not([data-toggle-enabled]) {
+    width: 1px;
+}
+
+#editor-pane > table > tr:first-child > td:nth-child(2) > input {
+	border-top-left-radius: 0.5ch;
+}
+
+#editor-pane > table tr:first-child td:last-child input {
+	border-top-right-radius: 0.5ch;
+}
+
+#editor-pane > div div:has(> input, > select) {
+    display: flex;
+}
+
+#editor-pane > div label {
+    white-space-collapse: preserve;
+}
+
+#editor-pane > table td[data-toggle-enabled] {
+    position: relative;
+    padding: 0;
+    height: 25px;
+    cursor: pointer;
+    min-width: 1ch;
+    user-select: none;
+}
+
+#editor-pane > table td[data-toggle-enabled="true"] {
+    background-color: lightgreen;
+}
+
+#editor-pane > table td[data-toggle-enabled="false"] {
+    background-color: green;
 }
 
 svg {
@@ -276,13 +227,4 @@ svg:hover[data-selected] {
 		top: 0px;
 		left: 0px;
 	}
-
-}
-
-.editor-selectors-container {
-	display: flex;
-}
-
-.editor-selectors-container > table {
-	height: fit-content;
 }

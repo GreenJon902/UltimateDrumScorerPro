@@ -1,6 +1,7 @@
 # Firefox has a big problem when developing JS.
 # If the JS gets stuck in a loop forever, the debugging features in firefox don't work, because it is too busy running the JS or something I don't know.
 # So instead just crash if we loop too many times.
+# If you need to (generally if you have file level code), add // PUT_DEBUG_FOREVERLOOP_HERE somewhere. 
 
 
 from http.server import HTTPServer as BaseHTTPServer, SimpleHTTPRequestHandler
@@ -46,15 +47,22 @@ class HTTPHandler(SimpleHTTPRequestHandler):
 
     def modify_js(self, content):
         # Example modification: inject a console.log
+        foreverloop_definition = "let __values = {}; function __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>10000) {__values = {};throw \"Too many iterations on line \" + n + \"\";}}"
+        
         new = ""
+        foreverloop_added = False
         for n, line in enumerate(content.split("\n")):
         	if ("while (" in line or "for (" in line) and ") {" in line:
         		split = line.split("//", 1)
         		split[0] += f" __check_no_forever_loop({n + 1}); "
         		line = "//".join(split)
+        	if line.strip() == "// PUT_DEBUG_FOREVERLOOP_HERE":
+        		line = foreverloop_definition + "  " + line
+        		foreverloop_added = True
         	new += line + "\n"
         
-        new += "\n\nlet __values = {}\nfunction __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>10000) {__values = {};throw \"Too many iterations on line \" + n + \"\";}}"
+        if not foreverloop_added:
+        	new += "\n\n" + foreverloop_definition
         
         return new
 
