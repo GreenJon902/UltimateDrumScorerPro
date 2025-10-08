@@ -1,4 +1,5 @@
 import {ComponentManager} from "./componentManager.js";
+import {createSvgText, updateSvgText} from "./textComponentSvgRenderer.js";
 import {compileScoreComponent, calculateScoreComponentSpacing} from "./scoreComponentSvgRenderer.js";
 
 export function attachRendered(componentContainer) {
@@ -53,17 +54,6 @@ function getSvgFor(componentContainer, componentId) {
     return componentContainer.querySelector(`[data-component-id=${componentId}]`);
 }
 
-function createSvgText(container, textContent, fontSize) {
-    // Creates a svg text node with the given attributes.
-    // It is added to the container, and is returned.
-    // Font size is in mm tall.
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.innerHTML = textContent;
-    text.style.fontSize = fontSize + "px";  // SVG will scale px to mm for us
-    container.appendChild(text);
-    return text;
-}
-
 function createInitialTextComponent(componentContainer, componentId) {
     // Creates the initial SVG for the given text component.
     // This requires bindings (via updateTextComponent) to be called whenever component manager changes.
@@ -75,15 +65,8 @@ function createInitialTextComponent(componentContainer, componentId) {
 function updateTextComponent(componentContainer, what, componentId, newValue) {
     // Updates the given attribute (what - "text", "fontSize") for the given component to the new value.
     // This works on SVGs created by createInitialTextComponent.
-    
     const svg = getSvgFor(componentContainer, componentId);
-    if (what === "text") {
-        svg.querySelector("text").innerHTML = newValue;
-    } else if (what === "fontSize") {
-        svg.querySelector("text").style.fontSize = newValue + "px";  // SVG will scale px to mm for us
-    } else {
-        throw "Unknown what"
-    }
+    updateSvgText(svg, what, newValue);
 }
 
 function createInitialScoreComponent(componentContainer, componentId) {

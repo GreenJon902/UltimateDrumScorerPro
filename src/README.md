@@ -2,6 +2,9 @@
 A diagram of the algorithm for the beaming and rhythm stuff:
 ![image](https://github.com/user-attachments/assets/3cbde333-0225-4733-9cd5-972c669230fe)
 
+The renderering of the components in the component container should be managed by rendered.js (which recieves events from the Managers).  
+However the actual renderering (of the svg contents, the actual svg node is instantiated in rendered.js) is done by the (score,text)ComponentSvgRenderer.js files.
+
 # Data flow / event processing
 ## "Class diagrams" for managers
 Events are bound using on\<EventName\>(some function), and dispatched using dispatch\<EventName\>(your, args).  
