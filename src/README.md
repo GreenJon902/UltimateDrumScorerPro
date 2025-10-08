@@ -1,9 +1,64 @@
 # Rendering
 A diagram of the algorithm for the beaming and rhythm stuff:
 ![image](https://github.com/user-attachments/assets/3cbde333-0225-4733-9cd5-972c669230fe)
-
+  
 The renderering of the components in the component container should be managed by rendered.js (which recieves events from the Managers).  
 However the actual renderering (of the svg contents, the actual svg node is instantiated in rendered.js) is done by the (score,text)ComponentSvgRenderer.js files.
+
+# Symbols
+A symbol-id represents a specific drum (a cymbal counts as a drum) (e.g. kick, flam_snare, hi-hat) or a specific decoration (e.g. repeat-end). It consists of two parts - a base-id and zero or more modifier-ids - separated by an underscore. The base-id and modifier-id are both symbol-id-parts.  
+A symbol-id-part is a lowercase string containing only alphabetical characters and dashes. These must be unique (so any pair of decorations, drums, groups, or parts cannot have the same symbol-id-parts) (these can technically be an empty string).  
+The base-id is what it actually is - e.g. snare. The modifier-id is how it has been changed - e.g. ghost, flam. Together this makes snare\_ghost_flam.  
+A drum-id is a symbol-id that refers to a symbol that is a drum. This can be any symbol-id.  
+A decoration-id is a symbol-id that refers to a symbol that is a decoration. This can only be a symbol-id-part (i.e. it cannot be modified).  
+A part-id is a symbol-id that refers to a reusable component that can be used inside drums or decorations, This can only be a symbol-id-part (i.e. it cannot be modified).  
+A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i.e. it cannot be modified).  
+  
+`new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction>>,<groups...: list<group-id>>`  
+Adds a new base-symbol for a drum with the given id. The id must not be taken.  
+The sizes are the distance from the anchor that this symbol takes up.  
+
+`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<instructions...: list<instruction>>`  
+Adds a new base-symbol for a decoration with the given id. The id must not be taken.
+The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.
+  
+`new,part,<id: part-id>,<instructions...: list<instruction...>>`  
+Adds a new part symbol with the given id. The id must not be taken.  
+  
+`modifier,drum,explicit,<id: symbol-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
+Adds a new symbol for a drum with the given id. The id must not be taken, however the modifier itself can have already been used. The id must be modified at least once, and the base-id must be taken.  
+The sizes are the distance from the anchor that this symbol takes up.  
+This will not inherit instructions or groups from the base-ids or any related symbol-ids. You must specify these yourself.  
+  
+`modifier,drum,auto,<modifier-id: modifier_id>,<pattern...: list<pattern-part>>,(+<detla|\><min)size-left: float>,(+<detla|\><min)size-right: float>,(+<detla|\><min)size-up: float>,(+<detla|\><min)size-down: float>,<min-width: float>,<min-height: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
+Adds new symbols for each drum who's id matches the pattern. At least one id must match the pattern. The modifier can have been used already, but if the combined ids may not be taken.  
+The created drum's ids are the old id with the modifier added onto the end.  
+For each of the size-(left,right,up,down), you can specificy whether it is a delta or a minimum. The delta is added on to the old size. The minimum means we take the maximum of the given minimum and the old size. In case it isn't clear, you specify which you want using + and > (e.g. ...,+5,+1,>3,+2,...).  
+The min-width and min-height are extra options to say we want at least this width and this height centered around the anchor. So if we have the size-right=0 and size-left=10 and min-width=5, size-right of the new drum will be 2.5.  
+The created drum will inherit instructions and groups from the drum it was created from, and will have the new instructions and groups appended to the end.  
+  
+`constraint,drum,<top-id: union<drum-id,group-id>>,<bottom-id: union<drum-id,group-id>>,<distance: float>`  
+Adds a constraint to say a given drum/group must be above another drum/group. The given ids must exist.  
+If a group id is used, then it refers to every single drum in that group. Any non-drum symbol will be ignored.  
+The distance is the minimum distance an item on top may be drawn from an item on the bottom. Any desired indirect distances must be specified directly.   
+- E.g. if a is 0 above b and b is 5 above c, then if only a and c are drawn then a will b 0 above c. If you want to keep the five constraint between a and c then you must add that constraint with another constraint or by using a group.  
+  
+`list<i...: T>`: `<number-of-elements>,` + elements separated by commas.  
+The elements themselves may be constructed of multiple pieces of data that are also separated by commas.
+  
+`instruction...`: `<instruction-name>,<instruction-args...>`
+The instruction arguements depend on the name. These are the instructions:  
+* `path,<path-string: string>` - Draws a path. Given string is as per the SVG spec.  
+* `circle,<cx>,<cy>,<r>` - Draws a circle with centre `(cx, cy)` and radius `r`.  
+* `use,<symbol-id>` - Uses adds the instructions for another symbol in this location. This could be a drum, decoration or part.  
+* `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
+* `pop-transform` - Pops a transformation.  
+  
+Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
+This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on identifiers and float-literals.
+Instructions in drums will always have the identifiers `size_left`, `size_right`, `size_up` and `size_down`, which are the sizes of the final symbol after all modifications are processed. This means `size_right` of a `snare` may be 0, but `size_right` of a `snare_ghost` may be 3. This means when you use a `use` instruction then parts will have access to size, and when if you use a `use` instruction to include a `snare`, the `size_right` will still be 3. However, keep in mind that if you use a part in both a drum and decoration, the identifiers may not be available/identical in both.  
+When you use `modifier,drum,auto...`, you will have `parent_size_left`, `parent_size_right`, `parent_size_up`, `parent_size_down`, however these refer specifically to the direct parent. So if a inherits from b and b inherits from c: when drawing a, the parent sizes for b will be c's size, and the parent sizes for a will be b's size.
+Instructions in decorations will always have the identifiers `width`, `height` and `drum-center-y` and the same rules apply as do apply to drums.  
 
 # Data flow / event processing
 ## "Class diagrams" for managers
