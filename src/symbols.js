@@ -14,13 +14,14 @@ function ensureStringIsLowerAndGiven(string, ...allowedNonAlphanumeric) {
     return string;
 }
 
-function ensureBaseSymbolId(string) {
+function ensureSymbolIdPart(string) {
     // Ensures the given string is formatted as a valid base-symbol-id/part-symbol-id/modifier-id: "some-id".
     // If it is correct then it is returned, otherwise an error is thrown.
     return ensureStringIsLowerAndGiven(string, "-");
 }
-const ensurePartSymbolId = ensureBaseSymbolId;
-const ensureModifierId = ensureBaseSymbolId;
+const ensureBaseSymbolId = ensureSymbolIdPart;
+const ensurePartSymbolId = ensureSymbolIdPart;
+const ensureModifierId = ensureSymbolIdPart;
 
 function ensureSymbolOrGroupId(string) {
     // Ensures the given string is formatted as a valid symbol-id/group-id: "some-id_some-modifier"/"some-id".
@@ -101,7 +102,7 @@ function parseNewBase(tokens, parseData) {
     // This removes the tokens from the given array.
     // This expects the action ID to already have been removed.
     // 
-    // The following tokens should be like this base-symbol-id,size-left,size-up,size-down,<instructions>,<groups>.
+    // The following tokens should be like this base-symbol-id,size-left,size-up,size-right,size-down,<instructions>,<groups>.
     const baseSymbolId = ensureBaseSymbolId(dequeue(tokens), parseData);
     const sizeLeft = parseFloat(dequeue(tokens));
     const sizeUp = parseFloat(dequeue(tokens));
@@ -131,7 +132,7 @@ function parseModifierExplicit(tokens, parseData) {
     // This removes the tokens from the given array.
     // This expects the action ID to already have been removed.
     // 
-    // The following tokens should be like this base_symbol-id(_modifier-id)+,size-left,size-up,size-down,<instructions>,<groups>.
+    // The following tokens should be like this base_symbol-id(_modifier-id)+,size-left,size-up,size-right,size-down,<instructions>,<groups>.
     const symbolId = ensureDoesNotExist(dequeue(tokens), parseData);
     const {base: baseSymbolId, modifiers: modifierIds} = splitSymbolId(symbolId);
     ensureExists(baseSymbolId, parseData);
@@ -175,7 +176,7 @@ function parseModifierAuto(tokens, parseData) {
 
         // For this specific symbol, get the instructions
         // We need to do it like this as transform anchors may be different for each symbolId
-        const instructions = parseInstructions(Array.from(tokensCopy), parseData, parentSymbolId);  // We don't wantit to modify out copy of tokens, as we may still need to loop through it more
+        const instructions = parseInstructions(Array.from(tokensCopy), parseData, parentSymbolId);  // We don't want it to modify our copy of tokens, as we may still need to loop through it more
             // This will add the instructions from parentSymbolId too
         
         // Figure out correct size for new symbol
@@ -197,7 +198,7 @@ function parseModifierAuto(tokens, parseData) {
 }
 
 function parseHeadConstraint(tokens, parseData) {
-    // Parse a modifier_auto action from the array of tokens.
+    // Parse a head_constraint action from the array of tokens.
     // This removes the tokens from the given array.
     // This expects the action ID to already have been removed.
     // 
@@ -224,9 +225,6 @@ class SvgInstruction {
     //      PUSH-TRANSFORM:
     //          - transform - The value to put in the svg transform value.
     //      POP-TRANSFORM:
-    //      PUSH-ANCHORED-TRANSFORM:
-    //          - horizAnchor - LEFT,MIDDLE,RIGHT - of the parent symbol
-    //          - vertAnchor - TOP,MIDDLE,BOTTOM - of the parent symbol
 
     // Instruction types
     static get PATH() {return "PATH";}  // Declare like this so are immutable
@@ -385,8 +383,8 @@ function parsePatternAndGetMatchingSymbols(tokens, parseData) {
     return Object.freeze(ids);
 }
 
-function calculateFullOrder(parseData) {
-    // Using the constraint data, figure out which symbols need to be drawn over which symbols.
+function calculateFullDrumOrder(parseData) {
+    // Using the constraint data, figure out which drum symbols need to be drawn over which symbols.
     
     // Extract the constraint data to get direct relations beetween symbols
     const symbolOverSymbols = {};  // {symbol-id: Array<symbol-ids-which-are-below>}
@@ -432,13 +430,13 @@ function calculateFullOrder(parseData) {
 // First parse tokens into the arrays
 const parseData = parseSymbolSourceString(SYMBOLS_SOURCE);
 // Process constraints
-const fullOrder = calculateFullOrder(parseData);
+const fullDrumOrder = calculateFullDrumOrder(parseData);
 
 // Create functions to export -------------------------------------
-export class Symbols {
+export class DrumSymbols {
     static getFullOrder() {
         // Returns an array containing the order in which symbols should be drawn where index 0 is the top.
-        return fullOrder;  // This is already frozen
+        return fullDrumOrder;  // This is already frozen
     }
 
     static isAbove(symbolId1, symbolId2) {
