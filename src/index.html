@@ -43,11 +43,11 @@
         // -------------------------
         
         ComponentManager.loadEmptyProject();
-        //const id = ComponentManager.createEmptyComponent("score-component");
-        const id = ComponentManager.createEmptyComponent("text-component");
+        const id = ComponentManager.createEmptyComponent("score-component");
+        //const id = ComponentManager.createEmptyComponent("text-component");
         SelectionManager.select(id);
-        //ComponentManager.toggleComponentSymbolEnabledState("component-0", "snare");
-        //ComponentManager.toggleComponentSymbolEnabledState("component-0", "kick");
+        ComponentManager.toggleComponentSymbolEnabledState("component-0", "snare");
+        ComponentManager.toggleComponentSymbolEnabledState("component-0", "kick");
         
         attachEditor(document.getElementById("editor-pane"));
         attachRendered(document.getElementById("component-container"));
