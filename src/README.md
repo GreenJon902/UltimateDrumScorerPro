@@ -6,8 +6,8 @@ The renderering of the components in the component container should be managed b
 However the actual renderering (of the svg contents, the actual svg node is instantiated in rendered.js) is done by the (score,text)ComponentSvgRenderer.js files.
 
 # Symbols
-A symbol-id represents a specific drum (a cymbal counts as a drum) (e.g. kick, flam_snare, hi-hat) or a specific decoration (e.g. repeat-end). It consists of two parts - a base-id and zero or more modifier-ids - separated by an underscore. The base-id and modifier-id are both symbol-id-parts.  
-A symbol-id-part is a lowercase string containing only alphabetical characters and dashes. These must be unique (so any pair of decorations, drums, groups, or parts cannot have the same symbol-id-parts) (these can technically be an empty string).  
+A symbol-id represents a specific drum (a cymbal counts as a drum) (e.g. kick, flam_snare, hi-hat) or a specific decoration (e.g. repeat-end). It consists of two parts - a base-id and zero or more modifier-ids - separated by an underscore. The base-id and modifier-id are both symbol-id-parts. These must be unique (so any pair of decorations, drums, groups, or parts cannot have the same symbol-id-parts).  
+A symbol-id-part is a lowercase string containing only alphabetical characters and dashes  (these can technically be an empty string). 
 The base-id is what it actually is - e.g. snare. The modifier-id is how it has been changed - e.g. ghost, flam. Together this makes snare\_ghost_flam.  
 A drum-id is a symbol-id that refers to a symbol that is a drum. This can be any symbol-id.  
 A decoration-id is a symbol-id that refers to a symbol that is a decoration. This can only be a symbol-id-part (i.e. it cannot be modified).  
