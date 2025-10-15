@@ -25,18 +25,26 @@ function ensureSymbolIdPart(string) {
     return ensureStringIsLowerAndGiven(string, "-");
 }
 
-function ensureSymbolId(string) {
+function ensureSymbolId(string, mustBeModified=false) {
     // Ensures the given string is a valid symbol-id (e.g. "hello-world", "hello-world_i-am_jon").
     // If it is correct then it is returned, otherwise an error is thrown.
     // 
     // If a string is a symbolIdPart then it necessarily passes this function too.
+    // 
+    // If mustBeModified is true then the id must be modified (contain an _).
+    
     ensureStringIsLowerAndGiven(string, "-", "_");
+    
+    if (mustBeModified && !string.includes("_")) throw "Id must be modified but is not";
+    
+    return string;
 }
 
-function ensureExists(id, parseData) {
+function ensureExists(id, parseData, group=true, drum=true, part=true, decoration=true) {
     // Ensures the given id exists.
     // If it does then the id is returned, otherwise an error is thrown.
-    if (!(parseData.groups.has(id) || id in parseData.drums || id in parseData.parts || id in parseData.decorations)) throw "Given id not in parse data";
+    // If group, drum, part, or decoration is false then that specific one will not be checked.
+    if (!((group && parseData.groups.has(id)) || (drum && id in parseData.drums) || (part && id in parseData.parts) || (decoration && id in parseData.decorations))) throw "Given id not in parse data";
     return id;
 }
 
@@ -69,6 +77,62 @@ function parseModifierSizeChanger(string) {
     }
 }
 
+function parseOptionalFloat(string) {
+    // Parses an optional float -> float, or an empty string to null.
+
+    if (string === "") return null;
+    return parseFloat(string);
+}
+
+function parseList(tokens, parseItem, ...parseItemArgs) {
+    // Parses a list from the given token array.
+    // This expects the first token to be the length of the array. It consumes this value.
+    // It will then call the parseItem(tokens, ...parseItemArgs)->result function that many times, and expects it to consume any tokens it uses.
+    // This then returns an array with the results.
+    
+    const n = parseInt(dequeue(tokens));
+    const listValues = new Array();
+    for (let i=0; i<n; i++) {
+        listValues.push(parseItem(tokens, ...parseItemArgs));
+    }
+}
+
+function parseInstruction(tokens, parseData) {
+    // Parses an instruction from the given tokens.
+    // Expects this instruction to be first, and will consume it.
+    // This will not update parseData, it will only query it.
+    // 
+    // See src/README.md for instruction types.
+
+    const instructionName = dequeue(tokens);
+    if (instructionName === "path") {
+        const pathString = dequeue(tokens);
+        return SvgInstruction(SvgInstruction.PATH, pathString);
+    } else if (instructionName === "circle") {
+        const cx = parseFloat(dequeue(tokens));
+        const cy = parseFloat(dequeue(tokens));
+        const r = parseFloat(dequeue(tokens));
+        return SvgInstruction(SvgInstruction.CIRCLE, cx, cy, r);
+    } else if (instructionName === "use") {
+        const id = ensureExists(ensureSymbolId(dequeue(tokens)), parseData, group=false);  // We can't draw a group so don't check those.
+        return SvgInstruction(SvgInstruction.USE, id);
+    } else if (instructionName === "push-transform") {
+        const transformString = dequeue(tokens);
+        return SvgInstruction(SvgInstruction.PUSH_TRANSFORM, transformString);
+    } else if (instructionName === "pop-transform") {
+        return SvgInstruction(SvgInstruction.POP_TRANSFORM);
+    } else {
+        throw "Instruction " + instructionName + " is not recognised";
+    }
+}
+
+function parseGroup(tokens) {
+    // Parses a group-id from the given tokens.
+    // This will consume that token, and expects it to be first.
+    // This will not add the groups to parseData.
+    return ensureSymbolIdPart(dequeue(tokens));
+}
+
 function parseSymbolSourceString(symbolsSource) {
     // Parse the given symbol source string. This string is made of actions with arguments which are all separated by commas.
     // This loads them into thise maps: parts, symbols, constraints.
@@ -77,9 +141,9 @@ function parseSymbolSourceString(symbolsSource) {
     // This returns a parseData object (see creation for doc).
     
     const parseData = {
-        parts: {},  // {part-id: {instructions: Array<SvgInstruction>}}
-        drums: {},  // {symbol-id: {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Array<SvgInstruction>, groups: Array<group-id>}}
-        decorations: {},  // {decoration-id: {width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Array<SvgInstruction>}}
+        parts: {},  // {part-id: {instructions: Object.freeze(Array<SvgInstruction>)}}
+        drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
+        decorations: {},  // {decoration-id: Object.frreze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Object.freeze(Array<SvgInstruction>)})}
         constraints: new Set(),  // {topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float}
         groups: new Set()  // group-id
     }
@@ -158,30 +222,75 @@ function parseNewDrum(tokens, parseData) {
     // Parses a statement that begins with new,drum from the tokens.
     // This expects that new,drum to have already been consumed.
     // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
 
-    // TODO: This
+    // Parse all parts of data for drum
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
+    const sizeLeft = parseFloat(dequeue(tokens));
+    const sizeUp = parseFloat(dequeue(tokens));
+    const sizeRight = parseFloat(dequeue(tokens));
+    const sizeDown = parseFloat(dequeue(tokens));
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
+    
+    // Add groups to parseData
+    groups.forEach(g => parseData.groups.add(g));
+    
+    // Add drum to parseData
+    parseData.drums[id] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: Object.freeze(instructions), groups: Object.freeze(groups)};
 }
 
 function parseNewDecoration(tokens, parseData) {
     // Parses a statement that begins with new,decoration from the tokens.
     // This expects that new,decoration to have already been consumed.
     // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
 
-    // TODO: This
+    // Parse all parts of data for decoration
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
+    const width = parseFloat(dequeue(tokens));
+    const minHeight = parseFloat(dequeue(tokens));
+    const minBelowDrums = parseOptionalFloat(dequeue(tokens));
+    const minAboveDrums = parseOptionalFloat(dequeue(tokens));
+    const minAboveBars = parseOptionalFloat(dequeue(tokens));
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    
+    // Add decoration to parseData
+    groups.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, instructions: Object.freeze(instructions)};
 }
 
 function parseModifierDrumExplicit(tokens, parseData) {
     // Parses a statement that begins with modifier,drum,explicit from the tokens.
     // This expects that modifier,drum,explicit to have already been consumed.
     // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
 
-    // TODO: This
+    // Parse all parts of data for modifier
+    const id = ensureDoesNotExist(ensureSymbolId(dequeue(tokens), mustBeModified=true));
+    ensureExists(splitSymbolId(id).base);  // Ensure base exists
+    const sizeLeft = parseFloat(dequeue(tokens));
+    const sizeUp = parseFloat(dequeue(tokens));
+    const sizeRight = parseFloat(dequeue(tokens));
+    const sizeDown = parseFloat(dequeue(tokens));
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
+    
+    // Add groups to parseData
+    groups.forEach(g => parseData.groups.add(g));
+    
+    // Add drum to parseData
+    parseData.drums[id] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: Object.freeze(instructions), groups: Object.freeze(groups)};
 }
 
 function parseModifierDrumAuto(tokens, parseData) {
     // Parses a statement that begins with modifier,drum,auto from the tokens.
     // This expects that modifier,drum,auto to have already been consumed.
     // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
 
     // TODO: This
 }
@@ -190,6 +299,56 @@ function parseConstraintDrum(tokens, parseData) {
     // Parses a statement that begins with constraint,drum from the tokens.
     // This expects that constraint,drum to have already been consumed.
     // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
 
     // TODO: This
+}
+
+class SvgInstruction {
+    // An instruction for how to create the svg nodes for a given symbol. Multiple of these create a symbol.
+    //
+    // There are a couple types of svg-instructions (and what they store):
+    //      PATH:
+    //          - path - The value of the `d` attribute of the node.
+    //      CIRCLE:
+    //          - cx - The centre x of the circle.
+    //          - cy - The centre y of the circle.
+    //          - r - The radius of the circle.
+    //      USE:
+    //          - id - The id of the part or symbol to use.
+    //      PUSH-TRANSFORM:
+    //          - transform - The value to put in the svg transform value.
+    //      POP-TRANSFORM:
+
+    // Instruction types
+    static get PATH() {return "PATH";}  // Declare like this so are immutable
+    static get CIRCLE() {return "CIRCLE";} 
+    static get USE() {return "USE";}  
+    static get PUSH_TRANSFORM() {return "PUSH-TRANSFORM";}  
+    static get POP_TRANSFORM() {return "POP-TRANSFORM";}  
+    
+    constructor(type, ...args) {
+        // Type should be the value in PATH, CIRCLE...
+        // Args should be passed in the order they are documented in.
+        
+        this.type = type;
+        if (type === SvgInstruction.PATH) {
+            this.path = args[0];
+        } else if (type === SvgInstruction.CIRCLE) {
+            this.cx = args[0];
+            this.cy = args[1];
+            this.r = args[2];
+        } else if (type === SvgInstruction.USE) {
+            this.id = args[0];
+        } else if (type === SvgInstruction.PUSH_TRANSFORM) {
+            this.transform = args[0];
+        } else if (type === SvgInstruction.POP_TRANSFORM) {
+            // There are no args for this
+        } else {
+            throw "Unknown type " + type;
+        }
+        
+        Object.freeze(this);  // Make final
+    }
 }
