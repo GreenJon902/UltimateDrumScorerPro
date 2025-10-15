@@ -113,3 +113,83 @@ function parseNew(tokens, parseData) {
     if (whatFunction === undefined) throw "Unknown what " + what;
     whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
 }
+
+function parseModifier(tokens, parseData) {
+    // Parses a statement that begins with modifier from the tokens.
+    // This expects that modifier to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const what = dequeue(tokens);
+    let whatFunction = {  // Select which function we want to call
+        "drum": parseModifierDrum
+    }[what];
+    if (whatFunction === undefined) throw "Unknown what " + what;
+    whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseModifierDrum(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum from the tokens.
+    // This expects that modifier,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const how = dequeue(tokens);
+    let howFunction = {  // Select which function we want to call
+        "explicit": parseModifierDrumExplicit,
+        "auto": parseModifierDrumAuto
+    }[how];
+    if (howFunction === undefined) throw "Unknown how " + how;
+    howFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseConstraint(tokens, parseData) {
+    // Parses a statement that begins with constraint from the tokens.
+    // This expects that constraint to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const what = dequeue(tokens);
+    let whatFunction = {  // Select which function we want to call
+        "drum": parseConstraintDrum
+    }[what];
+    if (whatFunction === undefined) throw "Unknown what " + what;
+    whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseNewDrum(tokens, parseData) {
+    // Parses a statement that begins with new,drum from the tokens.
+    // This expects that new,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    // TODO: This
+}
+
+function parseNewDecoration(tokens, parseData) {
+    // Parses a statement that begins with new,decoration from the tokens.
+    // This expects that new,decoration to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    // TODO: This
+}
+
+function parseModifierDrumExplicit(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum,explicit from the tokens.
+    // This expects that modifier,drum,explicit to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    // TODO: This
+}
+
+function parseModifierDrumAuto(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum,auto from the tokens.
+    // This expects that modifier,drum,auto to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    // TODO: This
+}
+
+function parseConstraintDrum(tokens, parseData) {
+    // Parses a statement that begins with constraint,drum from the tokens.
+    // This expects that constraint,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    // TODO: This
+}
