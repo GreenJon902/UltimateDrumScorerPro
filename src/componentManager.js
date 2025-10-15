@@ -32,10 +32,10 @@ let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
  *     "time-signature-denomenator": positive int,
  *     "rhythm-length-hint": non-negative real,
  *     "score-content": [<Beat>],                    * Must not be empty.
- *     "enabled-symbols": [symbol-id]                * Ids must be distinct.
+ *     "enabled-drums": [drum-id]                    * Ids must be distinct.
  * }
  * <Beat>: [<Subdivision>]                           * Must not be empty.
- * <Subdivision>: [symbol-id]                        * Ids must be distinct.
+ * <Subdivision>: [drum-id]                          * Ids must be distinct.
  * 
  * <VertGroup>: [component-id]                       * Ids must be score-components. An ID may only be used once and in only one VertGroup.
  */
@@ -64,8 +64,8 @@ export class ComponentManager {
         createEvents(this, "Component", ["X", "Y", "TimeSignatureDenomenator", "RhythmLengthHint", "Text", "FontSize"], "Changed");
         createEvents(this, "Component", ["Left", "Right"], "DecorationChanged");
         createEvent(this, "ComponentVertGroupChanged");
-        createEvent(this, "ComponentSymbolToggled");
-        createEvent(this, "ComponentSymbolEnabledStateChanged");
+        createEvent(this, "ComponentDrumToggled");
+        createEvent(this, "ComponentDrumEnabledStateChanged");
         createEvents(this, "Component", ["Beats", "Subdivisions"], ["Added", "Removed"]);
     }
 
@@ -95,7 +95,7 @@ export class ComponentManager {
                 "time-signature-denomenator": 4,
                 "rhythm-length-hint": 0,
                 "score-content": [[[], []], [[], []], [[], []], [[], []]],
-                "enabled-symbols": []
+                "enabled-drums": []
             }
         } else if (componentType === "text-component") {
             componentData = {
@@ -173,40 +173,40 @@ export class ComponentManager {
         createBasicComponentGetterSetter(this, "score-component", "RightDecoration", "right-decoration", v => typeof v === "string");  // TODO: Validate id
     }
     
-    static toggleComponentSymbol(componentId, beatI, subdivisionI, symbolId) {
-        // Toggles whether the given symbol is used at the given subdivision of the given beat of the given component.
-        // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
-        // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be used.
+    static toggleComponentDrum(componentId, beatI, subdivisionI, drumId) {
+        // Toggles whether the given drum is used at the given subdivision of the given beat of the given component.
+        // Errors are thrown if the componentId, beatI, subdivisionI, or drumId are invalid.
+        // Only drumIds which are currently enabled by toggleComponentDrumEnabledState are allowed to be used.
         
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
-        // TODO: Validate symbolId is valid
-        if (!this.getComponentSymbolEnabledState(componentId, symbolId)) throw "Tried to use toggle on disabled symbolId";
+        // TODO: Validate drumId is valid
+        if (!this.getComponentDrumEnabledState(componentId, drumId)) throw "Tried to use toggle on disabled drumId";
         
         // Handle toggle
-        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI], symbolId);  // Updates array in-place
-        this.dispatchComponentSymbolToggled(componentId, beatI, subdivisionI, symbolId, this.getComponentSymbolState(componentId, beatI, subdivisionI, symbolId));
+        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI], drumId);  // Updates array in-place
+        this.dispatchComponentDrumToggled(componentId, beatI, subdivisionI, drumId, this.getComponentDrumState(componentId, beatI, subdivisionI, drumId));
     }
     
-    static getComponentSymbolState(componentId, beatI, subdivisionI, symbolId) {
-        // Gets whether the given symbol is being used in the given subdivision in the given beat on the given component.
-        // Errors are thrown if the componentId, beatI, subdivisionI, or symbolId are invalid.
-        // Only symbolIds which are currently enabled by toggleComponentSymbolEnabledState are allowed to be queried.
+    static getComponentDrumState(componentId, beatI, subdivisionI, drumId) {
+        // Gets whether the given drum is being used in the given subdivision in the given beat on the given component.
+        // Errors are thrown if the componentId, beatI, subdivisionI, or drumId are invalid.
+        // Only drumIds which are currently enabled by toggleComponentDrumEnabledState are allowed to be queried.
         
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
-        // TODO: Validate symbolId is valid
-        if (!this.getComponentSymbolEnabledState(componentId, symbolId)) throw "Tried to use toggle on disabled symbolId";
+        // TODO: Validate drumId is valid
+        if (!this.getComponentDrumEnabledState(componentId, drumId)) throw "Tried to use toggle on disabled drumId";
         
-        return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(symbolId);
+        return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(drumId);
     }
     
-    static getComponentSubdivisionSymbols(componentId, beatI, subdivisionI) {
-        // Returns an immutable set of the symbolIds which are enabled on the given subdivison of the given beat of this given component.
+    static getComponentSubdivisionDrums(componentId, beatI, subdivisionI) {
+        // Returns an immutable set of the drumIds which are enabled on the given subdivison of the given beat of this given component.
         
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
@@ -216,41 +216,41 @@ export class ComponentManager {
         return Object.freeze(new Set(CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI]));
     }
     
-    static toggleComponentSymbolEnabledState(componentId, symbolId) {
-        // Toggles whether the given symbol can be enabled for this component.
+    static toggleComponentDrumEnabledState(componentId, drumId) {
+        // Toggles whether the given drum can be enabled for this component.
         // This determins whether it is shown in the editor.
-        // If this is disabled, then all enabled beats and subdivisions for this symbol are silently disabled.
+        // If this is disabled, then all enabled beats and subdivisions for this drum are silently disabled.
         
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
-        // TODO: Validate symbol id
+        // TODO: Validate drum id
         
-        // Silently drop any removed symbols from the score if we're removing a symbolId
-        if (this.getComponentSymbolEnabledState(componentId, symbolId)) {
+        // Silently drop any removed drums from the score if we're removing a drumId
+        if (this.getComponentDrumEnabledState(componentId, drumId)) {
             for (let bi=0; bi<this.getComponentBeatCount(componentId); bi++) {
                 for (let si=0; si<this.getComponentBeatSubdivisionCount(componentId, bi); si++) {
-                    if (this.getComponentSymbolState(componentId, bi, si, symbolId)) {
+                    if (this.getComponentDrumState(componentId, bi, si, drumId)) {
                         const array = CURRENT_PROJECT["components"][componentId]["score-content"][bi][si];  // Do action on array so no events are dispatched
-                        array.splice(array.indexOf(symbolId), 1);
+                        array.splice(array.indexOf(drumId), 1);
                     }
                 }
             }
         }
 
         // Handle toggle
-        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["enabled-symbols"], symbolId);  // Updates array in place
-        this.dispatchComponentSymbolEnabledStateChanged(componentId, symbolId, this.getComponentSymbolEnabledState(componentId, symbolId));
+        toggleArrayItem(CURRENT_PROJECT["components"][componentId]["enabled-drums"], drumId);  // Updates array in place
+        this.dispatchComponentDrumEnabledStateChanged(componentId, drumId, this.getComponentDrumEnabledState(componentId, drumId));
     }
     
-    static getComponentSymbolEnabledState(componentId, symbolId) {
-        // Gets whether the given symbol can be used in the given component.
-        // See toggleComponentSymbolEnabledState for more detail.
+    static getComponentDrumEnabledState(componentId, drumId) {
+        // Gets whether the given drum can be used in the given component.
+        // See toggleComponentDrumEnabledState for more detail.
          
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
-        // TODO: Validate symbol id
+        // TODO: Validate drum id
         
-        return CURRENT_PROJECT["components"][componentId]["enabled-symbols"].includes(symbolId);
+        return CURRENT_PROJECT["components"][componentId]["enabled-drums"].includes(drumId);
     }
     
     static addVertGroup(...componentIds) {

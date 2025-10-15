@@ -72,8 +72,8 @@ ComponentManager - Stores persistant state of entities.
 		- Component(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)Changed {componentId, newValue}
 		- Component(Left|Right)DecorationChanged {componentId, newId|null}
 		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
-		- ComponentSymbolToggled {componentId, beatI, subdivisionI, symbolId, newValue}
-		- ComponentSymbolEnabledStateChanged {componentId, symbolId, newValue}
+		- ComponentDrumToggled {componentId, beatI, subdivisionI, drumId, newValue}
+		- ComponentDrumEnabledStateChanged {componentId, drumId, newValue}
 		- ComponentBeatsAdded {componentId, numberOfSubdivisions, ...beatIndexes}
 		- ComponentBeatsRemoved {componentId, ...beatIndexes}
 		- ComponentSubdivisionsAdded {componentId, beatI, ...subdivisionIndexes}
@@ -84,11 +84,11 @@ ComponentManager - Stores persistant state of entities.
 		- GetComponentType(componentId) -> component-type
 		- RemoveComponent(componentId)
 		- DuplicateComponent(componentId) -> newComponentId
-		- ToggleComponentSymbol(componentId, beatI, subdivisionI, symbolId)
-		- GetComponentSymbolState(componentId, beatI, subdivisionI, symbolId) -> bool
-		- GetComponentSubdivisonSymbols(componentId, beatI, subdivisionI) -> Object.freeze(Set<symbol-id>)
-		- ToggleComponentSymbolEnabledState(componentId, symbolId)
-		- GetComponentSymbolEnabledState(componentId, symbolId) -> bool
+		- ToggleComponentDrum(componentId, beatI, subdivisionI, drumId)
+		- GetComponentDrumState(componentId, beatI, subdivisionI, drumId) -> bool
+		- GetComponentSubdivisonDrums(componentId, beatI, subdivisionI) -> Object.freeze(Set<drum-id>)
+		- ToggleComponentDrumEnabledState(componentId, drumId)
+		- GetComponentDrumEnabledState(componentId, drumId) -> bool
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId, newValue)
 		- SetComponent(Left|Right)Decoration(componentId, newId|null)
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
@@ -173,19 +173,19 @@ The basic thought process is all data flows through the manager. If the editor u
 ```
 1. Toggle pressed on <id>.
 	2. State of toggle not changed.
-	3. ComponentManager.toggleComponentSymbol(<id>, ...).
+	3. ComponentManager.toggleComponentDrum(<id>, ...).
 		4. ComponentManager updates internal state.
-		5. ComponentManager emits ComponentSymbolToggled.
+		5. ComponentManager emits ComponentDrumToggled.
 			6a. Renderer responds accordingly.
 			6b. Editor updates toggle state.
 ```
-### Adding/remove a symbol from component in editor
+### Adding/remove a drum from component in editor
 ```
-1. Component is <componentId>. Symbol is <symbolId>. Click happens in editor.
-	2. Symbols shown not changed.
-	3. ComponentManager.toggleComponentSymbolEnabledState(<compId>, <symbolId>).
-		4. ComponentManager adds or removes symbols internally (without emitting any events).
-		5. ComponentManager emits ComponentSymbolEnabledStateChanged.
+1. Component is <componentId>. Drum is <drumId>. Click happens in editor.
+	2. Drums shown not changed.
+	3. ComponentManager.toggleComponentDrumEnabledState(<compId>, <drumId>).
+		4. ComponentManager adds or removes drums internally (without emitting any events).
+		5. ComponentManager emits ComponentDrumEnabledStateChanged.
 			6. Editor responds accordingly.
 ```
 ### Clicking on a component
