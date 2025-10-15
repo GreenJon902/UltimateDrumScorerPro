@@ -14,11 +14,11 @@ A decoration-id is a symbol-id that refers to a symbol that is a decoration. Thi
 A part-id is a symbol-id that refers to a reusable component that can be used inside drums or decorations, This can only be a symbol-id-part (i.e. it cannot be modified).  
 A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i.e. it cannot be modified).  
   
-`new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction>>,<groups...: list<group-id>>`  
+`new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
 The sizes are the distance from the anchor that this symbol takes up.  
 
-`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<instructions...: list<instruction>>`  
+`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.
 The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.
   
