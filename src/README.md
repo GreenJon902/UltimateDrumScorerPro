@@ -31,7 +31,7 @@ The sizes are the distance from the anchor that this symbol takes up.
 This will not inherit instructions or groups from the base-ids or any related symbol-ids. You must specify these yourself.  
   
 `modifier,drum,auto,<modifier-id: modifier_id>,<pattern...: list<pattern-part>>,(+<detla|\><min)size-left: float>,(+<detla|\><min)size-right: float>,(+<detla|\><min)size-up: float>,(+<detla|\><min)size-down: float>,<min-width: float>,<min-height: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
-Adds new symbols for each drum who's id matches the pattern. At least one id must match the pattern. The modifier can have been used already, but if the combined ids may not be taken.  
+Adds new symbols for each drum who's id matches the pattern (non-drum matches will throw an exception). At least one id must match the pattern. The modifier can have been used already, but if the combined ids may not be taken.  
 The created drum's ids are the old id with the modifier added onto the end.  
 For each of the size-(left,right,up,down), you can specificy whether it is a delta or a minimum. The delta is added on to the old size. The minimum means we take the maximum of the given minimum and the old size. In case it isn't clear, you specify which you want using + and > (e.g. ...,+5,+1,>3,+2,...).  
 The min-width and min-height are extra options to say we want at least this width and this height centered around the anchor. So if we have the size-right=0 and size-left=10 and min-width=5, size-right of the new drum will be 2.5.  
@@ -53,7 +53,14 @@ The instruction arguements depend on the name. These are the instructions:
 * `use,<symbol-id>` - Uses adds the instructions for another symbol in this location. This could be a drum, decoration or part. This ID must exist.  
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
-  
+ 
+`pattern-part` : `<action><id: symbol-id>` (yes, without the comma).
+A pattern refers to a set of symbols (these can be of any type, but the function using these symbols may put limitations on this).
+The pattern is build from pattern-parts, and each pattern-part is an instruction to include or exclude ids.
+The `action` can be `+` or `-`, meaning to add all matching symbols or remove any previously-matched matching symbols respecitvely.
+If the id is a group, then it adds/removes all ids that are in that group.
+
+
 Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
 This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on identifiers and float-literals.
 Instructions in drums will always have the identifiers `size_left`, `size_right`, `size_up` and `size_down`, which are the sizes of the final symbol after all modifications are processed. This means `size_right` of a `snare` may be 0, but `size_right` of a `snare_ghost` may be 3. This means when you use a `use` instruction then parts will have access to size, and when if you use a `use` instruction to include a `snare`, the `size_right` will still be 3. However, keep in mind that if you use a part in both a drum and decoration, the identifiers may not be available/identical in both.  

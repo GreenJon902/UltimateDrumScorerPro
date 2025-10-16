@@ -150,11 +150,11 @@ function parseSymbolSourceString(symbolsSource) {
     // This returns a parseData object (see creation for doc).
     
     const parseData = {
-        parts: {},  // {part-id: {instructions: Object.freeze(Array<SvgInstruction>)}}
+        parts: {},  // {part-id: Object.freeze({instructions: Object.freeze(Array<SvgInstruction>)})}
         drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
-        decorations: {},  // {decoration-id: Object.frreze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Object.freeze(Array<SvgInstruction>)})}
-        constraints: new Set(),  // {topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float}
-        groups: new Set()  // group-id
+        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Object.freeze(Array<SvgInstruction>)})}
+        constraints: new Set(),  // Object.freeze({topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float})
+        groups: new Set()  // group-id 
     }
 
     const tokens = symbolsSource.split(",");
@@ -181,7 +181,8 @@ function parseNew(tokens, parseData) {
     const what = dequeue(tokens);
     let whatFunction = {  // Select which function we want to call
         "drum": parseNewDrum,
-        "decoration": parseNewDecoration
+        "decoration": parseNewDecoration,
+        "part": parseNewPart
     }[what];
     if (whatFunction === undefined) throw "Unknown what " + what;
     whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
@@ -270,6 +271,22 @@ function parseNewDecoration(tokens, parseData) {
     groups.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, instructions: Object.freeze(instructions)};
 }
 
+function parseNewPart(tokens, parseData) {
+    // Parses a statement that begins with new,part from the tokens.
+    // This expects that new,part to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for decoration
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    
+    // Add decoration to parseData
+    groups.parts[id] = Object.freeze({instructions: Object.freeze(instructions)});
+}
+
+// TODO: Check and doc for loading duplicate modifers and duplicate drums (e.g. snare_flam_flam is not allowed, and snare_flam_ghost is the same as snare_ghost_flam)
 function parseModifierDrumExplicit(tokens, parseData) {
     // Parses a statement that begins with modifier,drum,explicit from the tokens.
     // This expects that modifier,drum,explicit to have already been consumed.
@@ -302,6 +319,19 @@ function parseModifierDrumAuto(tokens, parseData) {
     // See src/README.md for token doc.
 
     // TODO: This
+    // Parse all parts of data for modifier
+    const modifierId = ensureSymbolIdPart(dequeue(tokens));
+    const pattern = queryparseList(tokens, parsePatternPart);
+    const sizeLeft = parseModifierSizeChanger(dequeue(tokens));
+    const sizeUp = parseModifierSizeChanger(dequeue(tokens));
+    const sizeRight = parseModifierSizeChanger(dequeue(tokens));
+    const sizeDown = parseModifierSizeChanger(dequeue(tokens));
+    const minWidth = parseFloat(dequeue(tokens));
+    const minHeight = parseFloat(dequeue(tokens));
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
+    
+    // TODO: What we want to do next is parsePatternAndGetMatchingSymbols
 }
 
 function parseConstraintDrum(tokens, parseData) {
@@ -311,7 +341,14 @@ function parseConstraintDrum(tokens, parseData) {
     // 
     // See src/README.md for token doc.
 
-    // TODO: This
+    // Parse all parts of data for constraint
+    const topId = ensureExistsAndIs(dequeue(tokens), parseData, drum=true, group=true);
+    const bottomId = ensureExistsAndIs(dequeue(tokens), parseData, drum=true, group=true);
+    const distance = parseFloat(dequeue(tokens));
+    
+    // Add constraint to parseData
+    parseData.constraints.add(Object.freeze({topId: topId, bottomId: bottomId, distance: distance}));
+    
 }
 
 class SvgInstruction {
