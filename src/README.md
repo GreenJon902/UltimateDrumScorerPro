@@ -25,7 +25,7 @@ The min-below and min-above mean the minimum distances between the - for example
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
   
-`modifier,drum,explicit,<id: symbol-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
+`modifier,drum,explicit,<id: drum-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new symbol for a drum with the given id. The id must not be taken, however the modifier itself can have already been used. The id must be modified at least once, and the base-id must be taken.  
 The sizes are the distance from the anchor that this symbol takes up.  
 This will not inherit instructions or groups from the base-ids or any related symbol-ids. You must specify these yourself.  

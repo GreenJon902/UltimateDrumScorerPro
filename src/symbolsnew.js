@@ -48,6 +48,15 @@ function ensureExists(id, parseData, group=true, drum=true, part=true, decoratio
     return id;
 }
 
+function ensureExistsAndIs(id, parseData, group=false, drum=false, part=false, decoration=false) {
+    // Ensure the given id exists.
+    // If it does then it checks that the given id is one of the specified types (by setting the relevant type's flag to true).
+    // If it does then the id is returned, otherwise an error is thrown.
+    //
+    // This function is the same as ensureExists but if the default values were false.
+    ensureExists(id, parseData, group=group, drum=drum, part=part, decoration=decoration);
+}
+
 function ensureDoesNotExist(id, parseData) {
     // Ensures the given id does not exist.
     // If it does then an error is thrown, otherwise it is returned.
@@ -270,7 +279,7 @@ function parseModifierDrumExplicit(tokens, parseData) {
 
     // Parse all parts of data for modifier
     const id = ensureDoesNotExist(ensureSymbolId(dequeue(tokens), mustBeModified=true));
-    ensureExists(splitSymbolId(id).base);  // Ensure base exists
+    ensureExistsAndIs(splitSymbolId(id).base, drum=true);  // Ensure base exists
     const sizeLeft = parseFloat(dequeue(tokens));
     const sizeUp = parseFloat(dequeue(tokens));
     const sizeRight = parseFloat(dequeue(tokens));
