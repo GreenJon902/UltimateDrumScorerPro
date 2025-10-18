@@ -32,10 +32,20 @@ function ensureSymbolId(string, mustBeModified=false) {
     // If a string is a symbolIdPart then it necessarily passes this function too.
     // 
     // If mustBeModified is true then the id must be modified (contain an _).
+    // 
+    // This method will fix the order of the modifiers by sorting them. Therefore the return value of this should always be used.
     
     ensureStringIsLowerAndGiven(string, "-", "_");
     
     if (mustBeModified && !string.includes("_")) throw "Id must be modified but is not";
+    
+    // Fix modifier order
+    const {base: base, modifiers: modifiers} = splitSymbolId(string);
+    const sorted_modifiers = modifiers.sort();  // Modifiers should be sorted alphabetically
+    string = [base, ...sorted_modifiers].join("-");
+    
+    // Check for duplicate modifiers
+    if (modifiers.length !== new Set(modifiers)) throw "Duplicate modifiers";
     
     return string;
 }
