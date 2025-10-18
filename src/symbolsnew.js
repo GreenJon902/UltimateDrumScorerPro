@@ -44,7 +44,7 @@ function ensureExists(id, parseData, group=true, drum=true, part=true, decoratio
     // Ensures the given id exists.
     // If it does then the id is returned, otherwise an error is thrown.
     // If group, drum, part, or decoration is false then that specific one will not be checked.
-    if (!((group && parseData.groups.has(id)) || (drum && id in parseData.drums) || (part && id in parseData.parts) || (decoration && id in parseData.decorations))) throw "Given id not in parse data";
+    if (!((group && parseData.groups.has(id)) || (drum && id in parseData.drums) || (part && id in parseData.parts) || (decoration && id in parseData.decorations))) throw "Given id not in parse data or of wrong type";
     return id;
 }
 
@@ -318,10 +318,9 @@ function parseModifierDrumAuto(tokens, parseData) {
     // 
     // See src/README.md for token doc.
 
-    // TODO: This
     // Parse all parts of data for modifier
     const modifierId = ensureSymbolIdPart(dequeue(tokens));
-    const pattern = queryparseList(tokens, parsePatternPart);
+    const pattern = parseList(tokens, dequeue);
     const sizeLeft = parseModifierSizeChanger(dequeue(tokens));
     const sizeUp = parseModifierSizeChanger(dequeue(tokens));
     const sizeRight = parseModifierSizeChanger(dequeue(tokens));
@@ -331,7 +330,13 @@ function parseModifierDrumAuto(tokens, parseData) {
     const instructions = parseList(tokens, parseInstruction, parseData);
     const groups = parseList(tokens, parseGroup);
     
-    // TODO: What we want to do next is parsePatternAndGetMatchingSymbols
+    // Get symbols matching pattern
+    const baseIds = getSymbolsMatchingPattern(pattern, parseData)
+    // Ensure they're all drums
+    baseIds.forEach(id => ensureExistsAndIs(id, drum=true));
+
+    // TODO: Combinding instructions
+    // TODO: Adding drums to parseData
 }
 
 function parseConstraintDrum(tokens, parseData) {
@@ -397,4 +402,39 @@ class SvgInstruction {
         
         Object.freeze(this);  // Make final
     }
+}
+
+function getSymbolsMatchingPattern(pattern, parseData) {
+    // See src/README.md for full doc.
+    //
+    // The gist of it is this:
+    // The pattern should be formatted like ["+group-id", "-symbol-id", ...].
+    // group-ids match any symbols in the group, other ids are taken literally.
+    // Then + adds any matching symbols to the selection, and - removes matching symbols from the selection.
+    // 
+    // This function then returns a frozen set of the results.
+    let ids = new Set();
+    for (let i=0; i<pattern.length; i++) {
+        const statement = pattern[i];
+        const isRemoving = statement[0] === "-";
+        if (!isRemoving && statement[0] !== "+") throw "Invalid pattern action";
+        const toMatch = statement.slice((isRemoving) ? 1 : 0);  // Remove "-" from start of statement
+        
+        // First collect all ids we are refering too
+        const referingIds = new Set(); 
+        // Check direct matches for ids
+        Object.keys(parseData.parts).filter(p => p === toMatch).forEach(p => referingIds.add(p));
+        Object.keys(parseData.drums).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+        Object.keys(parseData.decorations).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+        // Check groups
+        Object.keys(parseData.drums).filter(d => parseData.drums[d].has(toMatch)).forEach(d => referingIds.add(d));
+        
+        // Handle our ids
+        if (isRemoving) {
+            ids = ids.difference(referingIds);   
+        } else {
+            ids = ids.union(referingIds);
+        }
+    }
+    return Object.freeze(ids);
 }
