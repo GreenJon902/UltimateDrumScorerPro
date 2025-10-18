@@ -296,7 +296,6 @@ function parseNewPart(tokens, parseData) {
     groups.parts[id] = Object.freeze({instructions: Object.freeze(instructions)});
 }
 
-// TODO: Check and doc for loading duplicate modifers and duplicate drums (e.g. snare_flam_flam is not allowed, and snare_flam_ghost is the same as snare_ghost_flam)
 function parseModifierDrumExplicit(tokens, parseData) {
     // Parses a statement that begins with modifier,drum,explicit from the tokens.
     // This expects that modifier,drum,explicit to have already been consumed.
@@ -331,22 +330,49 @@ function parseModifierDrumAuto(tokens, parseData) {
     // Parse all parts of data for modifier
     const modifierId = ensureSymbolIdPart(dequeue(tokens));
     const pattern = parseList(tokens, dequeue);
-    const sizeLeft = parseModifierSizeChanger(dequeue(tokens));
-    const sizeUp = parseModifierSizeChanger(dequeue(tokens));
-    const sizeRight = parseModifierSizeChanger(dequeue(tokens));
-    const sizeDown = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaLeft, min: minLeft} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaUp, min: minUp} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaRight, min: minRight} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaDown, min: minDown} = parseModifierSizeChanger(dequeue(tokens));
     const minWidth = parseFloat(dequeue(tokens));
     const minHeight = parseFloat(dequeue(tokens));
     const instructions = parseList(tokens, parseInstruction, parseData);
     const groups = parseList(tokens, parseGroup);
     
+    // Add new groups to tracker
+    groups.forEach(group => parseData.groups.add(group));
+    
     // Get symbols matching pattern
-    const baseIds = getSymbolsMatchingPattern(pattern, parseData)
-    // Ensure they're all drums
-    baseIds.forEach(id => ensureExistsAndIs(id, drum=true));
+    const oldIds = getSymbolsMatchingPattern(pattern, parseData)
+    // Ensure they're all drums and there's at least one
+    oldIds.forEach(id => ensureExistsAndIs(id, drum=true));
+    if (oldIds.length === 0) throw "Expected at least one symbol-id to match the pattern";
 
-    // TODO: Combinding instructions
-    // TODO: Adding drums to parseData
+    // Create new drums
+    for (int i=0; i<oldId.length; i++) {
+        const oldId = oldId[i];
+        const old = parseData.drums[oldId];
+        const modifiedId = ensureDoesNotExist(ensureSymbolId(oldId + "_" + modifierId));  // EnsureSymbolId to sort modifier-ids to.
+        
+        // Find out size of new drum
+        const parentCenterX = -old.sizeLeft / 2 + old.sizeRight / 2;
+        const parentCenterY = -old.sizeUp / 2 + old.sizeDown / 2;
+        const sizeLeft = Math.max(old.sizeLeft + deltaLeft, minLeft, minWidth / 2 - parentCenterX);
+        const sizeUp = Math.max(old.sizeUp + deltaUp, minUp, minHeight / 2 - parentCenterY);
+        const sizeRight = Math.max(old.sizeRight + deltaRight, minRight, minWidth / 2 + parentCenterX);
+        const sizeDown = Math.max(old.sizeDown + deltaDown, minDown, minHeight / 2 + parentCenterY);
+        
+        // Compute combined instructions
+        const combinedInstructions = [
+            ...old.instructions,
+            ...instruction.map(instr => instr.substitute({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
+        ]
+        
+        // New groups set and add
+        const combinedGroups = old.groups.union(groups);
+        parseData.drums[modifiedId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: combinedInstructions, groups: combinedGroups};
+    }
+    
 }
 
 function parseConstraintDrum(tokens, parseData) {
@@ -381,6 +407,8 @@ class SvgInstruction {
     //      PUSH-TRANSFORM:
     //          - transform - The value to put in the svg transform value.
     //      POP-TRANSFORM:
+    // 
+    // As per the README, you can put expressions which are evaluated when this instruction is rendered. To pass data to these expressions, you can use substitutions.
 
     // Instruction types
     static get PATH() {return "PATH";}  // Declare like this so are immutable
@@ -388,6 +416,8 @@ class SvgInstruction {
     static get USE() {return "USE";}  
     static get PUSH_TRANSFORM() {return "PUSH-TRANSFORM";}  
     static get POP_TRANSFORM() {return "POP-TRANSFORM";}  
+    
+    #substitutions;
     
     constructor(type, ...args) {
         // Type should be the value in PATH, CIRCLE...
@@ -410,7 +440,21 @@ class SvgInstruction {
             throw "Unknown type " + type;
         }
         
+        // Handle if substitutions were passed in. This should only be done by SvgInstruction.substitute
+        if (args.length>0 && args[args.length-1].IS_A_SUBSTITUATION_DICT === true) {
+            this.#substitutions = args[args.length-1];
+        } else {
+            this.#substitutions = {};
+        }
+        
         Object.freeze(this);  // Make final
+    }
+    
+    function substitute(newSubstitutions) {
+        // Saves the given substitutions to be used when this instruction is realised.
+        // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        if (new Set(Object.keys(newSubstitutions)).union(new Set(Object.keys(this.#substitutions))).length !== 0) throw "Cannot substitute the same name twice";
+        return SvgInstruction();  // TODO: Add new values in
     }
 }
 

@@ -34,7 +34,7 @@ This will not inherit instructions or groups from the base-ids or any related sy
 Adds new symbols for each drum who's id matches the pattern (non-drum matches will throw an exception). At least one id must match the pattern. The modifier can have been used already, but if the combined ids may not be taken.  
 The created drum's ids are the old id with the modifier added onto the end.  
 For each of the size-(left,right,up,down), you can specificy whether it is a delta or a minimum. The delta is added on to the old size. The minimum means we take the maximum of the given minimum and the old size. In case it isn't clear, you specify which you want using + and > (e.g. ...,+5,+1,>3,+2,...).  
-The min-width and min-height are extra options to say we want at least this width and this height centered around the anchor. So if we have the size-right=0 and size-left=10 and min-width=5, size-right of the new drum will be 2.5.  
+The min-width and min-height are extra options to say we want at least this width and this height centered around the centre of the parent. So if we have the size-right=0 and size-left=5 and min-width=10, size-left of the new drum will be 7.5, and the size-right of the new drum will be 2.5. A maximum will be taken between sizes computed this way and sized computed from deltas/mins.  
 The created drum will inherit instructions and groups from the drum it was created from, and will have the new instructions and groups appended to the end.  
   
 `constraint,drum,<top-id: union<drum-id,group-id>>,<bottom-id: union<drum-id,group-id>>,<distance: float>`  
