@@ -1,3 +1,4 @@
+import {evaluateExpression} from "./expressionParser.js";
 
 function dequeue(tokens) {
     // Removes the first element from the array, and throws an error if it doesn't exist.
@@ -365,7 +366,7 @@ function parseModifierDrumAuto(tokens, parseData) {
         // Compute combined instructions
         const combinedInstructions = [
             ...old.instructions,
-            ...instruction.map(instr => instr.substitute({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
+            ...instruction.map(instr => instr.addSubstitutions({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
         ]
         
         // New groups set and add
@@ -422,6 +423,8 @@ class SvgInstruction {
     constructor(type, ...args) {
         // Type should be the value in PATH, CIRCLE...
         // Args should be passed in the order they are documented in.
+        // 
+        // Args can have substitution expressions as in the README, the type may not.
         
         this.type = type;
         if (type === SvgInstruction.PATH) {
@@ -440,21 +443,72 @@ class SvgInstruction {
             throw "Unknown type " + type;
         }
         
-        // Handle if substitutions were passed in. This should only be done by SvgInstruction.substitute
-        if (args.length>0 && args[args.length-1].IS_A_SUBSTITUATION_DICT === true) {
-            this.#substitutions = args[args.length-1];
-        } else {
-            this.#substitutions = {};
-        }
+        // Initialise substitutions as an empty dict, any substitutions will be added after initialisation (object.freeze doesn't affect privates).
+        this.#substitutions = {};
         
         Object.freeze(this);  // Make final
     }
     
-    function substitute(newSubstitutions) {
-        // Saves the given substitutions to be used when this instruction is realised.
+    function addSubstitutions(newSubstitutions) {
+        // Saves the given substitutions to be used when this instruction's substitutions are computed.
         // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        
+        // Check if duplicate substitution
         if (new Set(Object.keys(newSubstitutions)).union(new Set(Object.keys(this.#substitutions))).length !== 0) throw "Cannot substitute the same name twice";
-        return SvgInstruction();  // TODO: Add new values in
+        
+        // Create new instruction
+        let newInstruction;
+        if (this.type === SvgInstruction.PATH) {
+            newInstruction = new SvgInstruction(this.path);
+        } else if (this.type === SvgInstruction.CIRCLE) {
+            newInstruction = new SvgInstruction(this.cx, this.cy, this.r);
+        } else if (this.type === SvgInstruction.USE) {
+            newInstruction = new SvgInstruction(this.id);
+        } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
+            newInstruction = new SvgInstruction(this.transform);
+        } else if (this.type === SvgInstruction.POP_TRANSFORM) {
+            newInstruction = new SvgInstruction();
+        } else {
+            throw "Unknown type " + type;
+        }
+        
+        // Add new combined substitutions
+        Object.assign(newInstruction.#substitutions, newSubstitutions);
+
+        return newSubstitutions;
+    }
+    
+    function computeSubstitutions() { 
+        // Uses the values given in addSubstitutions to evaluate any expressions in the args of the instruction.
+        // If a arg expressing is incorrectly formatted, or a substitution name is missing, then an error is thrown.
+        // 
+        // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        
+        let newInstruction;
+        if (this.type === SvgInstruction.PATH) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.path));
+        } else if (this.type === SvgInstruction.CIRCLE) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.cx), this.#evaluate(this.cy), this.#evaluate(this.r));
+        } else if (this.type === SvgInstruction.USE) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.id));
+        } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.transform));
+        } else if (this.type === SvgInstruction.POP_TRANSFORM) {
+            newInstruction = new SvgInstruction();
+        } else {
+            throw "Unknown type " + type;
+        }
+        
+        return newInstruction;
+    }
+    
+    function #evaluate(string) {
+        // Substitutions the stored substitutions into the given string and computes the maths and then returns it.
+        
+        return string.replaceAll(/\${(.*?)}/g, (_, expr) => evaluateExpression(
+            expr, 
+            Object.assign({}, this.#substitutions)  // Dupliacte substitutions array
+        )); 
     }
 }
 
