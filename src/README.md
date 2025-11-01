@@ -54,11 +54,12 @@ The instruction arguements depend on the name. These are the instructions:
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
  
-`pattern-part` : `<action><id: symbol-id>` (yes, without the comma).  
+`pattern-part` : `<action><id: Union<symbol-id, "*[drums|decorations|parts]">>` (yes, without the comma).  
 A pattern refers to a set of symbols (these can be of any type, but the function using these symbols may put limitations on this).  
 The pattern is build from pattern-parts, and each pattern-part is an instruction to include or exclude ids.  
 The `action` can be `+` or `-`, meaning to add all matching symbols or remove any previously-matched matching symbols respecitvely.  
 If the id is a group, then it adds/removes all ids that are in that group.  
+If the id is the string literal "\*drums" or "\*decorations" or "\*parts", then it will add every id from the given group.
 
 
 Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
