@@ -3,7 +3,7 @@ import {createEvents, createEvent} from "./managerHelpers.js";
 
 // TODO: Combined logic of AddBeats, RemoveBeats, AddSubdivision and RemoveSubdivision
 // TODO: Validate that indexes are actually integers
-
+// TODO: Add second file extension to PDFs (e.g. filename.udsp.pdf).
 
 let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
 /*
