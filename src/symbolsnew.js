@@ -1,4 +1,5 @@
 import {evaluateExpression} from "./expressionParser.js";
+import {SYMBOLS_SOURCE} from "./_symbols_source.js";
 
 function dequeue(tokens) {
     // Removes the first element from the array, and throws an error if it doesn't exist.
@@ -545,4 +546,170 @@ function getSymbolsMatchingPattern(pattern, parseData) {
         }
     }
     return Object.freeze(ids);
+}
+
+
+
+// Load symbols and make accessable to rest of program ------------------------------------------------------------
+
+// Shut up I know I'm being lazy but whatever
+// This function takes a drum id or a group id and returns a list of drum ids.
+const matchSymbolIds = (id, pd) => getSymbolsMatchingPattern(["+" + id], pd).map(id_ => {
+    ensureExistsAndIs(id_, drum=true);  // Ensure they are all drums, otherwise throw an error
+    return id_;
+});
+
+function calculateFullDrumOrder(parseData) {
+    // Using the constraint data, figure out which drum symbols need to be drawn over which symbols.
+    
+    // Extract the constraint data to get direct relations beetween symbols
+    const symbolOverSymbols = {};  // {symbol-id: Array<symbol-ids-which-are-below>}
+    Object.keys(parseData.drums).forEach(id => { symbolOverSymbols[id] = new Set(); });  // Create set for each symbol
+    parseData.constraints.forEach(constraint => {  // Add direct constraints
+        const topIds = matchSymbolIds(constraint.topId, parseData);
+        const bottomIds = matchSymbolIds(constraint.bottomId, parseData);
+        topIds.forEach(topId => {
+            symbolOverSymbols[topId].add(...bottomIds);  // Add bottomIds to all topIds
+        });
+    });
+    
+    // Actually order our symbolIds
+    // We do this by iteratively looking at the data set, if all the symbolIds that need to be below a given symbol are there, then we can add that symbol
+    const symbolIds = Array.from(Object.keys(parseData.drums));
+    const symbolIdCount = symbolIds.length;  // Take this now as the array reduces in size
+    const fullOrder = new Array();
+    while (fullOrder.length < symbolIdCount) {
+        changeOccured = false;  // Flag for whether we actually have changed anything
+        for (let i=0; i<symbolIds.length; i++) {
+            const symbolId = symbolIds[i];
+            if (symbolOverSymbols[symbolId].difference(new Set(fullOrder)).size === 0) {  // Are all requisites for symbolId in fullOrder?
+                // Yes so we can move symbolId
+                fullOrder.push(symbolId);
+                symbolIds.splice(i,1);  // Remove from old array so faster
+                i--;
+                changeOccured = true;
+            }
+        }
+        if (!changeOccured) {
+            // If we changed nothing then we are stuck so should crash.
+            throw "Cannot put drums in order using the given constraints, this could be caused by a circular constraint;"
+        }
+    }
+    
+    // Reverse array so bottom is at end of array
+    fullOrder.reverse();
+
+    return Object.freeze(fullOrder);
+}
+
+
+// Ignore this line, see the tools/server.py ---
+// PUT_DEBUG_FOREVERLOOP_HERE
+// ---------------------------------------------
+
+// First parse tokens into the arrays
+const parseData = parseSymbolSourceString(SYMBOLS_SOURCE);
+// Process constraints
+const fullDrumOrder = calculateFullDrumOrder(parseData);
+
+
+// Static class to make this info accessable
+export class Symbols {
+    static getFullDrumVertOrder() {
+        // Returns an array containing the order in which drus should be drawn, where index 0 is the top.
+        return fullDrumOrder;  // This is already frozen
+    }
+
+    static isDrumAbove(symbolId1, symbolId2) {
+        // True if symbolId2 should be drawn above symbolId1.
+        ensureExistsAndIs(symbolId1, drum=true);
+        ensureExistsAndIs(symbolId2, drum=true);
+        return fullOrder.indexOf(symbolId1) < fullOrder.indexOf(symbolId2);
+    }
+
+    static getMinVertDistBetweenDrums(symbolId1, symbolId2) {
+        // Get's the minimum distance between the anchors of the given drums.
+        // If symbolId2 should be drawn above symbolId1 then an error is thrown.
+        // This will not return indirect constraints (e.g. if a is 10 from b and b is 5 from c, it will not say a is 15 from c (unless you add that externally)).
+        // If there is no constraint (this includes an indirect constraint) then 0 will be returned.
+        ensureExistsAndIs(symbolId1, drum=true);
+        ensureExistsAndIs(symbolId2, drum=true);
+        
+        if (isSymbolAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
+        
+        // Find the maximum distance from all the (relevant) constraints
+        const minDistance = Math.max(...Array.from(parseData.constraints).map(constraint => {
+            if (!(matchSymbolIds(constraint.topId, parseData).has(symbolId1) && matchSymbolIds(constraint.bottomId, parseData).has(symbolId2))) {  // If this constraint doesn't refer to both of the given symbols
+                return 0;  // 0 as no constraint
+            } else {
+                return constraint.distance; 
+            }
+        }));
+        
+        return minDistance;
+    }
+
+    static getSymbolInstructions(symbolId) {
+        // Returns the instructions for a given symbol. If the symbolId is not a valid drum or decoration id then an error is thrown.
+        symbolId = ensureSymbolId(symbolId);  // Order modifiers correctly if applicable
+        // Try and return the symbol if we can
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].instructions;  // This is already frozen
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].instructions;  // This is already frozen
+        // Id is invalid so throw error
+        throw "SymbolId does not exist, or is not drum or decoration";
+    }
+    
+    static getDecorationWidth(symbolId) {
+        // Returns the width of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].width;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinHeight(symbolId) {
+        // Returns the minimum height of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minHeight;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinBelowDrums(symbolId) {
+        // Returns the minimum distance a decoration should descend below the bottom of the lowest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minBelowDrums;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinAboveDrums(symbolId) {
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveDrums;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinAboveBars(symbolId) {
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBars;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDrumSizeLeft(symbolId) {
+        // Returns horizontal distance a drum spans on the left side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeLeft;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeUp(symbolId) {
+        // Returns vertical distance a drum ascends above the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeUp;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeRight(symbolId) {
+        // Returns horizontal distance a drum spans on the right side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeRight;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeDown(symbolId) {
+        // Returns vertical distance a drum descends below the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeDown;
+        throw "Symbol does not exist, or is not a drum";
+    }
 }
