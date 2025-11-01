@@ -1,4 +1,5 @@
-import { SYMBOLS_SOURCE } from "./_symbols_source.js";
+import {evaluateExpression} from "./expressionParser.js";
+import {SYMBOLS_SOURCE} from "./_symbols_source.js";
 
 function dequeue(tokens) {
     // Removes the first element from the array, and throws an error if it doesn't exist.
@@ -6,45 +7,77 @@ function dequeue(tokens) {
     return tokens.shift();  // Shift removes first item from the array then returns it
 }
 
-function ensureStringIsLowerAndGiven(string, ...allowedNonAlphanumeric) {
-    // Ensures the given string is lower case and only contains alphanumerics and the given non-alphanumerics.
+function peek(tokens, i=0) {
+    // Peeks at the ith element from the start of the given array, and throws an error if it doesn't exist.
+    if (tokens.length >= i) throw "Failed to peek element as tokens' length is 0";
+    return tokens[i];  
+}
+
+function ensureStringIsLowerAndGiven(string, ...allowedNonAlpha) {
+    // Ensures the given string is lower case and only contains alpha and the given non-alphas.
     // If it is correct then it is returned, otherwise an error is thrown.
     if (string.toLowerCase() !== string) throw "Given string has upper case";
-    if (new Set(string.split("")).intersection(new Set(string.toUpperCase().split(""))).difference(new Set(allowedNonAlphanumeric)).size !== 0) throw "String contains not allowed characters";
+    if (new Set(string.split("")).intersection(new Set(string.toUpperCase().split(""))).difference(new Set(allowedNonAlpha)).size !== 0) throw "String contains not allowed characters";
     return string;
 }
 
 function ensureSymbolIdPart(string) {
-    // Ensures the given string is formatted as a valid base-symbol-id/part-symbol-id/modifier-id: "some-id".
+    // Ensures the given string is formatted as a valid symbol id part (e.g. "hello-world").
     // If it is correct then it is returned, otherwise an error is thrown.
     return ensureStringIsLowerAndGiven(string, "-");
 }
-const ensureBaseSymbolId = ensureSymbolIdPart;
-const ensurePartSymbolId = ensureSymbolIdPart;
-const ensureModifierId = ensureSymbolIdPart;
 
-function ensureSymbolOrGroupId(string) {
-    // Ensures the given string is formatted as a valid symbol-id/group-id: "some-id_some-modifier"/"some-id".
+function ensureSymbolId(string, {mustBeModified = false} = {}) {
+    // Ensures the given string is a valid symbol-id (e.g. "hello-world", "hello-world_i-am_jon").
     // If it is correct then it is returned, otherwise an error is thrown.
-    return ensureStringIsLowerAndGiven(string, "-", "_");
+    // 
+    // If a string is a symbolIdPart then it necessarily passes this function too.
+    // 
+    // If mustBeModified is true then the id must be modified (contain an _).
+    // 
+    // This method will fix the order of the modifiers by sorting them. Therefore the return value of this should always be used.
+    
+    ensureStringIsLowerAndGiven(string, "-", "_");
+    
+    if (mustBeModified && !string.includes("_")) throw "Id must be modified but is not";
+    
+    // Fix modifier order
+    const {base: base, modifiers: modifiers} = splitSymbolId(string);
+    const sorted_modifiers = modifiers.sort();  // Modifiers should be sorted alphabetically
+    string = [base, ...sorted_modifiers].join("_");
+    
+    // Check for duplicate modifiers
+    if (modifiers.length !== new Set(modifiers).size) throw "Duplicate modifiers";
+    
+    return string;
 }
 
-function ensureExists(id, parseData) {
-    // Ensures the given id (symbol-id or group-id) exists.
+function ensureExists(id, parseData, {group = true, drum = true, part = true, decoration = true} = {}) {
+    // Ensures the given id exists.
     // If it does then the id is returned, otherwise an error is thrown.
-    if (!(parseData.groups.has(id) || id in parseData.symbols)) throw "Given id not in parse data";
+    // If group, drum, part, or decoration is false then that specific one will not be checked.
+    if (!((group && parseData.groups.has(id)) || (drum && id in parseData.drums) || (part && id in parseData.parts) || (decoration && id in parseData.decorations))) throw "Given id not in parse data or of wrong type";
     return id;
 }
 
+function ensureExistsAndIs(id, parseData, {group = false, drum = false, part = false, decoration = false} = {}) {
+    // Ensure the given id exists.
+    // If it does then it checks that the given id is one of the specified types (by setting the relevant type's flag to true).
+    // If it does then the id is returned, otherwise an error is thrown.
+    //
+    // This function is the same as ensureExists but if the default values were false.
+    return ensureExists(id, parseData, {group: group, drum: drum, part: part, decoration: decoration});
+}
+
 function ensureDoesNotExist(id, parseData) {
-    // Ensures the given id (symbol-id or group-id) does not exist.
+    // Ensures the given id does not exist.
     // If it does then an error is thrown, otherwise it is returned.
-    if (parseData.groups.has(id) || id in parseData.symbols) throw "Given id already in parse data";
+    if (parseData.groups.has(id) || id in parseData.drums || id in parseData.parts || id in parseData.decorations) throw "Given id already in parse data";
     return id;
 }
 
 function splitSymbolId(string) {
-    // Ensures the given symbol id is valid, if it ins't then an error is thrown.
+    // Ensures the given symbol id is valid, if it isn't then an error is thrown.
     // Returns {base: baseSymbolId, modifiers: Array<modifierId>}.
     ensureStringIsLowerAndGiven(string, "-", "_");
     const [base, ...modifiers] = string.split("_");
@@ -65,6 +98,64 @@ function parseModifierSizeChanger(string) {
     }
 }
 
+function parseOptionalFloat(string) {
+    // Parses an optional float -> float, or an empty string to null.
+
+    if (string === "") return null;
+    return parseFloat(string);
+}
+
+function parseList(tokens, parseItem, ...parseItemArgs) {
+    // Parses a list from the given token array.
+    // This expects the first token to be the length of the array. It consumes this value.
+    // It will then call the parseItem(tokens, ...parseItemArgs)->result function that many times, and expects it to consume any tokens it uses.
+    // This then returns an array with the results.
+    
+    const n = parseInt(dequeue(tokens));
+    const listValues = new Array();
+    for (let i=0; i<n; i++) {
+        listValues.push(parseItem(tokens, ...parseItemArgs));
+    }
+    
+    return listValues;
+}
+
+function parseInstruction(tokens, parseData) {
+    // Parses an instruction from the given tokens.
+    // Expects this instruction to be first, and will consume it.
+    // This will not update parseData, it will only query it.
+    // 
+    // See src/README.md for instruction types.
+
+    const instructionName = dequeue(tokens);
+    if (instructionName === "path") {
+        const pathString = dequeue(tokens);
+        return new SvgInstruction(SvgInstruction.PATH, pathString);
+    } else if (instructionName === "circle") {
+        const cx = parseFloat(dequeue(tokens));
+        const cy = parseFloat(dequeue(tokens));
+        const r = parseFloat(dequeue(tokens));
+        return new SvgInstruction(SvgInstruction.CIRCLE, cx, cy, r);
+    } else if (instructionName === "use") {
+        const id = ensureExists(ensureSymbolId(dequeue(tokens)), parseData, {group: false});  // We can't draw a group so don't check those.
+        return new SvgInstruction(SvgInstruction.USE, id);
+    } else if (instructionName === "push-transform") {
+        const transformString = dequeue(tokens);
+        return new SvgInstruction(SvgInstruction.PUSH_TRANSFORM, transformString);
+    } else if (instructionName === "pop-transform") {
+        return new SvgInstruction(SvgInstruction.POP_TRANSFORM);
+    } else {
+        throw "Instruction " + instructionName + " is not recognised";
+    }
+}
+
+function parseGroup(tokens) {
+    // Parses a group-id from the given tokens.
+    // This will consume that token, and expects it to be first.
+    // This will not add the groups to parseData.
+    return ensureSymbolIdPart(dequeue(tokens));
+}
+
 function parseSymbolSourceString(symbolsSource) {
     // Parse the given symbol source string. This string is made of actions with arguments which are all separated by commas.
     // This loads them into thise maps: parts, symbols, constraints.
@@ -73,141 +164,236 @@ function parseSymbolSourceString(symbolsSource) {
     // This returns a parseData object (see creation for doc).
     
     const parseData = {
-        parts: {},  // {part-symbol-id: {instructions: Array<SvgInstruction>}}
-        symbols: {},  // {symbol-id: {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Array<SvgInstruction>, groups: Array<group-id>}}
-        constraints: new Set(),  // {topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float}
-        groups: new Set()  // group-id
+        parts: {},  // {part-id: Object.freeze({instructions: Object.freeze(Array<SvgInstruction>)})}
+        drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
+        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Object.freeze(Array<SvgInstruction>)})}
+        constraints: new Set(),  // Object.freeze({topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float})
+        groups: new Set()  // group-id 
     }
 
     const tokens = symbolsSource.split(",");
     while (tokens.length != 0) {
         // Figure out which specific parse function to call, and then call it
         const action = dequeue(tokens);
-        const actionFunction = {  // Select which function we want to call
-            "new_base": parseNewBase,
-            "new_part": parseNewPart,
-            "modifier_explicit": parseModifierExplicit,
-            "modifier_auto": parseModifierAuto,
-            "head_constraint": parseHeadConstraint
+        let actionFunction = {  // Select which function we want to call
+            "new": parseNew,
+            "modifier": parseModifier,
+            "constraint": parseConstraint
         }[action];
         if (actionFunction === undefined) throw "Unknown action " + action;
-        actionFunction(tokens, parseData);  // Functions update tokens array for us
+        actionFunction(tokens, parseData);  // Functions update tokens array and parseData for us
     }
     
     return parseData;
 }
 
-function parseNewBase(tokens, parseData) {
-    // Parse a new_base action from the array of tokens. 
-    // This removes the tokens from the given array.
-    // This expects the action ID to already have been removed.
+function parseNew(tokens, parseData) {
+    // Parses a statement that begins with new from the tokens.
+    // This expects that new to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const what = dequeue(tokens);
+    let whatFunction = {  // Select which function we want to call
+        "drum": parseNewDrum,
+        "decoration": parseNewDecoration,
+        "part": parseNewPart
+    }[what];
+    if (whatFunction === undefined) throw "Unknown what " + what;
+    whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseModifier(tokens, parseData) {
+    // Parses a statement that begins with modifier from the tokens.
+    // This expects that modifier to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const what = dequeue(tokens);
+    let whatFunction = {  // Select which function we want to call
+        "drum": parseModifierDrum
+    }[what];
+    if (whatFunction === undefined) throw "Unknown what " + what;
+    whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseModifierDrum(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum from the tokens.
+    // This expects that modifier,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const how = dequeue(tokens);
+    let howFunction = {  // Select which function we want to call
+        "explicit": parseModifierDrumExplicit,
+        "auto": parseModifierDrumAuto
+    }[how];
+    if (howFunction === undefined) throw "Unknown how " + how;
+    howFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseConstraint(tokens, parseData) {
+    // Parses a statement that begins with constraint from the tokens.
+    // This expects that constraint to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+
+    const what = dequeue(tokens);
+    let whatFunction = {  // Select which function we want to call
+        "drum": parseConstraintDrum
+    }[what];
+    if (whatFunction === undefined) throw "Unknown what " + what;
+    whatFunction(tokens, parseData);  // Functions update tokens array and parseData for us
+}
+
+function parseNewDrum(tokens, parseData) {
+    // Parses a statement that begins with new,drum from the tokens.
+    // This expects that new,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
     // 
-    // The following tokens should be like this base-symbol-id,size-left,size-up,size-right,size-down,<instructions>,<groups>.
-    const baseSymbolId = ensureBaseSymbolId(dequeue(tokens), parseData);
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for drum
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
     const sizeLeft = parseFloat(dequeue(tokens));
     const sizeUp = parseFloat(dequeue(tokens));
     const sizeRight = parseFloat(dequeue(tokens));
     const sizeDown = parseFloat(dequeue(tokens));
-    const instructions = parseInstructions(tokens, parseData);
-    const groups = parseGroups(tokens);
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
     
-    parseData.symbols[baseSymbolId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: instructions, groups: groups};
-    groups.forEach(group => parseData.groups.add(group));
+    // Add groups to parseData
+    groups.forEach(g => parseData.groups.add(g));
+    
+    // Add drum to parseData
+    parseData.drums[id] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: Object.freeze(instructions), groups: Object.freeze(groups)};
+}
+
+function parseNewDecoration(tokens, parseData) {
+    // Parses a statement that begins with new,decoration from the tokens.
+    // This expects that new,decoration to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
+    // 
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for decoration
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
+    const width = parseFloat(dequeue(tokens));
+    const minHeight = parseFloat(dequeue(tokens));
+    const minBelowDrums = parseOptionalFloat(dequeue(tokens));
+    const minAboveDrums = parseOptionalFloat(dequeue(tokens));
+    const minAboveBars = parseOptionalFloat(dequeue(tokens));
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    
+    // Add decoration to parseData
+    groups.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, instructions: Object.freeze(instructions)};
 }
 
 function parseNewPart(tokens, parseData) {
-    // Parse a new_part action from the array of tokens. 
-    // This removes the tokens from the given array.
-    // This expects the action ID to already have been removed.
+    // Parses a statement that begins with new,part from the tokens.
+    // This expects that new,part to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
     // 
-    // The following tokens should be like this base-symbol-id,<instructions>.
-    const partSymbolId = ensureDoesNotExist(ensurePartSymbolId(dequeue(tokens)), parseData);
-    const instructions = parseInstructions(tokens, parseData);
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for decoration
+    const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
+    const instructions = parseList(tokens, parseInstruction, parseData);
     
-    parseData.parts[partSymbolId] = {instructions: instructions}
+    // Add part to parseData
+    parseData.parts[id] = Object.freeze({instructions: Object.freeze(instructions)});
 }
 
-function parseModifierExplicit(tokens, parseData) {
-    // Parse a modifier_explicit action from the array of tokens.
-    // This removes the tokens from the given array.
-    // This expects the action ID to already have been removed.
+function parseModifierDrumExplicit(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum,explicit from the tokens.
+    // This expects that modifier,drum,explicit to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
     // 
-    // The following tokens should be like this base_symbol-id(_modifier-id)+,size-left,size-up,size-right,size-down,<instructions>,<groups>.
-    const symbolId = ensureDoesNotExist(dequeue(tokens), parseData);
-    const {base: baseSymbolId, modifiers: modifierIds} = splitSymbolId(symbolId);
-    ensureExists(baseSymbolId, parseData);
-    if (modifierIds.length === 0) throw "Expected at least one modifierId";
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for modifier
+    const id = ensureDoesNotExist(ensureSymbolId(dequeue(tokens), {mustBeModified: true}), parseData);
+    ensureExistsAndIs(splitSymbolId(id).base, parseData, {drum: true});  // Ensure base exists
     const sizeLeft = parseFloat(dequeue(tokens));
     const sizeUp = parseFloat(dequeue(tokens));
     const sizeRight = parseFloat(dequeue(tokens));
     const sizeDown = parseFloat(dequeue(tokens));
-    const instructions = parseInstructions(tokens, parseData);
-    const groups = parseGroups(tokens);
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
     
-    parseData.symbols[symbolId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: instructions, groups: groups};
-    groups.forEach(group => parseData.groups.add(group));
+    // Add groups to parseData
+    groups.forEach(g => parseData.groups.add(g));
+    
+    // Add drum to parseData
+    parseData.drums[id] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: Object.freeze(instructions), groups: Object.freeze(groups)};
 }
 
-function parseModifierAuto(tokens, parseData) {
-    // Parse a modifier_auto action from the array of tokens.
-    // This removes the tokens from the given array.
-    // This expects the action ID to already have been removed.
+function parseModifierDrumAuto(tokens, parseData) {
+    // Parses a statement that begins with modifier,drum,auto from the tokens.
+    // This expects that modifier,drum,auto to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
     // 
-    // The following tokens should be like this modifier-id,<pattern>,(+detla,>min)size-left,(+detla,>min)size-right,(+detla,>min)size-up,(+detla,>min)size-down,min-width,min-height,<instructions>,<groups>.
-    // 
-    // Created groups have the id <old-symbol-id>_<modifier-id> and inherit groups+instructions from the old symbol (as well as the new groups+instructions).
-    const modifierId = ensureModifierId(dequeue(tokens), parseData);  // We don't mind if the modifierId already exists, if we want to apply it to a symbolId then we can check then
-    const symbolIds = parsePatternAndGetMatchingSymbols(tokens, parseData);
-    if (symbolIds.length === 0) throw "Matched no symbolIds which this algorithm is not built for";
-    const {delta: sizeLeftDelta, min: minSizeLeft} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: sizeUpDelta, min: minSizeUp} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: sizeRightDelta, min: minSizeRight} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: sizeDownDelta, min: minSizeDown} = parseModifierSizeChanger(dequeue(tokens));
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for modifier
+    const modifierId = ensureSymbolIdPart(dequeue(tokens));
+    const pattern = parseList(tokens, dequeue);
+    const {delta: deltaLeft, min: minLeft} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaUp, min: minUp} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaRight, min: minRight} = parseModifierSizeChanger(dequeue(tokens));
+    const {delta: deltaDown, min: minDown} = parseModifierSizeChanger(dequeue(tokens));
     const minWidth = parseFloat(dequeue(tokens));
     const minHeight = parseFloat(dequeue(tokens));
-    const tokensCopy = Array.from(tokens);  // Clone array at this point, we will use it later
-    parseInstructions(tokens, parseData, Array.from(symbolIds)[0]);  // Just skip instructions, we will reparse later
-    const extraGroups = parseGroups(tokens);
+    const instructions = parseList(tokens, parseInstruction, parseData);
+    const groups = parseList(tokens, parseGroup);
     
-    // Each of the symbolIds needs to be modified
-    symbolIds.forEach(parentSymbolId => {
-        const parentSymbol = parseData.symbols[parentSymbolId];
-        const modifiedSymbolId = parentSymbolId + "_" + modifierId;
+    // Add new groups to tracker
+    groups.forEach(group => parseData.groups.add(group));
+    
+    // Get symbols matching pattern
+    const oldIds = getSymbolsMatchingPattern(pattern, parseData)
+    // Ensure they're all drums and there's at least one
+    oldIds.forEach(id => ensureExistsAndIs(id, {drum: true}));
+    if (oldIds.length === 0) throw "Expected at least one symbol-id to match the pattern";
 
-        // For this specific symbol, get the instructions
-        // We need to do it like this as transform anchors may be different for each symbolId
-        const instructions = parseInstructions(Array.from(tokensCopy), parseData, parentSymbolId);  // We don't want it to modify our copy of tokens, as we may still need to loop through it more
-            // This will add the instructions from parentSymbolId too
+    // Create new drums
+    for (let i=0; i<oldIds.length; i++) {
+        const oldId = oldIds[i];
+        const old = parseData.drums[oldId];
+        const modifiedId = ensureDoesNotExist(ensureSymbolId(oldId + "_" + modifierId));  // EnsureSymbolId to sort modifier-ids to.
         
-        // Figure out correct size for new symbol
-        const parentCenterX = -parentSymbol.sizeLeft / 2 + parentSymbol.sizeRight / 2;
-        const parentCenterY = -parentSymbol.sizeUp / 2 + parentSymbol.sizeDown / 2;
-        const sizeLeft = Math.max(parentSymbol.sizeLeft + sizeLeftDelta, minSizeLeft, minWidth / 2 - parentCenterX);
-        const sizeRight = Math.max(parentSymbol.sizeRight + sizeRightDelta, minSizeUp, minWidth / 2 + parentCenterX);
-        const sizeUp = Math.max(parentSymbol.sizeUp + sizeUpDelta, minSizeRight, minHeight / 2 - parentCenterY);
-        const sizeDown = Math.max(parentSymbol.sizeDown + sizeDownDelta, minSizeDown, minHeight / 2 + parentCenterY);
+        // Find out size of new drum
+        const parentCenterX = -old.sizeLeft / 2 + old.sizeRight / 2;
+        const parentCenterY = -old.sizeUp / 2 + old.sizeDown / 2;
+        const sizeLeft = Math.max(old.sizeLeft + deltaLeft, minLeft, minWidth / 2 - parentCenterX);
+        const sizeUp = Math.max(old.sizeUp + deltaUp, minUp, minHeight / 2 - parentCenterY);
+        const sizeRight = Math.max(old.sizeRight + deltaRight, minRight, minWidth / 2 + parentCenterX);
+        const sizeDown = Math.max(old.sizeDown + deltaDown, minDown, minHeight / 2 + parentCenterY);
         
-        // New groups set
-        const groups = parentSymbol.groups.union(extraGroups);
-
-        // Add it if it doesn't already exist
-        ensureDoesNotExist(modifiedSymbolId, parseData);
-        parseData.symbols[modifiedSymbolId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: instructions, groups: groups};
-        groups.forEach(group => parseData.groups.add(group));
-    });
+        // Compute combined instructions
+        const combinedInstructions = [
+            ...old.instructions,
+            ...instruction.map(instr => instr.addSubstitutions({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
+        ]
+        
+        // New groups set and add
+        const combinedGroups = old.groups.union(groups);
+        parseData.drums[modifiedId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: combinedInstructions, groups: combinedGroups};
+    }
+    
 }
 
-function parseHeadConstraint(tokens, parseData) {
-    // Parse a head_constraint action from the array of tokens.
-    // This removes the tokens from the given array.
-    // This expects the action ID to already have been removed.
+function parseConstraintDrum(tokens, parseData) {
+    // Parses a statement that begins with constraint,drum from the tokens.
+    // This expects that constraint,drum to have already been consumed.
+    // This will remove tokens from the array, and add the result to parseData.
     // 
-    // The following tokens should be like this top-(symbol|group)-id,bottom-(symbol|group)-id,distance.
-    const topId = ensureExists(ensureSymbolOrGroupId(dequeue(tokens)), parseData);
-    const bottomId = ensureExists(ensureSymbolOrGroupId(dequeue(tokens)), parseData);
-    const distance = parseInt(dequeue(tokens));
+    // See src/README.md for token doc.
+
+    // Parse all parts of data for constraint
+    const topId = ensureExistsAndIs(dequeue(tokens), parseData, {drum: true, group: true});
+    const bottomId = ensureExistsAndIs(dequeue(tokens), parseData, {drum: true, group: true});
+    const distance = parseFloat(dequeue(tokens));
     
-    parseData.constraints.add({topId: topId, bottomId: bottomId, distance: distance});
+    // Add constraint to parseData
+    parseData.constraints.add(Object.freeze({topId: topId, bottomId: bottomId, distance: distance}));
+    
 }
 
 class SvgInstruction {
@@ -225,6 +411,8 @@ class SvgInstruction {
     //      PUSH-TRANSFORM:
     //          - transform - The value to put in the svg transform value.
     //      POP-TRANSFORM:
+    // 
+    // As per the README, you can put expressions which are evaluated when this instruction is rendered. To pass data to these expressions, you can use substitutions.
 
     // Instruction types
     static get PATH() {return "PATH";}  // Declare like this so are immutable
@@ -233,9 +421,13 @@ class SvgInstruction {
     static get PUSH_TRANSFORM() {return "PUSH-TRANSFORM";}  
     static get POP_TRANSFORM() {return "POP-TRANSFORM";}  
     
+    #substitutions;
+    
     constructor(type, ...args) {
         // Type should be the value in PATH, CIRCLE...
         // Args should be passed in the order they are documented in.
+        // 
+        // Args can have substitution expressions as in the README, the type may not.
         
         this.type = type;
         if (type === SvgInstruction.PATH) {
@@ -253,125 +445,111 @@ class SvgInstruction {
         } else {
             throw "Unknown type " + type;
         }
+        
+        // Initialise substitutions as an empty dict, any substitutions will be added after initialisation (object.freeze doesn't affect privates).
+        this.#substitutions = {};
+        
+        Object.freeze(this);  // Make final
     }
-}
-
-function parseInstructions(tokens, parseData, parentSymbolId=null) {
-    // Parse and return the instructions (as an svg element (e.g. <group> or <path>, not <svg>)) that are at the start of tokens.
-    // This removes the tokens from the given array.
-    // 
-    // This expects the following tokens to be the number of instructions followed by the instructions.
-    // The instructions can be these:
-    //      `path`,`path-string`  
-    //      `circle`,`cx`,`cy`,`r`  
-    //      `use`,`symbol-id`  
-    //      `use`,`part-symbol-id`  
-    //      `push-transform`,`transform-string`  
-    //      `pop-transform`  
-    //      `push-anchored-transform`,`horizAnchor`,`vertAnchor` - This is only valid when parentSymbolId is not null. horizAnchor can be left,middle,right, vertAnchor can be top,middle,bottom. The anchors are relative to the size of the parent.
-    // 
-    // When parentSymbolId is given, then the instructions from that symbol will be put before the instructions from tokens.
     
-    const instructions = new Array();  // Array of generated instructions
-    // Handle instructions from parent
-    if (parentSymbolId !== null) {
-        instructions.push(...parseData.symbols[parentSymbolId].instructions);
-    }
-    // Handle instructions from tokens   
-    const numberOfInstruction = parseInt(dequeue(tokens));
-    for (let i=0; i<numberOfInstruction; i++) {
-        const instructionName = dequeue(tokens);
-        switch (instructionName) {
-            case "path":
-                instructions.push(new SvgInstruction(SvgInstruction.PATH, dequeue(tokens)));
-                break;
-            case "circle":
-                instructions.push(new SvgInstruction(SvgInstruction.CIRCLE, dequeue(tokens), dequeue(tokens), dequeue(tokens)));
-                break;
-            case "use":
-                instructions.push(new SvgInstruction(SvgInstruction.USE, dequeue(tokens)));
-                break;
-            case "push-transform":
-                instructions.push(new SvgInstruction(SvgInstruction.PUSH_TRANSFORM, dequeue(tokens)));
-                break;
-            case "pop-transform":
-                instructions.push(new SvgInstruction(SvgInstruction.POP_TRANSFORM));
-                break;
-            case "push-anchored-transform":
-                if (parentSymbolId === null) throw "Push-anchored-transform cannot be used when parentSymbolId is null";
-                // Convert anchored transform to normal transform:
-                
-                const parent = parseData.symbols[parentSymbolId];
-                // Find amounts we need to translate by
-                const transX = {
-                    left: -parent.sizeLeft,
-                    middle: -parent.sizeLeft / 2 + parent.sizeRight / 2,
-                    right: parent.sizeRight
-                }[dequeue(tokens)];
-                const transY = {
-                    top: -parent.sizeUp,
-                    middle: -parent.sizeUp / 2 + parent.sizeDown / 2,
-                    bottom: parent.sizeDown
-                }[dequeue(tokens)];
-                // Now add it to the instructions
-                instructions.push(new SvgInstruction(SvgInstruction.PUSH_TRANSFORM, `transform(${transX} ${transY})`));
-                break;
-            default:
-                throw "Invalid instruction name " + instructionName;
+    addSubstitutions(newSubstitutions) {
+        // Saves the given substitutions to be used when this instruction's substitutions are computed.
+        // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        
+        // Check if duplicate substitution
+        if (new Set(Object.keys(newSubstitutions)).union(new Set(Object.keys(this.#substitutions))).length !== 0) throw "Cannot substitute the same name twice";
+        
+        // Create new instruction
+        let newInstruction;
+        if (this.type === SvgInstruction.PATH) {
+            newInstruction = new SvgInstruction(this.path);
+        } else if (this.type === SvgInstruction.CIRCLE) {
+            newInstruction = new SvgInstruction(this.cx, this.cy, this.r);
+        } else if (this.type === SvgInstruction.USE) {
+            newInstruction = new SvgInstruction(this.id);
+        } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
+            newInstruction = new SvgInstruction(this.transform);
+        } else if (this.type === SvgInstruction.POP_TRANSFORM) {
+            newInstruction = new SvgInstruction();
+        } else {
+            throw "Unknown type " + type;
         }
+        
+        // Add new combined substitutions
+        Object.assign(newInstruction.#substitutions, newSubstitutions);
+
+        return newSubstitutions;
     }
-    return Object.freeze(instructions);
+    
+    computeSubstitutions() { 
+        // Uses the values given in addSubstitutions to evaluate any expressions in the args of the instruction.
+        // If a arg expressing is incorrectly formatted, or a substitution name is missing, then an error is thrown.
+        // 
+        // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        
+        let newInstruction;
+        if (this.type === SvgInstruction.PATH) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.path));
+        } else if (this.type === SvgInstruction.CIRCLE) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.cx), this.#evaluate(this.cy), this.#evaluate(this.r));
+        } else if (this.type === SvgInstruction.USE) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.id));
+        } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
+            newInstruction = new SvgInstruction(this.#evaluate(this.transform));
+        } else if (this.type === SvgInstruction.POP_TRANSFORM) {
+            newInstruction = new SvgInstruction();
+        } else {
+            throw "Unknown type " + type;
+        }
+        
+        return newInstruction;
+    }
+    
+    #evaluate(string) {
+        // Substitutions the stored substitutions into the given string and computes the maths and then returns it.
+        
+        return string.replaceAll(/\${(.*?)}/g, (_, expr) => evaluateExpression(
+            expr, 
+            Object.assign({}, this.#substitutions)  // Dupliacte substitutions array
+        )); 
+    }
 }
 
-function parseGroups(tokens) {
-    // Parse and return a list of groups from the list of tokens.
-    // This removes the tokens from the given list.
-    // This returns a frozen set of strings.
-    // This does not require the groups to exist.
+function getSymbolsMatchingPattern(pattern, parseData) {  // TODO: Add some more operations (e.g. allow us to make intersects of groups and that.)
+    // See src/README.md for full doc.
+    //
+    // The gist of it is this:
+    // The pattern should be formatted like ["+group-id", "-symbol-id", "+*drums", ...].
+    // group-ids match any symbols in the group, other ids are taken literally. The asterisk means add all of the following type (drums, decorations, parts).
+    // Then + adds any matching symbols to the selection, and - removes matching symbols from the selection.
     // 
-    // This expects the first token to be the number of groups, then the groups follow that.
-    const numberOfGroups = parseInt(dequeue(tokens));
-    const groups = new Set();
-    for (let i=0; i<numberOfGroups; i++) {
-        groups.add(dequeue(tokens));
-    }
-    return Object.freeze(groups);
-}
-
-function matchSymbolIds(toMatch, parseData) {
-    // Returns symbol names based on toMatch. "*" is all, otherwise pass a symbol or group id.
-    let referingIds;
-    if (toMatch === "*") {
-        referingIds = new Set(Object.keys(parseData.symbols));
-    } else if (parseData.groups.has(toMatch)) {
-        referingIds = new Set(Object.keys(parseData.symbols)
-            .filter(id => parseData.symbols[id].groups.has(toMatch)));
-    } else if (toMatch in parseData.symbols) {
-        referingIds = new Set([toMatch]);
-    } else {
-        throw "Could not find what toMatch is refering to";
-    }
-    return referingIds;
-}
-
-function parsePatternAndGetMatchingSymbols(tokens, parseData) {
-    // Parses the given pattern and then finds and returns the ids of any symbols that match that in a frozen array.
-    // 
-    // The first token should be the number of include/exclude statements, and the following tokens should be the actual statements. These are processed in order.
-    // These are the possible statements:
-    //      `*` - take all `symbol-id`s.  
-    //      `-` before a statement - to reject all the ones that match.  
-    //      `symbol-id` - match a specific symbol. 
-    //      `group-id` - match a specific group.
-    const numberOfParts = parseInt(dequeue(tokens));
+    // This function then returns a frozen set of the results.
     let ids = new Set();
-    for (let i=0; i<numberOfParts; i++) {
-        const statement = dequeue(tokens);
+    for (let i=0; i<pattern.length; i++) {
+        const statement = pattern[i];
         const isRemoving = statement[0] === "-";
+        if (!isRemoving && statement[0] !== "+") throw "Invalid pattern action";
         const toMatch = statement.slice((isRemoving) ? 1 : 0);  // Remove "-" from start of statement
         
         // First collect all ids we are refering too
-        const referingIds = matchSymbolIds(toMatch, parseData);
+        const referingIds = new Set(); 
+        if (toMatch[0] === "*") { // It's a wildcard
+            const dict = {
+                "drums": parseData.drums,
+                "decorations": parseData.decorations,
+                "parts": parseData.parts
+            }[toMatch.slice(1)];  // slice to remove asterisk
+            if (dict === undefined) throw "Unknown wildcard";
+            Object.keys(dict).forEach(id => referingIds.add(id));  // Add all ids from the dict
+            
+        } else { // It's not a wildcard
+            // Check direct matches for ids
+            Object.keys(parseData.parts).filter(p => p === toMatch).forEach(p => referingIds.add(p));
+            Object.keys(parseData.drums).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+            Object.keys(parseData.decorations).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+            // Check groups
+            Object.keys(parseData.drums).filter(d => parseData.drums[d].hasOwnProperty(toMatch)).forEach(d => referingIds.add(d));
+        }
         
         // Handle our ids
         if (isRemoving) {
@@ -383,12 +561,23 @@ function parsePatternAndGetMatchingSymbols(tokens, parseData) {
     return Object.freeze(ids);
 }
 
+
+
+// Load symbols and make accessable to rest of program ------------------------------------------------------------
+
+// Shut up I know I'm being lazy but whatever
+// This function takes a drum id or a group id and returns a list of drum ids.
+const matchSymbolIds = (id, pd) => Array.from(getSymbolsMatchingPattern(["+" + id], pd)).map(id_ => {
+    ensureExistsAndIs(id_, {drum: true});  // Ensure they are all drums, otherwise throw an error
+    return id_;
+});
+
 function calculateFullDrumOrder(parseData) {
     // Using the constraint data, figure out which drum symbols need to be drawn over which symbols.
     
     // Extract the constraint data to get direct relations beetween symbols
     const symbolOverSymbols = {};  // {symbol-id: Array<symbol-ids-which-are-below>}
-    Object.keys(parseData.symbols).forEach(id => { symbolOverSymbols[id] = new Set(); });  // Create set for each symbol
+    Object.keys(parseData.drums).forEach(id => { symbolOverSymbols[id] = new Set(); });  // Create set for each symbol
     parseData.constraints.forEach(constraint => {  // Add direct constraints
         const topIds = matchSymbolIds(constraint.topId, parseData);
         const bottomIds = matchSymbolIds(constraint.bottomId, parseData);
@@ -397,25 +586,26 @@ function calculateFullDrumOrder(parseData) {
         });
     });
     
-    // Check that we have no "loops" - a is over b but b is over a
-    Object.keys(parseData.symbols).forEach(id1 => Object.keys(parseData.symbols).forEach(id2 => {
-        if (symbolOverSymbols[id1].has(id2) && symbolOverSymbols[id2].has(id1)) throw "Circular constraint";
-    }));
-    
     // Actually order our symbolIds
     // We do this by iteratively looking at the data set, if all the symbolIds that need to be below a given symbol are there, then we can add that symbol
-    const symbolIds = Array.from(Object.keys(parseData.symbols));
+    const symbolIds = Array.from(Object.keys(parseData.drums));
     const symbolIdCount = symbolIds.length;  // Take this now as the array reduces in size
     const fullOrder = new Array();
     while (fullOrder.length < symbolIdCount) {
+        let changeOccured = false;  // Flag for whether we actually have changed anything
         for (let i=0; i<symbolIds.length; i++) {
             const symbolId = symbolIds[i];
             if (symbolOverSymbols[symbolId].difference(new Set(fullOrder)).size === 0) {  // Are all requisites for symbolId in fullOrder?
-                // Yes to we can move symbolId
+                // Yes so we can move symbolId
                 fullOrder.push(symbolId);
                 symbolIds.splice(i,1);  // Remove from old array so faster
                 i--;
+                changeOccured = true;
             }
+        }
+        if (!changeOccured) {
+            // If we changed nothing then we are stuck so should crash.
+            throw "Cannot put drums in order using the given constraints, this could be caused by a circular constraint;"
         }
     }
     
@@ -425,29 +615,39 @@ function calculateFullDrumOrder(parseData) {
     return Object.freeze(fullOrder);
 }
 
+
+// Ignore this line, see the tools/server.py ---
 // PUT_DEBUG_FOREVERLOOP_HERE
+// ---------------------------------------------
 
 // First parse tokens into the arrays
 const parseData = parseSymbolSourceString(SYMBOLS_SOURCE);
 // Process constraints
 const fullDrumOrder = calculateFullDrumOrder(parseData);
 
-// Create functions to export -------------------------------------
-export class DrumSymbols {
-    static getFullOrder() {
-        // Returns an array containing the order in which symbols should be drawn where index 0 is the top.
+
+// Static class to make this info accessable
+export class Symbols {
+    static getFullDrumVertOrder() {
+        // Returns an array containing the order in which drus should be drawn, where index 0 is the top.
         return fullDrumOrder;  // This is already frozen
     }
 
-    static isAbove(symbolId1, symbolId2) {
+    static isDrumAbove(symbolId1, symbolId2) {
         // True if symbolId2 should be drawn above symbolId1.
+        ensureExistsAndIs(symbolId1, {drum: true});
+        ensureExistsAndIs(symbolId2, {drum: true});
         return fullOrder.indexOf(symbolId1) < fullOrder.indexOf(symbolId2);
     }
 
-    static getMinDistance(symbolId1, symbolId2) {
-        // Get's the minimum distance between the anchors of the given symbols.
+    static getMinVertDistBetweenDrums(symbolId1, symbolId2) {
+        // Get's the minimum distance between the anchors of the given drums.
         // If symbolId2 should be drawn above symbolId1 then an error is thrown.
         // This will not return indirect constraints (e.g. if a is 10 from b and b is 5 from c, it will not say a is 15 from c (unless you add that externally)).
+        // If there is no constraint (this includes an indirect constraint) then 0 will be returned.
+        ensureExistsAndIs(symbolId1, {drum: true});
+        ensureExistsAndIs(symbolId2, {drum: true});
+        
         if (isSymbolAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
         
         // Find the maximum distance from all the (relevant) constraints
@@ -462,28 +662,67 @@ export class DrumSymbols {
         return minDistance;
     }
 
-    static getInstructions(symbolId) {
-        // Returns an array of SvgInstruction for the given symbol.
-        return parseData.symbols[symbolId].instructions;
+    static getSymbolInstructions(symbolId) {
+        // Returns the instructions for a given symbol. If the symbolId is not a valid drum or decoration id then an error is thrown.
+        symbolId = ensureSymbolId(symbolId);  // Order modifiers correctly if applicable
+        // Try and return the symbol if we can
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].instructions;  // This is already frozen
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].instructions;  // This is already frozen
+        // Id is invalid so throw error
+        throw "SymbolId does not exist, or is not drum or decoration";
     }
-
-    static getSizeLeft(symbolId) {
-        // Returns the sizeLeft for the given symbol. This is the horizontal distance to the left of the anchor that this symbol takes up.
-        return parseData.symbols[symbolId].sizeLeft;
+    
+    static getDecorationWidth(symbolId) {
+        // Returns the width of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].width;
+        throw "SymbolId does not exist, or is not decoration";
     }
-
-    static getSizeRight(symbolId) {
-        // Returns the sizeRight for the given symbol. This is the horizontal distance to the right of the anchor that this symbol takes up.
-        return parseData.symbols[symbolId].sizeRight;
+    
+    static getDecorationMinHeight(symbolId) {
+        // Returns the minimum height of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minHeight;
+        throw "SymbolId does not exist, or is not decoration";
     }
-
-    static getSizeUp(symbolId) {
-        // Returns the sizeUp for the given symbol. This is the vertical distance above the anchor that this symbol takes up.
-        return parseData.symbols[symbolId].sizeUp;
+    
+    static getDecorationMinBelowDrums(symbolId) {
+        // Returns the minimum distance a decoration should descend below the bottom of the lowest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minBelowDrums;
+        throw "SymbolId does not exist, or is not decoration";
     }
-
-    static getSizeDown(symbolId) {
-        // Returns the sizeDown for the given symbol. This is the vertical distance below the anchor that this symbol takes up.
-        return parseData.symbols[symbolId].sizeDown;
+    
+    static getDecorationMinAboveDrums(symbolId) {
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveDrums;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinAboveBars(symbolId) {
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBars;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDrumSizeLeft(symbolId) {
+        // Returns horizontal distance a drum spans on the left side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeLeft;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeUp(symbolId) {
+        // Returns vertical distance a drum ascends above the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeUp;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeRight(symbolId) {
+        // Returns horizontal distance a drum spans on the right side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeRight;
+        throw "Symbol does not exist, or is not a drum";
+    }
+    
+    static getDrumSizeDown(symbolId) {
+        // Returns vertical distance a drum descends below the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeDown;
+        throw "Symbol does not exist, or is not a drum";
     }
 }

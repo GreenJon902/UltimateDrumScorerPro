@@ -52,10 +52,10 @@ export function attachEditor(editorPane) {
         ComponentManager["onComponent" + field + "Changed"]((componentId, newValue) => linkFromComponentManagerCalled(editorPane, "basic", componentId, field, newValue));
     });
     ComponentManager.onComponentVertGroupChanged((before, after) => linkFromComponentManagerCalled(editorPane, "vertGroup", before, after));
-    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
-    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
-    ComponentManager.onComponentSymbolToggled((componentId, bi, si, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "toggle", componentId, bi, si, symbolId, newValue));
-    ComponentManager.onComponentSymbolEnabledStateChanged((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
+    ComponentManager.onComponentDrumEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentDrumEnabledStateChanged((componentId, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "enabledState", componentId, symbolId, newValue));
+    ComponentManager.onComponentDrumToggled((componentId, bi, si, symbolId, newValue) => linkFromComponentManagerCalled(editorPane, "toggle", componentId, bi, si, symbolId, newValue));
+    ComponentManager.onComponentDrumEnabledStateChanged((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
     ComponentManager.onComponentBeatsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
     ComponentManager.onComponentBeatsRemoved((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
     ComponentManager.onComponentSubdivisionsAdded((componentId, ..._) => linkFromComponentManagerCalled(editorPane, "redrawSequencer", componentId));
@@ -386,7 +386,7 @@ function updateSequencerTableContents(table, componentId) {
     table.appendChild(document.createElement("tr"));
     
     // Add rows for symbols
-    const symbolIds = Symbols.getFullOrder().filter(id => ComponentManager.getComponentSymbolEnabledState(componentId, id));  // Use full order so we add columns in the correct order
+    const symbolIds = Symbols.getFullDrumVertOrder().filter(id => ComponentManager.getComponentDrumEnabledState(componentId, id));  // Use full order so we add columns in the correct order
     for (let i=0; i<symbolIds.length; i++) {
         const tr = document.createElement("tr");
         const symbolId = symbolIds[i];
@@ -404,7 +404,7 @@ function updateSequencerTableContents(table, componentId) {
             for (let si=0; si<subdivisionCount; si++) {
                 // Create a td. We can attach events to this, and use data tags to allow css to style it
                 const td = document.createElement("td");
-                td.dataset.toggleEnabled = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);
+                td.dataset.toggleEnabled = ComponentManager.getComponentDrumState(componentId, bi, si, symbolId);
                 createLinkFromComponentManager(td, componentId, "toggle", bi, si, symbolId);  // We need this so the tds actually change. We don't redraw everything when a toggle changes
                 addSequencerToggleEvents(table, td, componentId, bi, si, symbolId);
                 td.style.width = 4 / subdivisionCount + "ch";  // So sizes are consistant with duration. CSS rules then have a minimum width
@@ -435,15 +435,15 @@ function addSequencerToggleEvents(table, td, componentId, bi, si, symbolId) {
     // Toggle first, and figure out if we're toggling on or off
     td.onmousedown = (e) => {
         if (e.buttons !== 1) return;  // Only allow left clicks
-        ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
-        table.dataset.sequencerCurrentDragNewValue = ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId);  // Record this so the rest of the drag only goes to what the first one went to
+        ComponentManager.toggleComponentDrum(componentId, bi, si, symbolId);  // The binding to change the data class is already done
+        table.dataset.sequencerCurrentDragNewValue = ComponentManager.getComponentDrumState(componentId, bi, si, symbolId);  // Record this so the rest of the drag only goes to what the first one went to
     }
     // If dragging, update any toggles that are in the incorret state
     td.onmouseenter = (e) => {
         if (e.buttons !== 1) return;  // Only allow left clicks
         const cndv = table.dataset.sequencerCurrentDragNewValue;
-        if (cndv !== undefined && ComponentManager.getComponentSymbolState(componentId, bi, si, symbolId) !== (cndv === "true")) {
-            ComponentManager.toggleComponentSymbol(componentId, bi, si, symbolId);  // The binding to change the data class is already done
+        if (cndv !== undefined && ComponentManager.getComponentDrumState(componentId, bi, si, symbolId) !== (cndv === "true")) {
+            ComponentManager.toggleComponentDrum(componentId, bi, si, symbolId);  // The binding to change the data class is already done
         }
     }
     // Remove the currentDragNewValue so if the user starts a new drag - from outside the sequencer -, it won't be recorded
@@ -470,25 +470,25 @@ function createScoreEditorOptions(container, componentId) {
     createDeleteDuplicate(div, componentId);
     createVertGroupControls(div, componentId);
     createBreak(div);
-    createEnabledSymbolsOptions(div, componentId);
+    createEnabledDrumsOptions(div, componentId);
     container.appendChild(div);
     return div;
 }
 
-function createEnabledSymbolsOptions(container, componentId) {
+function createEnabledDrumsOptions(container, componentId) {
     // Creates the checkboxes to select which symbols should be enabled.
     // The created node will be returned, as well as added to the container.
     // Checkboxes will have data-symbol-binding="componentId_symbolId".
     
     // Create the table of checkboxes and labels
     const table = document.createElement("table");
-    Symbols.getFullOrder().forEach(symbolId => {
+    Symbols.getFullDrumVertOrder().forEach(symbolId => {
         const tr = document.createElement("tr");
         const labelTd = document.createElement("td");
         const boxTd = document.createElement("td");
         const boxId = getUniqueId();
         createOptionLabel(labelTd, symbolId, boxId);
-        const box = createCheckboxOption(boxTd, ComponentManager.getComponentSymbolEnabledState(componentId, symbolId), () => ComponentManager.toggleComponentSymbolEnabledState(componentId, symbolId));
+        const box = createCheckboxOption(boxTd, ComponentManager.getComponentDrumEnabledState(componentId, symbolId), () => ComponentManager.toggleComponentDrumEnabledState(componentId, symbolId));
         box.id = boxId;
         createLinkFromComponentManager(box, componentId, "enabledState", symbolId);
         
@@ -499,7 +499,7 @@ function createEnabledSymbolsOptions(container, componentId) {
     
     // Construct node heirarchy
     const div = document.createElement("div");
-    createSpan(div, "Enabled Symbols:");
+    createSpan(div, "Enabled Drums:");
     div.appendChild(table);
     container.appendChild(div);
     return div;
