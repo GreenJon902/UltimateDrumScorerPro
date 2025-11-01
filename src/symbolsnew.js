@@ -517,8 +517,8 @@ function getSymbolsMatchingPattern(pattern, parseData) {
     // See src/README.md for full doc.
     //
     // The gist of it is this:
-    // The pattern should be formatted like ["+group-id", "-symbol-id", ...].
-    // group-ids match any symbols in the group, other ids are taken literally.
+    // The pattern should be formatted like ["+group-id", "-symbol-id", "+*drums", ...].
+    // group-ids match any symbols in the group, other ids are taken literally. The asterisk means add all of the following type (drums, decorations, parts).
     // Then + adds any matching symbols to the selection, and - removes matching symbols from the selection.
     // 
     // This function then returns a frozen set of the results.
@@ -531,12 +531,23 @@ function getSymbolsMatchingPattern(pattern, parseData) {
         
         // First collect all ids we are refering too
         const referingIds = new Set(); 
-        // Check direct matches for ids
-        Object.keys(parseData.parts).filter(p => p === toMatch).forEach(p => referingIds.add(p));
-        Object.keys(parseData.drums).filter(d => d === toMatch).forEach(d => referingIds.add(d));
-        Object.keys(parseData.decorations).filter(d => d === toMatch).forEach(d => referingIds.add(d));
-        // Check groups
-        Object.keys(parseData.drums).filter(d => parseData.drums[d].has(toMatch)).forEach(d => referingIds.add(d));
+        if (toMatch[0] === "*") { // It's a wildcard
+            const dict = {
+                "drums": parseData.drums,
+                "decorations": parseData.decorations,
+                "parts": parseData.parts
+            }[toMatch.slice(1)];  // slice to remove asterisk
+            if (dict === undefined) throw "Unknown wildcard";
+            Object.keys(dict).forEach(id => referingIds.add(id));  // Add all ids from the dict
+            
+        } else { // It's not a wildcard
+            // Check direct matches for ids
+            Object.keys(parseData.parts).filter(p => p === toMatch).forEach(p => referingIds.add(p));
+            Object.keys(parseData.drums).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+            Object.keys(parseData.decorations).filter(d => d === toMatch).forEach(d => referingIds.add(d));
+            // Check groups
+            Object.keys(parseData.drums).filter(d => parseData.drums[d].has(toMatch)).forEach(d => referingIds.add(d));
+        }
         
         // Handle our ids
         if (isRemoving) {
