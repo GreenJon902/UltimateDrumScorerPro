@@ -464,8 +464,8 @@ function createScoreEditorOptions(container, componentId) {
     createBasicTextOption(div, componentId, "Time Signature Denomenator", "TimeSignatureDenomenator", ...POSITIVE_INT);
     createBasicTextOption(div, componentId, "Rhythm Length Hint", "RhythmLengthHint", ...POSITIVE_REAL);
     createTextOption(div, "Set All Subdivisions", POSITIVE_INT[0], "", value => setAllSubdivisionsBoxChanged(componentId, value));
-    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", ["start", "repeat-start", "option-start"]);  // TODO: Get options for a proper source
-    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", ["end", "repeat-end", "option-end", "bar-end"]);  // TODO: Get options for a proper source
+    createBasicSelectOption(div, componentId, "Left Decoration", "LeftDecoration", Symbols.listLeftDecorations());  
+    createBasicSelectOption(div, componentId, "Right Decoration", "RightDecoration", Symbols.listRightDecorations());  
     createBreak(div);
     createDeleteDuplicate(div, componentId);
     createVertGroupControls(div, componentId);

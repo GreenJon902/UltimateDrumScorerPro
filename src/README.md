@@ -18,9 +18,10 @@ A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
 The sizes are the distance from the anchor that this symbol takes up.  
 
-`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<instructions...: list<instruction...>>`  
+`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.
 The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.
+The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  

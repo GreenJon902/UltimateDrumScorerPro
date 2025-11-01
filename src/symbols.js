@@ -156,6 +156,9 @@ function parseGroup(tokens) {
     return ensureSymbolIdPart(dequeue(tokens));
 }
 
+const LEFT = "left";
+const RIGHT = "right";
+
 function parseSymbolSourceString(symbolsSource) {
     // Parse the given symbol source string. This string is made of actions with arguments which are all separated by commas.
     // This loads them into thise maps: parts, symbols, constraints.
@@ -166,7 +169,7 @@ function parseSymbolSourceString(symbolsSource) {
     const parseData = {
         parts: {},  // {part-id: Object.freeze({instructions: Object.freeze(Array<SvgInstruction>)})}
         drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
-        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, instructions: Object.freeze(Array<SvgInstruction>)})}
+        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, size: Union<"left", "right"> instructions: Object.freeze(Array<SvgInstruction>)})}
         constraints: new Set(),  // Object.freeze({topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float})
         groups: new Set()  // group-id 
     }
@@ -279,10 +282,14 @@ function parseNewDecoration(tokens, parseData) {
     const minBelowDrums = parseOptionalFloat(dequeue(tokens));
     const minAboveDrums = parseOptionalFloat(dequeue(tokens));
     const minAboveBars = parseOptionalFloat(dequeue(tokens));
+    const side = dequeue(tokens);
     const instructions = parseList(tokens, parseInstruction, parseData);
     
+    // Ensure side is valid
+    if (side !== LEFT && side !== RIGHT) throw "Invalid side " + side;
+    
     // Add decoration to parseData
-    groups.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, instructions: Object.freeze(instructions)};
+    parseData.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, side: side, instructions: Object.freeze(instructions)};
 }
 
 function parseNewPart(tokens, parseData) {
@@ -628,6 +635,9 @@ const fullDrumOrder = calculateFullDrumOrder(parseData);
 
 // Static class to make this info accessable
 export class Symbols {
+    static get LEFT() {return LEFT};
+    static get RIGHT() {return RIGHT};
+
     static getFullDrumVertOrder() {
         // Returns an array containing the order in which drus should be drawn, where index 0 is the top.
         return fullDrumOrder;  // This is already frozen
@@ -670,6 +680,22 @@ export class Symbols {
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].instructions;  // This is already frozen
         // Id is invalid so throw error
         throw "SymbolId does not exist, or is not drum or decoration";
+    }
+    
+    static listLeftDecorations() {
+        // Returns a frozen array containing the ids of the left decorations.
+        // If these are shown to the user, it is intended that they are shown in the returned order.
+
+        // TODO: Order these somehow
+        return Object.freeze(Array.from(Object.keys(parseData.decorations)).filter(id => parseData.decorations[id].side === this.LEFT));
+    }
+    
+    static listRightDecorations() {
+        // Returns a frozen array containing the ids of the left decorations.
+        // If these are shown to the user, it is intended that they are shown in the returned order.
+
+        // TODO: Order these somehow
+        return Object.freeze(Array.from(Object.keys(parseData.decorations)).filter(id => parseData.decorations[id].side === this.RIGHT));
     }
     
     static getDecorationWidth(symbolId) {
