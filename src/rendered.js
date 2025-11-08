@@ -76,6 +76,5 @@ function createInitialScoreComponent(componentContainer, componentId) {
     const instructions = compileScoreComponent(componentId);
     const spacing = calculateScoreComponentSpacing(instructions, instructions, 0);
     
-
     componentContainer.appendChild(svg);
 }
