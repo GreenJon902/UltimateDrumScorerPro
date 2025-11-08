@@ -5,17 +5,17 @@ class RenderInstruction {
     //
     // There are a couple types of render-instructions (and what they store):
     //     GROUP: 
-    //         - symbols
+    //         - drumIDs
     //         - full-beams
     //         - broken-beams
     //         - dots
     //         - length
     //     GROUP-END:
-    //         - symbols
+    //         - drumIDs
     //         - dots
     //         - length
     //     FLAG:
-    //         - symbols
+    //         - drumIDs
     //         - flags
     //         - dots
     //         - length
@@ -28,11 +28,9 @@ class RenderInstruction {
     //         - hooks
     //     CONTRACT-END:
     //     DECORATION:
-    //         - decorations
-    //     SIDE-DECORATION:
-    //         - side-decoration
+    //         - decorationID
     // 
-    // symbols: A string array of the symbolIDs to draw.
+    // drumIDs: A string array of the (drum) symbolIDs to draw.
     // full-beams: The number (non-zero and positive) of full beams to draw between this instruction and the next instruction (with a stem, full beams go over rests).
     // broken-beams: The same full-beams except for broken-beams. This can be signed, where negative means to draw on the left, and positive to the right. It can also be zero - no broken-beams. If dots != 0 then this cannot be negative.
     // dots: The number (zero or positive) of dots that should be drawn after the stem. If broken-beams is negative (broken-beams on the left) then this must be 0 (no dots).
@@ -41,14 +39,14 @@ class RenderInstruction {
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
     // length: The relative duration of a note compared to the rest of the notes. If a note is twice as long then it should have double the duration.
-    // side-decoration:  The side decoration ID of the side decoration to draw. 
+    // decoration:  The (decoration) symbolID of the decoration to draw. 
     // 
     // GROUPs connect to the next GROUP or GROUP-END, so must be followed by at least one of these.
     // A GROUP-END must follow a GROUP.
     // FLAGs stand alone so should not follow an un-ended GROUP. This means crotchets should be represented using a FLAG with flags=0.
     // Each CONTRACT-START must be closed by a CONTRACT-END, and must be closed before another CONTRACT can start.
     // RESTS and CONTRACTING-START/END can come anywhere between GROUPs and FLAGs.
-    // SIDE-DECORATIONs cannot come within unended groups.
+    // DECORATIONs cannot come within unended groups.
     // 
     // CONTRACT groups are for contracting-ratios, they say notes inside this group (of the length given inside ratio) should be contracted so that they last the length of a single beat.
     
@@ -59,7 +57,7 @@ class RenderInstruction {
     static get REST() {return "REST";}
     static get CONTRACT_START() {return "CONTRACT_START";}
     static get CONTRACT_END() {return "CONTRACT_END";}
-    static get SIDE_DECORATION() {return "SIDE-DECORATION";}
+    static get DECORATION() {return "DECORATION";}
 
     constructor(type, ...args) {
         // Type should be the value in GROUP, GROUP_END...
@@ -89,8 +87,8 @@ class RenderInstruction {
             this.ratio = args[0];
             this.hooks = args[1];
         } else if (type === RenderInstruction.CONTRACT_END) {
-        } else if (type === RenderInstruction.SIDE_DECORATION) {
-            this.side_decoration = args[0];
+        } else if (type === RenderInstruction.DECORATION) {
+            this.decoration = args[0];
         } else {
             throw "Unkown type " + type;
         }
@@ -164,7 +162,7 @@ export function compileScoreComponent(componentID) {
     // Add the left decoration
     const leftDecorationID = ComponentManager.getComponentLeftDecoration(componentID);
     if (leftDecorationID !== "") {
-        renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION,  leftDecorationID));
+        renderInstructions.push(new RenderInstruction(RenderInstruction.DECORATION,  leftDecorationID));
     }
 
     // We do each beat separately
@@ -174,7 +172,7 @@ export function compileScoreComponent(componentID) {
         // First, calculate the non-empty subdivision indexes:
         let nonEmptySubdivisionIndexes = [];  // Holds the indexes of non-empty subdivisions in this beat, relative to the start of the beat
         for (let si=0; si < beatSubdivisions; si ++) {  // SI: subdivisionIndex
-            if (ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si).length != 0) {
+            if (ComponentManager.getComponentSubdivisionDrums(componentID, bi, si).length != 0) {
                 nonEmptySubdivisionIndexes.push(si);
             }
         }
@@ -231,7 +229,7 @@ export function compileScoreComponent(componentID) {
         let si = 0;  // SI: subdivisionIndex. This should correspond to the start of the ith (see below) sGroup
         let nonEmptySGroups = [];  // The indexes of sGroups that aren't empty
         for (let i=0; i<sGroups.length; i++) {  // i: Index of curreng sGroup
-            if (ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si * subdivisionMultiplier).length != 0) { // Is non-empty?
+            if (ComponentManager.getComponentSubdivisionDrums(componentID, bi, si * subdivisionMultiplier).length != 0) { // Is non-empty?
                 nonEmptySGroups.push(i);
             }
             si += sGroups[i];
@@ -251,7 +249,7 @@ export function compileScoreComponent(componentID) {
         for (let i=0; i<sGroups.length; i++) {  // i: Index of current sGroup
             const rhythmInfo = calculateRhythmInformation(sGroups[i], relativeSubdivisions);
             if (nonEmptySGroups.includes(i)) {
-                const drums = ComponentManager.getComponentSubdivisionSymbols(componentID, bi, si * subdivisionMultiplier);
+                const drums = ComponentManager.getComponentSubdivisionDrums(componentID, bi, si * subdivisionMultiplier);
                 
                 if (nonEmptySGroups.length == 1) {
                     // i is the only non-empty sGroup, so draw a FLAG
@@ -319,7 +317,7 @@ export function compileScoreComponent(componentID) {
     // Add right decoration
     const rightDecorationID = ComponentManager.getComponentRightDecoration(componentID);
     if (rightDecorationID !== "") {
-        renderInstructions.push(new RenderInstruction(RenderInstruction.SIDE_DECORATION, rightDecorationID));
+        renderInstructions.push(new RenderInstruction(RenderInstruction.DECORATION, rightDecorationID));
     }
 
 
@@ -360,18 +358,19 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
     // The rhythmLengthHint is the minimum length of a beat, and if big enough can allow the rhythm to be implied by spacing.
     // 
     // It returns {
-    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST / SIDE_DECORATION. It is the start and end of a CONTRACT_START/END pair.
+    //     instructionXs: [int] - The x coordinate of a stem, or the right edge of a REST / DECORATION. It is the start and end of a CONTRACT_START/END pair.
     //     drumYs: {str: int} - A map from drumID to drum anchor (where the stem connects to the head) y level.
     //     restCenterYs: [int] - The y line where rests should be centered on. The index is the number of the rest as they come in instructions.
     //     contractCenterYs: [int] - The y line where contracts should be centered on. The index is the number of the contract (one for each pair) as they come in instructions.
     //     stemStartYs: [int] - The y level where stems (and hence beams and flags and dots) should be start being drawn on (so the top). The index is the number of the stem as they come in instructions.
     //     width: int, height: int  - The width and height of the SVG to be drawn.
-    //     sideDecorationCenterY: int - The y position that side-decorations should be centered on.
+    //     decorationCenterY: int - The y position that decorations should be centered on.
     //  }
     //  The rhythmLengthMultiplier is a hint for how wide to draw each instruction (excluding contracts) per unit instruction.length.
 
+    let DRUMS = Symbols.getFullDrumVertOrder();  // Contains ordered drumIDs with 0 being draw at top
     let {array: DRUMS, map: DRUMS_MAP} = getSvgNodes("drums");
-    //let {array: SIDE_DECORATIONS, map: SIDE_DECORATIONS_MAP} = getSvgNodes("side-decorations");
+    //let {array: DECORATIONS, map: DECORATIONS_MAP} = getSvgNodes("decorations");
 
     
     // Get a list of the DRUMS that are. Order is preserved.
@@ -454,9 +453,9 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
             if (instructions[i-1].type === RenderInstruction.REST) {
                 x += 2;
             }
-        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+        } else if (instr.type === RenderInstruction.DECORATION) {
             // We add the whole width here as we want x to be on the right side of the decoration
-            x += parseFloat(SIDE_DECORATIONS_MAP[instr.side_decoration].dataset.width); 
+            x += parseFloat(DECORATIONS_MAP[instr.decoration].dataset.width); 
         } else {
             throw "Unexpected instruction type";
         }
@@ -536,7 +535,7 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
                 instructionXs[currentContractI] = instructionXs[currentContractI + 1];  // No hooks so starts with a GROUP so we can get the next x
                 instructionXs[i] = instructionXs[i - 1];  // No hooks so ends with a GROUP_END so we can get last x
             }
-        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+        } else if (instr.type === RenderInstruction.DECORATION) {
             x += 1;  // Add some padding
         } else {
             throw "Unexpected instruction type"
@@ -639,25 +638,25 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
     }
     console.log("4. TRh:", tallestRhythm);
 
-    // Fifth, calculate the tallest rest / side-decoration, also count the rests and count the side-decorations
-    let tallestRestOrSideDeco = 0;
+    // Fifth, calculate the tallest rest / decoration, also count the rests and count the decorations
+    let tallestRestOrDeco = 0;
     let restCount = 0;
-    let sideDecorationCount = 0;
+    let decorationCount = 0;
     for (let i=0; i<linkedInstructions.length; i++) {
         const instr = linkedInstructions[i];
         if (instr.type === RenderInstruction.REST) {
             restCount += 1;
             if (instr.ticks === 0) {  // Is crotchet rest?
-                tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, 15);
+                tallestRestOrDeco = Math.max(tallestRestOrDeco, 15);
             } else {
-                tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, 5 * instr.ticks);
+                tallestRestOrDeco = Math.max(tallestRestOrDeco, 5 * instr.ticks);
             }
-        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
-            sideDecorationCount += 1;
-            tallestRestOrSideDeco = Math.max(tallestRestOrSideDeco, parseFloat(SIDE_DECORATIONS_MAP[instr.side_decoration].dataset.height));
+        } else if (instr.type === RenderInstruction.DECORATION) {
+            DecorationCount += 1;
+            tallestRestOrDeco = Math.max(tallestRestOrDeco, parseFloat(DECORATIONS_MAP[instr.decoration].dataset.height));
         }
     }
-    console.log("5. TROSD:", tallestRestOrSideDeco);
+    console.log("5. TROSD:", tallestRestOrDeco);
     
     // Sixth, find out if we have any contracts we need to account for, and how many there are
     const contractCount = instructions.filter(instr => instr.type === RenderInstruction.CONTRACT_START).length;
@@ -701,7 +700,7 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
     } else {
         headHeight = 0;
     }
-    const underRhythmHeight = Math.max(tallestRestOrSideDeco, headHeight);  // Height of stuff under beams
+    const underRhythmHeight = Math.max(tallestRestOrDeco, headHeight);  // Height of stuff under beams
         
     const restCenterY = contractHeight + tallestRhythm + (underRhythmHeight / 2) + maxDecorationsHeight;
     const restCenterYs = new Array(restCount).fill(restCenterY);
@@ -709,7 +708,7 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
     
     const contractCenterYs = new Array(contractCount).fill(contractHeight / 2);
     const stemStartYs = new Array(stemCount).fill(contractHeight + maxDecorationsHeight);
-    const sideDecorationCenterY = tallestRhythm + contractHeight + maxDecorationsHeight + underRhythmHeight / 2;
+    const decorationCenterY = tallestRhythm + contractHeight + maxDecorationsHeight + underRhythmHeight / 2;
     
      // Center heads in underRhythmHeight and move to be under beams and make it so drumID points to y-coord
     const drumYsMap = {};
@@ -735,7 +734,7 @@ export function calculateScoreComponentSpacing(instructions, linkedInstructions,
         decorationPoss,
         width,
         height,
-        sideDecorationCenterY
+        decorationCenterY
     };
     console.log("9. RE:", ret);
     return ret;
@@ -925,10 +924,10 @@ function draw(instructions, spacing) {
             // Update trackers
             currentContractI = null;
             contractI += 1;
-        } else if (instr.type === RenderInstruction.SIDE_DECORATION) {
+        } else if (instr.type === RenderInstruction.DECORATION) {
             const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-            use.setAttribute("href", "#" + instr.side_decoration);
-            use.setAttribute("transform", `translate(${spacing.instructionXs[i]} ${spacing.sideDecorationCenterY})`);
+            use.setAttribute("href", "#" + instr.decoration);
+            use.setAttribute("transform", `translate(${spacing.instructionXs[i]} ${spacing.decorationCenterY})`);
             svg.appendChild(use);
         } else {
             throw "Unexpected instruction type"
