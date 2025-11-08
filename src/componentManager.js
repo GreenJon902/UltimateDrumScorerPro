@@ -348,10 +348,14 @@ export class ComponentManager {
         // The beats will be inserted at the given indexes in the order that they come.
         //      E.g. If we have 2 3 4 5 and we insert addBeats(id, 1, 1, 2) then we'd get 2 1 1 3 4 5.
         //      A single event is dispatched after all beats have been added internally.
+        // The supplied indexes don't need to be sorted, but the dispatched event will have them automatically sorted.
         
         // Validate componentId and numberOfSubdivisions
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (numberOfSubdivisions <= 0) throw "NumberOfSubdivisions must be above 0";
+        
+        // The event requires indexes to be sorted, so we'll sort them here
+        beatIndexes = sortIndexes(beatIndexes, 1);
         
         // Copy beats array so action is atomic (incase validation fails in middle)
         const newBeats = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"]);  // Only needs to be a shallow copy
@@ -381,9 +385,13 @@ export class ComponentManager {
         // The beats will be removed at the given indexes in the order that they come.
         //      E.g. If we have 2 3 4 5 and we remove removeBeats(id, 1, 2) then we'd get 2 4.
         //      A single event is dispatched after all beats have been removed internally.
+        // The supplied indexes don't need to be sorted, but the dispatched event will have them automatically sorted.
         
         // Validate componentId
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
+        
+        // The event requires indexes to be sorted, so we'll sort them here
+        beatIndexes = sortIndexes(beatIndexes, -1);
         
         // Copy beats array so action is atomic (incase validation fails in middle)
         const newBeats = new Array(...CURRENT_PROJECT["components"][componentId]["score-content"]);  // Only needs to be a shallow copy
@@ -409,6 +417,10 @@ export class ComponentManager {
         // Adds subdivisions at the given indexes to the given beat of the given component.
         // Each of the new subdivisions will be empty.
         // These are added in the same order as addBeats.
+        // The supplied indexes don't need to be sorted, but the dispatched event will have them automatically sorted.
+        
+        // The event requires indexes to be sorted, so we'll sort them here
+        subdivisionIndexes = sortIndexes(subdivisionIndexes, 1);
         
         // Validate componentId and beatI
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
@@ -436,6 +448,10 @@ export class ComponentManager {
     static removeSubdivisons(componentId, beatI, ...subdivisionIndexes) {
         // Removes subdivisions at the given indexes from the given beat of the given component.
         // These are removed in the same order as removeBeats.
+        // The supplied indexes don't need to be sorted, but the dispatched event will have them automatically sorted.
+        
+        // The event requires indexes to be sorted, so we'll sort them here
+        subdivisionIndexes = sortIndexes(subdivisionIndexes, -1);
         
         // Validate componentId and beatI
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
@@ -537,4 +553,37 @@ function toggleArrayItem(array, item) {
         // Not there so add
         array.push(item);
     }
+}
+
+function sortIndexes(indexes, modifier) {
+    // Sorts the indexes into ascending order, while ensuring that result of inserting/removing `modifier` items at that index is consistant with if it was done before sorting the indexes.
+    // Positive modifier means inserting, negative modifier means removing.
+    //
+    // E.g. sortIndexes((2, 1, 4), +1):
+    //      This means we are adding one element at index 2, then index 1, then index 4.
+    //      We want these indexes in ascending order, but if we have 1, 2, 4 then the item origonally inserted at two (which then get's shifted to three as something is inserted before) is inserted at two and never moves.
+    //      So instead this method would return (1, 3, 5).
+    // Similarily sortIndexes((2, 1, 4)) -> (1, 1, 4).
+    // 
+    // This assumes the list has enough items to support the action, if it does not then you may get negative indecies.
+
+    indexes = Array.from(indexes);  // Duplicate array so we don't modify origonal
+    const newIndexes = new Array();
+
+    while (indexes.length > 0) {
+        // Pop minimum index from indexes
+        const minI = indexes.indexOf(Math.min(...indexes));  // This is the index in the indexes array
+        const minIndex = indexes.splice(minI, 1)[0];  // This is the value of indexes[minI]
+        
+        // minIndex must be > max(newIndexes) so we can just append to the end and it will be ascending
+        newIndexes.push(minIndex);
+        
+        // We need to adjust the other indexes
+        // All items in indexes are greater than or equal to minIndex, however the indexes after minIndex will be unaffected if minIndex moves forwards as the overall change remains the same. This means we only need to change the ones before minIndex.
+        for (let i=0; i<minI; i++) {
+            indexes[i] += modifier;
+        }
+    }
+        
+    return newIndexes;
 }

@@ -83,10 +83,10 @@ ComponentManager - Stores persistant state of entities.
 		- ComponentVertGroupChanged {oldGroup, newGroup} - `oldGroup` and `newGroup` are lists of ids. Corrosponding to a group before and a group after. If either is null, it means the group didn't exist before/after. The set difference can tell you which ids changed.
 		- ComponentDrumToggled {componentId, beatI, subdivisionI, drumId, newValue}
 		- ComponentDrumEnabledStateChanged {componentId, drumId, newValue}
-		- ComponentBeatsAdded {componentId, numberOfSubdivisions, ...beatIndexes}
-		- ComponentBeatsRemoved {componentId, ...beatIndexes}
-		- ComponentSubdivisionsAdded {componentId, beatI, ...subdivisionIndexes}
-		- ComponentSubdivisionsRemoved {componentId, beatI, ...subdivisionIndexes}
+		- ComponentBeatsAdded {componentId, numberOfSubdivisions, ...beatIndexes} - The `beatIndexes` will be in ascending order, and were applied in that order.
+		- ComponentBeatsRemoved {componentId, ...beatIndexes} - The `beatIndexes` will be in ascending order, and were applied in that order.
+		- ComponentSubdivisionsAdded {componentId, beatI, ...subdivisionIndexes} - The `subdivisionIndexes` will be in ascending order, and were applied in that order.
+		- ComponentSubdivisionsRemoved {componentId, beatI, ...subdivisionIndexes} - The `subdivisionIndexes` will be in ascending order, and were applied in that order.
 	- Methods:
 		- CreateEmptyComponent (typeId) -> componentId
 		- ComponentExists(componentId) -> bool
@@ -253,7 +253,7 @@ The basic thought process is all data flows through the manager. If the editor u
 ### Adding a beat (/subdivision)
 ```
 1. Editor calls ComponentManager.addBeats(<id>, <nos>, 4, 1, 4)
-	2. ComponentManager adds them internally.
+	2. ComponentManager adds them internally (and sorts and updates beat indecies to be in ascending order, such that the outcome would be the same if beats were added using the old or new indicies).
 	3. ComponentManager dispatches ComponentBeatsAdded {<nos>, 4, 1, 4}
 		4. Editor and Renderer respond accordingly.
 ```
