@@ -91,6 +91,7 @@ class RenderInstruction {
             this.ratio = args[0];
             this.hooks = args[1];
         } else if (type === RenderInstruction.CONTRACT_END) {
+            // No args taken
         } else if (type === RenderInstruction.DECORATION) {
             this.decoration = args[0];
         } else {
