@@ -1,6 +1,7 @@
 import {ComponentManager} from "./componentManager.js";
 import {createSvgText, updateSvgText} from "./textComponentSvgRenderer.js";
-import {compileScoreComponent, calculateScoreComponentSpacing} from "./scoreComponentSvgRenderer.js";
+//import {compileScoreComponent, calculateScoreComponentSpacing} from "./scoreComponentSvgRenderer.js";
+import {compileScoreComponent} from "./scoreComponentUtils/compile.js"
 
 export function attachRendered(componentContainer) {
     // Sets up bindings for the given componentContainer to connect it ot he various managers.
