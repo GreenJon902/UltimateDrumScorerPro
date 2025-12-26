@@ -122,7 +122,7 @@ function makeGroupLengthsLegal(length) {
         // Our series simplifies to `2^(n+1) - 2^k`, we can use this to find `k` by equating it to length
         const k = Math.ceil(Math.log2(Math.pow(2, n+1) - length))
         
-        // Then get the length of the series (the legal length of the group we are added (the missing part will be handled in later iterations))
+        // Then evaluate the series (the legal length of the group we are added (the missing part will be handled in later iterations))
         const series = Math.pow(2, n+1) - Math.pow(2, k)
         legalLengths.push(series);
         // Subtract the series from length as we have accounted for it
