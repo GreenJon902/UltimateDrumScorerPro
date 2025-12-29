@@ -235,8 +235,9 @@ function calculateBeamInfo(l, c, n, nn) {
 // TODO: RenderInstruction length arguement needs to take into account all beats in bar
 // TODO: Simplify contraction ratio
 
-function createGroupInstructions(componentId, beatI) {
+function createGroupInstructions(componentId, beatI, absoluteRelativeLength) {
     // Creates the group instructions for a given beat for a given component.
+    // The returned instruction have "length"s, which are relative to other lengths in a bar. The absoluteRelativeLength encodes the number of subdivisions of the other beats in the bar. It should be the lcm of all the subdivisionCounts. The instruction lengths are then absoluteRelativeLength/thisBeatsSubdivisionCount*numberOfSubdivisionsThisGroupTakesUp.
     
     // Get some preliminary data
     const groupLengths = groupSubdivisions(componentId, beatI);
@@ -293,6 +294,33 @@ function createGroupInstructions(componentId, beatI) {
     return Object.freeze(instructions);
 }
 
+function gcd(a, b) {
+    // Calculates the greatest common denomenator of two numbers.
+    
+    // Run the euclidean algorithm
+    while (b !== 0) {
+        [a, b] = [b, a % b];
+    }
+    
+    return a;
+}
+
+function getLcmSubdivisionCounts(componentId) {
+    // Return the lowest common multiple of the subdivision counts for each bar in the given component.
+    
+    // Get subdivision counts
+    const subdivisionCounts = new Array();
+    const beatCount = ComponentManager.getComponentBeatCount(componentId)
+    for (let beatI=0; beatI<beatCount; beatI++) {
+        subdivisionCounts.push(ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI));
+    }
+    
+    // Calculate lcm
+    const lcm = subdivisionCounts.reduce((a, b) => (a * b / gcd(a, b)));
+    
+    return lcm;
+}
+
 export function compileScoreComponent(componentId) {
     // Converts the given score-component into a frozen array of RenderInstructions.
     // This implementation will take each beat on its own, so will not beam between beats.
@@ -304,12 +332,13 @@ export function compileScoreComponent(componentId) {
     if (leftDeco !== null) instructions.push(new RenderInstruction(RenderInstruction.DECORATION, leftDeco));
 
     // Convert actual note information to instructions
+    const lcmSubdivisionCounts = getLcmSubdivisionCounts(componentId);
     const beatCount = ComponentManager.getComponentBeatCount(componentId)
     for (let beatI=0; beatI<beatCount; beatI++) {
         const subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
         
         // Get instructions for beat
-        const beatInstructions = createGroupInstructions(componentId, beatI);
+        const beatInstructions = createGroupInstructions(componentId, beatI, lcmSubdivisionCounts);
         
         // Do we need a contract
         const needsContract = Math.log2(subdivCount) % 1 !== 0;
