@@ -16,7 +16,7 @@ A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i
   
 `new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
-The sizes are the distance from the anchor that this symbol takes up.  
+The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up.  
 
 `new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.
@@ -28,7 +28,7 @@ Adds a new part symbol with the given id. The id must not be taken.
   
 `modifier,drum,explicit,<id: drum-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new symbol for a drum with the given id. The id must not be taken, however the modifier itself can have already been used. The id must be modified at least once, and the base-id must be taken.  
-The sizes are the distance from the anchor that this symbol takes up.  
+The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up.  
 This will not inherit instructions or groups from the base-ids or any related symbol-ids. You must specify these yourself.  
   
 `modifier,drum,auto,<modifier-id: modifier_id>,<pattern...: list<pattern-part>>,(+<detla|\><min)size-left: float>,(+<detla|\><min)size-right: float>,(+<detla|\><min)size-up: float>,(+<detla|\><min)size-down: float>,<min-width: float>,<min-height: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
