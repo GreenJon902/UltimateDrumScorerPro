@@ -232,17 +232,34 @@ function calculateBeamInfo(l, c, n, nn) {
     return {fullBeams: fullBeams, brokenBeams: brokenBeams};
 }
 
-// TODO: Simplify contraction ratio
+function getGcd(...n) {
+    // Gets the greatest common denomenator from the given numbers.
+    // This expects there to be at least one number given.
+    return n.reduce((a, b) => {
+        // Euclidean algorithm
+        while (b !== 0) {
+            [a, b] = [b, a % b];
+        }
+        return a;
+    });
+}
 
 function createGroupInstructions(componentId, beatI) {
     // Creates the group instructions for a given beat for a given component.
+    // Returns {beatInstructions: Object.freeze(Array<RenderInstruction>), subdivDivisor: int} where the subdivDivisor is the factor by which lengths were reduced.
     
     // Get some preliminary data
-    const groupLengths = groupSubdivisions(componentId, beatI);
+    let groupLengths = groupSubdivisions(componentId, beatI);
     const expandedGroupLengths = groupLengths.map(l => new Array(l).fill(l)).reduce((a, b) => a.concat(b));  // Has an item for each subdivision containing the length of its group
     const nonEmptySubdivisions = getNonEmptySubdivisions(componentId, beatI);
     const nonEmptyCount = nonEmptySubdivisions.length;
-    const subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
+    let subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
+    
+    // Simplify groupLengths and subdivCount by removing common factors
+    // This means a beat with 3 subdivsions, but only the first subdivision is non-empty, will not be notated as a dotted-crotchet with a triplet contraction
+    const gcd = getGcd(...groupLengths);  // If x|(some group length) then x|subdivCount, so we only need to run for groupLengths
+    subdivCount = subdivCount / gcd;
+    groupLengths = groupLengths.map(x => x/gcd);
     
     // Create the instructions. We need one for each group length
     const instructions = new Array();
@@ -293,7 +310,7 @@ function createGroupInstructions(componentId, beatI) {
         subdivI += groupLength;
     }
     
-    return Object.freeze(instructions);
+    return {beatInstructions: Object.freeze(instructions), subdivDivisor: gcd};
 }
 
 export function compileScoreComponent(componentId) {
@@ -309,10 +326,13 @@ export function compileScoreComponent(componentId) {
     // Convert actual note information to instructions
     const beatCount = ComponentManager.getComponentBeatCount(componentId)
     for (let beatI=0; beatI<beatCount; beatI++) {
-        const subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
         
         // Get instructions for beat
-        const beatInstructions = createGroupInstructions(componentId, beatI);
+        const {beatInstructions, subdivDivisor} = createGroupInstructions(componentId, beatI);
+        
+        // Get adjusted subdivisonCount
+        const initialSubdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
+        const subdivCount = initialSubdivCount / subdivDivisor;
         
         // Do we need a contract
         const needsContract = Math.log2(subdivCount) % 1 !== 0;
