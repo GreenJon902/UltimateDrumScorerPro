@@ -356,14 +356,13 @@ function parseModifierDrumAuto(tokens, parseData) {
     // Get symbols matching pattern
     const oldIds = getSymbolsMatchingPattern(pattern, parseData)
     // Ensure they're all drums and there's at least one
-    oldIds.forEach(id => ensureExistsAndIs(id, {drum: true}));
+    oldIds.forEach(id => ensureExistsAndIs(id, parseData, {drum: true}));
     if (oldIds.length === 0) throw "Expected at least one symbol-id to match the pattern";
 
     // Create new drums
-    for (let i=0; i<oldIds.length; i++) {
-        const oldId = oldIds[i];
+    oldIds.forEach(oldId => {
         const old = parseData.drums[oldId];
-        const modifiedId = ensureDoesNotExist(ensureSymbolId(oldId + "_" + modifierId));  // EnsureSymbolId to sort modifier-ids to.
+        const modifiedId = ensureDoesNotExist(ensureSymbolId(oldId + "_" + modifierId), parseData);  // EnsureSymbolId to sort modifier-ids to.
         
         // Find out size of new drum
         const parentCenterX = -old.sizeLeft / 2 + old.sizeRight / 2;
@@ -376,13 +375,13 @@ function parseModifierDrumAuto(tokens, parseData) {
         // Compute combined instructions
         const combinedInstructions = [
             ...old.instructions,
-            ...instruction.map(instr => instr.addSubstitutions({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
+            ...instructions.map(instr => instr.addSubstitutions({parent_size_left: old.sizeLeft, parent_size_up: old.sizeUp, parent_size_right: old.sizeRight, parent_size_down: old.sizeDown}))  // These vars should refer to the direct parent.
         ]
         
         // New groups set and add
-        const combinedGroups = old.groups.union(groups);
+        const combinedGroups = old.groups.concat(groups);
         parseData.drums[modifiedId] = {sizeLeft: sizeLeft, sizeUp: sizeUp, sizeRight: sizeRight, sizeDown: sizeDown, instructions: combinedInstructions, groups: combinedGroups};
-    }
+    });
     
 }
 
@@ -464,20 +463,20 @@ class SvgInstruction {
         // This returns a new SvgInstruction (because SvgInstruction are immutable).
         
         // Check if duplicate substitution
-        if (new Set(Object.keys(newSubstitutions)).union(new Set(Object.keys(this.#substitutions))).length !== 0) throw "Cannot substitute the same name twice";
+        if (new Set(Object.keys(newSubstitutions)).intersection(new Set(Object.keys(this.#substitutions))).size !== 0) throw "Cannot substitute the same name twice";
         
         // Create new instruction
         let newInstruction;
         if (this.type === SvgInstruction.PATH) {
-            newInstruction = new SvgInstruction(this.path);
+            newInstruction = new SvgInstruction(SvgInstruction.PATH, this.path);
         } else if (this.type === SvgInstruction.CIRCLE) {
-            newInstruction = new SvgInstruction(this.cx, this.cy, this.r);
+            newInstruction = new SvgInstruction(SvgInstruction.CIRCLE, this.cx, this.cy, this.r);
         } else if (this.type === SvgInstruction.USE) {
-            newInstruction = new SvgInstruction(this.id);
+            newInstruction = new SvgInstruction(SvgInstruction.USE, this.id);
         } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
-            newInstruction = new SvgInstruction(this.transform);
+            newInstruction = new SvgInstruction(SvgInstruction.PUSH_TRANSFORM, this.transform);
         } else if (this.type === SvgInstruction.POP_TRANSFORM) {
-            newInstruction = new SvgInstruction();
+            newInstruction = new SvgInstruction(SvgInstruction.POP_TRANSFORM);
         } else {
             throw "Unknown type " + type;
         }
@@ -536,7 +535,7 @@ function getSymbolsMatchingPattern(pattern, parseData) {  // TODO: Add some more
         const statement = pattern[i];
         const isRemoving = statement[0] === "-";
         if (!isRemoving && statement[0] !== "+") throw "Invalid pattern action";
-        const toMatch = statement.slice((isRemoving) ? 1 : 0);  // Remove "-" from start of statement
+        const toMatch = statement.slice((["-", "+"].includes(statement[0])) ? 1 : 0);  // Remove "-" or "+" from start of statement
         
         // First collect all ids we are refering too
         const referingIds = new Set(); 
@@ -555,7 +554,7 @@ function getSymbolsMatchingPattern(pattern, parseData) {  // TODO: Add some more
             Object.keys(parseData.drums).filter(d => d === toMatch).forEach(d => referingIds.add(d));
             Object.keys(parseData.decorations).filter(d => d === toMatch).forEach(d => referingIds.add(d));
             // Check groups
-            Object.keys(parseData.drums).filter(d => parseData.drums[d].hasOwnProperty(toMatch)).forEach(d => referingIds.add(d));
+            Object.keys(parseData.drums).filter(d => parseData.drums[d].groups.includes(toMatch)).forEach(d => referingIds.add(d));
         }
         
         // Handle our ids
@@ -575,7 +574,7 @@ function getSymbolsMatchingPattern(pattern, parseData) {  // TODO: Add some more
 // Shut up I know I'm being lazy but whatever
 // This function takes a drum id or a group id and returns a list of drum ids.
 const matchSymbolIds = (id, pd) => Array.from(getSymbolsMatchingPattern(["+" + id], pd)).map(id_ => {
-    ensureExistsAndIs(id_, {drum: true});  // Ensure they are all drums, otherwise throw an error
+    ensureExistsAndIs(id_, pd, {drum: true});  // Ensure they are all drums, otherwise throw an error
     return id_;
 });
 
@@ -588,9 +587,9 @@ function calculateFullDrumOrder(parseData) {
     parseData.constraints.forEach(constraint => {  // Add direct constraints
         const topIds = matchSymbolIds(constraint.topId, parseData);
         const bottomIds = matchSymbolIds(constraint.bottomId, parseData);
-        topIds.forEach(topId => {
-            symbolOverSymbols[topId].add(...bottomIds);  // Add bottomIds to all topIds
-        });
+        topIds.forEach(topId => 
+            bottomIds.forEach(bottomId => symbolOverSymbols[topId].add(...bottomIds))  // Add bottomIds to all topIds
+        );
     });
     
     // Actually order our symbolIds
@@ -645,9 +644,9 @@ export class Symbols {
 
     static isDrumAbove(symbolId1, symbolId2) {
         // True if symbolId2 should be drawn above symbolId1.
-        ensureExistsAndIs(symbolId1, {drum: true});
-        ensureExistsAndIs(symbolId2, {drum: true});
-        return fullOrder.indexOf(symbolId1) < fullOrder.indexOf(symbolId2);
+        ensureExistsAndIs(symbolId1, parseData, {drum: true});
+        ensureExistsAndIs(symbolId2, parseData, {drum: true});
+        return fullDrumOrder.indexOf(symbolId1) < fullDrumOrder.indexOf(symbolId2);
     }
 
     static getMinVertDistBetweenDrums(symbolId1, symbolId2) {
@@ -655,14 +654,14 @@ export class Symbols {
         // If symbolId2 should be drawn above symbolId1 then an error is thrown.
         // This will not return indirect constraints (e.g. if a is 10 from b and b is 5 from c, it will not say a is 15 from c (unless you add that externally)).
         // If there is no constraint (this includes an indirect constraint) then 0 will be returned.
-        ensureExistsAndIs(symbolId1, {drum: true});
-        ensureExistsAndIs(symbolId2, {drum: true});
+        ensureExistsAndIs(symbolId1, parseData, {drum: true});
+        ensureExistsAndIs(symbolId2, parseData, {drum: true});
         
-        if (isSymbolAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
+        if (Symbols.isDrumAbove(symbolId2, symbolId1)) throw "SymbolId2 should be below symbolId1"
         
         // Find the maximum distance from all the (relevant) constraints
         const minDistance = Math.max(...Array.from(parseData.constraints).map(constraint => {
-            if (!(matchSymbolIds(constraint.topId, parseData).has(symbolId1) && matchSymbolIds(constraint.bottomId, parseData).has(symbolId2))) {  // If this constraint doesn't refer to both of the given symbols
+            if (!(matchSymbolIds(constraint.topId, parseData).includes(symbolId1) && matchSymbolIds(constraint.bottomId, parseData).includes(symbolId2))) {  // If this constraint doesn't refer to both of the given symbols
                 return 0;  // 0 as no constraint
             } else {
                 return constraint.distance; 
