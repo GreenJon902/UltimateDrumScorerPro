@@ -99,6 +99,7 @@ ComponentManager - Stores persistant state of entities.
 		- ToggleComponentDrumEnabledState(componentId, drumId)
 		- GetComponentDrumEnabledState(componentId, drumId) -> bool
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId, newValue)
+		- GetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId) -> someApplicableType
 		- SetComponent(Left|Right)Decoration(componentId, decoration-id|null)
 		- GetComponent(Left|Right)Decoration(componentId) -> decoration-id|null
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
