@@ -1,22 +1,22 @@
 import {ComponentManager} from "../componentManager.js";
 
-class RenderInstruction {
+export class RenderInstruction {
     // Render instructions are produced from data in the ComponentManager, and dictate exactly what needs to be drawn. 
     // They allow the actual drawing function to ignore the calculations required for beams, etc.
     //
     // There are a couple types of render-instructions (and what they store):
     //     BEAM: 
-    //         - drumIDs
+    //         - drums
     //         - full-beams
     //         - broken-beams
     //         - dots
     //         - length
     //     BEAM-END:
-    //         - drumIDs
+    //         - drums
     //         - dots
     //         - length
     //     FLAG:
-    //         - drumIDs
+    //         - drums
     //         - flags
     //         - dots
     //         - length
@@ -31,7 +31,7 @@ class RenderInstruction {
     //     DECORATION:
     //         - decorationID
     // 
-    // drumIDs: A string array of the (drum) symbolIDs to draw.
+    // drums: A string array of the (drum) symbolIDs to draw.
     // full-beams: The number (non-zero and positive) of full beams to draw between this instruction and the next instruction (with a stem, full beams go over rests).
     // broken-beams: The same full-beams except for broken-beams. This can be signed, where negative means to draw on the left, and positive to the right. It can also be zero - no broken-beams. If dots != 0 then this cannot be negative.
     // dots: The number (zero or positive) of dots that should be drawn after the stem. If broken-beams is negative (broken-beams on the left) then this must be 0 (no dots).
@@ -350,5 +350,5 @@ export function compileScoreComponent(componentId) {
     const rightDeco = ComponentManager.getComponentRightDecoration(componentId);
     if (rightDeco !== null) instructions.push(new RenderInstruction(RenderInstruction.DECORATION, rightDeco));
     
-    console.log(instructions);
+    return instructions;
 }

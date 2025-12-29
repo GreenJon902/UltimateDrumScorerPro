@@ -6,6 +6,9 @@ export const SYMBOLS_SOURCE = "new,part,ks-base,1,path,M0 0 l-3.5 3.5," +
                               "new,drum,kick,3.5,0,0,3.5,1,use,ks-base,0," + 
                               "modifier,drum,auto,ghost,2,+*drums,-kick,+1,0,+1,0,0,4,6,push-transform,\"translate(${parent_size_left} 0)\",use,left-ghost,pop-transform,push-transform,\"translate(${parent_size_right} 0)\",use,right-ghost,pop-transform,0," + 
                               "constraint,drum,gsnare,kick,10," + 
+                              "constraint,drum,snare_ghost,snare,1," + 
+                              "constraint,drum,snare_flam,snare,0," + 
+                              "constraint,drum,snare_ghost,snare_flam,0," + 
                               "new,decoration,start,5,10,,,,left,0," + // TODO: Put proper values in here
                               "new,decoration,repeat-start,5,10,,,,left,0," + 
                               "new,decoration,option-start,5,10,,,,left,0," + 

@@ -34,12 +34,14 @@
     <script type="module">
         import {ComponentManager} from "./componentManager.js";
         import {SelectionManager} from "./selectionManager.js";
+        import {Symbols} from "./symbols.js";
         import {attachEditor} from "./editor.js";
         import {attachRendered} from "./rendered.js";
         
         // DEBUG STUFF -------------
         window.CM = ComponentManager;
         window.SM = SelectionManager;
+        window.S = Symbols;
         // -------------------------
         
         ComponentManager.loadEmptyProject();
@@ -47,6 +49,8 @@
         //const id = ComponentManager.createEmptyComponent("text-component");
         SelectionManager.select(id);
         ComponentManager.toggleComponentDrumEnabledState("component-0", "snare");
+        ComponentManager.toggleComponentDrumEnabledState("component-0", "snare_flam");
+        ComponentManager.toggleComponentDrumEnabledState("component-0", "snare_ghost");
         ComponentManager.toggleComponentDrumEnabledState("component-0", "kick");
         ComponentManager.addSubdivisions("component-0", 2, 0, 1, 2, 3, 4, 5);
         ComponentManager.addBeats("component-0", 64, 3);
@@ -54,8 +58,9 @@
         ComponentManager.addBeats("component-0", 3, 6);
         ComponentManager.addSubdivisions("component-0", 4, 0, 1, 2, 3);
         ComponentManager.toggleComponentDrum("component-0", 0, 0, "kick");
-        ComponentManager.toggleComponentDrum("component-0", 1, 1, "kick");
-        ComponentManager.toggleComponentDrum("component-0", 2, 0, "kick");
+        ComponentManager.toggleComponentDrum("component-0", 1, 1, "snare");
+        ComponentManager.toggleComponentDrum("component-0", 2, 0, "snare_flam");
+        ComponentManager.toggleComponentDrum("component-0", 2, 0, "snare_ghost");
         ComponentManager.toggleComponentDrum("component-0", 2, 7, "kick");
         ComponentManager.toggleComponentDrum("component-0", 3, 0, "kick");
         ComponentManager.toggleComponentDrum("component-0", 3, 53, "kick");

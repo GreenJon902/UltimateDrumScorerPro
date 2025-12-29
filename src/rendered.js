@@ -1,7 +1,8 @@
 import {ComponentManager} from "./componentManager.js";
 import {createSvgText, updateSvgText} from "./textComponentSvgRenderer.js";
-//import {compileScoreComponent, calculateScoreComponentSpacing} from "./scoreComponentSvgRenderer.js";
-import {compileScoreComponent} from "./scoreComponentUtils/compile.js"
+import {compileScoreComponent} from "./scoreComponentUtils/compile.js";
+import {calculateScoreComponentSpacing} from "./scoreComponentUtils/decode.js";
+import {renderScoreComponentFromInstructionsAndSpacing} from "./scoreComponentUtils/execute.js";
 
 export function attachRendered(componentContainer) {
     // Sets up bindings for the given componentContainer to connect it ot he various managers.
@@ -75,7 +76,8 @@ function createInitialScoreComponent(componentContainer, componentId) {
     // This requires bindings (via updateScoreComponent) to be called whenever component manager changes.
     const svg = createBaseSvg(componentContainer, componentId);
     const instructions = compileScoreComponent(componentId);
-    const spacing = calculateScoreComponentSpacing(instructions, instructions, 0);
-    
+    console.log(instructions);
+    const spacing = calculateScoreComponentSpacing(instructions, new Set([instructions]), ComponentManager.getComponentRhythmLengthHint(componentId));
+    renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing);
     componentContainer.appendChild(svg);
 }
