@@ -39,7 +39,7 @@ class RenderInstruction {
     // ticks: The number (zero or positive) of ticks to draw on a rest. Zero means it's a crotchet rest.
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
-    // length: The relative duration of a note compared to the rest of the notes. If a note is twice as long then it should have double the duration.
+    // length: The fraction of a beat that this group inhabits (e.g. a semiquaver is 0.25). This is used as metadata for stylised spacing when drawing, so need not be technically accurate and the fraction part is a suggestion. It could also be greater than 1, and they need not add to 1. It should be non-negative though.
     // decoration:  The (decoration) symbolID of the decoration to draw. 
     // 
     // BEAMs connect to the next BEAM or BEAM-END, so must be followed by at least one of these.
@@ -232,12 +232,10 @@ function calculateBeamInfo(l, c, n, nn) {
     return {fullBeams: fullBeams, brokenBeams: brokenBeams};
 }
 
-// TODO: RenderInstruction length arguement needs to take into account all beats in bar
 // TODO: Simplify contraction ratio
 
-function createGroupInstructions(componentId, beatI, absoluteRelativeLength) {
+function createGroupInstructions(componentId, beatI) {
     // Creates the group instructions for a given beat for a given component.
-    // The returned instruction have "length"s, which are relative to other lengths in a bar. The absoluteRelativeLength encodes the number of subdivisions of the other beats in the bar. It should be the lcm of all the subdivisionCounts. The instruction lengths are then absoluteRelativeLength/thisBeatsSubdivisionCount*numberOfSubdivisionsThisGroupTakesUp.
     
     // Get some preliminary data
     const groupLengths = groupSubdivisions(componentId, beatI);
@@ -256,9 +254,13 @@ function createGroupInstructions(componentId, beatI, absoluteRelativeLength) {
         const groupLength = groupLengths[groupI];
         const rhythmInfo = calculateRyhthmInfo(groupLength, subdivCount);
         
+        // Process groupLength to be comparible to other beats (which may have different subdivisionCounts)
+        // The easiest way to do this is make the length be a fraction of the beat length
+        const processedGroupLength = groupLength / subdivCount;
+        
         if (drums.size == 0) {
             // We have a REST
-            instructions.push(new RenderInstruction(RenderInstruction.REST, rhythmInfo.beams, rhythmInfo.dots, groupLength));
+            instructions.push(new RenderInstruction(RenderInstruction.REST, rhythmInfo.beams, rhythmInfo.dots, processedGroupLength));
             
         } else if (countedNonEmpty < nonEmptyCount - 1 && (rhythmInfo.beams > 0 && calculateRyhthmInfo(expandedGroupLengths[nonEmptySubdivisions[countedNonEmpty + 1]], subdivCount).beams > 0)) {  // If at least one more nonEmpty after this, and both require beams
             // We have a BEAM
@@ -272,19 +274,19 @@ function createGroupInstructions(componentId, beatI, absoluteRelativeLength) {
             // Calculate the beam info
             const {fullBeams: fullBeams, brokenBeams: brokenBeams} = calculateBeamInfo(l, c, n, nn);
             
-            instructions.push(new RenderInstruction(RenderInstruction.BEAM, drums, fullBeams, brokenBeams, rhythmInfo.dots, groupLength));
+            instructions.push(new RenderInstruction(RenderInstruction.BEAM, drums, fullBeams, brokenBeams, rhythmInfo.dots, processedGroupLength));
             countedNonEmpty++;
             inBeamFlag = true;
             
         } else if (inBeamFlag) {
             // We have a BEAM_END
-            instructions.push(new RenderInstruction(RenderInstruction.BEAM_END, drums, rhythmInfo.dots, groupLength))
+            instructions.push(new RenderInstruction(RenderInstruction.BEAM_END, drums, rhythmInfo.dots, processedGroupLength))
             countedNonEmpty++;
             inBeamFlag = false;
             
         } else {
             // We have a FLAG
-            instructions.push(new RenderInstruction(RenderInstruction.FLAG, drums, rhythmInfo.beams, rhythmInfo.dots, groupLength));
+            instructions.push(new RenderInstruction(RenderInstruction.FLAG, drums, rhythmInfo.beams, rhythmInfo.dots, processedGroupLength));
             countedNonEmpty++;
         }
         
@@ -292,33 +294,6 @@ function createGroupInstructions(componentId, beatI, absoluteRelativeLength) {
     }
     
     return Object.freeze(instructions);
-}
-
-function gcd(a, b) {
-    // Calculates the greatest common denomenator of two numbers.
-    
-    // Run the euclidean algorithm
-    while (b !== 0) {
-        [a, b] = [b, a % b];
-    }
-    
-    return a;
-}
-
-function getLcmSubdivisionCounts(componentId) {
-    // Return the lowest common multiple of the subdivision counts for each bar in the given component.
-    
-    // Get subdivision counts
-    const subdivisionCounts = new Array();
-    const beatCount = ComponentManager.getComponentBeatCount(componentId)
-    for (let beatI=0; beatI<beatCount; beatI++) {
-        subdivisionCounts.push(ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI));
-    }
-    
-    // Calculate lcm
-    const lcm = subdivisionCounts.reduce((a, b) => (a * b / gcd(a, b)));
-    
-    return lcm;
 }
 
 export function compileScoreComponent(componentId) {
@@ -332,13 +307,12 @@ export function compileScoreComponent(componentId) {
     if (leftDeco !== null) instructions.push(new RenderInstruction(RenderInstruction.DECORATION, leftDeco));
 
     // Convert actual note information to instructions
-    const lcmSubdivisionCounts = getLcmSubdivisionCounts(componentId);
     const beatCount = ComponentManager.getComponentBeatCount(componentId)
     for (let beatI=0; beatI<beatCount; beatI++) {
         const subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
         
         // Get instructions for beat
-        const beatInstructions = createGroupInstructions(componentId, beatI, lcmSubdivisionCounts);
+        const beatInstructions = createGroupInstructions(componentId, beatI);
         
         // Do we need a contract
         const needsContract = Math.log2(subdivCount) % 1 !== 0;
