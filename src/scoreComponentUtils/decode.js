@@ -1,4 +1,14 @@
+//
+// This is a very basic implementation of spacing.
+// Group instructions will not overlap in the x direction, even when it is possible to do so (kick on next subdiv could go under snare (in certain situations)).
+// Beams, flags and dots are drawn over the highest drum. So if we need 10 half_beams over a kick, these will not descend into the drum y-space, but will instead push the rhythm notation parts up.
+// Similarily, contracts will be drawn over the highest beam/flag/dot.
+//
+//
+//
+
 import {RenderInstruction} from "./compile.js";
+import {getRestSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
@@ -86,6 +96,61 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     return relativeDrumYs;
 }
 
+function getInstructionXs(instructions) {
+    // instructions: Array<RenderInstruction>
+    // 
+    // Calculates the x-coordinate data for each instruction.
+    // For BEAMs, BEAM_ENDs and FLAGs: this is the anchor-x.
+    // For RESTs and DECORATIONs: this is the right edge (of the rest, not the dots attached to the rest).
+    // For CONTRACT_STARTs and CONTRACT_ENDs: this is the hook location (or where it would be, in the cases that it isn't drawn).
+    // 
+    // The index of the returned array corresponds to the index of the instruction.
+
+    const instructionXs = new Array();
+    const lastDrumsSpaceRight = 0;  // A drum-symbol can have size-right, which could impact the next group's instructionX
+    const lastRyhthmRight = 0;  // A BEAM, BEAM_END and FLAG instruction stores rhythm information for after the stem, which could impact the next group's instructionX. Also BEAMS go over rests so rests can ignore this
+    const lastX = 0;  // Same as last item in instructionXs
+
+    for (let i=0; i<instructions.length; i++) {
+        const instr = instructions[i];
+        
+        let newX, newDrumSpaceRight, newRyhthmRight;
+        if (instr.type === RenderInstruction.CONTRACT_START) {
+            newX = lastX;
+            newDrumSpaceRight = lastDrumsSpaceRight;
+            newRyhthmRight = lastRyhthmRight;
+            
+
+        } else if (instr.type === RenderInstruction.CONTRACT_END) {
+            newX = lastX;
+            newDrumSpaceRight = lastDrumsSpaceRight;
+            newRyhthmRight = lastRyhthmRight;
+            // TODO: Process minimum width of a contract
+            
+
+        } else if (instr.type === RenderInstruction.BEAM) {
+
+            
+        } else if (instr.type === RenderInstruction.BEAM_END) {
+
+            
+        } else if (instr.type === RenderInstruction.FLAG) {
+
+            
+        } else if (instr.type === RenderInstruction.REST) {
+            const restSize = getREstSize(instr.ticks, instr.dots);
+            
+            newX = lastDrumsSpaceRight + restSize.sizeLeft;
+            newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
+            newRyhthmRight = lastRyhthmRight;  // Rests are below bars so don't impact them
+
+            
+        } else {
+            throw "Unknown instruction type " + instr.type;
+        }
+    }
+}
+
 export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhtyhmLengthHint) {
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
@@ -105,5 +170,6 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     // }
     
     console.log(getRelativeDrumYs(vertGroupLinkedComponentInstructions))
+    console.log(getInstructionXs(instructions));
 
 }

@@ -100,6 +100,8 @@ export class RenderInstruction {
 
         Object.freeze(this);  // So is immutable
     }
+
+    get isGroup() {return [RenderInstruction.BEAM, RenderInstruction.BEAM_END, RenderInstruction.FLAG, RenderInstruction.REST].includes(this.type);}
 }
 
 function makeGroupLengthsLegal(length) {
