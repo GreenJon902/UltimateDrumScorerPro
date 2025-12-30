@@ -29,12 +29,12 @@ export class RenderInstruction {
     //         - hooks
     //     CONTRACT-END:
     //     DECORATION:
-    //         - decorationID
+    //         - decoration
     // 
     // drums: A string array of the (drum) symbolIDs to draw.
     // full-beams: The number (non-zero and positive) of full beams to draw between this instruction and the next instruction (with a stem, full beams go over rests).
-    // broken-beams: The same full-beams except for broken-beams. This can be signed, where negative means to draw on the left, and positive to the right. It can also be zero - no broken-beams. If dots != 0 then this cannot be negative.
-    // dots: The number (zero or positive) of dots that should be drawn after the stem. If broken-beams is negative (broken-beams on the left) then this must be 0 (no dots).
+    // broken-beams: The same full-beams except for broken-beams. This can be signed, where negative means to draw on the left, and positive to the right. It can also be zero - no broken-beams.
+    // dots: The number (zero or positive) of dots that should be drawn after the stem.
     // flags: The number (zero or positive) of flags to draw after the stem.
     // ticks: The number (zero or positive) of ticks to draw on a rest. Zero means it's a crotchet rest.
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
@@ -69,17 +69,17 @@ export class RenderInstruction {
         
         this.type = type;
         if (type === RenderInstruction.BEAM) {
-            this.drums = args[0];
+            this.drums = Object.freeze(args[0]);
             this.fullBeams = args[1];
             this.brokenBeams = args[2];
             this.dots = args[3];
             this.length = args[4];
         } else if (type === RenderInstruction.BEAM_END) {
-            this.drums = args[0];
+            this.drums =Object.freeze(args[0]);
             this.dots = args[1];
             this.length = args[2];
         } else if (type === RenderInstruction.FLAG) {
-            this.drums = args[0];
+            this.drums = Object.freeze(args[0]);
             this.flags = args[1];
             this.dots = args[2];
             this.length = args[3];

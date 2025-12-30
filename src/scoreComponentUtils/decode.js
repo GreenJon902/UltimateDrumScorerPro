@@ -8,7 +8,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, calculateMinBeamWidth} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
@@ -96,6 +96,17 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     return relativeDrumYs;
 }
 
+function getMaxHorizSizeOfDrums(drums) {
+    // drums: Array<drum-id>
+    //
+    // Returns the maxiumum sizeLeft and sizeRight that the given drums have.
+    // Returns {sizeLeft: float, sizeRight: float}.
+    return {
+        sizeLeft: Math.max(...Array.from(drums).map(id => Symbols.getDrumSizeLeft(id))),
+        sizeRight: Math.max(...Array.from(drums).map(id => Symbols.getDrumSizeRight(id)))
+    };
+}
+
 function getInstructionXs(instructions) {
     // instructions: Array<RenderInstruction>
     // 
@@ -107,48 +118,82 @@ function getInstructionXs(instructions) {
     // The index of the returned array corresponds to the index of the instruction.
 
     const instructionXs = new Array();
-    const lastDrumsSpaceRight = 0;  // A drum-symbol can have size-right, which could impact the next group's instructionX
-    const lastRyhthmRight = 0;  // A BEAM, BEAM_END and FLAG instruction stores rhythm information for after the stem, which could impact the next group's instructionX. Also BEAMS go over rests so rests can ignore this
-    const lastX = 0;  // Same as last item in instructionXs
+    let lastDrumSpaceRight = 0;  // A drum-symbol can have size-right, which could impact the next group's instructionX
+    let lastRyhthmRight = 0;  // A BEAM, BEAM_END and FLAG instruction stores rhythm information for after the stem, which could impact the next group's instructionX. Also BEAMS go over rests so rests can ignore this
+    let lastX = 0;  // Same as last item in instructionXs
 
     for (let i=0; i<instructions.length; i++) {
         const instr = instructions[i];
         
+        // Calculate new data the x-coordinates
         let newX, newDrumSpaceRight, newRyhthmRight;
         if (instr.type === RenderInstruction.CONTRACT_START) {
-            newX = lastX;
-            newDrumSpaceRight = lastDrumsSpaceRight;
+            newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
+            newDrumSpaceRight = lastDrumSpaceRight;
             newRyhthmRight = lastRyhthmRight;
             
 
         } else if (instr.type === RenderInstruction.CONTRACT_END) {
-            newX = lastX;
-            newDrumSpaceRight = lastDrumsSpaceRight;
+            newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
+            newDrumSpaceRight = lastDrumSpaceRight;
             newRyhthmRight = lastRyhthmRight;
             // TODO: Process minimum width of a contract
             
 
         } else if (instr.type === RenderInstruction.BEAM) {
+            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
+            
+            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
+            newDrumSpaceRight = newX + drumsSize.sizeRight;
+            newRyhthmRight = newX + calculateMinBeamWidth(instr.fullBeams, instr.brokenBeams, instr.dots);
 
             
         } else if (instr.type === RenderInstruction.BEAM_END) {
+            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
+            
+            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
+            newDrumSpaceRight = newX + drumsSize.sizeRight;
+            newRyhthmRight = newX + getDotsSize(instr.dots).width;
 
             
         } else if (instr.type === RenderInstruction.FLAG) {
+            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
+            
+            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
+            newDrumSpaceRight = newX + drumsSize.sizeRight;
+            newRyhthmRight = newX + getFlagSize(instr.flags, instr.dots).width;
+        
+
+        } else if (instr.type === RenderInstruction.DECORATION) {
+            const decorationWidth = Symbols.getDecorationWidth(instr.decoration);
+            
+            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationWidth);
+            newDrumSpaceRight = newX;
+            newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
 
             
         } else if (instr.type === RenderInstruction.REST) {
-            const restSize = getREstSize(instr.ticks, instr.dots);
+            const restSize = getRestSize(instr.ticks, instr.dots);
             
-            newX = lastDrumsSpaceRight + restSize.sizeLeft;
+            newX = lastDrumSpaceRight + restSize.sizeLeft;
             newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
             newRyhthmRight = lastRyhthmRight;  // Rests are below bars so don't impact them
+            // TODO: Using lastRyhthmRight, center the rest underneath the bars
 
             
         } else {
             throw "Unknown instruction type " + instr.type;
         }
+        
+        
+        // Save calculated data
+        lastX = newX;
+        lastDrumSpaceRight = newDrumSpaceRight;
+        lastRyhthmRight = newRyhthmRight;
+        instructionXs.push(newX);
     }
+    
+    return instructionXs;
 }
 
 export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhtyhmLengthHint) {
@@ -169,7 +214,11 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //     decorationCenterYs: [float]  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
     // }
     
-    console.log(getRelativeDrumYs(vertGroupLinkedComponentInstructions))
     console.log(getInstructionXs(instructions));
+    console.log(getRelativeDrumYs(vertGroupLinkedComponentInstructions))
+    // TODO: restCenterYs
+    // TODO: contractCenterYs
+    // TODO: stemTopYs
+    // TODO: decorationCenterYs
 
 }
