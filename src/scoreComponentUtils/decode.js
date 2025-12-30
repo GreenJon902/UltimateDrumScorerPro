@@ -118,82 +118,83 @@ function getInstructionXs(instructions) {
     // The index of the returned array corresponds to the index of the instruction.
 
     const instructionXs = new Array();
-    let lastDrumSpaceRight = 0;  // A drum-symbol can have size-right, which could impact the next group's instructionX
-    let lastRyhthmRight = 0;  // A BEAM, BEAM_END and FLAG instruction stores rhythm information for after the stem, which could impact the next group's instructionX. Also BEAMS go over rests so rests can ignore this
-    let lastX = 0;  // Same as last item in instructionXs
+    let xTrackers = null;
 
     for (let i=0; i<instructions.length; i++) {
         const instr = instructions[i];
         
-        // Calculate new data the x-coordinates
-        let newX, newDrumSpaceRight, newRyhthmRight;
-        if (instr.type === RenderInstruction.CONTRACT_START) {
-            newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
-            newDrumSpaceRight = lastDrumSpaceRight;
-            newRyhthmRight = lastRyhthmRight;
-            
+        // Get new X coordinate
+        let instructionX;
+        ({instructionX, trackers: xTrackers} = calculateInstructionX(instr, xTrackers));
 
-        } else if (instr.type === RenderInstruction.CONTRACT_END) {
-            newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
-            newDrumSpaceRight = lastDrumSpaceRight;
-            newRyhthmRight = lastRyhthmRight;
-            // TODO: Process minimum width of a contract
-            
-
-        } else if (instr.type === RenderInstruction.BEAM) {
-            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
-            
-            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
-            newDrumSpaceRight = newX + drumsSize.sizeRight;
-            newRyhthmRight = newX + calculateMinBeamWidth(instr.fullBeams, instr.brokenBeams, instr.dots);
-
-            
-        } else if (instr.type === RenderInstruction.BEAM_END) {
-            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
-            
-            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
-            newDrumSpaceRight = newX + drumsSize.sizeRight;
-            newRyhthmRight = newX + getDotsSize(instr.dots).width;
-
-            
-        } else if (instr.type === RenderInstruction.FLAG) {
-            const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
-            
-            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
-            newDrumSpaceRight = newX + drumsSize.sizeRight;
-            newRyhthmRight = newX + getFlagSize(instr.flags, instr.dots).width;
-        
-
-        } else if (instr.type === RenderInstruction.DECORATION) {
-            const decorationWidth = Symbols.getDecorationWidth(instr.decoration);
-            
-            newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationWidth);
-            newDrumSpaceRight = newX;
-            newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
-
-            
-        } else if (instr.type === RenderInstruction.REST) {
-            const restSize = getRestSize(instr.ticks, instr.dots);
-            
-            newX = lastDrumSpaceRight + restSize.sizeLeft;
-            newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
-            newRyhthmRight = lastRyhthmRight;  // Rests are below bars so don't impact them
-            // TODO: Using lastRyhthmRight, center the rest underneath the bars
-
-            
-        } else {
-            throw "Unknown instruction type " + instr.type;
-        }
-        
-        
-        // Save calculated data
-        lastX = newX;
-        lastDrumSpaceRight = newDrumSpaceRight;
-        lastRyhthmRight = newRyhthmRight;
-        instructionXs.push(newX);
+        instructionXs.push(instructionX);
     }
     
     return instructionXs;
+}
+
+function calculateInstructionX(instr, trackers) {
+    // instr: RenderInstruction
+    // trackers: the return value from the last call of this function, or null if this is the first call
+    //
+    // Calculates the instructionX (see calculateScoreComponentSpacing return value) for this instruction.
+    // This depends data that was calculated by previous calls of this function, which is saved in this "trackers" object. This first call of this function should have trackers as null, for all future calls it *must* be the value returned for the last instruction.
+    //
+    // return {instructionX: float, trackers}.
+    
+    // Handle trackers unpacking
+    if (trackers === null) trackers = {x: 0, ryhthmRight: 0, drumSpaceRight: 0};  // Default value
+    const {x: lastX, ryhthmRight: lastRyhthmRight, drumSpaceRight: lastDrumSpaceRight} = trackers;
+    
+
+    // Calculate the new x and tracker values
+    let newX, newDrumSpaceRight, newRyhthmRight;
+    if (instr.isContract) {
+        newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
+        newDrumSpaceRight = lastDrumSpaceRight;
+        newRyhthmRight = lastRyhthmRight;
+        // TODO: Process minimum width of a contract
+        
+
+    } else if (instr.hasDrums) {
+        const drumsSize = getMaxHorizSizeOfDrums(instr.drums);
+        
+        // Select the (minimum) width of the rhythm part after the stem
+        const ryhthmWidthPart = {
+            [RenderInstruction.BEAM]: () => calculateMinBeamWidth(instr.fullBeams, instr.brokenBeams, instr.dots),
+            [RenderInstruction.BEAM_END]: () => getDotsSize(instr.dots).width,
+            [RenderInstruction.FLAG]: () => getFlagSize(instr.flags, instr.dots).width
+        }[instr.type]();  // Do as lambda functions so we only call the one we want
+        
+        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
+        newDrumSpaceRight = newX + drumsSize.sizeRight;
+        newRyhthmRight = newX + ryhthmWidthPart; 
+        
+
+    } else if (instr.type === RenderInstruction.DECORATION) {
+        const decorationWidth = Symbols.getDecorationWidth(instr.decoration);
+        
+        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationWidth);
+        newDrumSpaceRight = newX;
+        newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
+
+        
+    } else if (instr.type === RenderInstruction.REST) {
+        const restSize = getRestSize(instr.ticks, instr.dots);
+        
+        newX = lastDrumSpaceRight + restSize.sizeLeft;
+        newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
+        newRyhthmRight = lastRyhthmRight;  // Rests are below bars so don't impact them
+        // TODO: Using lastRyhthmRight, center the rest underneath the bars
+
+        
+    } else {
+        throw "Unknown instruction type " + instr.type;
+    }
+    
+    // Return new data
+    const newTrackers = {x: newX, ryhthmRight: newRyhthmRight, drumSpaceRight: newDrumSpaceRight};
+    return {instructionX: newX, trackers: newTrackers};
 }
 
 export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhtyhmLengthHint) {

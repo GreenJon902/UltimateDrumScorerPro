@@ -102,6 +102,10 @@ export class RenderInstruction {
     }
 
     get isGroup() {return [RenderInstruction.BEAM, RenderInstruction.BEAM_END, RenderInstruction.FLAG, RenderInstruction.REST].includes(this.type);}
+
+    get hasDrums() {return [RenderInstruction.BEAM, RenderInstruction.BEAM_END, RenderInstruction.FLAG].includes(this.type);}
+
+    get isContract() {return [RenderInstruction.CONTRACT_START, RenderInstruction.CONTRACT_END].includes(this.type);}
 }
 
 function makeGroupLengthsLegal(length) {
