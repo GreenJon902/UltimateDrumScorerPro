@@ -98,10 +98,10 @@ function parseModifierSizeChanger(string) {
     }
 }
 
-function parseOptionalFloat(string) {
-    // Parses an optional float -> float, or an empty string to null.
+function parseOptionalFloat(string, default_=null) {
+    // Parses an optional float -> float, or an empty string to default_=null.
 
-    if (string === "") return null;
+    if (string === "") return default_;
     return parseFloat(string);
 }
 
@@ -279,9 +279,9 @@ function parseNewDecoration(tokens, parseData) {
     const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
     const width = parseFloat(dequeue(tokens));
     const minHeight = parseFloat(dequeue(tokens));
-    const minBelowDrums = parseOptionalFloat(dequeue(tokens));
-    const minAboveDrums = parseOptionalFloat(dequeue(tokens));
-    const minAboveBars = parseOptionalFloat(dequeue(tokens));
+    const minBelowDrums = parseOptionalFloat(dequeue(tokens), 0);
+    const minAboveDrums = parseOptionalFloat(dequeue(tokens), 0);
+    const minAboveBars = parseOptionalFloat(dequeue(tokens), 0);
     const side = dequeue(tokens);
     const instructions = parseList(tokens, parseInstruction, parseData);
     
