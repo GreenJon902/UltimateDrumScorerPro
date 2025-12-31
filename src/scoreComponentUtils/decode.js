@@ -1,4 +1,3 @@
-//
 // This is a very basic implementation of spacing.
 // Group instructions will not overlap in the x direction, even when it is possible to do so (kick on next subdiv could go under snare (in certain situations)).
 // Beams, flags and dots are drawn over the highest drum. So if we need 10 half_beams over a kick, these will not descend into the drum y-space, but will instead push the rhythm notation parts up.
@@ -8,7 +7,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize, getFlagSize, getDotsSize, calculateMinBeamWidth} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, calculateBeamSize, getContractSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
@@ -161,7 +160,7 @@ function calculateInstructionX(instr, trackers) {
         
         // Select the (minimum) width of the rhythm part after the stem
         const ryhthmWidthPart = {
-            [RenderInstruction.BEAM]: () => calculateMinBeamWidth(instr.fullBeams, instr.brokenBeams, instr.dots),
+            [RenderInstruction.BEAM]: () => calculateBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minWidth,
             [RenderInstruction.BEAM_END]: () => getDotsSize(instr.dots).width,
             [RenderInstruction.FLAG]: () => getFlagSize(instr.flags, instr.dots).width
         }[instr.type]();  // Do as lambda functions so we only call the one we want
@@ -197,6 +196,139 @@ function calculateInstructionX(instr, trackers) {
     return {instructionX: newX, trackers: newTrackers};
 }
 
+function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions) {
+    // instructions: Array<RenderInstruction>
+    // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
+    // 
+    // Calculates the drumYs, restCenterYs, contractCenterYs and stemTopYs that are returned by calculateScoreComponentSpacing.
+    
+    // Calculate prerequisite data ---
+    
+    const relativeDrumYs = getRelativeDrumYs(vertGroupLinkedComponentInstructions);  // Relative to anchor of top drum
+    const maxBeamFlagDotHeight = Math.max(
+        // If there are no BEAM, FLAGs, or BEAM_ENDs then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.BEAM)
+            .map(instr => calculateBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).height),
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.BEAM_END)
+            .map(instr => calculateBeamSize(0, 0, instr.dots).height),
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.FLAG)
+            .map(instr => getFlagSize(instr.flags, instr.dots).height)
+    );
+    const maxDecorationHeight = Math.max(
+        0,  // If there are no decorations then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => Symbols.getDecorationMinHeight(instr.decoration))
+    );
+    const maxDecorationMinAboveBars = Math.max(
+        0,  // If there are no decorations then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => Symbols.getDecorationMinAboveBars(instr.decoration))
+    );
+    const maxDecorationMinAboveDrums = Math.max(
+        0,  // If there are no decorations then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => Symbols.getDecorationMinAboveDrums(instr.decoration))
+    );
+    const maxDecorationMinBelowDrums = Math.max(
+        0,  // If there are no decorations then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => Symbols.getDecorationMinBelowDrums(instr.decoration))
+    );
+    const maxContractHeight = Math.max(
+        0,  // If there are no contracts then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.CONTRACT_START)  // Only contract starts store data about the ratio and hooks
+            .map(instr => getContractSize(instr.ratio, instr.hooks))
+            .map(size => size.sizeUp + size.sizeDown)
+    );
+    const maxRestHeight = Math.max(
+        0,  // If there are no rests then take 0
+        ...instructions
+            .filter(instr => instr.type === RenderInstruction.REST)
+            .map(instr => getRestSize(instr.ticks, instr.dots))
+            .map(size => size.sizeUp + size.sizeDown)
+    );
+
+
+    // Compute contractCenterYs ---
+    // For now just put them all touching (but not going over) the top edge
+    const contractCenterYs = instructions
+            .filter(instr => instr.type === RenderInstruction.CONTRACT_START)  // Only contract starts store data about the ratio and hooks
+            .map(instr => getContractSize(instr.ratio, instr.hooks).sizeUp);
+    
+
+    // Compute stemTopYs ---
+    // For now just put them all as high as possible
+    const stemTop = maxContractHeight + maxDecorationMinAboveBars;
+    const stemTopYs = instructions
+            .filter(instr => instr.hasDrums)  // An instruction has drums <=> An instruction has a stem
+            .map(instr => stemTop);
+    
+    
+    // Compute drumYs ---
+    
+    // Find the actual height of the drums
+    const highestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
+    const highestDrumSizeUp = Symbols.getDrumSizeUp(highestDrumId)
+    const lowestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
+    const drumsHeight = Symbols.getDrumSizeDown(lowestDrumId) + relativeDrumYs[lowestDrumId] + highestDrumSizeUp;  // relativeDrumYs[highestDrumId] === 0
+    
+    // Figure out if (and by how much) the rests are taller than the drums
+    const restAboveDrumsHeight = Math.max(0, maxRestHeight - drumsHeight) / 2;
+    
+    // Calculate the top of the highest drum
+    const topDrumYTop = Math.max(
+        stemTop + maxBeamFlagDotHeight + restAboveDrumsHeight,
+        maxDecorationMinAboveDrums
+    );
+    const topDrumY = topDrumYTop + highestDrumSizeUp;  // Anchor of top drum
+    
+    // Create drumYs
+    const drumYs = Object.fromEntries(
+        Object.keys(relativeDrumYs).map(id => [id, topDrumY + relativeDrumYs[id]])
+    );
+    
+    
+    // Compute restCenterYs ---
+    //     We'll just centre with drumYs for now
+    const restCenterYs = instructions
+            .filter(instr => instr.type === RenderInstruction.REST)
+            .map(instr => topDrumYTop + drumsHeight / 2); 
+    
+    
+    // Compute decorationCenterYs
+    const decorationCenterYs = instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => topDrumYTop + drumsHeight / 2);
+    
+    return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs};
+}
+
+function minKey(key, ...items) {
+    // Returns the item in items with the lowest key(item).
+    // If key is not injective then one of the lowest is returned.
+
+    let lowestKey = Infinity;
+    let lowestItem = null;
+
+    items.forEach(item => {
+        const itemKey = key(item);
+        if (lowestKey > itemKey) {
+            lowestKey = itemKey;
+            lowestItem = item;
+        }
+    });
+
+    return lowestItem;
+}
+
 export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhtyhmLengthHint) {
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
@@ -215,11 +347,10 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //     decorationCenterYs: [float]  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
     // }
     
-    console.log(getInstructionXs(instructions));
-    console.log(getRelativeDrumYs(vertGroupLinkedComponentInstructions))
-    // TODO: restCenterYs
-    // TODO: contractCenterYs
-    // TODO: stemTopYs
-    // TODO: decorationCenterYs
+    // TODO: Take rhtyhmLengthHint into account
 
+    const instructionXs = getInstructionXs(instructions);
+    const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
+
+    return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs};
 }

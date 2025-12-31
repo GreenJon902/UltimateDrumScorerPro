@@ -27,24 +27,36 @@ export function getDotsSize(dots) {
     return {width: dots * 4, height: 4};
 }
 
-export function calculateMinBeamWidth(fullBeams, brokenBeams, dots) {
-    // Calculates the minimum width required to draw the specified beams and dots after stem.
+export function calculateBeamSize(fullBeams, brokenBeams, dots) {
+    // Calculates the height and minimum width required to draw the specified beams and dots after stem.
     // BrokenBeams is the same as specified in RenderInstruction.
-    // This returns the minimum stem to stem spacing.
+    // minWidth is the minimum stem to stem spacing.
+    // returns {minWidth: float, height: float}
     
     const brokenBeamWidth = (brokenBeams != 0) ? 7 : 0;  // 7 = 5 for beam + 2 padding
-    const dotWidth = getDotsSize(dots).width;
+    const dotSize = getDotsSize(dots);
 
     let minWidth;
+    let height;
     if (brokenBeams < 0) {
         // Dots below broken beams
-        minWidth = Math.max(brokenBeamWidth, dotWidth)
+        minWidth = Math.max(brokenBeamWidth, dotSize.width)
+        height = (fullBeams + brokenBeams) * 2 + dotSize.height;
     } else {
         // Dots on same level as broken beams
-        minWidth = brokenBeamWidth + dotWidth;
+        minWidth = brokenBeamWidth + dotSize.width;
+        height = fullBeams * 2 + Math.max(brokenBeams * 2, dotSize.height);
     }
     
-    return minWidth;
+    return {minWidth, height};
+}
+
+export function getContractSize(ratio, hooks) {
+    // Calculates the minimum width, and the sizeUp and sizeDown, of a contract.
+    // returns {minWidth: float, sizeUp: float, sizeDown: float}.
+
+    // TODO: This properly
+    return {minWidth: 5, sizeUp: 2.5, sizeDown: 2.5};
 }
 
 export function getFlagSize(flags, dots) {
@@ -58,3 +70,4 @@ export function getFlagSize(flags, dots) {
     
     return {width: maxWidth, height: 10};  // TODO: Add proper height calculation
 }
+

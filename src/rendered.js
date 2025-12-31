@@ -78,6 +78,7 @@ function createInitialScoreComponent(componentContainer, componentId) {
     const instructions = compileScoreComponent(componentId);
     console.log(instructions);
     const spacing = calculateScoreComponentSpacing(instructions, new Set([instructions]), ComponentManager.getComponentRhythmLengthHint(componentId));
+    console.log(spacing);
     renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing);
     componentContainer.appendChild(svg);
 }
