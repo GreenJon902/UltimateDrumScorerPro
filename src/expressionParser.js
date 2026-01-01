@@ -26,7 +26,7 @@ const OPERATORS_FUNCTIONS = {  // Maps from operator (single-character) to funct
 }
 
 const OPERATORS = new Set("()+/-*");  // Contains all operators (single-characters).
-const LITERAL_CHARS = new Set("123456789.");
+const LITERAL_CHARS = new Set("0123456789.");
 const IDENTIFIER_CHARS = new Set("abcdefghijklmnopqrstuvwxyz_");
 
 function tokenize(expr) {
@@ -39,7 +39,7 @@ function tokenize(expr) {
     while (i < expr.length) {
         // Is token at i an operator
         if (OPERATORS.has(expr[i])) {
-            tokens.append(expr[i]);
+            tokens.push(expr[i]);
             i++;
             continue;
         }
@@ -54,7 +54,7 @@ function tokenize(expr) {
             }
             
             // Convert to float
-            tokens.add(parseFloat(literal_chars.join("")));
+            tokens.push(parseFloat(literal_chars.join("")));
             continue;
         }
         
@@ -68,7 +68,7 @@ function tokenize(expr) {
             }
             
             // Convert to string
-            tokens.add(identifier_chars.join(""));
+            tokens.push(identifier_chars.join(""));
             continue;
         }
         
@@ -81,6 +81,8 @@ function tokenize(expr) {
         // Nothing matched so error
         throw "Failed to tokenize expression";
     }
+
+    return tokens;
 }
 
 function substitute(tokens, variables) {
@@ -90,7 +92,7 @@ function substitute(tokens, variables) {
     // Substitute
     const newTokens = tokens.map(tok => ((typeof tok === "string" || tok instanceof String) && !OPERATORS.has(tok)) ? variables[tok] : tok);
     // Throw error if any are undefined (so identifier not in variables)
-    if (newTokens.filter(tok => tok === undefined)) throw "Variable not specified";
+    if (newTokens.filter(tok => tok === undefined).length > 0) throw "Variable not specified";
     
     return newTokens;
 }
@@ -119,10 +121,10 @@ function parse(tokens) {
             let nextOpPrecedence = OPERATORS_PRECEDENCE[op];
             if (nextOpPrecedence === undefined) throw "Unexpected token";  // Use precedence's keys as brackets can't come here.
             
-            if (opPrecedence > nextOpPrecedence) break;
+            if (opPrecedence >= nextOpPrecedence) break;  // >= as if we have 3 - 2 - 1 then we want to do (3 - 2) - 1
             tokens.shift();  // Consume operator
             
-            let rhs = [nextOp, rhs, parseLiteralOrBracket(tokens)];
+            rhs = [nextOp, rhs, parseLiteralOrBracket(tokens)];
         }
 
         lhs = [op, lhs, rhs];

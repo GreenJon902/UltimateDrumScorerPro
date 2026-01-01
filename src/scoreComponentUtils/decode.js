@@ -348,6 +348,9 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     // }
     
     // TODO: Take rhtyhmLengthHint into account
+    // TODO: stemTopYs inside of groups is unintuative. What if we want to have a beam at an angle
+    //          Either: Store for first BEAM in beam-group and for BEAM_END
+    //          Or: Calculate the whole slant here (does that really make sense though?)
 
     const instructionXs = getInstructionXs(instructions);
     const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);

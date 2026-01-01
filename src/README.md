@@ -54,7 +54,10 @@ The instruction arguements depend on the name. These are the instructions:
 * `use,<symbol-id>` - Uses adds the instructions for another symbol in this location. This could be a drum, decoration or part. This ID must exist.  
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
- 
+
+`transform-string`: 
+This should be the same format as the SVG spec uses for transforms. This should contain no commas, and should not be wrapped with quotes.
+
 `pattern-part` : `<action><id: Union<symbol-id, "*[drums|decorations|parts]">>` (yes, without the comma).  
 A pattern refers to a set of symbols (these can be of any type, but the function using these symbols may put limitations on this).  
 The pattern is build from pattern-parts, and each pattern-part is an instruction to include or exclude ids.  

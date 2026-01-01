@@ -402,7 +402,7 @@ function parseConstraintDrum(tokens, parseData) {
     
 }
 
-class SvgInstruction {
+export class SvgInstruction {
     // An instruction for how to create the svg nodes for a given symbol. Multiple of these create a symbol.
     //
     // There are a couple types of svg-instructions (and what they store):
@@ -484,7 +484,7 @@ class SvgInstruction {
         // Add new combined substitutions
         Object.assign(newInstruction.#substitutions, newSubstitutions);
 
-        return newSubstitutions;
+        return newInstruction;
     }
     
     computeSubstitutions() { 
@@ -495,15 +495,15 @@ class SvgInstruction {
         
         let newInstruction;
         if (this.type === SvgInstruction.PATH) {
-            newInstruction = new SvgInstruction(this.#evaluate(this.path));
+            newInstruction = new SvgInstruction(SvgInstruction.PATH, this.#evaluate(this.path));
         } else if (this.type === SvgInstruction.CIRCLE) {
-            newInstruction = new SvgInstruction(this.#evaluate(this.cx), this.#evaluate(this.cy), this.#evaluate(this.r));
+            newInstruction = new SvgInstruction(SvgInstruction.CIRCLE, this.#evaluate(this.cx), this.#evaluate(this.cy), this.#evaluate(this.r));
         } else if (this.type === SvgInstruction.USE) {
-            newInstruction = new SvgInstruction(this.#evaluate(this.id));
+            newInstruction = new SvgInstruction(SvgInstruction.USE, this.#evaluate(this.id));
         } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
-            newInstruction = new SvgInstruction(this.#evaluate(this.transform));
+            newInstruction = new SvgInstruction(SvgInstruction.PUSH_TRANSFORM, this.#evaluate(this.transform));
         } else if (this.type === SvgInstruction.POP_TRANSFORM) {
-            newInstruction = new SvgInstruction();
+            newInstruction = new SvgInstruction(SvgInstruction.POP_TRANSFORM);
         } else {
             throw "Unknown type " + type;
         }
@@ -672,13 +672,14 @@ export class Symbols {
     }
 
     static getSymbolInstructions(symbolId) {
-        // Returns the instructions for a given symbol. If the symbolId is not a valid drum or decoration id then an error is thrown.
+        // Returns the instructions for a given symbol. If the symbolId is not a valid drum, decoration or part id then an error is thrown.
         symbolId = ensureSymbolId(symbolId);  // Order modifiers correctly if applicable
         // Try and return the symbol if we can
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].instructions;  // This is already frozen
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].instructions;  // This is already frozen
+        if (parseData.parts.hasOwnProperty(symbolId)) return parseData.parts[symbolId].instructions;  // This is already frozen
         // Id is invalid so throw error
-        throw "SymbolId does not exist, or is not drum or decoration";
+        throw "SymbolId does not exist, or is not drum, decoration or part";
     }
     
     static listLeftDecorations() {
