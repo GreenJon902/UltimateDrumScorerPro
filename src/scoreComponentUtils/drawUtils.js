@@ -1,3 +1,9 @@
+// This file contains methods related to drawing (and calculating sizes) of specific structures in a score section.
+// The methods in this file understand that they are acting on different types of SVG nodes, however this should call on the svgUtils to create and manipulate the actual nodes.
+
+import {attachDefinition, hasDefinition, createPath, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
+import {Symbols, SvgInstruction} from "../symbols.js";
+
 function drawAndGetSizeRest(ticks, dots) {
     // Draws a rest with the given number of ticks and dots.
     // If ticks is zero then a crotchet rest is drawn.
@@ -71,3 +77,75 @@ export function getFlagSize(flags, dots) {
     return {width: maxWidth, height: 10};  // TODO: Add proper height calculation
 }
 
+
+const SYMBOL_DEFINITIONS = "symbol_definitions";  // The definitionType when handling definitions relating to symbols
+export function drawSymbolAt(svg, container, symbolId, x, y) {
+    // Draws the symbol with the given id to the given node (container) at the given coordinates.
+    // Any required definitions will be added to the given svg. It is expected that cont is a (indirect) child of svg.
+    
+    // Make sure the definition of this symbol has been added
+    // We must also ensure we have any definitions for indirect requisites (symbol parts, etc) added too
+    const requisites = [symbolId]; 
+    while (requisites.length !== 0) {
+        const id = requisites.pop();
+        
+        if (hasDefinition(svg, SYMBOL_DEFINITIONS, id)) continue;  // If we have the definition then we have its requisites too
+        
+        // Attach the definition for id, and add any requisites to the array to be processed
+        const {group, requisites: newRequisites} = createSymbolGroup(svg, id);
+        attachDefinition(svg, SYMBOL_DEFINITIONS, id, group);
+        requisites.push(...newRequisites);
+    }
+    
+    // Create and add a node which calls on the definition
+    createUse(svg, container, SYMBOL_DEFINITIONS, symbolId, translate(x, y));
+}
+
+
+function createSymbolGroup(svg, symbolId) {
+    // Creates a svg group node for the given symbol. Also returns any requisite symbols (parts, etc).
+    // Expects the requisites to be added under the type SYMBOL_DEFINITIONS.
+    // Returns {group: SvgNode, requisites: Set<symbolId>}.
+
+    // Figure out how to draw the given symbol
+    const svgInstructions = Symbols.getSymbolInstructions(symbolId);
+    console.log(svgInstructions);
+    
+    // Create a group node that will contain the executed svg instructions
+    const symbolContainer = createGroup(svg, null);
+    
+    // Convert the svg instructions to actual nodes and add them to the container
+    const parentNode = new Array(symbolContainer);  // Since we can push and pop transformations, we need a stack
+    const requisites = new Set();
+    for (let i=0; i<svgInstructions.length; i++) {
+        const instr = svgInstructions[i].computeSubstitutions();
+        
+        const currentParent = parentNode[parentNode.length - 1];  // Add node to the last parentNode (as that was most recently pushed)
+        
+        // Convert instr into a node
+        if (instr.type === SvgInstruction.PATH) {
+            createPath(svg, currentParent, instr.path);
+        } else if (instr.type === SvgInstruction.CIRCLE) {
+            createCircle(svg, currentParent, instr.r, instr.cx, instr.cy);
+        } else if (instr.type === SvgInstruction.USE) {
+            createUse(svg, currentParent, SYMBOL_DEFINITIONS, instr.id);
+            requisites.add(instr.id);
+            
+        // These two are special
+        } else if (instr.type === SvgInstruction.PUSH_TRANSFORM) {
+            const newGroup = createGroup(svg, currentParent, instr.transform);
+            parentNode.push(newGroup);  // We want the following instructions to be inside this group so the transformation applies to them
+        } else if (instr.type === SvgInstruction.POP_TRANSFORM) {
+            if (parentNode.length <= 1) throw "SvgInstruction tried to pop when nothing in stack";  // <= 1 as the 0th item is the symbolContainer
+            parentNode.pop();  // We no longer need the last transformation (which was stored by the last group)
+            
+        } else {
+            throw "Unknown type " + type;
+        }
+    }
+    
+    if (parentNode.length > 1) throw "SvgInstructions did not clean stack";  // There were more push instructions than pop instructions
+    
+    // Return
+    return {group: symbolContainer, requisites: Object.freeze(requisites)};
+}
