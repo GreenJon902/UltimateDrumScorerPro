@@ -159,7 +159,6 @@ function createSymbolGroup(svg, symbolId) {
 
     // Figure out how to draw the given symbol
     const svgInstructions = Symbols.getSymbolInstructions(symbolId);
-    console.log(svgInstructions);
     
     // Create a group node that will contain the executed svg instructions
     const symbolContainer = createGroup(svg, null);

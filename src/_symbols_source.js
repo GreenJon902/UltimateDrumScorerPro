@@ -9,7 +9,7 @@ export const SYMBOLS_SOURCE = "new,part,ks-base,1,path,M0 0 l-3.5 3.5," +
                               "constraint,drum,snare_ghost,snare,1," + 
                               "constraint,drum,snare_flam,snare,0," + 
                               "constraint,drum,snare_ghost,snare_flam,0," + 
-                              "new,decoration,start,5,10,,,,left,0," + // TODO: Put proper values in here
+                              "new,decoration,start,5,10,,,,left,2,path,M0 3 L0 -3 M-1 2 L1 4 M-1 -2 L1 -4,circle,0,0,1," + // TODO: Put proper values in here
                               "new,decoration,repeat-start,5,10,,,,left,0," + 
                               "new,decoration,option-start,5,10,,,,left,0," + 
                               "new,decoration,end,5,10,,,,right,0," + 

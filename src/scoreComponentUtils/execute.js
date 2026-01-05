@@ -17,6 +17,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     // Renders the given instructions to the given svg using the given spacing data.
     
     let prevStemCount = 0;  // The number of stems we've already drawn
+    let prevDecorationCount = 0;  // The number of decorations we've already drawn
     for (let instrI = 0; instrI < instructions.length; instrI++) {
         const instr = instructions[instrI];
 
@@ -52,7 +53,14 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const stemBottomY = Math.max(...Array.from(instr.drums).map(id => spacing.drumYs[id]));  // Get the anchor of the lowest drum
             drawStem(svg, svg, stemX, stemTopY, stemBottomY);
             
-            prevStemCount += 1;
+            prevStemCount++;
+        }
+        
+
+        // Draw decorations ---
+        if (instr.type === RenderInstruction.DECORATION) {
+            drawSymbolAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount]);
+            prevDecorationCount++;
         }
         
 

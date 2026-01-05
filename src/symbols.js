@@ -514,6 +514,8 @@ export class SvgInstruction {
     #evaluate(string) {
         // Substitutions the stored substitutions into the given string and computes the maths and then returns it.
         
+        if (!(typeof string === 'string' || string instanceof String)) return string;  // If it's not a string (e.g. it's an int) then it can't be substituded
+
         return string.replaceAll(/\${(.*?)}/g, (_, expr) => evaluateExpression(
             expr, 
             Object.assign({}, this.#substitutions)  // Dupliacte substitutions array
