@@ -24,8 +24,13 @@ export function getRestSize(ticks, dots) {
 }
 
 
-export function drawDots(dots) {
-    // TODO: This
+export function drawDots(svg, container, dots, x, y) {
+    // Draws the given number of dots to the container.
+    // StartX and startY is the top-left corner of the bounding box containing the dots as returned by getDotsSize.
+
+    for (let n=0; n<dots; n++) {
+        createCircle(svg, container, 1, x + 2 + 4*n, y + 2);
+    }
 }
 export function getDotsSize(dots) {
     // Gets the size of the given number of dots when rendered together.
@@ -57,6 +62,35 @@ export function calculateBeamSize(fullBeams, brokenBeams, dots) {
     return {minWidth, height};
 }
 
+export function drawBeams(svg, container, fullBeams, brokenBeams, dots, startX, startY, endX, endY) {
+    // Draws the given beams and dots to the container. The top beam will go from (startX, startY) to (endX, endY) and subsequent beams will be placed below this.
+    // BrokenBeams is the same as specified in RenderInstruction.
+
+    const pathParts = new Array();
+
+    // Create path for full beams
+    for (let n=0; n<fullBeams; n++) {
+        pathParts.push(`M${startX} ${startY + 2*n} L${endX} ${endY + 2*n}`);
+    }
+    // Create path for broken beams
+    for (let n=fullBeams; n<fullBeams + brokenBeams; n++) {
+        const x1 = (brokenBeams < 0) ? startX : endX - 5;
+        const x2 = (brokenBeams < 0) ? 5 : endX;
+        pathParts.push(`M${x1} ${startY + 2*n} L${x2} ${endY + 2*n}`);
+    }
+    
+    // Create actual node
+    const path = pathParts.join(" ");
+    createPath(svg, container, path);
+    
+    // Draw dots
+    if (brokenBeams < 0) {
+        drawDots(svg, container, dots, startX, startY + 2 * (fullBeams + brokenBeams));
+    } else {
+        drawDots(svg, container, dots, startX, startY + 2 * fullBeams);
+    }
+}
+
 export function getContractSize(ratio, hooks) {
     // Calculates the minimum width, and the sizeUp and sizeDown, of a contract.
     // returns {minWidth: float, sizeUp: float, sizeDown: float}.
@@ -75,6 +109,22 @@ export function getFlagSize(flags, dots) {
     const maxWidth = Math.max(flagWidth, dotWidth);
     
     return {width: maxWidth, height: 10};  // TODO: Add proper height calculation
+}
+
+export function drawFlags(svg, container, flags, dots, flagStartX, flagStartY) {
+    // Draws the given number of flags and dots to the container.
+    // The first flag will be drawn at (flagStartX, flagStartY) and subsequent flags will be drawn below.
+
+    // Draw flags
+    const pathParts = new Array();
+    for (let n=0; n<flags; n++) {
+        pathParts.push(`M${flagStartX} ${flagStartY + 2 * n} l5 2`);
+    }
+    const path = pathParts.join(" ");
+    createPath(svg, container, path);
+    
+    // Draw dots
+    drawDots(svg, container, dots, flagStartX, flagStartY + 2 * flags)
 }
 
 

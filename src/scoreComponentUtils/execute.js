@@ -1,4 +1,5 @@
-import {drawSymbolAt, drawStem} from "./drawUtils.js";
+import {drawSymbolAt, drawStem, drawBeams, drawFlags, drawDots} from "./drawUtils.js";
+import {RenderInstruction} from "./compile.js";
 
 
 export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing) {
@@ -19,6 +20,23 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     for (let instrI = 0; instrI < instructions.length; instrI++) {
         const instr = instructions[instrI];
 
+        // Draw flags, dots and beams ---
+        // Do this before draw stem so prevStemCount is still accurate
+        if (instr.type === RenderInstruction.BEAM) {
+            const beamStartX = spacing.instructionXs[instrI];
+            const beamStartY = spacing.stemTopYs[prevStemCount];
+            const nextStemI = findSatisfying(instructions, instrI, 1, i => i.hasDrums);  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to
+            const beamEndX = spacing.instructionXs[nextStemI];  
+            const beamEndY = spacing.stemTopYs[nextStemI];  
+            
+            drawBeams(svg, svg, instr.fullBeams, instr.brokenBeams, instr.dots, beamStartX, beamStartY, beamEndX, beamEndY);
+        } else if (instr.type === RenderInstruction.BEAM_END) {
+            drawDots(svg, svg, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
+        } else if (instr.type === RenderInstruction.FLAG) {
+            drawFlags(svg, svg, instr.flags, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
+        }
+        
+        // Draw symbols ---
         if (instr.hasDrums) {
             // Draw the symbols
             instr.drums.forEach(drumId => {
@@ -33,8 +51,23 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const stemTopY = spacing.stemTopYs[prevStemCount];
             const stemBottomY = Math.max(...Array.from(instr.drums).map(id => spacing.drumYs[id]));  // Get the anchor of the lowest drum
             drawStem(svg, svg, stemX, stemTopY, stemBottomY);
+            
+            prevStemCount += 1;
         }
+        
+
         
     }
 
+}
+
+function findSatisfying(array, start, direction, func) {
+    // Searches through the array from the given start position in the given direction (+1 for forwards or -1 for backwards) for the first item for which func returns true.
+    // This returns the index of that item.
+    
+    for (let i=start+direction; 0<=i<array.length; i+=direction) {
+        if (func(array[i])) return i;
+    }
+
+    throw "None satisfying function found";
 }

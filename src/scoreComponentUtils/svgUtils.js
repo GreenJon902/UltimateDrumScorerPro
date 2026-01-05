@@ -84,7 +84,7 @@ export function createCircle(svg, container, r, cx, cy, transform) {
     // If transform is undefined then it is ignored, otherwise it should be a valid svg transform string.
     // The node will be added to the given container node.
 
-    const node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const node = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     node.setAttribute("r", r);
     node.setAttribute("cx", cx);
     node.setAttribute("cy", cy);
