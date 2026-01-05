@@ -1,4 +1,4 @@
-import {drawSymbolAt} from "./drawUtils.js";
+import {drawSymbolAt, drawStem} from "./drawUtils.js";
 
 
 export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing) {
@@ -15,17 +15,26 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     //
     // Renders the given instructions to the given svg using the given spacing data.
     
+    let prevStemCount = 0;  // The number of stems we've already drawn
     for (let instrI = 0; instrI < instructions.length; instrI++) {
         const instr = instructions[instrI];
 
         if (instr.hasDrums) {
+            // Draw the symbols
             instr.drums.forEach(drumId => {
                 const x = spacing.instructionXs[instrI];
                 const y = spacing.drumYs[drumId];
                 
                 drawSymbolAt(svg, svg, drumId, x, y);
             });
+            
+            // An instruction has a stem iff it has symbols, so draw the stem
+            const stemX = spacing.instructionXs[instrI];
+            const stemTopY = spacing.stemTopYs[prevStemCount];
+            const stemBottomY = Math.max(...Array.from(instr.drums).map(id => spacing.drumYs[id]));  // Get the anchor of the lowest drum
+            drawStem(svg, svg, stemX, stemTopY, stemBottomY);
         }
+        
     }
 
 }

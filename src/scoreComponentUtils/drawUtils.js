@@ -149,3 +149,8 @@ function createSymbolGroup(svg, symbolId) {
     // Return
     return {group: symbolContainer, requisites: Object.freeze(requisites)};
 }
+
+export function drawStem(svg, container, x, topY, bottomY) {
+    // Draws a stem into the container with endpoints (x, topY) and (x, bottomY).
+    createPath(svg, container, `M${x} ${topY} L${x} ${bottomY}`);
+}
