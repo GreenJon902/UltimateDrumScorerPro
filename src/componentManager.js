@@ -183,7 +183,7 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
-        // TODO: Validate drumId is valid
+        if (!Symbols.listDrums().includes(drumId)) throw "Invalid drum id";
         if (!this.getComponentDrumEnabledState(componentId, drumId)) throw "Tried to use toggle on disabled drumId";
         
         // Handle toggle
@@ -200,7 +200,7 @@ export class ComponentManager {
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
         if (!(0 <= beatI && beatI < this.getComponentBeatCount(componentId))) throw "BeatI out of range";
         if (!(0 <= subdivisionI && subdivisionI < this.getComponentBeatSubdivisionCount(componentId, beatI))) throw "SubdivisionI out of range";
-        // TODO: Validate drumId is valid
+        if (!Symbols.listDrums().includes(drumId)) throw "Invalid drum id";
         if (!this.getComponentDrumEnabledState(componentId, drumId)) throw "Tried to use toggle on disabled drumId";
         
         return CURRENT_PROJECT["components"][componentId]["score-content"][beatI][subdivisionI].includes(drumId);
@@ -224,7 +224,7 @@ export class ComponentManager {
         
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
-        // TODO: Validate drum id
+        if (!Symbols.listDrums().includes(drumId)) throw "Invalid drum id";
         
         // Silently drop any removed drums from the score if we're removing a drumId
         if (this.getComponentDrumEnabledState(componentId, drumId)) {
@@ -249,7 +249,7 @@ export class ComponentManager {
          
         // Validate args
         if (!this.componentExists(componentId) || this.getComponentType(componentId) !== "score-component") throw `Component ${componentId} does not exist or is not a score-component`;
-        // TODO: Validate drum id
+        if (!Symbols.listDrums().includes(drumId)) throw "Invalid drum id";
         
         return CURRENT_PROJECT["components"][componentId]["enabled-drums"].includes(drumId);
     }

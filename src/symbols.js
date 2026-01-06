@@ -644,6 +644,11 @@ export class Symbols {
         return fullDrumOrder;  // This is already frozen
     }
 
+    static listDrums() {
+        // Returns an array containing the the ids of all the drums.
+        return fullDrumOrder;  // This is already frozen
+    }
+
     static isDrumAbove(symbolId1, symbolId2) {
         // True if symbolId2 should be drawn above symbolId1.
         ensureExistsAndIs(symbolId1, parseData, {drum: true});
