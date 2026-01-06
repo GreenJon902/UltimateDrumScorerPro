@@ -1,7 +1,7 @@
 // This file contains methods related to drawing (and calculating sizes) of specific structures in a score section.
 // The methods in this file understand that they are acting on different types of SVG nodes, however this should call on the svgUtils to create and manipulate the actual nodes.
 
-import {attachDefinition, hasDefinition, createPath, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
+import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
 import {Symbols, SvgInstruction} from "../symbols.js";
 
 export function drawRest(svg, container, ticks, dots, right, centerY) {
@@ -44,6 +44,7 @@ export function getRestSize(ticks, dots) {
         return {sizeLeft: 2  * ticks + 3, sizeUp: 2 * ticks / 2 + 1.5, sizeRight: 0, sizeDown: 2 * ticks / 2 + 1.5};
     }
 }
+
 
 
 export function drawDots(svg, container, dots, x, y) {
@@ -119,6 +120,23 @@ export function getContractSize(ratio, hooks) {
 
     // TODO: This properly
     return {minWidth: 5, sizeUp: 2.5, sizeDown: 2.5};
+}
+export function drawContract(svg, container, ratio, hooks, startX, endX, centerY) {
+    // Draws the given contract to the container.
+    
+    const textWidth = 5;  // TODO: This properly
+    const textHeight = 5;  // TODO: This properly
+    
+    const centerX = (startX + endX) / 2;
+    const height = Math.max(textHeight, 2 * 2);  // Hook height * 2 = 2 * 2
+    
+    // Create hooks
+    if (hooks) {
+        createPath(svg, container, `M${startX} ${centerY + 2} l0 -2 L${centerX - textWidth / 2} ${centerY} M${centerX + textWidth / 2} ${centerY} L${endX} ${centerY} l0 2`);
+    }
+    
+    // Create text
+    createCenteredText(svg, container, ratio, centerX, centerY);
 }
 
 export function getFlagSize(flags, dots) {
