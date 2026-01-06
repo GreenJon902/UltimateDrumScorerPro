@@ -285,7 +285,10 @@ function createBasicSelectOption(container, componentId, label, optionName, opti
     });
     select.value = ComponentManager["getComponent" + optionName](componentId);
     // Event saving value
-    select.onchange = () => ComponentManager["setComponent" + optionName](componentId, select.value);
+    select.onchange = () => {
+        const value = (select.value === "") ? null : select.value;  // An empty string is a null value
+        ComponentManager["setComponent" + optionName](componentId, value);
+    }
     createLinkFromComponentManager(select, componentId, "basic", optionName);
     
     // Cerate action option structure

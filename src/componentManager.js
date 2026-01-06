@@ -1,4 +1,5 @@
 import {createEvents, createEvent} from "./managerHelpers.js";
+import {Symbols} from "./symbols.js";
 
 
 // TODO: Combined logic of AddBeats, RemoveBeats, AddSubdivision and RemoveSubdivision
@@ -169,8 +170,8 @@ export class ComponentManager {
     static {
         createBasicComponentGetterSetter(this, "score-component", "TimeSignatureDenomenator", "time-signature-denomenator", v => typeof v === "number" && v % 1 === 0 && v > 0);  // Positive integer
         createBasicComponentGetterSetter(this, "score-component", "RhythmLengthHint", "rhythm-length-hint", v => typeof v === "number" && v > 0);  // Positive real
-        createBasicComponentGetterSetter(this, "score-component", "LeftDecoration", "left-decoration", v => typeof v === "string");  // TODO: Validate id
-        createBasicComponentGetterSetter(this, "score-component", "RightDecoration", "right-decoration", v => typeof v === "string");  // TODO: Validate id
+        createBasicComponentGetterSetter(this, "score-component", "LeftDecoration", "left-decoration", v => [null, ...Symbols.listLeftDecorations()].includes(v));  
+        createBasicComponentGetterSetter(this, "score-component", "RightDecoration", "right-decoration", v => [null, ...Symbols.listRightDecorations()].includes(v));  
     }
     
     static toggleComponentDrum(componentId, beatI, subdivisionI, drumId) {
