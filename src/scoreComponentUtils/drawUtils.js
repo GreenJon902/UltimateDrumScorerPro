@@ -4,23 +4,45 @@
 import {attachDefinition, hasDefinition, createPath, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
 import {Symbols, SvgInstruction} from "../symbols.js";
 
-function drawAndGetSizeRest(ticks, dots) {
-    // Draws a rest with the given number of ticks and dots.
+export function drawRest(svg, container, ticks, dots, right, centerY) {
+    // Draws a rest with the given number of ticks and dots to the container.
     // If ticks is zero then a crotchet rest is drawn.
-    // Returns {svg, size: {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float}}.
-    // This is combined into a single method to reduce duplicated code.
     
-    return {svg: null, size: {sizeLeft: 5, sizeUp: 5, sizeRight: 0, sizeDown: 5}};  // TODO: Get actual data
-}
-export function drawRest(ticks, dots) {
-    // See drawAndGetSizeRest
-    // Returns the svg.
-    return drawAndGetSizeRest(ticks, dots).svg;
+    if (ticks === 0) {
+        // This is a crotchet rest
+        createPath(svg, container, `M${right - 5} ${centerY - 5} l5 5 l-4 2 l4 3`);
+        drawDots(svg, container, dots, right, centerY + 2);
+    } else {
+        // This is not a crotchet rest
+
+        // Draw rest
+        const pathParts = new Array();
+        // Rest base:
+        pathParts.push(`M${right} ${centerY - 2 * ticks / 2 - 1.5} l${-2 * ticks - 3} ${2 * ticks + 3}`);
+        // Rest ticks:
+        pathParts.push(`M${right - 2} ${centerY - 2 * ticks / 2 + 2 - 1.5}`);
+        for (let n=0; n<ticks; n++) {
+            pathParts.push("l-2 -2 m0 4");
+        }
+        // Create path
+        const path = pathParts.join(" ");
+        createPath(svg, container, path);
+        
+        // Draw dots
+        drawDots(svg, container, dots, right - 2 * ticks, centerY + 2 * ticks / 2 - 2);
+    }
 }
 export function getRestSize(ticks, dots) {
-    // See drawAndGetSizeRest
+    // Gets the size of a rest with the given number of ticks and dots.
+    // If ticks is zero then a crotchet rest is used.
     // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float}.
-    return drawAndGetSizeRest(ticks, dots).size;
+    if (ticks === 0) {
+        // This is a crotchet rest
+        return {sizeLeft: 5, sizeUp: 5, sizeRight: 0, sizeDown: 5};
+    } else {
+        // This is a crotchet rest
+        return {sizeLeft: 2  * ticks + 3, sizeUp: 2 * ticks / 2 + 1.5, sizeRight: 0, sizeDown: 2 * ticks / 2 + 1.5};
+    }
 }
 
 

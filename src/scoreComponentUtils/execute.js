@@ -1,4 +1,4 @@
-import {drawSymbolAt, drawStem, drawBeams, drawFlags, drawDots} from "./drawUtils.js";
+import {drawSymbolAt, drawStem, drawBeams, drawFlags, drawDots, drawRest} from "./drawUtils.js";
 import {RenderInstruction} from "./compile.js";
 
 
@@ -18,6 +18,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     
     let prevStemCount = 0;  // The number of stems we've already drawn
     let prevDecorationCount = 0;  // The number of decorations we've already drawn
+    let prevRestCount = 0;  // The number of rests we've already drawn
     for (let instrI = 0; instrI < instructions.length; instrI++) {
         const instr = instructions[instrI];
 
@@ -63,10 +64,12 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             prevDecorationCount++;
         }
         
-
-        
+        // Draw rests ---
+        if (instr.type === RenderInstruction.REST) {
+            drawRest(svg, svg, instr.ticks, instr.dots, spacing.instructionXs[instrI], spacing.restCenterYs[prevRestCount]);
+            prevRestCount++;
+        }
     }
-
 }
 
 function findSatisfying(array, start, direction, func) {
