@@ -25,6 +25,9 @@ export function attachRendered(componentContainer) {
     // Bind events for text-components
     ComponentManager.onComponentTextChanged((componentId, newValue) => updateTextComponent(componentContainer, "text", componentId, newValue));
     ComponentManager.onComponentFontSizeChanged((componentId, newValue) => updateTextComponent(componentContainer, "fontSize", componentId, newValue));
+    
+    // Bind events for score-components
+    ComponentManager.onComponentDrumToggled((componentId, _, __, ___, ____) => updateScoreComponent(componentContainer, componentId));
 }
 
 function createBaseSvg(componentContainer, componentId) {
@@ -82,3 +85,12 @@ function createInitialScoreComponent(componentContainer, componentId) {
     renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing);
     componentContainer.appendChild(svg);
 }
+
+function updateScoreComponent(componentContainer, componentId) {
+    // TODO: Doc and write this better
+    const svg = getSvgFor(componentContainer, componentId);
+    componentContainer.removeChild(svg);
+    createInitialScoreComponent(componentContainer, componentId);
+
+}
+
