@@ -96,9 +96,9 @@ export function drawBeams(svg, container, fullBeams, brokenBeams, dots, startX, 
         pathParts.push(`M${startX} ${startY + 2*n} L${endX} ${endY + 2*n}`);
     }
     // Create path for broken beams
-    for (let n=fullBeams; n<fullBeams + brokenBeams; n++) {
+    for (let n=fullBeams; n<fullBeams + Math.abs(brokenBeams); n++) {
         const x1 = (brokenBeams < 0) ? startX : endX - 5;
-        const x2 = (brokenBeams < 0) ? 5 : endX;
+        const x2 = (brokenBeams < 0) ? startX + 5 : endX;
         pathParts.push(`M${x1} ${startY + 2*n} L${x2} ${endY + 2*n}`);
     }
     

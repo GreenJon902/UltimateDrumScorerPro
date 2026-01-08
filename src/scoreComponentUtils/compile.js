@@ -224,13 +224,13 @@ function calculateBeamInfo(l, c, n, nn) {
         brokenBeams = 0;
     } else if (c > n && l < c) {  // c needs more beams than n, and l does not supply enough to c
         fullBeams = n;
-        brokenBeams = -(n - c);  // Negative as beams on left side
+        brokenBeams = n - c;  // Will be negative (as beams on left side)
     } else if (c < n && nn >= n) {  // c needs less beams than n, but nn supplies at least that many to n
         fullBeams = c;
         brokenBeams = 0;
     } else if (c < n && nn < n) {  // c needs less beams than n, but nn does not supply enough beams to n
         fullBeams = c;
-        brokenBeams = n - c;  // Positive as beams on right side
+        brokenBeams = n - c;  // Will be positive (as beams on right side)
     } else {
          throw "None of the beam logic cases worked, this shouldn't be possible, here are the values " + l + " " + c + " " + n + " " + nn;
     }
