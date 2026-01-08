@@ -85,7 +85,7 @@ function findSatisfying(array, start, direction, func) {
     // Searches through the array from the given start position in the given direction (+1 for forwards or -1 for backwards) for the first item for which func returns true.
     // This returns the index of that item.
     
-    for (let i=start+direction; 0<=i<array.length; i+=direction) {
+    for (let i=start+direction; 0<=i && i<array.length; i+=direction) {
         if (func(array[i])) return i;
     }
 
