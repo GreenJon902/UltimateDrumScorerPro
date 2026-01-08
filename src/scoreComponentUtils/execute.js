@@ -30,8 +30,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const beamStartY = spacing.stemTopYs[prevStemCount];
             const nextStemI = findSatisfying(instructions, instrI, 1, i => i.hasDrums);  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to
             const beamEndX = spacing.instructionXs[nextStemI];  
-            const beamEndY = spacing.stemTopYs[nextStemI];  
-            
+            const beamEndY = spacing.stemTopYs[prevStemCount + 1];  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to            
             drawBeams(svg, svg, instr.fullBeams, instr.brokenBeams, instr.dots, beamStartX, beamStartY, beamEndX, beamEndY);
         } else if (instr.type === RenderInstruction.BEAM_END) {
             drawDots(svg, svg, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
