@@ -156,12 +156,14 @@ export function drawFlags(svg, container, flags, dots, flagStartX, flagStartY) {
     // The first flag will be drawn at (flagStartX, flagStartY) and subsequent flags will be drawn below.
 
     // Draw flags
-    const pathParts = new Array();
-    for (let n=0; n<flags; n++) {
-        pathParts.push(`M${flagStartX} ${flagStartY + 2 * n} l5 2`);
+    if (flags !== 0) {  // If there are no flags, then this will just create an empty path
+        const pathParts = new Array();
+        for (let n=0; n<flags; n++) {
+            pathParts.push(`M${flagStartX} ${flagStartY + 2 * n} l5 2`);
+        }
+        const path = pathParts.join(" ");
+        createPath(svg, container, path);
     }
-    const path = pathParts.join(" ");
-    createPath(svg, container, path);
     
     // Draw dots
     drawDots(svg, container, dots, flagStartX, flagStartY + 2 * flags)
