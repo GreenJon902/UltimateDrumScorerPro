@@ -27,6 +27,10 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
         .filter(id => allDrumIds.includes(id));
     
 
+    // If no drum IDs are used then we can return an empty map
+    if (orderedDrumIds.length === 0) return {};
+    
+
     // Create a map of drums which are used in the same subdivision ---
     // Create empty sets for each id
     const drumCollisions = {};
@@ -275,10 +279,12 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // Compute drumYs ---
     
     // Find the actual height of the drums
-    const highestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
-    const highestDrumSizeUp = Symbols.getDrumSizeUp(highestDrumId)
+    const highestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));  // Returns null if relativeDrumYs is empty
+    const highestDrumSizeUp = (highestDrumId !== null) ? Symbols.getDrumSizeUp(highestDrumId) : 0;
     const lowestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
-    const drumsHeight = Symbols.getDrumSizeDown(lowestDrumId) + relativeDrumYs[lowestDrumId] + highestDrumSizeUp;  // relativeDrumYs[highestDrumId] === 0
+    const lowestDrumSizeDown = (lowestDrumId !== null) ? Symbols.getDrumSizeDown(highestDrumId) : 0;
+    const lowestDrumAnchor = (lowestDrumId !== null) ? relativeDrumYs[lowestDrumId] : 0;
+    const drumsHeight = lowestDrumSizeDown + lowestDrumAnchor + highestDrumSizeUp;  // relativeDrumYs[highestDrumId] === 0 so we don't need to add it
     
     // Figure out if (and by how much) the rests are taller than the drums
     const restAboveDrumsHeight = Math.max(0, maxRestHeight - drumsHeight) / 2;
@@ -314,6 +320,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
 function minKey(key, ...items) {
     // Returns the item in items with the lowest key(item).
     // If key is not injective then one of the lowest is returned.
+    // If items is empty then null is returned.
 
     let lowestKey = Infinity;
     let lowestItem = null;
