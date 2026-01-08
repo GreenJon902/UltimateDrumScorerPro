@@ -266,8 +266,7 @@ function createGroupInstructions(componentId, beatI) {
     
     // Get some preliminary data
     let groupLengths = groupSubdivisions(componentId, beatI);
-    const expandedGroupLengths = groupLengths.map(l => new Array(l).fill(l)).reduce((a, b) => a.concat(b));  // Has an item for each subdivision containing the length of its group
-    const nonEmptySubdivisions = getNonEmptySubdivisions(componentId, beatI);
+    let nonEmptySubdivisions = getNonEmptySubdivisions(componentId, beatI);
     const nonEmptyCount = nonEmptySubdivisions.length;
     let subdivCount = ComponentManager.getComponentBeatSubdivisionCount(componentId, beatI);
     
@@ -276,6 +275,11 @@ function createGroupInstructions(componentId, beatI) {
     const gcd = getGcd(...groupLengths);  // If x|(some group length) then x|subdivCount, so we only need to run for groupLengths
     subdivCount = subdivCount / gcd;
     groupLengths = groupLengths.map(x => x/gcd);
+    nonEmptySubdivisions = nonEmptySubdivisions.map(x => x/gcd);
+    
+    // Do this on the simplified data
+    const expandedGroupLengths = groupLengths.map(l => new Array(l).fill(l)).reduce((a, b) => a.concat(b));  // Has an item for each subdivision containing the length of its group
+    
     
     // Create the instructions. We need one for each group length
     const instructions = new Array();
@@ -283,7 +287,7 @@ function createGroupInstructions(componentId, beatI) {
     let countedNonEmpty = 0;  // Number of non-empties we have processed so far
     let inBeamFlag = false;  // Is there no BEAM instruction || Was a BEAM_END more recent than a BEAM
     for (let groupI = 0; groupI < groupLengths.length; groupI++) {
-        const drums = ComponentManager.getComponentSubdivisionDrums(componentId, beatI, subdivI);
+        const drums = ComponentManager.getComponentSubdivisionDrums(componentId, beatI, subdivI * gcd);  // We are counting simplified subdivisions, we need to scale back up for the component manager
         const groupLength = groupLengths[groupI];
         const rhythmInfo = calculateRyhthmInfo(groupLength, subdivCount);
         
