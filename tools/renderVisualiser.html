@@ -1,0 +1,112 @@
+<!--
+This page is used to visualise (for testing purposes) the results of the functions in src/scoreComponentUtils/drawUtils.js (including each symbol).
+It will display both the svg, and the returned sizing information.
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Visualiser</title>
+        <style>
+            svg {
+                overflow: visible;
+                border: 1px solid;
+                border-color: rgba(255, 0, 0, 1);
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .sideSize {
+                stroke: rgba(0, 0, 255, 0.5);
+                stroke-width: 2px;
+                
+            }
+
+            g path {
+                fill: none;
+                stroke: black;
+                stroke-width: 1;
+            }
+
+            g circle {
+                fill: black;
+                stroke: none;
+            }
+
+            g text {
+                fill: black;
+                stroke: none;
+                text-anchor: middle;
+                dominant-baseline: middle;
+                white-space: preserve;
+            }
+        </style>
+    </head>
+    <body>
+        <p>
+            The black line is the actual drawn svg.
+            The red line is the JS calculated bbox for the svg (svg.bbox()).
+            The blue lines are the sideSizes.
+        </p>
+        
+        <h1>Non-Symbols</h1>
+        <div id="non-symbol-container"></div>
+        
+        <h1>Symbols</h1>
+        <h2>Parts</h2>
+        <div id="symbol-parts-container"></div>
+        <h2>Drums</h2>
+        <div id="symbol-drums-container"></div>
+        <h2>Decorations</h2>
+        <div id="symbol-deocrations-container"></div>
+
+    </body>
+    <script type="module">
+        import {drawRest, getRestSize} from "../src/scoreComponentUtils/drawUtils.js";
+        
+        function drawLine(svg, className, x1, y1, x2, y2) {
+            // Draws the given line. But if any of the given coordinates are undefined then no line is drawn.
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("vector-effect", "non-scaling-stroke");  // So that the stroke width is actually 1px
+            path.classList.add(className);
+            path.setAttribute("d", `M${x1} ${y1} L${x2} ${y2}`);
+            svg.appendChild(path);
+        }
+        
+        function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
+            // drawFunc: Callable[svg, container, ...drawArgs]
+            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight}
+            // drawArgs: Array
+            // sizeArgs: Array
+            //
+            // Creates an svg in the div with id=`${section}`, then uses drawFunc on this svg. This will also draw the bounding box given by the sizeFunc, as well as drawing the bounding box that is calculated by JS.
+            
+            // Create container
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const container = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            svg.appendChild(container);
+            document.getElementById(section).appendChild(svg);
+            
+            // Draw actual thing
+            drawFunc(svg, container, ...drawArgs);  // Draw this to the container (for css selector reasons)
+            
+            // Set viewbox and svg size
+            // This needs to be after the svg is added to the document
+            // This should be done before the sizing calculation visualisation
+            const bbox = svg.getBBox();
+            svg.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+            svg.setAttribute("width", `${bbox.width}mm`);
+            svg.setAttribute("height", `${bbox.height}mm`);
+            
+            // Draw size calculations
+            const size = sizeFunc(...sizeArgs);
+            drawLine(svg, "sideSize", -size.sizeLeft, bbox.y, -size.sizeLeft, bbox.y + bbox.height);  // Draw this to the svg (for css selector reasons)
+            drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
+            drawLine(svg, "sideSize", bbox.x, -size.sizeUp, bbox.x + bbox.width, -size.sizeUp);  
+            drawLine(svg, "sideSize", bbox.x, size.sizeDown, bbox.x + bbox.width, size.sizeDown);  
+        }
+        
+        createSvg("non-symbol-container", drawRest, getRestSize, [0, 0, 0, 0], [0, 0]);
+
+    </script>
+</html>
