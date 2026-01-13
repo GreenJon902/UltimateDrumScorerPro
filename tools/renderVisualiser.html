@@ -30,11 +30,11 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                 stroke: rgba(0, 0, 255, 0.5);
             }
             
-            .whSize {
+            .mawSideSize {
                 stroke: rgba(0, 128, 0, 0.5);
             }
             
-            .minWhSize {
+            .maw {
                 stroke: rgba(0, 128, 0, 0.5);
                 stroke-dasharray: 4;
             }
@@ -53,7 +53,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             }
             
             svg:hover .grid {
-                stroke: rgba(0, 0, 0, 0.1);
+                stroke: rgba(0, 0, 0, 1);
             }
             
             
@@ -90,7 +90,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             The red "X" is the anchor / origin (In these visualisations, this will always be (0,0)).
             
             The blue lines are the sideSizes (sizeLeft, etc...). The lengths of these lines do not matter, only the perpendicular distance to the anchor.
-            The green lines are the whSizes (width, height). The lengths of these lines are the important detail, the other coordinate is likely just 0.
+            The green lines appear when there are multiple anchors affecting the side size. Solid is sideSize if the second anchor is minimumAnchorWidth from the first, dashed indicates the actual minimumAnchorWidth.
             
             A coloured line being dashed indicates it is a minimum.
             
@@ -99,9 +99,11 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         </p>
         
         <h1>Non-Symbols</h1>
+        <span>We expect the blue lines to be as small as possible, while still entirely containing all pixels drawn by the drawFunc (so they account for the stroke-width).
         <div id="non-symbol-container"></div>
         
         <h1>Symbols</h1>
+        <span>It's harder to describe the disired results here. And I don't yet know if the blue lines account for stroke-width. Look at it and it should look good enough to indicate the side of the symbol - so if a symbol was placed with it's bottom blue line on the top blue line of the symbol below then they don't overlap (too much).</span>
         <h2>Drums</h2>
         <div id="symbol-drums-container"></div>
         <h2>Decorations</h2>
@@ -109,16 +111,12 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
 
     </body>
     <script type="module">
-        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, calculateBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawSymbolAt} from "../src/scoreComponentUtils/drawUtils.js";
+        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawSymbolAt} from "../src/scoreComponentUtils/drawUtils.js";
         import {Symbols} from "../src/symbols.js";
         
         function drawLine(svg, className, x1, y1, x2, y2) {
-            // Draws the given line. But if any of the given coordinates are undefined then no line is drawn.
+            // Draws the given line.
             
-            // Check if coords are all defined
-            if (new Set([x1, y1, x2, y2]).intersection(new Set([NaN, undefined, null])).size !== 0) return;
-
-            // Draw line
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             path.classList.add(className);
             path.setAttribute("d", `M${x1} ${y1} L${x2} ${y2}`);
@@ -166,10 +164,10 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
 
             // Generate lines
             const pathParts = new Array();
-            for (let x=Math.ceil(bbox.x); x<Math.floor(bbox.x + bbox.width); x++) {
+            for (let x=Math.round(bbox.x); x<Math.round(bbox.x + bbox.width); x++) {
                 pathParts.push(`M${x} ${bbox.y} l0 ${bbox.height}`);
             }
-            for (let y=Math.ceil(bbox.y); y<Math.floor(bbox.y + bbox.height); y++) {
+            for (let y=Math.round(bbox.y); y<Math.round(bbox.y + bbox.height); y++) {
                 pathParts.push(`M${bbox.x} ${y} l${bbox.width} 0`);
             }
             const path = pathParts.join(" ");
@@ -184,7 +182,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
             // drawFunc: Callable[svg, container, ...drawArgs]
-            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight}
+            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth}
             // drawArgs: Array
             // sizeArgs: Array
             //
@@ -208,18 +206,18 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             
             // Draw size calculations ---
             const size = sizeFunc(...sizeArgs);
-            // The line drawing function will ignore any calls with undefined args, so we can just call it for each size type, even if that is not actually defined
-            // Do sideSizes
             drawLine(svg, "sideSize", -size.sizeLeft, bbox.y, -size.sizeLeft, bbox.y + bbox.height);  // Draw this to the svg (for css selector reasons)
-            drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
             drawLine(svg, "sideSize", bbox.x, -size.sizeUp, bbox.x + bbox.width, -size.sizeUp);  
             drawLine(svg, "sideSize", bbox.x, size.sizeDown, bbox.x + bbox.width, size.sizeDown);  
-            // Do whSizes
-            drawLine(svg, "whSize", bbox.x, 0, bbox.x + size.width, 0);
-            drawLine(svg, "whSize", 0, bbox.y, 0, bbox.y + size.height);
-            // Do minWhSizes
-            drawLine(svg, "minWhSize", bbox.x, 0, bbox.x + size.minWidth, 0);
-            drawLine(svg, "minWhSize", 0, bbox.y, 0, bbox.y + size.minHeight);
+            if (size.minAnchorWidth === undefined) {
+                // Only one anchor so sizeRight can be drawn like the others
+                drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
+            } else {
+                // Size right is from a second anchor
+                const maw = size.minAnchorWidth;
+                drawLine(svg, "maw", maw, bbox.y, maw, bbox.y + bbox.height);  
+                drawLine(svg, "mawSideSize", maw + size.sizeRight, bbox.y, maw + size.sizeRight, bbox.y + bbox.height);  
+            }
             
             // Draw anchor
             drawLine(svg, "anchor", -1, -1, 1, 1);
@@ -262,8 +260,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         [1, 2].forEach(fullBeams => {  // fullBeams == 0 is actually a flag
             [-2, -1, 0, 1, 2].forEach(brokenBeams => {
                 [0, 1, 2, 10].forEach(dots => {
-                    // TODO: Rename calculateBeamSize to getBeamSize
-                    createSvg("non-symbol-container", drawBeams, calculateBeamSize, [fullBeams, brokenBeams, dots, 0, 0, 10, 0], [fullBeams, brokenBeams, dots]);
+                    createSvg("non-symbol-container", drawBeams, getBeamSize, [fullBeams, brokenBeams, dots, 0, 0, 10, 0], [fullBeams, brokenBeams, dots]);
                 });
             });
         });

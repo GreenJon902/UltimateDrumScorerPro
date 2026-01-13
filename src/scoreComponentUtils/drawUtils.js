@@ -2,28 +2,34 @@
 // The methods in this file understand that they are acting on different types of SVG nodes, however this should call on the svgUtils to create and manipulate the actual nodes.
 // 
 // Just some notes on conventions:
-//     - Padding should be added by the spacing-engine (decode.js). So getSize functions should return the smallest possible box that will contain the svg nodes.
+//     - Padding should be added by the spacing-engine (decode.js). So getSize functions should return the smallest possible box that will contain the svg nodes (apart from where it makes sense to, e.g. beams take into account the stroke-width of stems). 
+//           - However sizes should take into account stroke-width, and therefore bounding boxes should contain every pixel drawn to by the drawFunction.
+//     - Anchor is just a name to refer to the coordinate around which each thing will be drawn, and around which sizes and measured from.
 
 import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
 import {Symbols, SvgInstruction} from "../symbols.js";
 
-export function drawRest(svg, container, ticks, dots, right, centerY) {
+const SW = 1;  // Stroke width is 1mm
+const SR = SW / 2;  // Stroke radius / distance of edge of line from centre of line
+
+export function drawRest(svg, container, ticks, dots, anchorX, anchorY) {  
     // Draws a rest with the given number of ticks and dots to the container.
     // If ticks is zero then a crotchet rest is drawn.
+    // The given anchorX is the right hand side of the rest (this does not include dots, or take stroke width into account). The given anchorY is the Y coordinate to centre the rest on.
     
     if (ticks === 0) {
         // This is a crotchet rest
-        createPath(svg, container, `M${right - 5} ${centerY - 5} l5 5 l-4 2 l4 3`);
-        drawDots(svg, container, dots, right, centerY + 2);
+        createPath(svg, container, `M${anchorX - 5} ${anchorY - 5} l5 5 l-4 2 l4 3`);
+        drawDots(svg, container, dots, anchorX + 1, anchorY + 3);
     } else {
         // This is not a crotchet rest
 
         // Draw rest
         const pathParts = new Array();
         // Rest base:
-        pathParts.push(`M${right} ${centerY - 2 * ticks / 2 - 1.5} l${-2 * ticks - 3} ${2 * ticks + 3}`);
+        pathParts.push(`M${anchorX} ${anchorY - 2 * ticks / 2 - 1.5} l${-2 * ticks - 3} ${2 * ticks + 3}`);
         // Rest ticks:
-        pathParts.push(`M${right - 2} ${centerY - 2 * ticks / 2 + 2 - 1.5}`);
+        pathParts.push(`M${anchorX - 2} ${anchorY - 2 * ticks / 2 + 2 - 1.5}`);
         for (let n=0; n<ticks; n++) {
             pathParts.push("l-2 -2 m0 4");
         }
@@ -32,91 +38,85 @@ export function drawRest(svg, container, ticks, dots, right, centerY) {
         createPath(svg, container, path);
         
         // Draw dots
-        drawDots(svg, container, dots, right - 2 * ticks + 1, centerY + 2 * ticks / 2 - 1);
+        drawDots(svg, container, dots, anchorX - 2 * ticks + 2, anchorY + 2 * ticks / 2);
     }
 }
 export function getRestSize(ticks, dots) {
     // Gets the size of a rest with the given number of ticks and dots.
     // If ticks is zero then a crotchet rest is used.
-    // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float}.
+    // 
+    // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float} which are the distances this extends from the anchor-position (see corresponding draw function).
+    // The side-sizes take into account the stroke width (i.e. Every pixel drawn in this rest will be within this bounding box).
     
     const dotSize = getDotsSize(dots);
 
     if (ticks === 0) {
         // This is a crotchet rest
-        return {sizeLeft: 5, sizeUp: 5, sizeRight: dotSize.width, sizeDown: 5};  // The dots' height should be contained within the height of the rest
+        return {
+            sizeLeft: 5 + SR,
+            sizeRight: Math.max(SR, 1 + dotSize.sizeRight),  // We want the rightmost of the right-of-rest or right-of-dots
+            sizeUp: 5 + SR,
+            sizeDown: 5 + SR  // The dots' height should be contained within the height of the rest
+        };   
     } else {
         // This is not a crotchet rest
         return {
-            sizeLeft: 2  * ticks + 3, 
-            sizeUp: 2 * ticks / 2 + 1.5, 
-            sizeRight: Math.max(0, -2 * ticks + 1 + dotSize.width), // Max of right of rest or right of dots
-            sizeDown: 2 * ticks / 2 + 1.5
+            sizeLeft: 2  * ticks + 3 + SR, 
+            sizeRight: Math.max(SR, -2 * ticks + 2 + dotSize.sizeRight), // Max of right-of-rest or right-of-dots
+            sizeUp: 2 * ticks / 2 + 1.5 + SR, 
+            sizeDown: 2 * ticks / 2 + 1.5 + SR
         };
     }
 }
 
 
 
-export function drawDots(svg, container, dots, x, y) {
+export function drawDots(svg, container, dots, anchorX, anchorY) {
     // Draws the given number of dots to the container.
-    // x and y are the top-left corner of the bounding box containing the dots as returned by getDotsSize.
+    // The anchorX and anchorY are the centre of the first/left-most dot.
     // 
-    // Specifically: We draw dots of radius 1mm. Between adjacent dots we have a spacing of 2mm.
+    // Specifically: We draw dots of radius 1mm, between which we have a spacing of 2mm. However you can use getDotsSize to get a rectangular bounding box.
 
     for (let n=0; n<dots; n++) {
-        createCircle(svg, container, 1, x + 1 + 4*n, y + 1);
+        createCircle(svg, container, 1, anchorX + 4*n, anchorY);
     }
 }
 export function getDotsSize(dots) {
     // Gets the size of the given number of dots when rendered together.
-    // Returns {width: float, height: float}.
-    if (dots === 0) return {width: 0, height: 0};  // No dots so return no size
+    // 
+    // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float} which are the distances this extends from the anchor-position (see corresponding draw function).
+    // Every pixel drawn will be within this bounding box.
+    // You can assume that sizeLeft, sizeUp, and sizeDown will be 1 whenever there are dots, and 0 when there dots == 0.
+    
+    if (dots === 0) return {sizeLeft: 0, sizeRight: 0, sizeUp: 0, sizeDown: 0};  // No dots so return no size
+    
     return {
-        width: 2 * (dots + (dots - 1)),  // Each dot is 2mm wide, and between each dot we have 2mm gap.
-        height: 2
+        sizeLeft: 1,
+        sizeRight: 4*(dots-1) + 1,  // For n dots we draw (n-1) times: 1mm right of dot, 2mm spacing, 1mm left of next dot. Then add one more for the right of the last dot
+        sizeUp: 1,
+        sizeDown: 1
     }; 
 }
 
-export function calculateBeamSize(fullBeams, brokenBeams, dots) {
-    // Calculates the height and minimum width required to draw the specified beams and dots after stem.
-    // BrokenBeams is the same as specified in RenderInstruction.
-    // minWidth is the minimum stem to stem spacing.
-    // returns {minWidth: float, height: float}
-    
-    const brokenBeamWidth = (brokenBeams != 0) ? 7 : 0;  // 7 = 5 for beam + 2 padding
-    const dotSize = getDotsSize(dots);
 
-    let minWidth;
-    let height;
-    if (brokenBeams < 0) {
-        // Dots below broken beams
-        minWidth = Math.max(brokenBeamWidth, dotSize.width)
-        height = (fullBeams + brokenBeams) * 2 + dotSize.height;
-    } else {
-        // Dots on same level as broken beams
-        minWidth = brokenBeamWidth + dotSize.width;
-        height = fullBeams * 2 + Math.max(brokenBeams * 2, dotSize.height);
-    }
-    
-    return {minWidth, height};
-}
-
-export function drawBeams(svg, container, fullBeams, brokenBeams, dots, startX, startY, endX, endY) {
-    // Draws the given beams and dots to the container. The top beam will go from (startX, startY) to (endX, endY) and subsequent beams will be placed below this.
+export function drawBeams(svg, container, fullBeams, brokenBeams, dots, anchor1X, anchor1Y, anchor2X, anchor2Y) {
+    // Draws the given beams and dots to the container. The top beam will go from (anchor1X, anchor1Y) to (anchor2X, anchor2Y) and subsequent beams will be placed below this. These anchors are where it attaches to the stem, and should be the actual stem coordinate (aka not adjusted for stem stroke width).
+    // Anchor1X should be left-of/smaller-than anchor2X.
     // BrokenBeams is the same as specified in RenderInstruction.
+
+    const beamCount = fullBeams + Math.abs(brokenBeams);  // Total number of beams and broken-beams
 
     const pathParts = new Array();
 
     // Create path for full beams
     for (let n=0; n<fullBeams; n++) {
-        pathParts.push(`M${startX} ${startY + 2*n} L${endX} ${endY + 2*n}`);
+        pathParts.push(`M${anchor1X} ${anchor1Y + 2*n} L${anchor2X} ${anchor2Y + 2*n}`);
     }
     // Create path for broken beams
-    for (let n=fullBeams; n<fullBeams + Math.abs(brokenBeams); n++) {
-        const x1 = (brokenBeams < 0) ? startX : endX - 5;
-        const x2 = (brokenBeams < 0) ? startX + 5 : endX;
-        pathParts.push(`M${x1} ${startY + 2*n} L${x2} ${endY + 2*n}`);
+    for (let n=fullBeams; n<beamCount; n++) {
+        const x1 = (brokenBeams < 0) ? anchor1X : anchor2X - 5;
+        const x2 = (brokenBeams < 0) ? anchor1X + 5 : anchor2X;
+        pathParts.push(`M${x1} ${anchor1Y + 2*n} L${x2} ${anchor2Y + 2*n}`);
     }
     
     // Create actual node
@@ -124,20 +124,47 @@ export function drawBeams(svg, container, fullBeams, brokenBeams, dots, startX, 
     createPath(svg, container, path);
     
     // Draw dots
-    if (brokenBeams < 0) {
-        drawDots(svg, container, dots, startX, startY + 2 * (fullBeams + brokenBeams));
+    const dotsSize = getDotsSize(dots);
+    const dotsAnchorX = (anchor1X + SR) + 1 + dotsSize.sizeLeft;  // (right-of-stem) + 1mm padding + sizeLeft
+    if (brokenBeams < 0 || dotsAnchorX + dotsSize.sizeRight + 1 > anchor2X - 5 - SR) {  // If brokenBeams on left or dots won't fit under right brokenBeams
+        drawDots(svg, container, dots, dotsAnchorX, anchor1Y + (SR + 1 + SR)*(beamCount-1) + SR + 2);  // We want the top of the dots to be one below the bottom of the beam. The stroke width of the beam is 1mm, so its edge is 0.5mm from the y level of the beam
     } else {
-        drawDots(svg, container, dots, startX, startY + 2 * fullBeams);
+        drawDots(svg, container, dots, dotsAnchorX, anchor1Y + 2 * fullBeams + 1);
     }
 }
+export function getBeamSize(fullBeams, brokenBeams, dots) {
+    // Calculates the height and minimum width required to draw the specified beams and dots after stem.
+    // BrokenBeams is the same as specified in RenderInstruction.
+    // 
+    // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, minAnchorWidth: float}:
+    //     sizeLeft is measured from the anchor1/the-left-anchor, and sizeRight from anchor2/the-right-anchor.
+    //     sizeUp is measured from the highest anchor (as they may be slanted).
+    //     sizeDown is measured from the lowest anchor (as they may be slanted) (this may be slightly larger than necessary in the case that broken beams are on the side of the higher anchor).
+    //     minAnchorWidth is the minimum distance between the anchors (so the distance between stem's-x-coordinate (this function already accounts for the stems stroke width)).
+    // Every pixel drawn will be within this bounding box.
+    // You can assume sizeLeft, sizeUp and sizeRight will always be STROKE_WIDTH/2==1mm.
+    
+    const brokenBeamWidth = (brokenBeams != 0) ? 5 + SR + 1 : 0;  // (5+SR) for beam + 1 padding
+    const dotsSize = getDotsSize(dots);
 
-export function getContractSize(ratio, hooks) {
-    // Calculates the minimum width, and the sizeUp and sizeDown, of a contract.
-    // returns {minWidth: float, sizeUp: float, sizeDown: float}.
-
-    // TODO: This properly
-    return {minWidth: 5, sizeUp: 2.5, sizeDown: 2.5};
+    // TODO: Figure out if dots are below or on same level as broken-beams (we'll need to know final width?)
+    // For now assume they are underneath broken beams
+    const minAnchorWidth = Math.max(
+        SR + 1 + SR,  // If no dots and no broken-beams, then say 1mm between inside edges of stems
+        brokenBeamWidth + SR,  // + SR for stroke width of stem on right side
+        SR + 1 + dotsSize.sizeLeft + dotsSize.sizeRight + 1 + SR  // Add padding of 1mm between inside edges of stems and outside edges of dots, and account of SR of stem on each side
+    );  
+    const sizeDown = 2*(fullBeams+Math.abs(brokenBeams)-1) + SR + ((dots !== 0) ? 1 : 0) + dotsSize.sizeUp + dotsSize.sizeDown;  // We have 2 between the coordinates the beams are drawn at, then SR of bottom beam, then 1mm padding (if there are dots), then height of dots (when applicable, will be zero otherwise)
+    
+    return {
+        sizeLeft: SR,
+        sizeRight: SR,
+        sizeUp: SR,
+        sizeDown: sizeDown,
+        minAnchorWidth: minAnchorWidth
+    };
 }
+
 export function drawContract(svg, container, ratio, hooks, startX, endX, centerY) {
     // Draws the given contract to the container.
     
@@ -155,35 +182,53 @@ export function drawContract(svg, container, ratio, hooks, startX, endX, centerY
     // Create text
     createCenteredText(svg, container, ratio, centerX, centerY);
 }
+export function getContractSize(ratio, hooks) {
+    // Calculates the minimum width, and the sizeUp and sizeDown, of a contract.
+    // returns {minWidth: float, sizeUp: float, sizeDown: float}.
 
-export function getFlagSize(flags, dots) {
-    // Calculates the size of the flags and dots when drawn after a stem.
-    // This returns {width: float, height: float}
-    
-    const flagWidth = (flags != 0) ? 5 : 0; 
-    const dotWidth = getDotsSize(dots).width;
-
-    const maxWidth = Math.max(flagWidth, dotWidth);
-    
-    return {width: maxWidth, height: 10};  // TODO: Add proper height calculation
+    // TODO: This properly
+    return {minWidth: 5, sizeUp: 2.5, sizeDown: 2.5};
 }
 
-export function drawFlags(svg, container, flags, dots, flagStartX, flagStartY) {
-    // Draws the given number of flags and dots to the container.
-    // The first flag will be drawn at (flagStartX, flagStartY) and subsequent flags will be drawn below.
+export function drawFlags(svg, container, flags, dots, anchorX, anchorY) {
+    // Draws the given number of flags and dots to the container. The number of flags can be zero, in which case this is just a stem.
+    // The first flag will be drawn descending to the right from (anchorX, anchorY) and subsequent flags will be drawn below.
+    // This anchor position should be the stem-coordinate (so should not take into account stem stroke-width).
 
     // Draw flags
     if (flags !== 0) {  // If there are no flags, then this will just create an empty path
         const pathParts = new Array();
         for (let n=0; n<flags; n++) {
-            pathParts.push(`M${flagStartX} ${flagStartY + 2 * n} l5 2`);
+            pathParts.push(`M${anchorX} ${anchorY + 2 * n} l5 2`);
         }
         const path = pathParts.join(" ");
         createPath(svg, container, path);
     }
     
     // Draw dots
-    drawDots(svg, container, dots, flagStartX, flagStartY + 2 * flags)
+    const dotsSize = getDotsSize(dots);
+    const dotsAnchorX = (anchorX + SR) + 1 + dotsSize.sizeLeft;  // (right-of-stem) + 1mm padding + sizeLeft
+    const dotsAnchorY = anchorY + 2 * flags + SR + 0.5 + dotsSize.sizeUp;  // Bottom of flags + 1mm padding + radius of dots. We keep this padding even if there are no flags cause I think it makes sense
+    drawDots(svg, container, dots, dotsAnchorX, dotsAnchorY);
+}
+export function getFlagSize(flags, dots) {
+    // Calculates the size of the flags and dots when drawn after a stem.
+    // 
+    // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float} which are the distances this extends from the anchor-position (see corresponding draw function).
+    // Every pixel drawn will be within this bounding box.
+    
+    const flagRight = (flags != 0) ? 5 + SR : 0; 
+    const dotsSize = getDotsSize(dots);
+    const dotsRight = (dots !== 0) ? SR + 1 + (dotsSize.sizeLeft + dotsSize.sizeRight) : 0;  // SR of stem + 1mm padding + width of dots
+
+    const maxRight = Math.max(flagRight, dotsRight);
+    
+    return {
+        sizeLeft: SR,
+        sizeRight: maxRight,
+        sizeUp: SR,
+        sizeDown: 2 * flags + SR + ((dots !== 0) ? (0.5 + dotsSize.sizeUp + dotsSize.sizeDown) : 0)
+    };
 }
 
 

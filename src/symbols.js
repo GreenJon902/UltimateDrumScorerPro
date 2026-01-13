@@ -735,7 +735,7 @@ export class Symbols {
         throw "SymbolId does not exist, or is not decoration";
     }
     
-    static getDrumSizeLeft(symbolId) {
+    static getDrumSizeLeft(symbolId) {  // TODO: Should these functions account for stroke width?
         // Returns horizontal distance a drum spans on the left side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeLeft;
         throw "Symbol does not exist, or is not a drum";

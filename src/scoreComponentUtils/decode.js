@@ -7,7 +7,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize, getFlagSize, getDotsSize, calculateBeamSize, getContractSize} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getContractSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
@@ -164,7 +164,7 @@ function calculateInstructionX(instr, trackers) {
         
         // Select the (minimum) width of the rhythm part after the stem
         const ryhthmWidthPart = {
-            [RenderInstruction.BEAM]: () => calculateBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minWidth,
+            [RenderInstruction.BEAM]: () => getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minWidth,
             [RenderInstruction.BEAM_END]: () => getDotsSize(instr.dots).width,
             [RenderInstruction.FLAG]: () => getFlagSize(instr.flags, instr.dots).width
         }[instr.type]();  // Do as lambda functions so we only call the one we want
