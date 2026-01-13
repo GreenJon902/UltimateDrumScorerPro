@@ -171,7 +171,7 @@ export function drawFlags(svg, container, flags, dots, flagStartX, flagStartY) {
 
 
 const SYMBOL_DEFINITIONS = "symbol_definitions";  // The definitionType when handling definitions relating to symbols
-export function drawSymbolAt(svg, container, symbolId, x, y) {
+export function drawSymbolAt(svg, container, symbolId, x, y) {  // TODO: Set up remaining SVGInstruction variables (e.g. size_..., width, height, drum-center-y and that innit)
     // Draws the symbol with the given id to the given node (container) at the given coordinates.
     // Any required definitions will be added to the given svg. It is expected that cont is a (indirect) child of svg.
     
