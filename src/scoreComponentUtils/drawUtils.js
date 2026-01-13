@@ -1,5 +1,8 @@
 // This file contains methods related to drawing (and calculating sizes) of specific structures in a score section.
 // The methods in this file understand that they are acting on different types of SVG nodes, however this should call on the svgUtils to create and manipulate the actual nodes.
+// 
+// Just some notes on conventions:
+//     - Padding should be added by the spacing-engine (decode.js). So getSize functions should return the smallest possible box that will contain the svg nodes.
 
 import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
 import {Symbols, SvgInstruction} from "../symbols.js";
@@ -29,19 +32,27 @@ export function drawRest(svg, container, ticks, dots, right, centerY) {
         createPath(svg, container, path);
         
         // Draw dots
-        drawDots(svg, container, dots, right - 2 * ticks, centerY + 2 * ticks / 2 - 2);
+        drawDots(svg, container, dots, right - 2 * ticks + 1, centerY + 2 * ticks / 2 - 1);
     }
 }
 export function getRestSize(ticks, dots) {
     // Gets the size of a rest with the given number of ticks and dots.
     // If ticks is zero then a crotchet rest is used.
     // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float}.
+    
+    const dotSize = getDotsSize(dots);
+
     if (ticks === 0) {
         // This is a crotchet rest
-        return {sizeLeft: 5, sizeUp: 5, sizeRight: 0, sizeDown: 5};
+        return {sizeLeft: 5, sizeUp: 5, sizeRight: dotSize.width, sizeDown: 5};  // The dots' height should be contained within the height of the rest
     } else {
-        // This is a crotchet rest
-        return {sizeLeft: 2  * ticks + 3, sizeUp: 2 * ticks / 2 + 1.5, sizeRight: 0, sizeDown: 2 * ticks / 2 + 1.5};
+        // This is not a crotchet rest
+        return {
+            sizeLeft: 2  * ticks + 3, 
+            sizeUp: 2 * ticks / 2 + 1.5, 
+            sizeRight: Math.max(0, -2 * ticks + 1 + dotSize.width), // Max of right of rest or right of dots
+            sizeDown: 2 * ticks / 2 + 1.5
+        };
     }
 }
 
@@ -49,16 +60,22 @@ export function getRestSize(ticks, dots) {
 
 export function drawDots(svg, container, dots, x, y) {
     // Draws the given number of dots to the container.
-    // StartX and startY is the top-left corner of the bounding box containing the dots as returned by getDotsSize.
+    // x and y are the top-left corner of the bounding box containing the dots as returned by getDotsSize.
+    // 
+    // Specifically: We draw dots of radius 1mm. Between adjacent dots we have a spacing of 2mm.
 
     for (let n=0; n<dots; n++) {
-        createCircle(svg, container, 1, x + 2 + 4*n, y + 2);
+        createCircle(svg, container, 1, x + 1 + 4*n, y + 1);
     }
 }
 export function getDotsSize(dots) {
     // Gets the size of the given number of dots when rendered together.
     // Returns {width: float, height: float}.
-    return {width: dots * 4, height: 4};
+    if (dots === 0) return {width: 0, height: 0};  // No dots so return no size
+    return {
+        width: 2 * (dots + (dots - 1)),  // Each dot is 2mm wide, and between each dot we have 2mm gap.
+        height: 2
+    }; 
 }
 
 export function calculateBeamSize(fullBeams, brokenBeams, dots) {
