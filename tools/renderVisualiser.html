@@ -47,6 +47,15 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                 fill: rgba(0, 0, 0, 0.2);
             }
             
+            .grid {
+                stroke-width: 1px;
+                stroke: rgba(0, 0, 0, 0);
+            }
+            
+            svg:hover .grid {
+                stroke: rgba(0, 0, 0, 0.1);
+            }
+            
             
             /* CSS for the actual symbols and stuff */
             svg > g {
@@ -151,6 +160,28 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             return {svg, container};
         }
         
+        function drawGrid(svg, className, bbox) {
+            // Draws a path to the svg with the given className.
+            // The path will be all cardinal lines with integer coordinates contained within bbox.
+
+            // Generate lines
+            const pathParts = new Array();
+            for (let x=Math.ceil(bbox.x); x<Math.floor(bbox.x + bbox.width); x++) {
+                pathParts.push(`M${x} ${bbox.y} l0 ${bbox.height}`);
+            }
+            for (let y=Math.ceil(bbox.y); y<Math.floor(bbox.y + bbox.height); y++) {
+                pathParts.push(`M${bbox.x} ${y} l${bbox.width} 0`);
+            }
+            const path = pathParts.join(" ");
+            
+            // Create node
+            const node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            node.classList.add(className);
+            node.setAttribute("d", path);
+            svg.appendChild(node);
+
+        }
+        
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
             // drawFunc: Callable[svg, container, ...drawArgs]
             // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight}
@@ -201,6 +232,9 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             svg.setAttribute("viewBox", `${newBbox.x} ${newBbox.y} ${newBbox.width} ${newBbox.height}`);
             svg.setAttribute("width", `${newBbox.width}mm`);
             svg.setAttribute("height", `${newBbox.height}mm`);
+            
+            // Draw grid
+            drawGrid(svg, "grid", newBbox);
         }
         
         
