@@ -1,6 +1,8 @@
 <!--
 This page is used to visualise (for testing purposes) the results of the functions in src/scoreComponentUtils/drawUtils.js (including each symbol).
 It will display both the svg, and the returned sizing information.
+
+Just a node about scope: This can be considered akin to a unit test. I.E.: the point is not to test the whole spacing-engine (currently decode.js), instead it is purely about checking the reported information on individual parts. (So a single drum, not multiple drums or drums and beams at the same time).
 -->
 
 <!DOCTYPE html>
@@ -8,18 +10,48 @@ It will display both the svg, and the returned sizing information.
     <head>
         <title>Visualiser</title>
         <style>
+            p {
+                white-space: pre-line;
+            }
+            
             svg {
                 overflow: visible;
-                border: 1px solid;
-                border-color: rgba(255, 0, 0, 1);
-                stroke-linecap: round;
-                stroke-linejoin: round;
+                margin: 0.3cm;
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+
+            /* CSS for sizing information */
+            svg > path {
+                vector-effect: non-scaling-stroke;
+                stroke-width: 1.5px;
             }
 
             .sideSize {
                 stroke: rgba(0, 0, 255, 0.5);
-                stroke-width: 2px;
-                
+            }
+            
+            .whSize {
+                stroke: rgba(0, 128, 0, 0.5);
+            }
+            
+            .minWhSize {
+                stroke: rgba(0, 128, 0, 0.5);
+                stroke-dasharray: 4;
+            }
+            
+            .anchor {
+                stroke: rgba(255, 0, 0, 0.5);
+            }
+            
+            .backgroundBox {
+                fill: rgba(0, 0, 0, 0.2);
+            }
+            
+            
+            /* CSS for the actual symbols and stuff */
+            svg > g {
+                stroke-linecap: round;
+                stroke-linejoin: round;
             }
 
             g path {
@@ -44,33 +76,79 @@ It will display both the svg, and the returned sizing information.
     </head>
     <body>
         <p>
-            The black line is the actual drawn svg.
-            The red line is the JS calculated bbox for the svg (svg.bbox()).
-            The blue lines are the sideSizes.
+            The black line is the actual drawn svg.  
+            
+            The red "X" is the anchor / origin (In these visualisations, this will always be (0,0)).
+            
+            The blue lines are the sideSizes (sizeLeft, etc...). The lengths of these lines do not matter, only the perpendicular distance to the anchor.
+            The green lines are the whSizes (width, height). The lengths of these lines are the important detail, the other coordinate is likely just 0.
+            
+            A coloured line being dashed indicates it is a minimum.
+            
+            The light gray background is the background of the svg itself.
+            The darg gray background is the JS calculated bbox of just the symbol / resultOfDrawFunction.
         </p>
         
         <h1>Non-Symbols</h1>
         <div id="non-symbol-container"></div>
         
         <h1>Symbols</h1>
-        <h2>Parts</h2>
-        <div id="symbol-parts-container"></div>
         <h2>Drums</h2>
         <div id="symbol-drums-container"></div>
         <h2>Decorations</h2>
-        <div id="symbol-deocrations-container"></div>
+        <div id="symbol-decorations-container"></div>
 
     </body>
     <script type="module">
-        import {drawRest, getRestSize} from "../src/scoreComponentUtils/drawUtils.js";
+        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, calculateBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawSymbolAt} from "../src/scoreComponentUtils/drawUtils.js";
+        import {Symbols} from "../src/symbols.js";
         
         function drawLine(svg, className, x1, y1, x2, y2) {
             // Draws the given line. But if any of the given coordinates are undefined then no line is drawn.
+            
+            // Check if coords are all defined
+            if (new Set([x1, y1, x2, y2]).intersection(new Set([NaN, undefined, null])).size !== 0) return;
+
+            // Draw line
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("vector-effect", "non-scaling-stroke");  // So that the stroke width is actually 1px
             path.classList.add(className);
             path.setAttribute("d", `M${x1} ${y1} L${x2} ${y2}`);
             svg.appendChild(path);
+        }
+        
+        function drawSquare(svg, className, x, y, width, height) {
+            // Draws the given square to the given section.
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.classList.add(className);
+            rect.setAttribute("x", x);
+            rect.setAttribute("y", y);
+            rect.setAttribute("width", width);
+            rect.setAttribute("height", height);
+            svg.appendChild(rect);
+        }
+        
+        function createTitle(svg, drawFunc, sizeFunc, drawArgs, sizeArgs) {
+            // Creates a title (tooltip) node inside the given svg for the given functions and arguements.
+            
+            const regex = /^(?:function )?(.*?\(.+?\))/;  // Gets the function name (if it's present) and arguments
+            const drawFuncString = regex.exec(drawFunc.toString())[1];
+            const sizeFuncString = regex.exec(sizeFunc.toString())[1];
+
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent = `${drawFuncString} ${sizeFuncString} [${drawArgs.join(", ")}] [${sizeArgs.join(", ")}]`;
+            svg.appendChild(title);
+        }
+        
+        function createSvgAndContainer(section) {
+            // Creates a SVG node in the div who's id=`${section}`.
+            // Then creates a g node inside the svg.
+            // This returns {svg, container} where container is the g node.
+            
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const container = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            svg.appendChild(container);
+            document.getElementById(section).appendChild(svg);
+            return {svg, container};
         }
         
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
@@ -80,33 +158,127 @@ It will display both the svg, and the returned sizing information.
             // sizeArgs: Array
             //
             // Creates an svg in the div with id=`${section}`, then uses drawFunc on this svg. This will also draw the bounding box given by the sizeFunc, as well as drawing the bounding box that is calculated by JS.
+            // The result of drawFunc will be inside a group, all size-lines will be paths drawn as direct children of the svg nodes.
+            //
+            // The svg will be given a tooltip to report the arguments that were used when generating it.
             
             // Create container
-            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            const container = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            svg.appendChild(container);
-            document.getElementById(section).appendChild(svg);
+            const {svg, container} = createSvgAndContainer(section);
+            createTitle(svg, drawFunc, sizeFunc, drawArgs, sizeArgs);
+            
             
             // Draw actual thing
             drawFunc(svg, container, ...drawArgs);  // Draw this to the container (for css selector reasons)
             
-            // Set viewbox and svg size
-            // This needs to be after the svg is added to the document
-            // This should be done before the sizing calculation visualisation
+            // Draw js calculated bbox
             const bbox = svg.getBBox();
-            svg.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
-            svg.setAttribute("width", `${bbox.width}mm`);
-            svg.setAttribute("height", `${bbox.height}mm`);
+            drawSquare(svg, "backgroundBox", bbox.x, bbox.y, bbox.width, bbox.height);
             
-            // Draw size calculations
+            
+            // Draw size calculations ---
             const size = sizeFunc(...sizeArgs);
+            // The line drawing function will ignore any calls with undefined args, so we can just call it for each size type, even if that is not actually defined
+            // Do sideSizes
             drawLine(svg, "sideSize", -size.sizeLeft, bbox.y, -size.sizeLeft, bbox.y + bbox.height);  // Draw this to the svg (for css selector reasons)
             drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
             drawLine(svg, "sideSize", bbox.x, -size.sizeUp, bbox.x + bbox.width, -size.sizeUp);  
             drawLine(svg, "sideSize", bbox.x, size.sizeDown, bbox.x + bbox.width, size.sizeDown);  
+            // Do whSizes
+            drawLine(svg, "whSize", bbox.x, 0, bbox.x + size.width, 0);
+            drawLine(svg, "whSize", 0, bbox.y, 0, bbox.y + size.height);
+            // Do minWhSizes
+            drawLine(svg, "minWhSize", bbox.x, 0, bbox.x + size.minWidth, 0);
+            drawLine(svg, "minWhSize", 0, bbox.y, 0, bbox.y + size.minHeight);
+            
+            // Draw anchor
+            drawLine(svg, "anchor", -1, -1, 1, 1);
+            drawLine(svg, "anchor", 1, -1, -1, 1);
+
+
+            // Set viewbox and svg size
+            // This needs to be after the svg is added to the document
+            const newBbox = svg.getBBox();
+            svg.setAttribute("viewBox", `${newBbox.x} ${newBbox.y} ${newBbox.width} ${newBbox.height}`);
+            svg.setAttribute("width", `${newBbox.width}mm`);
+            svg.setAttribute("height", `${newBbox.height}mm`);
         }
         
-        createSvg("non-symbol-container", drawRest, getRestSize, [0, 0, 0, 0], [0, 0]);
+        
+        function createBr(section) {
+            // Adds a break to the given section.
+            document.getElementById(section).appendChild(document.createElement("br"));
+        }
+        
+        
+        // Visualise dots
+        [0, 1, 2, 10].forEach(dots => {
+            createSvg("non-symbol-container", drawDots, getDotsSize, [dots, 0, 0], [dots]);
+        });
+        createBr("non-symbol-container");
+
+        // Visualise rests
+        [0, 1, 2, 10].forEach(ticks => {
+            [0, 1, 2, 10].forEach(dots => {
+                createSvg("non-symbol-container", drawRest, getRestSize, [ticks, dots, 0, 0], [ticks, dots]);
+            });
+        });
+        createBr("non-symbol-container");
+        
+        // Visualise beams
+        [1, 2].forEach(fullBeams => {  // fullBeams == 0 is actually a flag
+            [-2, -1, 0, 1, 2].forEach(brokenBeams => {
+                [0, 1, 2, 10].forEach(dots => {
+                    // TODO: Rename calculateBeamSize to getBeamSize
+                    createSvg("non-symbol-container", drawBeams, calculateBeamSize, [fullBeams, brokenBeams, dots, 0, 0, 10, 0], [fullBeams, brokenBeams, dots]);
+                });
+            });
+        });
+        createBr("non-symbol-container");
+  
+        // Visualise contracts
+        [0, 1, 123].forEach(ratio => {
+            [false, true].forEach(hooks => {
+                createSvg("non-symbol-container", drawContract, getContractSize, [ratio, hooks, 0, 30, 0], [ratio, hooks]);
+            });
+        });
+        createBr("non-symbol-container");
+        
+        // Visualise flags
+        [0, 1, 2].forEach(flags => {  // flags == 0 is a stem, a flag instruction is used for stems so that makes sense to test here
+            [0, 1, 2, 10].forEach(dots => {
+                createSvg("non-symbol-container", drawFlags, getFlagSize, [flags, dots, 0, 0], [flags, dots]);
+            });
+        });
+        createBr("non-symbol-container");
+        
+        // Visualise stems
+        // I have decided to omit visualising stems, as this seems uneccesary, and (at the time of writing) they have no sizing calculations
+        
+        
+        // Visualise drums
+        const drumSizeGetter = (drumId) => {
+            return {
+                sizeLeft: Symbols.getDrumSizeLeft(drumId),
+                sizeRight: Symbols.getDrumSizeRight(drumId),
+                sizeUp: Symbols.getDrumSizeUp(drumId),
+                sizeDown: Symbols.getDrumSizeDown(drumId)
+            };
+        };
+        Symbols.listDrums().forEach(drumId => {
+            createSvg("symbol-drums-container", drawSymbolAt, drumSizeGetter, [drumId, 0, 0], [drumId]);
+        });
+        
+        // Visualise decorations
+        // TODO: Paramaterise visualisations with different drum / bar heights
+        const decorationSizeGetter = (decoId) => {
+            return {
+                width: Symbols.getDecorationWidth(decoId),
+                minHeight: Symbols.getDecorationMinHeight(decoId)
+            };
+        };
+        [...Symbols.listLeftDecorations(), ...Symbols.listRightDecorations()].forEach(decoId => {
+            createSvg("symbol-decorations-container", drawSymbolAt, decorationSizeGetter, [decoId, 0, 0], [decoId]);
+        });
 
     </script>
-</html>
+</html
