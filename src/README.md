@@ -50,7 +50,7 @@ The elements themselves may be constructed of multiple pieces of data that are a
 `instruction...`: `<instruction-name>,<instruction-args...>`
 The instruction arguements depend on the name. These are the instructions:  
 * `path,<path-string: string>` - Draws a path. Given string is as per the SVG spec.  
-* `circle,<cx>,<cy>,<r>` - Draws a circle with centre `(cx, cy)` and radius `r`.  
+* `circle,<cx>,<cy>,<r>` - Draws a unfilled-circle with centre `(cx, cy)` and radius `r`.  
 * `use,<symbol-id>` - Uses adds the instructions for another symbol in this location. This could be a drum, decoration or part. This ID must exist.  
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
