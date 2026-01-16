@@ -1,3 +1,6 @@
+### Hey I'm currently developing in the ![v4-stage2](https://github.com/GreenJon902/UltimateDrumScorerPro/tree/v4-stage2) branch!
+
+
 [![CodeFactor](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro/badge)](https://www.codefactor.io/repository/github/greenjon902/ultimatedrumscorerpro)
 
 A) I'm pretty sure good drum score programs just don't exist... if they do I can't find one that fits my needs (web-based, no account needed, can do multipage projects, supports all the cymbals and drums I need).  
