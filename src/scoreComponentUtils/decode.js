@@ -10,6 +10,22 @@ import {RenderInstruction} from "./compile.js";
 import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getContractSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
+function getHeight(sizeInfo) {
+    // sizeInfo: {sizeLeft: float, sizeUp: float, sizeDown: float, sizeRight: float}
+    // returns: float
+    //
+    // Returns sizeUp + sizeDown.
+    return sizeInfo.sizeUp + sizeInfo.sizeDown;
+}
+
+function getWidth(sizeInfo) {
+    // sizeInfo: {sizeLeft: float, sizeUp: float, sizeDown: float, sizeRight: float}
+    // returns: float
+    //
+    // Returns sizeUp + sizeDown.
+    return sizeInfo.sizeLeft + sizeInfo.sizeRight;
+}
+
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
     // 
@@ -164,9 +180,9 @@ function calculateInstructionX(instr, trackers) {
         
         // Select the (minimum) width of the rhythm part after the stem
         const ryhthmWidthPart = {
-            [RenderInstruction.BEAM]: () => getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minWidth,
-            [RenderInstruction.BEAM_END]: () => getDotsSize(instr.dots).width,
-            [RenderInstruction.FLAG]: () => getFlagSize(instr.flags, instr.dots).width
+            [RenderInstruction.BEAM]: () => getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minAnchorWidth,
+            [RenderInstruction.BEAM_END]: () => getWidth(getDotsSize(instr.dots)),
+            [RenderInstruction.FLAG]: () => getWidth(getFlagSize(instr.flags, instr.dots))
         }[instr.type]();  // Do as lambda functions so we only call the one we want
         
         newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
@@ -213,13 +229,13 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
         // If there are no BEAM, FLAGs, or BEAM_ENDs then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.BEAM)
-            .map(instr => calculateBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).height),
+            .map(instr => getHeight(getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots))),
         ...instructions
             .filter(instr => instr.type === RenderInstruction.BEAM_END)
-            .map(instr => calculateBeamSize(0, 0, instr.dots).height),
+            .map(instr => getHeight(getBeamSize(0, 0, instr.dots))),
         ...instructions
             .filter(instr => instr.type === RenderInstruction.FLAG)
-            .map(instr => getFlagSize(instr.flags, instr.dots).height)
+            .map(instr => getHeight(getFlagSize(instr.flags, instr.dots)))
     );
     const maxDecorationHeight = Math.max(
         0,  // If there are no decorations then take 0
@@ -249,15 +265,13 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
         0,  // If there are no contracts then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.CONTRACT_START)  // Only contract starts store data about the ratio and hooks
-            .map(instr => getContractSize(instr.ratio, instr.hooks))
-            .map(size => size.sizeUp + size.sizeDown)
+            .map(instr => getHeight(getContractSize(instr.ratio, instr.hooks)))
     );
     const maxRestHeight = Math.max(
         0,  // If there are no rests then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.REST)
-            .map(instr => getRestSize(instr.ticks, instr.dots))
-            .map(size => size.sizeUp + size.sizeDown)
+            .map(instr => getHeight(getRestSize(instr.ticks, instr.dots)))
     );
 
 
