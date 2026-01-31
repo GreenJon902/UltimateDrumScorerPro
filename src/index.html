@@ -166,7 +166,9 @@
 
             } else if (event.button == 0) {  // If the target is not the container then a component was clicked on. And also is a left-click
                 const cardinal = event.shiftKey;
-                DragManager.startDrag(cardinal);
+                const svg = getSvgFromSvgOrChild(event.target);
+                const compId = svg.dataset.componentId;  // Id of the component that was clicked on
+                DragManager.startDrag(cardinal, compId);
             }
         }
         window.handleCompContMouseMove = function(event) {
@@ -207,10 +209,7 @@
                 
                 } else {  // If the target is not the container then a component was clicked on.
                     
-                    // The target may be the svg or a child of the svg
-                    // Get the target, or the containing svg of the target
-                    const svg = (event.target.nodeName.toUpperCase() === "SVG") ? event.target : event.target.ownerSVGElement;  
-                    
+                    const svg = getSvgFromSvgOrChild(event.target);
                     const compId = svg.dataset.componentId;  
                     const multiselect = event.shiftKey;
                     SelectionManager.toggleSelectionState(compId, multiselect);
@@ -236,7 +235,10 @@
         }
         
 
-        
+        function getSvgFromSvgOrChild(node) {
+            // If node is a svg then it is returned, otherwise that nearest parent svg is returned.
+            return (node.nodeName.toUpperCase() === "SVG") ? node : node.ownerSVGElement;  
+        }
 
 
 
