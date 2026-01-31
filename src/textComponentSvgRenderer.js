@@ -15,9 +15,9 @@ export function updateSvgText(container, what, newValue) {
     // This works on SVGs created by createInitialTextComponent.
     
     if (what === "text") {
-        svg.querySelector("text").innerHTML = newValue;
+        container.querySelector("text").innerHTML = newValue;
     } else if (what === "fontSize") {
-        svg.querySelector("text").style.fontSize = newValue + "px";  // SVG will scale px to mm for us
+        container.querySelector("text").style.fontSize = newValue + "px";  // SVG will scale px to mm for us
     } else {
         throw "Unknown what"
     }
