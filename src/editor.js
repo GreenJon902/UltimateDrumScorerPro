@@ -80,7 +80,9 @@ function selectionStateChanged(editorPane, ..._) {
             "score-component": createFullScoreComponentEditor
         }[ComponentManager.getComponentType(theComponentId)](editorPane, theComponentId);
     } else {
-        throw "Not implemented"
+        console.log("Not implemented");
+        // TODO: IMplement this
+        //throw "Not implemented"
     }
 }
 

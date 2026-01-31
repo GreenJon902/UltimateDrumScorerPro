@@ -103,7 +103,7 @@ export class ComponentManager {
                 "component-type": "text-component",
                 "x": 0,
                 "y": 0,
-                "text": "Hello World!",
+                "text": "",
                 "font-size": 10
             }
         } else {

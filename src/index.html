@@ -5,9 +5,6 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-		<svg id="text-svg" xmlns="http://www.w3.org/2000/svg" style="visibility: hidden; height: 1mm;">
-		</svg>
-		
 		<input type="file" id="pdfInput" accept="application/pdf" style="display: none;" />
     
         <div id="rendered-pane">
@@ -21,7 +18,7 @@
 	    	</div>
         	<div id="rendered-pane-padding" onwheel="handleRenderedScroll(event)">
 			    <div id="component-container-container">
-                    <div id="component-container">
+                    <div id="component-container" onmousedown="handleCompContMouseDown(event)" onmousemove="handleCompContMouseMove(event)" onmouseup="handleCompContMouseUp(event)">
                     </div>
                 </div>
 	        </div>
@@ -34,6 +31,7 @@
     <script type="module">
         import {ComponentManager} from "./componentManager.js";
         import {SelectionManager} from "./selectionManager.js";
+        import {DragManager} from "./dragManager.js";
         import {Symbols} from "./symbols.js";
         import {attachEditor} from "./editor.js";
         import {attachRendered} from "./rendered.js";
@@ -41,6 +39,7 @@
         // DEBUG STUFF -------------
         window.CM = ComponentManager;
         window.SM = SelectionManager;
+        window.DM = DragManager;
         window.S = Symbols;
         // -------------------------
         
@@ -111,6 +110,16 @@
             if (keydownEvent.ctrlKey && String.fromCharCode(keydownEvent.keyCode) == "0" && mouseOverRendered) {
                 keydownEvent.preventDefault();
                 updateRenderedScale(1);
+            
+            // If shift pressed while in drag mode 
+            } else if (keydownEvent.key === "Shift" && DragManager.isDragging()) {
+                DragManager.setCardinal(true);
+            }
+        });
+        document.addEventListener("keyup", function(keyupEvent) {
+            // If shift pressed while in drag mode 
+            if (keyupEvent.key === "Shift" && DragManager.isDragging()) {
+                DragManager.setCardinal(false);
             }
         });
 
@@ -146,22 +155,101 @@
             }
             
         }
-        window.deselectComponents = function() {
-            // Set current edit to none.
-            setEditComponent("", "");
+        window.handleCompContMouseDown = function(event) {
+            // When the mouse is pressed down on the component container (or one of its children), then we may have to initiate a drag.
+            // This should be called by the onmousedown event of the componentContainer - the direct parent of the components.
+
+            const cont = document.getElementById("component-container");
+
+            if (event.target === cont) {  // If the target is the container then no component was pressed
+                // Ignore this case
+
+            } else if (event.button == 0) {  // If the target is not the container then a component was clicked on. And also is a left-click
+                const cardinal = event.shiftKey;
+                DragManager.startDrag(cardinal);
+            }
+        }
+        window.handleCompContMouseMove = function(event) {
+            // When the mouse is moved on the component container (or one of its children), then we may have a drag.
+            // This should be called by the onmousemove event of the componentContainer - the direct parent of the components.
+            
+            if (DragManager.isDragging()) {
+            
+                if (event.buttons % 2 !== 1) {
+                    // Click has been released (while not over the compcont), so end the drag and return
+                    DragManager.endDrag();
+                    return;
+                }
+                
+                // The delta is event.movement(XY). We need to convert this to mm
+                const bbox = document.getElementById("component-container").getBoundingClientRect();
+                const deltaX = event.movementX / bbox.width * 210;  // Page is 210x297mm
+                const deltaY = event.movementY / bbox.height * 297;
+
+                DragManager.moveDrag(deltaX, deltaY);
+            }
+        }
+        window.handleCompContMouseUp = function (event) {
+            // When the mouse is released on the component container (or one of its children), then we want update the selection or end a drag.
+            // This should be called by the onmouseup event of the componentContainer - the direct parent of the components.
+            
+            const cont = document.getElementById("component-container");
+
+            if (DragManager.isDragging() && DragManager.endDrag() && event.button === 0) {  // Was dragging and was drag significant and is a left-click
+                // Nothing to do here
+
+            } else if (event.button === 0) {  // Not dragging and is a left-click
+                // Didn't actually drag so instead register it as a click
+
+                if (event.target === cont) {  // If the target is the container then no component was pressed
+                    // Set selection to none
+                    SelectionManager.clearSelection()
+                
+                } else {  // If the target is not the container then a component was clicked on.
+                    
+                    // The target may be the svg or a child of the svg
+                    // Get the target, or the containing svg of the target
+                    const svg = (event.target.nodeName.toUpperCase() === "SVG") ? event.target : event.target.ownerSVGElement;  
+                    
+                    const compId = svg.dataset.componentId;  
+                    const multiselect = event.shiftKey;
+                    SelectionManager.toggleSelectionState(compId, multiselect);
+                }
+            }
         }
         window.newScoreComponent = function() {
-            // Create a new score component, render it and set it as the current edit.
-            const id = createNewScoreComponent();
-            renderComponent("score-component", id);
-            setEditComponent("score-component", id);
+            // Create a new score component and set it as selected.
+            // This puts some default data in.
+            const id = ComponentManager.createEmptyComponent("score-component");
+            ComponentManager.toggleComponentDrumEnabledState(id, "kick");  // Hope these are all present in symbols ;)
+            ComponentManager.toggleComponentDrumEnabledState(id, "snare");
+            ComponentManager.toggleComponentDrumEnabledState(id, "hi-hat");
+            SelectionManager.select(id);
         }
         window.newTextComponent = function() {
-            // Create a new text component, render it and set it as the current edit.
-            const id = createNewTextComponent();
-            renderComponent("text-component", id);
-            setEditComponent("text-component", id);
+            // Create a new score component and set it as selected.
+            // This puts some default data in.
+            const id = ComponentManager.createEmptyComponent("text-component");
+            ComponentManager.setComponentText(id, "Hello World!");
+            SelectionManager.select(id);
+            
         }
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        // BROKEN: ---------------------------------
         window.saveProject = function() {
             // Saves the project as a PDF with all the content, and with some metadata to allow the pdf to be imported back into the program.
             // This will open a prompt to ask the user for a file name.

@@ -125,20 +125,20 @@ SelectionManager - Stores temporary state of selection.
 		- ClearSelection()
 		- IsSelected(componentId) -> bool
 		- GetSelection() -> Object.freeze(Set<component-id>)
-DragManager - Stores temporary state of drag.
+DragManager - Stores temporary state of drag. Also determines wether the mouse move was significant enough to initiate a drag.
 	- Events:
-		- Drag(Start|End) {componentIds}
-		- DragMove {componentIds, totalDeltaX, totalDeltaY} - componentIds will remain the same as DragStart until ended. Delta is relative to start position.
+		- Drag(Start|End) {Object.freeze(Set<component-id>)} - Dispatched only when a mouse movement is deemed significant enough.
+		- DragMove {Object.freeze(Set<component-id>), totalDeltaX, totalDeltaY} - componentIds will remain the same as DragStart until ended. Delta is relative to start position. Dispatched only when a mouse movement is deemed significant enough.
 	- Methods
 		- startDrag(cardinal) - Cardinal is whether to lock movement to cardinal directions, what is passed is initial value.
 		- moveDrag(deltaX, deltaY) - Delta is relative to last time moveDrag was called.
-		- endDrag()
+		- endDrag() -> bool  - Returns true if the drag was significant (and components were actually moved)
 		- setCardinal(cardinal) - Cardinal is whether to lock movement to cardinal directions.
-		- isDragging() -> bool
+        - isDragging() -> bool - Returns true if there is currently a drag. This ignores the significance of the drag.
 ```
 
 ## Processes
-The basic thought process is all data flows through the manager. If the editor updates something, it can change the state of itself locally (an error will be thrown if it fails) and send this to the ComponentManger, however the renderer listens to and only to the ComponentManger.
+The basic thought process is all data flows through the managers. If the editor updates something, it can change the state of itself locally (an error will be thrown if it fails) and send this to the ComponentManger, however the renderer listens to and only to the ComponentManger.
 ### Loading components
 ```
 1. ComponentManager updates state internally.
@@ -202,46 +202,46 @@ The basic thought process is all data flows through the manager. If the editor u
 		5. ComponentManager emits ComponentDrumEnabledStateChanged.
 			6. Editor responds accordingly.
 ```
-### Clicking on a component
+### Clicking on/dragging a component
+These two are so intertwined that we will descript this with one flow.
+All drag events go to the drag manager. The manager decides internally whether the drag is significant enough to actually be a drag rather than a click. 
+It will only drag when a component is the start-point / where the mouse-down occured.
 ```
 1. <id> clicked on.
-2. Mouse has not moved (much).
-3. <shift> is true if shift is pressed.
-4. Renderer calls SelectionManager.toggleSelectionState(<id>, multiselect=<shift>)
-	5. SelectionManager updates itself internally.
-	6. SelectionManager emits SelectionStateChanged as required.
-		7a. Renderer responds accordingly.
-		7b. Editor responds accordingly.
-```
-### Dragging a component
-```
-1. <id> clicked on.
-	2. Mouse has moved (much).
 	3. <shift> is true if shift is pressed.
-	4. Renderer calls DragManager.startDrag(<id>, cardinal=<shift>)
+	4. index.html calls DragManager.startDrag(cardinal=<shift>)
 		5. <selected> is set to current SelectionManager.getSelection().
-		6. DragManager emits DragStart {<selection>}.
-			7. Renderer adds "translate" to each of <selection>'s style.
+[      	6. DragManager emits DragStart {<selection>}.                     ]  // This may be done late when drag significance is determined
+[			7. Renderer adds "translate" to each of <selection>'s style.  ]
 8a. Mouse moves by <delta>mm.
-	9. Renderer calls DragManager.moveDrag(<delta>)
-		10. DragManager updates state internally.
-		11. DragManager emits DragMove {<selected>, <delta>}.
-			12. Renderer responds accordingly.
+	9. index.html calls DragManager.moveDrag(<delta>)
+		10. DragManager updates state internally.               
+[		11. DragManager emits DragMove {<selected>, <delta>}.   ]  // This may be done late when drag significance is determined
+[			12. Renderer responds accordingly.                  ]
 8b. Shift pressed/unpressed -> <shift>.
-	9. Renderer calls DragManager.setCardinal(<shift>)
+	9. index.html calls DragManager.setCardinal(<shift>)
 		10. DragManager calculates <delta>.
 		11. DragManager updates state internally.
-		12. DragManager emits DragMove {<selected>, <delta>}.
-			13. Renderer responds accordingly.
+[		12. DragManager emits DragMove {<selected>, <delta>}.   ]  // This may be done late when drag significance is determined
+[			13. Renderer responds accordingly.                  ]
 14. Mouse relased.
-	14. Renderer calls DragManager.endDrag()
+	14. index.html calls DragManager.endDrag()
 		15. DragManager updates state internally.
-		16. DragManager calls ComponentManager.set(X|Y)(...).
-			17. ComponentManager updates state internally.
-			18. ComponentManager emits Component(X|Y)Changed.
-				19. Renderer responds accordingly.
-		20. DragManager emits DragEnd {<selected>}.
-			21. Renderer removes "translate" from selected components styles.
+[		16. DragManager calls ComponentManager.set(X|Y)(...).                  ]  // This may not be done, depending on drag significance
+[			17. ComponentManager updates state internally.                     ]
+[			18. ComponentManager emits Component(X|Y)Changed.                  ]
+[				19. Renderer responds accordingly.                             ]
+[		20. DragManager emits DragEnd {<selected>}.                            ]
+[			21. Renderer removes "translate" from selected components styles.  ]
+    15. if DragManager.endDrag() returns False then a click is processed.
+        16. <id> clicked on.
+        17. Mouse has not moved (much).
+        18. <shift> is true if shift is pressed.
+        19. Renderer calls SelectionManager.toggleSelectionState(<id>, multiselect=<shift>)
+	        20. SelectionManager updates itself internally.
+	        21. SelectionManager emits SelectionStateChanged as required.
+	        	22a. Renderer responds accordingly.
+		        22b. Editor responds accordingly.
 ```
 ### Vertically grouping components
 ```

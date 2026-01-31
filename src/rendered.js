@@ -1,4 +1,6 @@
 import {ComponentManager} from "./componentManager.js";
+import {SelectionManager} from "./selectionManager.js";
+import {DragManager} from "./dragManager.js";
 import {createSvgText, updateSvgText} from "./textComponentSvgRenderer.js";
 import {compileScoreComponent} from "./scoreComponentUtils/compile.js";
 import {calculateScoreComponentSpacing} from "./scoreComponentUtils/decode.js";
@@ -11,27 +13,87 @@ export function attachRendered(componentContainer) {
     // This will not handle zooming and panning, that should be done externally.
     
     // Add components that already exist
-    ComponentManager.getComponentIds().forEach(componentId => {
-        const componentType = ComponentManager.getComponentType(componentId);
-        if (componentType === "text-component") {
-            createInitialTextComponent(componentContainer, componentId);
-        } else if (componentType === "score-component") {
-            createInitialScoreComponent(componentContainer, componentId);
-        } else {
-            throw "Not implemented";
-        }
-    });
+    ComponentManager.getComponentIds().forEach(componentId => createInitialGenericComponent(componentContainer, componentId));
     
-    // Bind events for text-components
+    //  TODO: Bind all events
+
+    // Bind component addition / removal events
+    ComponentManager.onComponentAdded((componentId) => createInitialGenericComponent(componentContainer, componentId));
+
+    // Bind events for text-components changes
     ComponentManager.onComponentTextChanged((componentId, newValue) => updateTextComponent(componentContainer, "text", componentId, newValue));
     ComponentManager.onComponentFontSizeChanged((componentId, newValue) => updateTextComponent(componentContainer, "fontSize", componentId, newValue));
     
-    // Bind events for score-components
+    // Bind events for score-components changes
     ComponentManager.onComponentDrumToggled((componentId, _, __, ___, ____) => updateScoreComponent(componentContainer, componentId));
+    
+    // Bind events for generic component changes
+    ComponentManager.onComponentXChanged((componentId, newValue) => updateComponentX(componentContainer, componentId, newValue));
+    ComponentManager.onComponentYChanged((componentId, newValue) => updateComponentY(componentContainer, componentId, newValue));
+    
+    // Bind selection events
+    SelectionManager.onSelectionStateChanged((componentId, selectionState) => updateSelectionState(componentContainer, componentId, selectionState));
+    
+    // Bind drag events
+    DragManager.onDragStart((componentIds) => prepDrag(componentContainer, componentIds));
+    DragManager.onDragMove((componentIds, totalDeltaX, totalDeltaY) => updateDrag(componentContainer, componentIds, totalDeltaX, totalDeltaY));
+    DragManager.onDragEnd((componentIds) => removeDrag(componentContainer, componentIds));
+}
+
+function prepDrag(componentContainer, componentIds) {
+    // Prepares the given components to be dragged.
+    
+    // Give each component a "translate" to its style
+    componentIds.forEach(id => {
+        const comp = getSvgFor(componentContainer, id);
+        comp.style.setProperty("translate", "0mm, 0mm");
+    });
+}
+
+function updateDrag(componentContainer, componentIds, totalDeltaX, totalDeltaY) {
+    // Updates the amount the given components are dragged/translated by.
+    
+    // Update the translate css for each component
+    componentIds.forEach(id => {
+        const comp = getSvgFor(componentContainer, id);
+        comp.style.setProperty("translate", `${totalDeltaX}mm ${totalDeltaY}mm`);
+    });
+}
+
+function removeDrag(componentContainer, componentIds) {
+    // Finishes the drag for the given components, so removes the translate css.
+    
+    // Remove the "translate" for each component
+    componentIds.forEach(id => {
+        const comp = getSvgFor(componentContainer, id);
+        comp.style.removeProperty("translate");
+    });
+}
+
+function updateComponentX(componentContainer, componentId, x) {
+    // Update the given components x coordinate.
+    getSvgFor(componentContainer, componentId).style.setProperty("left", `${x}mm`);
+}
+function updateComponentY(componentContainer, componentId, y) {
+    // Update the given components y coordinate.
+    getSvgFor(componentContainer, componentId).style.setProperty("top", `${y}mm`);
+}
+
+function createInitialGenericComponent(componentContainer, componentId) {
+    // Runs the appropriate createInitialTextComponent/createInitialScoreComponent function.
+    const componentType = ComponentManager.getComponentType(componentId);
+    if (componentType === "text-component") {
+        createInitialTextComponent(componentContainer, componentId);
+    } else if (componentType === "score-component") {
+        createInitialScoreComponent(componentContainer, componentId);
+    } else {
+        throw "Not implemented";
+    }
 }
 
 function createBaseSvg(componentContainer, componentId) {
     // Creates an svg, adds it to the container, and then returns the node which contents should be added to.
+    // This will set the selection state.
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.dataset.componentId = componentId;
     
@@ -49,6 +111,20 @@ function createBaseSvg(componentContainer, componentId) {
         svg.setAttribute("height", bbox.height + "mm");  // MM so 1px goes to 1mm
 
     }).observe(svg, { attributes: true, characterData: true, subtree: true, childList: true });
+    
+    // Set the initial selection state
+    const selectionState = SelectionManager.isSelected(componentId);
+    if (selectionState) {
+        // Add data-selected tag
+        svg.setAttribute("data-selected", "");
+    } else {
+        // Remove data-selected tag
+        svg.removeAttribute("data-selected");
+    }
+    
+    // Set initial coordinates
+    svg.style.setProperty("left", `${ComponentManager.getComponentX(componentId)}mm`);
+    svg.style.setProperty("top", `${ComponentManager.getComponentY(componentId)}mm`);
 
     componentContainer.appendChild(svg);
     return svg;
@@ -57,6 +133,22 @@ function createBaseSvg(componentContainer, componentId) {
 function getSvgFor(componentContainer, componentId) {
     // Gets the svg node for the given component from the componentContainer.
     return componentContainer.querySelector(`[data-component-id=${componentId}]`);
+}
+
+function updateSelectionState(componentContainer, componentId, selectionState) {
+    // selectionState: bool - True for selected, false for not selected.
+    //
+    // Update the given components selection state to what was given.
+    // This will not affect other components selection state.
+    
+    const comp = getSvgFor(componentContainer, componentId);
+    if (selectionState) {
+        // Add data-selected tag
+        comp.setAttribute("data-selected", "");
+    } else {
+        // Remove data-selected tag
+        comp.removeAttribute("data-selected")
+    }
 }
 
 function createInitialTextComponent(componentContainer, componentId) {

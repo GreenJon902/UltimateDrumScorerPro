@@ -27,6 +27,7 @@ body {
 	background: white;
 	transform-origin: left top;
 	position: relative;
+    user-select: none;
 }
 
 #component-container-container {
