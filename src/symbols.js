@@ -1,6 +1,22 @@
 import {evaluateExpression} from "./expressionParser.js";
 import {SYMBOLS_SOURCE} from "./_symbols_source.js";
 
+function parseFloatNN(string) {
+    // If the given string is a valid float then it will be parsed and returned, otherwise an error is thrown
+    // This includes checking for trailing characters in the string.
+    const parsed = parseFloat(string);
+    if (isNaN(parsed) || parsed.toString() !== string) throw `Could not parse float - "${parsed}"`;
+    return parsed;
+}
+
+function parseIntNN(string) {
+    // If the given string is a valid int then it will be parsed and returned, otherwise an error is thrown.
+    // This includes checking for trailing characters in the string.
+    const parsed = parseInt(string);
+    if (isNaN(parsed) || parsed.toString() !== string) throw `Could not parse int - "${parsed}"`;
+    return parsed;
+}
+
 function dequeue(tokens) {
     // Removes the first element from the array, and throws an error if it doesn't exist.
     if (tokens.length === 0) throw "Failed to dequeue element as tokens' length is 0";
@@ -90,9 +106,9 @@ function parseModifierSizeChanger(string) {
     if (string === "0") {
         return {delta: 0, min: 0};
     } else if (string[0] === "+") {
-        return {delta: parseFloat(string.slice(1)), min: 0};
+        return {delta: parseFloatNN(string.slice(1)), min: 0};
     } else if (string[0] === ">") {
-        return {delta: 0, min: parseFloat(string.slice(1))};
+        return {delta: 0, min: parseFloatNN(string.slice(1))};
     } else {
         throw "Unrecognised size modifier for given string";
     }
@@ -102,7 +118,7 @@ function parseOptionalFloat(string, default_=null) {
     // Parses an optional float -> float, or an empty string to default_=null.
 
     if (string === "") return default_;
-    return parseFloat(string);
+    return parseFloatNN(string);
 }
 
 function parseList(tokens, parseItem, ...parseItemArgs) {
@@ -111,7 +127,7 @@ function parseList(tokens, parseItem, ...parseItemArgs) {
     // It will then call the parseItem(tokens, ...parseItemArgs)->result function that many times, and expects it to consume any tokens it uses.
     // This then returns an array with the results.
     
-    const n = parseInt(dequeue(tokens));
+    const n = parseIntNN(dequeue(tokens));
     const listValues = new Array();
     for (let i=0; i<n; i++) {
         listValues.push(parseItem(tokens, ...parseItemArgs));
@@ -132,9 +148,9 @@ function parseInstruction(tokens, parseData) {
         const pathString = dequeue(tokens);
         return new SvgInstruction(SvgInstruction.PATH, pathString);
     } else if (instructionName === "circle") {
-        const cx = parseFloat(dequeue(tokens));
-        const cy = parseFloat(dequeue(tokens));
-        const r = parseFloat(dequeue(tokens));
+        const cx = parseFloatNN(dequeue(tokens));
+        const cy = parseFloatNN(dequeue(tokens));
+        const r = parseFloatNN(dequeue(tokens));
         return new SvgInstruction(SvgInstruction.CIRCLE, cx, cy, r);
     } else if (instructionName === "use") {
         const id = ensureExists(ensureSymbolId(dequeue(tokens)), parseData, {group: false});  // We can't draw a group so don't check those.
@@ -254,10 +270,10 @@ function parseNewDrum(tokens, parseData) {
 
     // Parse all parts of data for drum
     const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
-    const sizeLeft = parseFloat(dequeue(tokens));
-    const sizeUp = parseFloat(dequeue(tokens));
-    const sizeRight = parseFloat(dequeue(tokens));
-    const sizeDown = parseFloat(dequeue(tokens));
+    const sizeLeft = parseFloatNN(dequeue(tokens));
+    const sizeUp = parseFloatNN(dequeue(tokens));
+    const sizeRight = parseFloatNN(dequeue(tokens));
+    const sizeDown = parseFloatNN(dequeue(tokens));
     const instructions = parseList(tokens, parseInstruction, parseData);
     const groups = parseList(tokens, parseGroup);
     
@@ -277,8 +293,9 @@ function parseNewDecoration(tokens, parseData) {
 
     // Parse all parts of data for decoration
     const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
-    const width = parseFloat(dequeue(tokens));
-    const minHeight = parseFloat(dequeue(tokens));
+    const width = parseFloatNN(dequeue(tokens));
+    const minHeight = parseFloatNN(dequeue(tokens));
+    console.log(minHeight)
     const minBelowDrums = parseOptionalFloat(dequeue(tokens), 0);
     const minAboveDrums = parseOptionalFloat(dequeue(tokens), 0);
     const minAboveBars = parseOptionalFloat(dequeue(tokens), 0);
@@ -317,10 +334,10 @@ function parseModifierDrumExplicit(tokens, parseData) {
     // Parse all parts of data for modifier
     const id = ensureDoesNotExist(ensureSymbolId(dequeue(tokens), {mustBeModified: true}), parseData);
     ensureExistsAndIs(splitSymbolId(id).base, parseData, {drum: true});  // Ensure base exists
-    const sizeLeft = parseFloat(dequeue(tokens));
-    const sizeUp = parseFloat(dequeue(tokens));
-    const sizeRight = parseFloat(dequeue(tokens));
-    const sizeDown = parseFloat(dequeue(tokens));
+    const sizeLeft = parseFloatNN(dequeue(tokens));
+    const sizeUp = parseFloatNN(dequeue(tokens));
+    const sizeRight = parseFloatNN(dequeue(tokens));
+    const sizeDown = parseFloatNN(dequeue(tokens));
     const instructions = parseList(tokens, parseInstruction, parseData);
     const groups = parseList(tokens, parseGroup);
     
@@ -345,8 +362,8 @@ function parseModifierDrumAuto(tokens, parseData) {
     const {delta: deltaUp, min: minUp} = parseModifierSizeChanger(dequeue(tokens));
     const {delta: deltaRight, min: minRight} = parseModifierSizeChanger(dequeue(tokens));
     const {delta: deltaDown, min: minDown} = parseModifierSizeChanger(dequeue(tokens));
-    const minWidth = parseFloat(dequeue(tokens));
-    const minHeight = parseFloat(dequeue(tokens));
+    const minWidth = parseFloatNN(dequeue(tokens));
+    const minHeight = parseFloatNN(dequeue(tokens));
     const instructions = parseList(tokens, parseInstruction, parseData);
     const groups = parseList(tokens, parseGroup);
     
@@ -395,7 +412,7 @@ function parseConstraintDrum(tokens, parseData) {
     // Parse all parts of data for constraint
     const topId = ensureExistsAndIs(dequeue(tokens), parseData, {drum: true, group: true});
     const bottomId = ensureExistsAndIs(dequeue(tokens), parseData, {drum: true, group: true});
-    const distance = parseFloat(dequeue(tokens));
+    const distance = parseFloatNN(dequeue(tokens));
     
     // Add constraint to parseData
     parseData.constraints.add(Object.freeze({topId: topId, bottomId: bottomId, distance: distance}));

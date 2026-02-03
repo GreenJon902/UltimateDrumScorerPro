@@ -302,9 +302,12 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         // Visualise decorations
         // TODO: Paramaterise visualisations with different drum / bar heights
         const decorationSizeGetter = (decoId) => {
+            const minHeight = Symbols.getDecorationMinHeight(decoId);
             return {
-                width: Symbols.getDecorationWidth(decoId),
-                minHeight: Symbols.getDecorationMinHeight(decoId)
+                sizeLeft: Symbols.getDecorationWidth(decoId),
+                sizeRight: 0,
+                sizeUp: minHeight / 2,
+                sizeDown: minHeight / 2
             };
         };
         [...Symbols.listLeftDecorations(), ...Symbols.listRightDecorations()].forEach(decoId => {

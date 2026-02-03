@@ -22,6 +22,7 @@ The sizes are the distance from the anchor (the location where the symbol attach
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.
 The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.
 The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.
+The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
@@ -67,10 +68,10 @@ If the id is the string literal "\*drums" or "\*decorations" or "\*parts", then 
 
 
 Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
-This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on identifiers and float-literals.
+This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on identifiers and float-literals.  
 Instructions in drums will always have the identifiers `size_left`, `size_right`, `size_up` and `size_down`, which are the sizes of the final symbol after all modifications are processed. This means `size_right` of a `snare` may be 0, but `size_right` of a `snare_ghost` may be 3. This means when you use a `use` instruction then parts will have access to size, and when if you use a `use` instruction to include a `snare`, the `size_right` will still be 3. However, keep in mind that if you use a part in both a drum and decoration, the identifiers may not be available/identical in both.  
-When you use `modifier,drum,auto...`, you will have `parent_size_left`, `parent_size_right`, `parent_size_up`, `parent_size_down`, however these refer specifically to the direct parent. So if a inherits from b and b inherits from c: when drawing a, the parent sizes for b will be c's size, and the parent sizes for a will be b's size.
-Instructions in decorations will always have the identifiers `width`, `height` and `drum-center-y` (relative to the (0,0) of the decoration) and the same rules apply as do apply to drums.  
+When you use `modifier,drum,auto...`, you will have `parent_size_left`, `parent_size_right`, `parent_size_up`, `parent_size_down`, however these refer specifically to the direct parent. So if a inherits from b and b inherits from c: when drawing a, the parent sizes for b will be c's size, and the parent sizes for a will be b's size.  
+Instructions in decorations will always have the identifiers `width`, `height` and `drum_center_y` (relative to the (0,0) of the decoration) and the same rules apply as do apply to drums.  
 
 # Data flow / event processing
 ## "Class diagrams" for managers
