@@ -295,7 +295,6 @@ function parseNewDecoration(tokens, parseData) {
     const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
     const width = parseFloatNN(dequeue(tokens));
     const minHeight = parseFloatNN(dequeue(tokens));
-    console.log(minHeight)
     const minBelowDrums = parseOptionalFloat(dequeue(tokens), 0);
     const minAboveDrums = parseOptionalFloat(dequeue(tokens), 0);
     const minAboveBars = parseOptionalFloat(dequeue(tokens), 0);

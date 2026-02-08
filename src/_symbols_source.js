@@ -54,6 +54,6 @@ export const SYMBOLS_SOURCE = [
 // TODO: SVG Instructions with brackets (in the format things) cause a recursion depth error
 // TODO: SVG Instruction format thing parsing does not work - seems to parse `a + b / 2` as `(a + b) / 2`)
 // TODO: We need a better selection system (better patterns). Some set-notation would probably do it
-
+// TODO: If you draw a drum and snare at the same time, they draw over oneanother
 
 
