@@ -7,7 +7,7 @@
 //     - Anchor is just a name to refer to the coordinate around which each thing will be drawn, and around which sizes and measured from.
 
 import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
-import {Symbols, SvgInstruction} from "../symbols.js";
+import {Symbols, SvgInstruction, splitSymbolId} from "../symbols.js";
 
 const SW = 1;  // Stroke width is 1mm
 const SR = SW / 2;  // Stroke radius / distance of edge of line from centre of line
@@ -235,12 +235,18 @@ export function getFlagSize(flags, dots) {
 export function drawDrumAt(svg, container, drumId, x, y) {
     // Draws the drum with the given id to the given node (container) at the given coordinates..
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+    
+    const baseId = splitSymbolId(drumId).base;
      
     drawSymbolAt(svg, container, drumId, x, y, {
         size_left: Symbols.getDrumSizeLeft(drumId),  // Underscores is what the substitution names use
         size_up: Symbols.getDrumSizeUp(drumId),
         size_right: Symbols.getDrumSizeRight(drumId),
-        size_down: Symbols.getDrumSizeDown(drumId)
+        size_down: Symbols.getDrumSizeDown(drumId),
+        base_size_left: Symbols.getDrumSizeLeft(baseId),
+        base_size_right: Symbols.getDrumSizeRight(baseId),
+        base_size_up: Symbols.getDrumSizeUp(baseId),
+        base_size_down: Symbols.getDrumSizeDown(baseId)
     });
 }
 export function getDrumSize(drumId) {

@@ -92,7 +92,7 @@ function ensureDoesNotExist(id, parseData) {
     return id;
 }
 
-function splitSymbolId(string) {
+export function splitSymbolId(string) {
     // Ensures the given symbol id is valid, if it isn't then an error is thrown.
     // Returns {base: baseSymbolId, modifiers: Array<modifierId>}.
     ensureStringIsLowerAndGiven(string, "-", "_");
@@ -101,14 +101,16 @@ function splitSymbolId(string) {
 }
 
 function parseModifierSizeChanger(string) {
-    // Parses the delta or min size left/up/right/down for the auto modifier.
-    // Returns {delta: int, min: int}.
+    // Parses the parent-delta, base-delta or min-size left/up/right/down for the auto modifier.
+    // Returns {parentDelta: float, baseDelta: float, min: float}.
     if (string === "0") {
-        return {delta: 0, min: 0};
+        return {parentDelta: 0, baseDelta: 0, min: 0};
     } else if (string[0] === "+") {
-        return {delta: parseFloatNN(string.slice(1)), min: 0};
+        return {parentDelta: parseFloatNN(string.slice(1)), baseDelta: 0, min: 0};
+    } else if (string[0] === "~") {
+        return {parentDelta: 0, baseDelta: parseFloatNN(string.slice(1)), min: 0};
     } else if (string[0] === ">") {
-        return {delta: 0, min: parseFloatNN(string.slice(1))};
+        return {parentDelta: 0, baseDelta: 0, min: parseFloatNN(string.slice(1))};
     } else {
         throw "Unrecognised size modifier for given string";
     }
@@ -357,10 +359,10 @@ function parseModifierDrumAuto(tokens, parseData) {
     // Parse all parts of data for modifier
     const modifierId = ensureSymbolIdPart(dequeue(tokens));
     const pattern = parseList(tokens, dequeue);
-    const {delta: deltaLeft, min: minLeft} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: deltaUp, min: minUp} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: deltaRight, min: minRight} = parseModifierSizeChanger(dequeue(tokens));
-    const {delta: deltaDown, min: minDown} = parseModifierSizeChanger(dequeue(tokens));
+    const {parentDelta: parentDeltaLeft, baseDelta: baseDeltaLeft, min: minLeft} = parseModifierSizeChanger(dequeue(tokens));
+    const {parentDelta: parentDeltaUp, baseDelta: baseDeltaUp, min: minUp} = parseModifierSizeChanger(dequeue(tokens));
+    const {parentDelta: parentDeltaRight, baseDelta: baseDeltaRight, min: minRight} = parseModifierSizeChanger(dequeue(tokens));
+    const {parentDelta: parentDeltaDown, baseDelta: baseDeltaDown, min: minDown} = parseModifierSizeChanger(dequeue(tokens));
     const minWidth = parseFloatNN(dequeue(tokens));
     const minHeight = parseFloatNN(dequeue(tokens));
     const instructions = parseList(tokens, parseInstruction, parseData);
@@ -377,16 +379,17 @@ function parseModifierDrumAuto(tokens, parseData) {
 
     // Create new drums
     oldIds.forEach(oldId => {
+        const base = parseData.drums[splitSymbolId(oldId).base];
         const old = parseData.drums[oldId];
         const modifiedId = ensureDoesNotExist(ensureSymbolId(oldId + "_" + modifierId), parseData);  // EnsureSymbolId to sort modifier-ids to.
         
         // Find out size of new drum
         const parentCenterX = -old.sizeLeft / 2 + old.sizeRight / 2;
         const parentCenterY = -old.sizeUp / 2 + old.sizeDown / 2;
-        const sizeLeft = Math.max(old.sizeLeft + deltaLeft, minLeft, minWidth / 2 - parentCenterX);
-        const sizeUp = Math.max(old.sizeUp + deltaUp, minUp, minHeight / 2 - parentCenterY);
-        const sizeRight = Math.max(old.sizeRight + deltaRight, minRight, minWidth / 2 + parentCenterX);
-        const sizeDown = Math.max(old.sizeDown + deltaDown, minDown, minHeight / 2 + parentCenterY);
+        const sizeLeft = Math.max(old.sizeLeft + parentDeltaLeft, base.sizeLeft + baseDeltaLeft, minLeft, minWidth / 2 - parentCenterX);
+        const sizeUp = Math.max(old.sizeUp + parentDeltaUp, base.sizeUp + baseDeltaUp, minUp, minHeight / 2 - parentCenterY);
+        const sizeRight = Math.max(old.sizeRight + parentDeltaRight, base.sizeRight + baseDeltaRight, minRight, minWidth / 2 + parentCenterX);
+        const sizeDown = Math.max(old.sizeDown + parentDeltaDown, base.sizeDown + baseDeltaDown, minDown, minHeight / 2 + parentCenterY);
         
         // Compute combined instructions
         const combinedInstructions = [
