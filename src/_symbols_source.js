@@ -49,7 +49,6 @@ export const SYMBOLS_SOURCE = [
 
 
 ].join(",");
-// TODO: "modifier,drum,auto,ghost,*,0,0,0,0,0,0,1,path,,0" does not crash
 // TODO: In the expression parser, add support for unary operations + and -
 // TODO: SVG Instructions with brackets (in the format things) cause a recursion depth error
 // TODO: SVG Instruction format thing parsing does not work - seems to parse `a + b / 2` as `(a + b) / 2`)
