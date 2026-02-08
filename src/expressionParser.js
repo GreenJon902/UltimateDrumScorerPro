@@ -112,7 +112,7 @@ function substitute(tokens, variables) {
 
 function parse(tokens) {
     // Parses the given tokens into an AST.
-    // This expects the only tokens to be literals (floats or ints) and operators.
+    // This expects the only tokens to be literals (floats or ints) and operators (so no variables anymore).
     //
     // The returned AST is a tree formatted like this ["-", ["+", 3, 2], 2].
     // 
@@ -120,14 +120,14 @@ function parse(tokens) {
     
     if (tokens.length === 0) throw "Expected at least one token";
 
-    let lhs = parseLiteralOrBracket(tokens);
+    let lhs = parsePrimary(tokens);
     while (tokens.length > 0) {
         let op = tokens.shift();
         if (op === ")") break;
         let opPrecedence = OPERATORS_PRECEDENCE[op];
         if (opPrecedence === undefined) throw "Unexpected token";  // Use precedence's keys as brackets can't come here.
         
-        let rhs = parseLiteralOrBracket(tokens);
+        let rhs = parsePrimary(tokens);
 
         while (tokens.length > 0 && tokens[0] !== ")") {
             let nextOp = tokens[0];
@@ -137,7 +137,7 @@ function parse(tokens) {
             if (opPrecedence >= nextOpPrecedence) break;  // >= as if we have 3 - 2 - 1 then we want to do (3 - 2) - 1
             tokens.shift();  // Consume operator
             
-            rhs = [nextOp, rhs, parseLiteralOrBracket(tokens)];
+            rhs = [nextOp, rhs, parsePrimary(tokens)];
         }
 
         lhs = [op, lhs, rhs];
@@ -146,13 +146,20 @@ function parse(tokens) {
     return lhs;
 }
 
-function parseLiteralOrBracket(tokens) {
-    // Parses a literal or a bracket.
+function parsePrimary(tokens) {
+    // Parses a literal or a bracket or unary operation, but not an identifier/variable.
     // This requires the literal to be a numeric.
     // This consumes the tokens.
     
     // Is it a bracket
     if (tokens[0] === "(") return parse(tokens);  // This consumes the closing bracket for us
+    
+    // Is it a unary operation?
+    if ((tokens[0] === "+" || tokens[0] === "-") && tokens.length > 1) {  // +/- and then at least one more token
+        const op = tokens.shift();  // Consume operator
+        return [op, 0, parsePrimary(tokens)];  // -a = 0 - a and +a = 0 + a. Parse another primary in-case we have a double unary, e.g. --a
+    }
+    
     
     // It must be literal
     if (typeof tokens[0] !== "number") throw "Invalid token type, expected number";

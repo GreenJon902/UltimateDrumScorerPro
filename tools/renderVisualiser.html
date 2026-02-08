@@ -119,6 +119,10 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
     <script type="module">
         import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt, getDrumSize, getDecorationSize} from "../src/scoreComponentUtils/drawUtils.js";
         import {Symbols} from "../src/symbols.js";
+
+        // DEBUG STUFF -------------
+        window.S = Symbols;
+        // -------------------------
         
         function drawLine(svg, className, x1, y1, x2, y2) {
             // Draws the given line.

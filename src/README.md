@@ -60,7 +60,7 @@ The instruction arguements depend on the name. These are the instructions:
 * `pop-transform` - Pops a transformation.  
 
 Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
-This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on variables and float-literals.  
+This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on variables and float-literals. Unary operations are supported for `+` and `-`.  
 There are two types of variables, local and global. Local apply only to that instruction, and do not carry through to bases or through 'use' calls. Global variables will.
 | Identifier                                                                     | __L__ocal/__G__lobal | D__r__ums/D__e__corations | Notes                                                                                       |
 |--------------------------------------------------------------------------------|----------------------|---------------------------|---------------------------------------------------------------------------------------------|

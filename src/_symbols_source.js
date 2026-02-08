@@ -36,20 +36,19 @@ export const SYMBOLS_SOURCE = [
 
     // Flams
     "new,part,p-flam-sign,1,path,M-0.5 -1.5 A0.8 1 0 0 0 1 1",
-    "modifier,drum,auto,flam,2,+*drums,-feet,+1,0,0,+1.5,0,0,3,push-transform,translate(${0 - parent_size_left} ${parent_size_down}),use,p-flam-sign,pop-transform,1,flamed",
+    "modifier,drum,auto,flam,2,+*drums,-feet,+1,0,0,+1.5,0,0,3,push-transform,translate(${-parent_size_left} ${parent_size_down}),use,p-flam-sign,pop-transform,1,flamed",
 
     // Ghosts
-    "modifier,drum,auto,ghost,1,+*drums,+2,+1,+2,+1,0,0,1,path,M${0 - parent_size_left - 1} ${0 - parent_size_up - 1} A10 10 0 0 0 ${0 - parent_size_left - 1} ${parent_size_down + 1} M${parent_size_right + 1} ${parent_size_down + 1} A10 10 0 0 0 ${parent_size_right + 1} ${0 - parent_size_up - 1},1,ghosted",
+    "modifier,drum,auto,ghost,1,+*drums,+2,+1,+2,+1,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up - 1} A10 10 0 0 0 ${-parent_size_left - 1} ${parent_size_down + 1} M${parent_size_right + 1} ${parent_size_down + 1} A10 10 0 0 0 ${parent_size_right + 1} ${-parent_size_up - 1},1,ghosted",
 
     // Accents
-    "modifier,drum,auto,accent,2,+*drums,-ghosted,+1,+2,+1,0,0,0,1,path,M${0 - parent_size_left - 1} ${0 - parent_size_up} L${0 - parent_size_left + parent_size_right / 2} ${0 - parent_size_up - 2} L${parent_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
+    "modifier,drum,auto,accent,2,+*drums,-ghosted,+1,+2,+1,0,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up} L${-parent_size_left + parent_size_right / 2} ${-parent_size_up - 2} L${parent_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
 
     // Decorations
     "new,decoration,bar-end,0,10,,,,right,1,path,M0 ${drum_center_y - height / 2} L0 ${drum_center_y + height / 2}"
 
 
 ].join(",");
-// TODO: In the expression parser, add support for unary operations + and -
 // TODO: SVG Instructions with brackets (in the format things) cause a recursion depth error
 // TODO: SVG Instruction format thing parsing does not work - seems to parse `a + b / 2` as `(a + b) / 2`)
 // TODO: We need a better selection system (better patterns). Some set-notation would probably do it
