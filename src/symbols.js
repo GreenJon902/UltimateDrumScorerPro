@@ -760,12 +760,14 @@ export class Symbols {
     
     static getDecorationWidth(symbolId) {
         // Returns the width of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].width;
         throw "SymbolId does not exist, or is not decoration";
     }
     
     static getDecorationMinHeight(symbolId) {
         // Returns the minimum height of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minHeight;
         throw "SymbolId does not exist, or is not decoration";
     }
@@ -788,26 +790,30 @@ export class Symbols {
         throw "SymbolId does not exist, or is not decoration";
     }
     
-    static getDrumSizeLeft(symbolId) {  // TODO: Should these functions account for stroke width?
+    static getDrumSizeLeft(symbolId) {  
         // Returns horizontal distance a drum spans on the left side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeLeft;
         throw "Symbol does not exist, or is not a drum";
     }
     
     static getDrumSizeUp(symbolId) {
         // Returns vertical distance a drum ascends above the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeUp;
         throw "Symbol does not exist, or is not a drum";
     }
     
     static getDrumSizeRight(symbolId) {
         // Returns horizontal distance a drum spans on the right side of the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeRight;
         throw "Symbol does not exist, or is not a drum";
     }
     
     static getDrumSizeDown(symbolId) {
         // Returns vertical distance a drum descends below the anchor. This is positive. If the symbolId is not a valid drum  id then an error is thrown.
+        // Note that this does not account for stoke width.
         if (parseData.drums.hasOwnProperty(symbolId)) return parseData.drums[symbolId].sizeDown;
         throw "Symbol does not exist, or is not a drum";
     }

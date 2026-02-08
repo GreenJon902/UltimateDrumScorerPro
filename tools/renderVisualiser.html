@@ -26,8 +26,12 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                 stroke-width: 1.5px;
             }
 
-            .sideSize {
+            path.sideSize {
                 stroke: rgba(0, 0, 255, 0.5);
+            }
+            
+            rect.sideSize {
+                fill: rgba(0, 0, 255, 0.5);
             }
             
             .mawSideSize {
@@ -99,11 +103,13 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         </p>
         
         <h1>Non-Symbols</h1>
-        <span>We expect the blue lines to be as small as possible, while still entirely containing all pixels drawn by the drawFunc (so they account for the stroke-width).
+        <span>We expect the blue lines to be as small as possible, while still entirely containing all pixels drawn by the drawFunc (so they account for the stroke-width).</span>
+        <span>The blue lines here should be centred on the edge of the stroke.</span>
         <div id="non-symbol-container"></div>
         
         <h1>Symbols</h1>
         <span>It's harder to describe the disired results here. And I don't yet know if the blue lines account for stroke-width. Look at it and it should look good enough to indicate the side of the symbol - so if a symbol was placed with it's bottom blue line on the top blue line of the symbol below then they don't overlap (too much).</span>
+        <span>The blue line's inside edge should be the actual line coordinate, and the outside edge match the edge of the stroke.</span>
         <h2>Drums</h2>
         <div id="symbol-drums-container"></div>
         <h2>Decorations</h2>
@@ -111,7 +117,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
 
     </body>
     <script type="module">
-        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt} from "../src/scoreComponentUtils/drawUtils.js";
+        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt, getDrumSize, getDecorationSize} from "../src/scoreComponentUtils/drawUtils.js";
         import {Symbols} from "../src/symbols.js";
         
         function drawLine(svg, className, x1, y1, x2, y2) {
@@ -182,7 +188,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
             // drawFunc: Callable[svg, container, ...drawArgs]
-            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth}
+            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth, size(left,right,up,down)(inside,outside)}
             // drawArgs: Array
             // sizeArgs: Array
             //
@@ -190,6 +196,8 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             // The result of drawFunc will be inside a group, all size-lines will be paths drawn as direct children of the svg nodes.
             //
             // The svg will be given a tooltip to report the arguments that were used when generating it.
+            //
+            // For the size func, either you have all inside+outside sizes and nothing else, or you have no inside+outside sizes. In the second case you need the left+up+down sizes and either sizeRight or minAnchorWidth but not both.
             
             // Create container
             const {svg, container} = createSvgAndContainer(section);
@@ -206,17 +214,24 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             
             // Draw size calculations ---
             const size = sizeFunc(...sizeArgs);
-            drawLine(svg, "sideSize", -size.sizeLeft, bbox.y, -size.sizeLeft, bbox.y + bbox.height);  // Draw this to the svg (for css selector reasons)
-            drawLine(svg, "sideSize", bbox.x, -size.sizeUp, bbox.x + bbox.width, -size.sizeUp);  
-            drawLine(svg, "sideSize", bbox.x, size.sizeDown, bbox.x + bbox.width, size.sizeDown);  
-            if (size.minAnchorWidth === undefined) {
-                // Only one anchor so sizeRight can be drawn like the others
-                drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
+            if (size.sizeLeftInside !== undefined) { // Are we drawing inside/outside sizes or normal sizeSizes
+                drawSquare(svg, "sideSize", -size.sizeLeftOutside, bbox.y, size.sizeLeftOutside - size.sizeLeftInside, bbox.height);
+                drawSquare(svg, "sideSize", size.sizeRightInside, bbox.y, size.sizeRightOutside - size.sizeRightInside, bbox.height);
+                drawSquare(svg, "sideSize", bbox.x, -size.sizeUpOutside, bbox.width, size.sizeUpOutside - size.sizeUpInside);
+                drawSquare(svg, "sideSize", bbox.x, size.sizeDownInside, bbox.width, size.sizeDownOutside - size.sizeDownInside);
             } else {
-                // Size right is from a second anchor
-                const maw = size.minAnchorWidth;
-                drawLine(svg, "maw", maw, bbox.y, maw, bbox.y + bbox.height);  
-                drawLine(svg, "mawSideSize", maw + size.sizeRight, bbox.y, maw + size.sizeRight, bbox.y + bbox.height);  
+                drawLine(svg, "sideSize", -size.sizeLeft, bbox.y, -size.sizeLeft, bbox.y + bbox.height);  // Draw this to the svg (for css selector reasons)
+                drawLine(svg, "sideSize", bbox.x, -size.sizeUp, bbox.x + bbox.width, -size.sizeUp);  
+                drawLine(svg, "sideSize", bbox.x, size.sizeDown, bbox.x + bbox.width, size.sizeDown);  
+                if (size.minAnchorWidth === undefined) {  // Are we drawing sizeRight or minAnchorWidth
+                    // Only one anchor so sizeRight can be drawn like the others
+                    drawLine(svg, "sideSize", size.sizeRight, bbox.y, size.sizeRight, bbox.y + bbox.height);  
+                } else {
+                    // Size right is from a second anchor
+                    const maw = size.minAnchorWidth;
+                    drawLine(svg, "maw", maw, bbox.y, maw, bbox.y + bbox.height);  
+                    drawLine(svg, "mawSideSize", maw + size.sizeRight, bbox.y, maw + size.sizeRight, bbox.y + bbox.height);  
+                }
             }
             
             // Draw anchor
@@ -288,11 +303,16 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         
         // Visualise drums
         const drumSizeGetter = (drumId) => {
+            const adjustedDrumSize = getDrumSize(drumId);
             return {
-                sizeLeft: Symbols.getDrumSizeLeft(drumId),
-                sizeRight: Symbols.getDrumSizeRight(drumId),
-                sizeUp: Symbols.getDrumSizeUp(drumId),
-                sizeDown: Symbols.getDrumSizeDown(drumId)
+                sizeLeftInside: Symbols.getDrumSizeLeft(drumId),
+                sizeRightInside: Symbols.getDrumSizeRight(drumId),
+                sizeUpInside: Symbols.getDrumSizeUp(drumId),
+                sizeDownInside: Symbols.getDrumSizeDown(drumId),
+                sizeLeftOutside: adjustedDrumSize.sizeLeft,
+                sizeRightOutside: adjustedDrumSize.sizeRight,
+                sizeUpOutside: adjustedDrumSize.sizeUp,
+                sizeDownOutside: adjustedDrumSize.sizeDown
             };
         };
         Symbols.listDrums().forEach(drumId => {
@@ -302,12 +322,16 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         // Visualise decorations
         // TODO: Paramaterise visualisations with different heights and drum_center_ys
         const decorationSizeGetter = (decoId) => {
-            const minHeight = Symbols.getDecorationMinHeight(decoId);
+            const adjustedDecoSize = getDecorationSize(decoId);
             return {
-                sizeLeft: Symbols.getDecorationWidth(decoId),
-                sizeRight: 0,
-                sizeUp: minHeight / 2,
-                sizeDown: minHeight / 2
+                sizeLeftInside: Symbols.getDecorationWidth(decoId),
+                sizeRightInside: 0,
+                sizeUpInside: Symbols.getDecorationMinHeight(decoId) / 2,
+                sizeDownInside: Symbols.getDecorationMinHeight(decoId) / 2,
+                sizeLeftOutside: adjustedDecoSize.sizeLeft,
+                sizeRightOutside: adjustedDecoSize.sizeRight,
+                sizeUpOutside: adjustedDecoSize.minHeight / 2,
+                sizeDownOutside: adjustedDecoSize.minHeight / 2
             };
         };
         [...Symbols.listLeftDecorations(), ...Symbols.listRightDecorations()].forEach(decoId => {

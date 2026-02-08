@@ -7,7 +7,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getContractSize} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getContractSize, getDrumSize, getDecorationSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getHeight(sizeInfo) {
@@ -90,8 +90,9 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
             
             // Check if iid collides with jid
             if (drumCollisions[iid].has(jid)) {
-                if (Symbols.getDrumSizeDown(jid) > (currentDist - Symbols.getDrumSizeUp(iid))) {
-                    distRequirement = Symbols.getDrumSizeDown(jid) + Symbols.getDrumSizeUp(iid);
+                const drumSize = getDrumSize(iid);
+                if (drumSize.sizeDown > (currentDist - drumSize.sizeUp)) {
+                    distRequirement = drumSize.sizeDown + drumSize.sizeUp;
                 }
             }
         }
@@ -121,8 +122,8 @@ function getMaxHorizSizeOfDrums(drums) {
     // Returns the maxiumum sizeLeft and sizeRight that the given drums have.
     // Returns {sizeLeft: float, sizeRight: float}.
     return {
-        sizeLeft: Math.max(...Array.from(drums).map(id => Symbols.getDrumSizeLeft(id))),
-        sizeRight: Math.max(...Array.from(drums).map(id => Symbols.getDrumSizeRight(id)))
+        sizeLeft: Math.max(...Array.from(drums).map(id => getDrumSize(id).sizeLeft)),
+        sizeRight: Math.max(...Array.from(drums).map(id => getDrumSize(id).sizeRight))
     };
 }
 
@@ -191,10 +192,10 @@ function calculateInstructionX(instr, trackers) {
         
 
     } else if (instr.type === RenderInstruction.DECORATION) {
-        const decorationWidth = Symbols.getDecorationWidth(instr.decoration);
+        const decorationSize = getDecorationSize(instr.decoration);
         
-        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationWidth);
-        newDrumSpaceRight = newX;
+        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationSize.sizeLeft);
+        newDrumSpaceRight = newX + decorationSize.sizeRight;
         newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
 
         
@@ -241,7 +242,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
         0,  // If there are no decorations then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => Symbols.getDecorationMinHeight(instr.decoration))
+            .map(instr => getDecorationSize(instr.decoration).minHeight)
     );
     const maxDecorationMinAboveBars = Math.max(
         0,  // If there are no decorations then take 0
@@ -294,9 +295,9 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
     // Find the actual height of the drums
     const highestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));  // Returns null if relativeDrumYs is empty
-    const highestDrumSizeUp = (highestDrumId !== null) ? Symbols.getDrumSizeUp(highestDrumId) : 0;
+    const highestDrumSizeUp = (highestDrumId !== null) ? getDrumSize(highestDrumId).sizeUp : 0;
     const lowestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
-    const lowestDrumSizeDown = (lowestDrumId !== null) ? Symbols.getDrumSizeDown(highestDrumId) : 0;
+    const lowestDrumSizeDown = (lowestDrumId !== null) ? getDrumSize(highestDrumId).sizeDown : 0;
     const lowestDrumAnchor = (lowestDrumId !== null) ? relativeDrumYs[lowestDrumId] : 0;
     const drumsHeight = lowestDrumSizeDown + lowestDrumAnchor + highestDrumSizeUp;  // relativeDrumYs[highestDrumId] === 0 so we don't need to add it
     

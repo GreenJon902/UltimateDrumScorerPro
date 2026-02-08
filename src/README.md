@@ -16,13 +16,14 @@ A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i
   
 `new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
-The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up.  
+The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up. These sizes should not account for stroke-width.  
 
 `new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
-Adds a new base-symbol for a decoration with the given id. The id must not be taken.
-The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.
-The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.
-The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.
+Adds a new base-symbol for a decoration with the given id. The id must not be taken.  
+The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-below-drums / 2` even if it extends over `min-height/2` over the middle of the drums.  
+The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.  
+The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.  
+The given sizes should not account for stroke-width. The min-below and min-above quantities will not be adjusted for stroke width.  
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
@@ -31,13 +32,15 @@ Adds a new part symbol with the given id. The id must not be taken.
 Adds a new symbol for a drum with the given id. The id must not be taken, however the modifier itself can have already been used. The id must be modified at least once, and the base-id must be taken.  
 The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up.  
 This will not inherit instructions or groups from the base-ids or any related symbol-ids. You must specify these yourself.  
-  
+The given sizes should not account for stroke-width.  
+
 `modifier,drum,auto,<modifier-id: modifier_id>,<pattern...: list<pattern-part>>,(+<detla|\><min)size-left: float>,(+<detla|\><min)size-right: float>,(+<detla|\><min)size-up: float>,(+<detla|\><min)size-down: float>,<min-width: float>,<min-height: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds new symbols for each drum who's id matches the pattern (non-drum matches will throw an exception). At least one id must match the pattern. The modifier can have been used already, but if the combined ids may not be taken.  
 The created drum's ids are the old id with the modifier added onto the end.  
 For each of the size-(left,right,up,down), you can specificy whether it is a delta or a minimum. The delta is added on to the old size. The minimum means we take the maximum of the given minimum and the old size. In case it isn't clear, you specify which you want using + and > (e.g. ...,+5,+1,>3,+2,...).  
 The min-width and min-height are extra options to say we want at least this width and this height centered around the centre of the parent. So if we have the size-right=0 and size-left=5 and min-width=10, size-left of the new drum will be 7.5, and the size-right of the new drum will be 2.5. A maximum will be taken between sizes computed this way and sized computed from deltas/mins.  
 The created drum will inherit instructions and groups from the drum it was created from, and will have the new instructions and groups appended to the end.  
+The given sizes should not account for stroke-width.  
   
 `constraint,drum,<top-id: union<drum-id,group-id>>,<bottom-id: union<drum-id,group-id>>,<distance: float>`  
 Adds a constraint to say a given drum/group must be above another drum/group. The given ids must exist.  

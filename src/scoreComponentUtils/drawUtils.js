@@ -237,11 +237,20 @@ export function drawDrumAt(svg, container, drumId, x, y) {
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
      
     drawSymbolAt(svg, container, drumId, x, y, {
-        size_left: Symbols.getDrumSizeLeft(drumId),
+        size_left: Symbols.getDrumSizeLeft(drumId),  // Underscores is what the substitution names use
         size_up: Symbols.getDrumSizeUp(drumId),
         size_right: Symbols.getDrumSizeRight(drumId),
         size_down: Symbols.getDrumSizeDown(drumId)
     });
+}
+export function getDrumSize(drumId) {
+    // Returns the given drums {size_left, size_right, size_up, size_down} after adjusting for stroke width.
+    return {
+        sizeLeft: Symbols.getDrumSizeLeft(drumId) + SR,
+        sizeUp: Symbols.getDrumSizeUp(drumId) + SR,
+        sizeRight: Symbols.getDrumSizeRight(drumId) + SR,
+        sizeDown: Symbols.getDrumSizeDown(drumId) + SR,
+    }
 }
 
 export function drawDecorationAt(svg, container, decorationId, x, y, height, drumCenterY) {
@@ -253,6 +262,15 @@ export function drawDecorationAt(svg, container, decorationId, x, y, height, dru
         height: height,
         drum_center_y: drumCenterY
     });
+}
+export function getDecorationSize(decoId) {
+    // Returns the given decortaions {sizeLeft, sizeRight, minHeight} after adjusting for stroke-width.
+    // The minHeight is centred around the centre-y of the decoration.
+    return {
+        sizeLeft: Symbols.getDecorationWidth(decoId) + SR,  
+        sizeRight: SR,
+        minHeight: Symbols.getDecorationMinHeight(decoId) + 2 * SR  // Stroke width on top and bottom
+    }
 }
 
 function createRequisiteName(symbolId, substitutions) {
