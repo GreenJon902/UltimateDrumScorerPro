@@ -45,7 +45,7 @@ export const SYMBOLS_SOURCE = [
     "modifier,drum,auto,accent,2,+*drums,-ghosted,+1,+2,+1,0,0,0,1,path,M${0 - parent_size_left - 1} ${0 - parent_size_up} L${0 - parent_size_left + parent_size_right / 2} ${0 - parent_size_up - 2} L${parent_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
 
     // Decorations
-    "new,decoration,bar-end,2.5,10,,,,right,1,path,L0 ${drum_center_y - height / 2} 0 ${drum_center_y + height / 2}"
+    "new,decoration,bar-end,1,10,,,,right,1,path,M-0.5 ${drum_center_y - height / 2} L-0.5 ${drum_center_y + height / 2}"
 
 
 ].join(",");
@@ -54,24 +54,6 @@ export const SYMBOLS_SOURCE = [
 // TODO: SVG Instructions with brackets (in the format things) cause a recursion depth error
 // TODO: SVG Instruction format thing parsing does not work - seems to parse `a + b / 2` as `(a + b) / 2`)
 // TODO: We need a better selection system (better patterns). Some set-notation would probably do it
-// TODO: Decoration variables // I mean the whole variable system needs to be fixed. We need to error when a variable does not exist
 
 
 
-
-
-
-Ok PLAN
-1. Fix above bugs
-
-2. Reimplement variables system
-
-    - computeSubstitutions, computeSubstitutionsPartial
-    - Tokenize and parse the SVGInstruction on creation, and store the AST instead of the string.
-    - Then computeSubstitutionsPartial replaces identifier nodes with literal nodes
-    - Then computeSubstitutions runs computeSubstitutionsPartial and then executes the node
-
-    - drumVars: [(base|parent)_]size_(left|right|up|down)
-    - decoVars: width, height, drum-center-y, drum-buttom, drum-top, beam-top
-
-3. Draw utils createSymbolGroup needs to have variables it can pass to svginstructions somehow?

@@ -47,7 +47,7 @@ class HTTPHandler(SimpleHTTPRequestHandler):
 
     def modify_js(self, content):
         # Example modification: inject a console.log
-        foreverloop_definition = "let __values = {}; function __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>10000) {__values = {};throw \"Too many iterations on line \" + n + \"\";}}"
+        foreverloop_definition = "let __values = {}; function __check_no_forever_loop(n) {if (!(n in __values)) {__values[n] = 0;}; __values[n] += 1; if (__values[n]>100000) {__values = {};throw \"Too many iterations on line \" + n + \"\";}}"
         
         new = ""
         foreverloop_added = False

@@ -1,4 +1,4 @@
-import {drawSymbolAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract} from "./drawUtils.js";
+import {drawDrumAt, drawDecorationAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract} from "./drawUtils.js";
 import {RenderInstruction} from "./compile.js";
 
 
@@ -45,7 +45,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
                 const x = spacing.instructionXs[instrI];
                 const y = spacing.drumYs[drumId];
                 
-                drawSymbolAt(svg, svg, drumId, x, y);
+                drawDrumAt(svg, svg, drumId, x, y);
             });
             
             // An instruction has a stem iff it has symbols, so draw the stem
@@ -60,6 +60,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
 
         // Draw decorations ---
         if (instr.type === RenderInstruction.DECORATION) {
+            // TODO: Convert to drawDecorationAt
             drawSymbolAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount]);
             prevDecorationCount++;
         }

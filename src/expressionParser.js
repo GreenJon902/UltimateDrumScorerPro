@@ -11,6 +11,17 @@ export function evaluateExpression(expr, variables) {
     return result;
 }
 
+export function getUsedSubstitionNames(expr) {
+    // Gets the names of values that need to be substituted into expr.
+    // Returns Set<string>.
+    
+    const tokens = tokenize(expr);
+    const names = tokens.filter(tok => ((typeof tok === "string" || tok instanceof String) && !OPERATORS.has(tok)));
+    
+    return Object.freeze(new Set(names));
+    
+}
+
 const OPERATORS_PRECEDENCE = {  // Maps from operator (single-character) to precedence number (higher means do first). Only contains operators with precedence.
     "+": 0,
     "*": 1,
@@ -91,8 +102,10 @@ function substitute(tokens, variables) {
     
     // Substitute
     const newTokens = tokens.map(tok => ((typeof tok === "string" || tok instanceof String) && !OPERATORS.has(tok)) ? variables[tok] : tok);
-    // Throw error if any are undefined (so identifier not in variables)
-    if (newTokens.filter(tok => tok === undefined).length > 0) throw "Variable not specified";
+    // Find any (and their index) that are undefined (so no variable was found for them)
+    const missing = newTokens.map((tok, i) => [tok, i]).filter(toki => toki[0] === undefined);
+    // Error if any are missing
+    if (missing.length > 0) throw "Variable not specified - "+ tokens[missing[0][1]];
     
     return newTokens;
 }
@@ -149,7 +162,14 @@ function parseLiteralOrBracket(tokens) {
 function execute(ast) {
     // Computes the value of the ast and returns the result.
     // This expects a tree of integers/floats and operators, foramtted as this ["*", 1, ["+", 2, 5]].
+    // This throws an error if an operation results in NaN.
     
-    if (Array.isArray(ast)) return OPERATORS_FUNCTIONS[ast[0]](execute(ast[1]), execute(ast[2]));
+    if (Array.isArray(ast)) {
+        const lhs = execute(ast[1]);
+        const rhs = execute(ast[2]);
+        const ret = OPERATORS_FUNCTIONS[ast[0]](lhs, rhs);
+        if (isNaN(ret)) throw "Operator resulted in NaN for " + ast + " lhs=" + lhs + " rhs=" + rhs;
+        return ret;
+    }
     return ast;
 }

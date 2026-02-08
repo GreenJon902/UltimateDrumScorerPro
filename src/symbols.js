@@ -1,4 +1,4 @@
-import {evaluateExpression} from "./expressionParser.js";
+import {evaluateExpression, getUsedSubstitionNames} from "./expressionParser.js";
 import {SYMBOLS_SOURCE} from "./_symbols_source.js";
 
 function parseFloatNN(string) {
@@ -148,9 +148,9 @@ function parseInstruction(tokens, parseData) {
         const pathString = dequeue(tokens);
         return new SvgInstruction(SvgInstruction.PATH, pathString);
     } else if (instructionName === "circle") {
-        const cx = parseFloatNN(dequeue(tokens));
-        const cy = parseFloatNN(dequeue(tokens));
-        const r = parseFloatNN(dequeue(tokens));
+        const cx = dequeue(tokens);  // Don't cast as this could be paramerterised
+        const cy = dequeue(tokens);
+        const r = dequeue(tokens);
         return new SvgInstruction(SvgInstruction.CIRCLE, cx, cy, r);
     } else if (instructionName === "use") {
         const id = ensureExists(ensureSymbolId(dequeue(tokens)), parseData, {group: false});  // We can't draw a group so don't check those.
@@ -478,9 +478,10 @@ export class SvgInstruction {
     addSubstitutions(newSubstitutions) {
         // Saves the given substitutions to be used when this instruction's substitutions are computed.
         // This returns a new SvgInstruction (because SvgInstruction are immutable).
+        // The given newSubstitutions should be {string: float}.
         
         // Check if duplicate substitution
-        if (new Set(Object.keys(newSubstitutions)).intersection(new Set(Object.keys(this.#substitutions))).size !== 0) throw "Cannot substitute the same name twice";
+        if (new Set(Object.keys(newSubstitutions)).intersection(new Set(Object.keys(this.#substitutions))).size !== 0) throw "Cannot substitute the same name twice - current: " + this.#substitutions + ", new: " + newSubstitutions;
         
         // Create new instruction
         let newInstruction;
@@ -498,7 +499,8 @@ export class SvgInstruction {
             throw "Unknown type " + type;
         }
         
-        // Add new combined substitutions
+        // Add old and new substitutions
+        Object.assign(newInstruction.#substitutions, this.#substitutions);
         Object.assign(newInstruction.#substitutions, newSubstitutions);
 
         return newInstruction;
@@ -528,6 +530,31 @@ export class SvgInstruction {
         return newInstruction;
     }
     
+    getUsedSubstitionNames() {
+        // Returns the names of the substitutions that this instruction uses, as a frozen set of strings.
+        
+        if (this.type === SvgInstruction.PATH) {
+            return this.#getNamesInSubstitutions(this.path);
+        } else if (this.type === SvgInstruction.CIRCLE) {
+            return this.#getNamesInSubstitutions(this.cx) + this.#getNamesInSubstitutions(this.cy) + this.#getNamesInSubstitutions(this.r);
+        } else if (this.type === SvgInstruction.USE) {
+            return this.#getNamesInSubstitutions(this.id);
+        } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
+            return this.#getNamesInSubstitutions(this.transform);
+        } else if (this.type === SvgInstruction.POP_TRANSFORM) {
+            return Object.freeze(new Set());  // Just return empty set
+        } else {
+            throw "Unknown type " + type;
+        }
+    }
+    
+    getSubstitutions() {
+        // Returns a map {string: float} from all substitutions that have been given to this instruction.
+        // Unless you have added substitutions to this object, these should only be local variables (if any).
+        
+        return Object.freeze(Object.assign({}, this.#substitutions));  // Freeze and clone object
+    }
+    
     #evaluate(string) {
         // Substitutions the stored substitutions into the given string and computes the maths and then returns it.
         
@@ -537,6 +564,15 @@ export class SvgInstruction {
             expr, 
             Object.assign({}, this.#substitutions)  // Dupliacte substitutions array
         )); 
+    }
+    
+    #getNamesInSubstitutions(string) {
+        // Gets the names of the identifiers used inside of a substitution expression.
+        // So ${a + 2 * b} => FrozenSet(a, b).
+        
+        return Object.freeze(new Set(...Iterator.concat(string.matchAll(/\${(.*?)}/g).map(a => 
+            getUsedSubstitionNames(a[1])
+        ))));
     }
 }
 
@@ -776,3 +812,4 @@ export class Symbols {
         throw "Symbol does not exist, or is not a drum";
     }
 }
+

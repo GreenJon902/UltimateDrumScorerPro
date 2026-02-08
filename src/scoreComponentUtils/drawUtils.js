@@ -232,34 +232,80 @@ export function getFlagSize(flags, dots) {
 }
 
 
+export function drawDrumAt(svg, container, drumId, x, y) {
+    // Draws the drum with the given id to the given node (container) at the given coordinates..
+    // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+     
+    drawSymbolAt(svg, container, drumId, x, y, {
+        size_left: Symbols.getDrumSizeLeft(drumId),
+        size_up: Symbols.getDrumSizeUp(drumId),
+        size_right: Symbols.getDrumSizeRight(drumId),
+        size_down: Symbols.getDrumSizeDown(drumId)
+    });
+}
+
+export function drawDecorationAt(svg, container, decorationId, x, y, height, drumCenterY) {
+    // Draws the decoration with the given id to the given node (container) at the given coordinates..
+    // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+     
+    drawSymbolAt(svg, container, decorationId, x, y, {
+        width: Symbols.getDecorationWidth(decorationId),
+        height: height,
+        drum_center_y: drumCenterY
+    });
+}
+
+function createRequisiteName(symbolId, substitutions) {
+    // Creates the id to use for the svg def for the given symbol pared with the given substitutions.
+    // This will only take into account substitutions that are actually used.
+    // Only the global variables should be given, the local variables should already be stored in the SvgInstruction.
+    
+    // Local substs are in the instruction, global are given as a param, so combined
+    const allSubstitutions = Object.assign({}, ...Symbols.getSymbolInstructions(symbolId).map(
+        instr => instr.addSubstitutions(substitutions).getSubstitutions()
+    ));
+
+    // Get names of substitutions used by any instruction as a sorted array using each substName only once
+    const usedSubstitutionNames = new Array(...new Set(Iterator.concat(
+        ...Array.from(Symbols.getSymbolInstructions(symbolId)).map(instr => instr.getUsedSubstitionNames())
+    ))).sort();
+
+    return [symbolId, ...usedSubstitutionNames.map(name => `${name}=${allSubstitutions[name]}`)].join(",");
+}
+
 const SYMBOL_DEFINITIONS = "symbol_definitions";  // The definitionType when handling definitions relating to symbols
-export function drawSymbolAt(svg, container, symbolId, x, y) {  // TODO: Set up remaining SVGInstruction variables (e.g. size_..., width, height, drum-center-y and that innit)
+function drawSymbolAt(svg, container, symbolId, x, y, substitutions) {  
     // Draws the symbol with the given id to the given node (container) at the given coordinates.
-    // Any required definitions will be added to the given svg. It is expected that cont is a (indirect) child of svg.
+    // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+    // The given substitutions - {string: float} - should contain all (global) variables required for the type of the given symbol. These will be applied to all requisites too.
     
     // Make sure the definition of this symbol has been added
     // We must also ensure we have any definitions for indirect requisites (symbol parts, etc) added too
     const requisites = [symbolId]; 
     while (requisites.length !== 0) {
-        const id = requisites.pop();
+        const newSymbolId = requisites.pop();
         
-        if (hasDefinition(svg, SYMBOL_DEFINITIONS, id)) continue;  // If we have the definition then we have its requisites too
+        if (hasDefinition(svg, SYMBOL_DEFINITIONS, newSymbolId)) continue;  // If we have the definition then we have its requisites too
         
         // Attach the definition for id, and add any requisites to the array to be processed
-        const {group, requisites: newRequisites} = createSymbolGroup(svg, id);
-        attachDefinition(svg, SYMBOL_DEFINITIONS, id, group);
+        const {group, requisites: newRequisites} = createSymbolGroup(svg, newSymbolId, substitutions);
+        
+        const defId = createRequisiteName(newSymbolId, substitutions);
+
+        attachDefinition(svg, SYMBOL_DEFINITIONS, defId, group);
         requisites.push(...newRequisites);
     }
     
     // Create and add a node which calls on the definition
-    createUse(svg, container, SYMBOL_DEFINITIONS, symbolId, translate(x, y));
+    createUse(svg, container, SYMBOL_DEFINITIONS, createRequisiteName(symbolId, substitutions), translate(x, y));
 }
 
 
-function createSymbolGroup(svg, symbolId) {
-    // Creates a svg group node for the given symbol. Also returns any requisite symbols (parts, etc).
+function createSymbolGroup(svg, symbolId, substitutions) {
+    // Creates a svg group node for the given symbol. Also returns any requisite symbols (parts, etc). Also returns any substitution-names / parameters that this used.
     // Expects the requisites to be added under the type SYMBOL_DEFINITIONS.
-    // Returns {group: SvgNode, requisites: Set<symbolId>}.
+    // The given substitutions - {string: float} - should contain all variables required for the type of the given symbol. These will be applied to all requisites too.
+    // Returns {group: SvgNode, requisites: Set<symbolId>, substitutions: Set<string>}.
 
     // Figure out how to draw the given symbol
     const svgInstructions = Symbols.getSymbolInstructions(symbolId);
@@ -271,7 +317,7 @@ function createSymbolGroup(svg, symbolId) {
     const parentNode = new Array(symbolContainer);  // Since we can push and pop transformations, we need a stack
     const requisites = new Set();
     for (let i=0; i<svgInstructions.length; i++) {
-        const instr = svgInstructions[i].computeSubstitutions();
+        const instr = svgInstructions[i].addSubstitutions(substitutions).computeSubstitutions();
         
         const currentParent = parentNode[parentNode.length - 1];  // Add node to the last parentNode (as that was most recently pushed)
         

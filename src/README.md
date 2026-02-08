@@ -56,6 +56,16 @@ The instruction arguements depend on the name. These are the instructions:
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
 
+Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
+This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on variables and float-literals.  
+There are two types of variables, local and global. Local apply only to that instruction, and do not carry through to bases or through 'use' calls. Global variables will.
+| Identifier                                                                     | __L__ocal/__G__lobal | D__r__ums/D__e__corations | Notes                                                                                       |
+|--------------------------------------------------------------------------------|----------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| `size_left`, `size_right`, `size_up`, `size_down`                              | G                    | r                         | The size of the final symbol after any modifications are processed.  <br>Relative to the anchor.                       |
+| `parent_size_left`, `parent_size_right` , `parent_size_up`, `parent_size_down` | L                    | r                         | Refer specifically to the direct parent.  <br>Only available for automatically modified drums. |
+| `drum_center_y`                                                                | G                    | e                         | Relative to the (0,0) of the decoration.                                                    |
+| `width`, `height`                                                              | G                    | e                         |                                                                                             |
+
 `transform-string`: 
 This should be the same format as the SVG spec uses for transforms. This should contain no commas, and should not be wrapped with quotes.
 
@@ -67,11 +77,7 @@ If the id is a group, then it adds/removes all ids that are in that group.
 If the id is the string literal "\*drums" or "\*decorations" or "\*parts", then it will add every id from the given group.
 
 
-Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
-This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on identifiers and float-literals.  
-Instructions in drums will always have the identifiers `size_left`, `size_right`, `size_up` and `size_down`, which are the sizes of the final symbol after all modifications are processed. This means `size_right` of a `snare` may be 0, but `size_right` of a `snare_ghost` may be 3. This means when you use a `use` instruction then parts will have access to size, and when if you use a `use` instruction to include a `snare`, the `size_right` will still be 3. However, keep in mind that if you use a part in both a drum and decoration, the identifiers may not be available/identical in both.  
-When you use `modifier,drum,auto...`, you will have `parent_size_left`, `parent_size_right`, `parent_size_up`, `parent_size_down`, however these refer specifically to the direct parent. So if a inherits from b and b inherits from c: when drawing a, the parent sizes for b will be c's size, and the parent sizes for a will be b's size.  
-Instructions in decorations will always have the identifiers `width`, `height` and `drum_center_y` (relative to the (0,0) of the decoration) and the same rules apply as do apply to drums.  
+
 
 # Data flow / event processing
 ## "Class diagrams" for managers

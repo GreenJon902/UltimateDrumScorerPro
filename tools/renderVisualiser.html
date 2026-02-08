@@ -111,7 +111,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
 
     </body>
     <script type="module">
-        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawSymbolAt} from "../src/scoreComponentUtils/drawUtils.js";
+        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt} from "../src/scoreComponentUtils/drawUtils.js";
         import {Symbols} from "../src/symbols.js";
         
         function drawLine(svg, className, x1, y1, x2, y2) {
@@ -296,11 +296,11 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             };
         };
         Symbols.listDrums().forEach(drumId => {
-            createSvg("symbol-drums-container", drawSymbolAt, drumSizeGetter, [drumId, 0, 0], [drumId]);
+            createSvg("symbol-drums-container", drawDrumAt, drumSizeGetter, [drumId, 0, 0], [drumId]);
         });
         
         // Visualise decorations
-        // TODO: Paramaterise visualisations with different drum / bar heights
+        // TODO: Paramaterise visualisations with different heights and drum_center_ys
         const decorationSizeGetter = (decoId) => {
             const minHeight = Symbols.getDecorationMinHeight(decoId);
             return {
@@ -311,7 +311,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             };
         };
         [...Symbols.listLeftDecorations(), ...Symbols.listRightDecorations()].forEach(decoId => {
-            createSvg("symbol-decorations-container", drawSymbolAt, decorationSizeGetter, [decoId, 0, 0], [decoId]);
+            createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter, [decoId, 0, 0, 10, 0], [decoId]);
         });
 
     </script>
