@@ -4,8 +4,8 @@ export function evaluateExpression(expr, variables) {
     
     const tokens = tokenize(expr);
     const substitutedTokens = substitute(tokens, variables);  // Since scope doesn't really exist, we can convert all identifiers to literals here
-    const ast = parse(substitutedTokens);
-    if (substitutedTokens.length !== 0) throw "Failed to parse full tokens array";
+    const ast = parse(substitutedTokens);  // This is successful if it cleared the substitutedTokens array
+    if (substitutedTokens.length !== 0) throw "Failed to parse full tokens array, did you close all brackets?";
     const result = execute(ast);
     
     return result;
@@ -117,22 +117,24 @@ function parse(tokens) {
     // The returned AST is a tree formatted like this ["-", ["+", 3, 2], 2].
     // 
     // This will modify the given array.
+    //                                                                                                                     ⌄
+    // If an (un-opened (by this)) closing bracket is found, then this method will return without consuming it.  E.g. (1+2))/2
     
     if (tokens.length === 0) throw "Expected at least one token";
 
     let lhs = parsePrimary(tokens);
     while (tokens.length > 0) {
+        if (tokens[0] === ")") break;  // If closing bracket then return without consuming
         let op = tokens.shift();
-        if (op === ")") break;
         let opPrecedence = OPERATORS_PRECEDENCE[op];
-        if (opPrecedence === undefined) throw "Unexpected token";  // Use precedence's keys as brackets can't come here.
+        if (opPrecedence === undefined) throw "Unexpected token " + op;  // Use precedence's keys as brackets can't come here.
         
         let rhs = parsePrimary(tokens);
 
         while (tokens.length > 0 && tokens[0] !== ")") {  // RHS may be an expression, e.g. a + 2/3  the 2/3 is the rhs
             let nextOp = tokens[0];
             let nextOpPrecedence = OPERATORS_PRECEDENCE[nextOp];
-            if (nextOpPrecedence === undefined) throw "Unexpected token";  // Use precedence's keys as brackets can't come here.
+            if (nextOpPrecedence === undefined) throw "Unexpected token " + nextOp;  // Use precedence's keys as brackets can't come here.
             
             if (opPrecedence >= nextOpPrecedence) break;  // >= as if we have 3 - 2 - 1 then we want to do (3 - 2) - 1
             tokens.shift();  // Consume operator
@@ -152,7 +154,13 @@ function parsePrimary(tokens) {
     // This consumes the tokens.
     
     // Is it a bracket
-    if (tokens[0] === "(") return parse(tokens);  // This consumes the closing bracket for us
+    if (tokens[0] === "(") {
+        tokens.shift();  // Consume opening bracket
+        const parsed = parse(tokens);  
+        if (tokens[0] !== ")") throw "Expected closing bracket, got " + tokens[0];
+        tokens.shift(); // Consume closing bracket
+        return parsed;
+    }
     
     // Is it a unary operation?
     if ((tokens[0] === "+" || tokens[0] === "-") && tokens.length > 1) {  // +/- and then at least one more token

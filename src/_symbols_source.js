@@ -42,14 +42,13 @@ export const SYMBOLS_SOURCE = [
     "modifier,drum,auto,ghost,1,+*drums,+2,+1,+2,+1,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up - 1} A10 10 0 0 0 ${-parent_size_left - 1} ${parent_size_down + 1} M${parent_size_right + 1} ${parent_size_down + 1} A10 10 0 0 0 ${parent_size_right + 1} ${-parent_size_up - 1},1,ghosted",
 
     // Accents
-    "modifier,drum,auto,accent,2,+*drums,-ghosted,+1,+2,+1,0,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up} L${-parent_size_left + parent_size_right / 2} ${-parent_size_up - 2} L${parent_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
+    "modifier,drum,auto,accent,2,+*drums,-ghosted,+1,+2,+1,0,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up} L${(-parent_size_left + parent_size_right) / 2} ${-parent_size_up - 2} L${parent_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
 
     // Decorations
     "new,decoration,bar-end,0,10,,,,right,1,path,M0 ${drum_center_y - height / 2} L0 ${drum_center_y + height / 2}"
 
 
 ].join(",");
-// TODO: SVG Instructions with brackets (in the format things) cause a recursion depth error
 // TODO: We need a better selection system (better patterns). Some set-notation would probably do it
 // TODO: If you draw a drum and snare at the same time, they draw over oneanother
 
