@@ -129,9 +129,9 @@ function parse(tokens) {
         
         let rhs = parsePrimary(tokens);
 
-        while (tokens.length > 0 && tokens[0] !== ")") {
+        while (tokens.length > 0 && tokens[0] !== ")") {  // RHS may be an expression, e.g. a + 2/3  the 2/3 is the rhs
             let nextOp = tokens[0];
-            let nextOpPrecedence = OPERATORS_PRECEDENCE[op];
+            let nextOpPrecedence = OPERATORS_PRECEDENCE[nextOp];
             if (nextOpPrecedence === undefined) throw "Unexpected token";  // Use precedence's keys as brackets can't come here.
             
             if (opPrecedence >= nextOpPrecedence) break;  // >= as if we have 3 - 2 - 1 then we want to do (3 - 2) - 1
