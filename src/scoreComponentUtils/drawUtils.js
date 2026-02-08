@@ -288,7 +288,7 @@ function createRequisiteName(symbolId, substitutions) {
         ...Array.from(Symbols.getSymbolInstructions(symbolId)).map(instr => instr.getUsedSubstitionNames())
     ))).sort();
 
-    return [symbolId, ...usedSubstitutionNames.map(name => `${name}=${allSubstitutions[name]}`)].join(",");
+    return [symbolId, ...usedSubstitutionNames.map(name => `${name}_${allSubstitutions[name]}`)].join(",");
 }
 
 const SYMBOL_DEFINITIONS = "symbol_definitions";  // The definitionType when handling definitions relating to symbols
