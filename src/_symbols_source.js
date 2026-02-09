@@ -45,7 +45,7 @@ export const SYMBOLS_SOURCE = [
     "modifier,drum,auto,accent,2,+*drums,-ghosted,~1,+2,~1,0,0,0,1,path,M${-base_size_left - 1} ${-parent_size_up} L${(-base_size_left + base_size_right) / 2} ${-parent_size_up - 2} L${base_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
 
     // Decorations
-    "new,decoration,bar-end,0,10,,,,right,1,path,M0 ${drum_center_y - height / 2} L0 ${drum_center_y + height / 2}"
+    "new,decoration,bar-end,0,10,,,,right,1,path,M0 ${-height / 2} L0 ${+height / 2}"
 
 
 ].join(",");

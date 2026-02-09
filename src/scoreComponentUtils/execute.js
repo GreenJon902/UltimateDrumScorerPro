@@ -11,7 +11,9 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     //     restCenterYs: [float],  // The y line that rests should be centred on. The index corresponds to the number of previous REST instructions.
     //     contractCenterYs: [float],  // The y line that contracts should be centred on. The index corresponds to the number of previous CONTRACT_START instructions.
     //     stemTopYs: [float],  // The y-level that should be the top of each stem. The index corresponds to the number of previous stems drawn.
-    //     decorationCenterYs: [float]  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
+    //     decorationCenterYs: [float],  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
+    //     drumCenterYs: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
+    //     decorationHeights: {str: float}  // A map from decoration-id to decoration height. This height does not include the stroke-width on the boundary.
     // }
     //
     // Renders the given instructions to the given svg using the given spacing data.
@@ -60,8 +62,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
 
         // Draw decorations ---
         if (instr.type === RenderInstruction.DECORATION) {
-            // TODO: Convert to drawDecorationAt
-            drawSymbolAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount]);
+            drawDecorationAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationHeights[instr.decoration]);
             prevDecorationCount++;
         }
         

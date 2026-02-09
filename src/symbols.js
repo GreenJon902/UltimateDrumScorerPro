@@ -297,9 +297,9 @@ function parseNewDecoration(tokens, parseData) {
     const id = ensureDoesNotExist(ensureSymbolIdPart(dequeue(tokens)), parseData);
     const width = parseFloatNN(dequeue(tokens));
     const minHeight = parseFloatNN(dequeue(tokens));
-    const minBelowDrums = parseOptionalFloat(dequeue(tokens), 0);
-    const minAboveDrums = parseOptionalFloat(dequeue(tokens), 0);
-    const minAboveBars = parseOptionalFloat(dequeue(tokens), 0);
+    const minBelowDrums = parseOptionalFloat(dequeue(tokens), null);
+    const minAboveDrums = parseOptionalFloat(dequeue(tokens), null);
+    const minAboveBars = parseOptionalFloat(dequeue(tokens), null);
     const side = dequeue(tokens);
     const instructions = parseList(tokens, parseInstruction, parseData);
     
@@ -776,18 +776,21 @@ export class Symbols {
     
     static getDecorationMinBelowDrums(symbolId) {
         // Returns the minimum distance a decoration should descend below the bottom of the lowest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        // If there is no constraint then this returns null.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minBelowDrums;
         throw "SymbolId does not exist, or is not decoration";
     }
     
     static getDecorationMinAboveDrums(symbolId) {
         // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
+        // If there is no constraint then this returns null.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveDrums;
         throw "SymbolId does not exist, or is not decoration";
     }
     
     static getDecorationMinAboveBars(symbolId) {
         // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
+        // If there is no constraint then this returns null.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBars;
         throw "SymbolId does not exist, or is not decoration";
     }
