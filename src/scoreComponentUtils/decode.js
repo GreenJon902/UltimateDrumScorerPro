@@ -68,7 +68,7 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     //     1: a is 10 above c, 2: a is 5 above b, 3: b is 5 above c.
     //     If we start with {a: 0, b: 0, c: 0}, and then apply 1 we get {a: 0, b: 0, c: 10}. Then after 2 and 3 we have {a: 0, b: 5, c: 10}. But if we choose a better order to apply the constraints in, we can get {a: 0, b: 5, c: 5}.
 
-    const directRelativeDrumYs = [{id: orderedDrumIds[0], dist: 0}];  // [{id: drumId, dist: float}] where the distance is to the anchor above it. The order of items in this array should be in the order that symbols are drawn top to bottom  // The first item will always have distance 0
+    const directRelativeDrumYs = [{id: orderedDrumIds[0], dist: getDrumSize(orderedDrumIds[0]).sizeUp}];  // [{id: drumId, dist: float}] where the distance is to the anchor above it. The order of items in this array should be in the order that symbols are drawn top to bottom  // The top of the first item should always be 0
     for (let i=1; i<orderedDrumIds.length; i++) {  // i is the index of the drum we are adding.  // Start with i=0 as we've already added item 0.
         const iid = orderedDrumIds[i];
         
@@ -77,8 +77,8 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
         for (let j=0; j<directRelativeDrumYs.length; j++) {  // j is the index of the drum we are comparing to
             const jid = directRelativeDrumYs[j].id;
             
-            const currentDist = [
-                                    ...directRelativeDrumYs.slice(jid + 1).map(drdy => drdy.dist),
+            const currentDist = [  // Distance of j's anchor from 0
+                                    ...directRelativeDrumYs.slice(0, jid + 1).map(drdy => drdy.dist),
                                     0  // Add zero at the end so reduce works if slice returns no values
                                 ].reduce((a, b) => (a + b));
             
@@ -90,9 +90,12 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
             
             // Check if iid collides with jid
             if (drumCollisions[iid].has(jid)) {
-                const drumSize = getDrumSize(iid);
-                if (drumSize.sizeDown > (currentDist - drumSize.sizeUp)) {
-                    distRequirement = drumSize.sizeDown + drumSize.sizeUp;
+                
+                const iDrumSize = getDrumSize(iid);
+                const jDrumSize = getDrumSize(jid);
+                
+                if (jDrumSize.sizeDown >= (currentDist - iDrumSize.sizeUp)) {
+                    distRequirement = jDrumSize.sizeDown + iDrumSize.sizeUp;
                 }
             }
         }
