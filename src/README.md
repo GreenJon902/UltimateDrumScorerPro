@@ -20,7 +20,7 @@ The sizes are the distance from the anchor (the location where the symbol attach
 
 `new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.  
-The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-height / 2` even if it extends over `min-height/2` over the middle of the drums.  
+The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-height / 2` even if it extends over `min-height/2` over the middle of the drums. The min-below and above-drums will also take the top and bottom of the rests into account.  
 The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.  
 The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.  
 The given sizes should not account for stroke-width. The min-below and min-above quantities will not be adjusted for stroke width.  
@@ -62,6 +62,7 @@ The instruction arguements depend on the name. These are the instructions:
 Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
 This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on variables and float-literals. Unary operations are supported for `+` and `-`.  
 There are two types of variables, local and global. Local apply only to that instruction, and do not carry through to bases or through 'use' calls. Global variables will.
+Variables can only store floats.
 | Identifier                                                                     | __L__ocal/__G__lobal | D__r__ums/D__e__corations | Notes                                                                                       |
 |--------------------------------------------------------------------------------|----------------------|---------------------------|---------------------------------------------------------------------------------------------|
 | `size_left`, `size_right`, `size_up`, `size_down`                              | G                    | r                         | The size of the final symbol after any modifications are processed.  <br>Relative to the anchor.                       |

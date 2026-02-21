@@ -224,7 +224,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
     // 
-    // Calculates the drumYs, restCenterYs, contractCenterYs, decorationCenterYs, decorationHeights and stemTopYs that are returned by calculateScoreComponentSpacing.
+    // Calculates the drumYs, restCenterYs, contractCenterYs, decorationCenterYs, decorationHeights, drumCenterY and stemTopYs that are returned by calculateScoreComponentSpacing.
     // While this does not return heights for decorations, it does take their heights into account.
     
     // Calculate prerequisite data ---
@@ -300,7 +300,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // Find the actual height of the drums
     const highestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));  // Returns null if relativeDrumYs is empty
     const highestDrumSizeUp = (highestDrumId !== null) ? getDrumSize(highestDrumId).sizeUp : 0;
-    const lowestDrumId = minKey(id => relativeDrumYs[id], ...Object.keys(relativeDrumYs));
+    const lowestDrumId = minKey(id => -relativeDrumYs[id], ...Object.keys(relativeDrumYs));  // Negate the key so then we are actually finding the maxKey
     const lowestDrumSizeDown = (lowestDrumId !== null) ? getDrumSize(highestDrumId).sizeDown : 0;
     const lowestDrumAnchor = (lowestDrumId !== null) ? relativeDrumYs[lowestDrumId] : 0;
     const drumsHeight = lowestDrumSizeDown + lowestDrumAnchor + highestDrumSizeUp;  // relativeDrumYs[highestDrumId] === 0 so we don't need to add it
@@ -326,6 +326,8 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     const restCenterYs = instructions
             .filter(instr => instr.type === RenderInstruction.REST)
             .map(instr => topDrumYTop + drumsHeight / 2); 
+    const toppestRestTop = topDrumYTop + drumsHeight / 2 - maxRestHeight / 2;
+    const bottomestRestBottom = topDrumYTop + drumsHeight / 2 + maxRestHeight / 2;
     
     
     // Compute decorationCenterYs
@@ -335,8 +337,11 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
 
     // Get decoration heights ---
-    const maxStemTop = Math.max(...stemTopYs);  // TODO: Should we only take into account the adjacent stem tops, or stem tops in that group
+    const maxStemTop = Math.max(...stemTopYs, 0);  // TODO: Should we only take into account the adjacent stem tops, or stem tops in that group?
     const centerDrumY = topDrumYTop + drumsHeight / 2;
+    const bottomDrumYBottom = topDrumYTop + drumsHeight;  // Bottom edge of the lowest drum
+    const topInDrumSpace = Math.min(topDrumYTop, toppestRestTop);  // minAboveDrums takes rests into account
+    const bottomInDrumSpace = Math.max(bottomDrumYBottom, bottomestRestBottom);  // minBelowDrums takes rests into account
     const decorationHeights = Object.fromEntries(
         // Get set of used decoration ids
         // Then convert to an array so we can map it
@@ -349,23 +354,26 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
             const minAboveDrums = Symbols.getDecorationMinAboveDrums(id);
             const minAboveBars = Symbols.getDecorationMinAboveBars(id);
             const minBelowDrums = Symbols.getDecorationMinBelowDrums(id);
-            return [id, Math.min(  // Get minimum decoration top coordinate
+            return [id, -Math.min(  // Get minimum decoration top coordinate
                 
-                    centerDrumY - Symbols.getDecorationMinHeight(id) / 2,  
-                    ...((minAboveDrums !== null) ? [drumYs[highestDrumId] - highestDrumSizeUp - minAboveDrums] : []),  // This is optional, so I've written it as a list expansion
+                    centerDrumY - minHeight / 2,  
+                    ...((minAboveDrums !== null) ? [topInDrumSpace - minAboveDrums] : []),  // This is optional, so I've written it as a list expansion
                     ...((minAboveBars !== null) ? [maxStemTop - minAboveBars] : [])  
                 
-                ) - Math.max(  // Get maximum decoration bottom coordinate
+                ) + Math.max(  // Get maximum decoration bottom coordinate
                     
-                    centerDrumY + Symbols.getDecorationMinHeight(id) / 2,  
-                    ...((minBelowDrums !== null) ? [drumYs[lowestDrumId] + lowestDrumSizeDown + minBelowDrums] : [])  // This is optional, so I've written it as a list expansion
+                    centerDrumY + minHeight / 2,  
+                    ...((minBelowDrums !== null) ? [bottomInDrumSpace + minBelowDrums] : [])  // This is optional, so I've written it as a list expansion
                     
                 )
             ];
         })
     );
     
-    return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights};
+    // Calculate drum center y
+    const drumCenterY = (topDrumYTop + bottomDrumYBottom) / 2;
+    
+    return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
 }
 
 function minKey(key, ...items) {
@@ -403,7 +411,7 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //     contractCenterYs: [float],  // The y line that contracts should be centred on. The index corresponds to the number of previous CONTRACT_START instructions.
     //     stemTopYs: [float],  // The y-level that should be the top of each stem. The index corresponds to the number of previous stems drawn.
     //     decorationCenterYs: [float],  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
-    //     drumCenterYs: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
+    //     drumCenterY: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
     //     decorationHeights: {str: float}  // A map from decoration-id to decoration height. This height does not include the stroke-width on the boundary.
     // }
     
@@ -413,7 +421,7 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //          Or: Calculate the whole slant here (does that really make sense though?)
 
     const instructionXs = getInstructionXs(instructions);
-    const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
+    const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
 
-    return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights};
+    return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
 }

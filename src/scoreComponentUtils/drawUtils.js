@@ -262,6 +262,8 @@ export function getDrumSize(drumId) {
 export function drawDecorationAt(svg, container, decorationId, x, y, height, drumCenterY) {
     // Draws the decoration with the given id to the given node (container) at the given coordinates..
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+    console.log("y", y);
+    console.log("height", height)
      
     drawSymbolAt(svg, container, decorationId, x, y, {
         width: Symbols.getDecorationWidth(decorationId),
@@ -285,8 +287,13 @@ function createRequisiteName(symbolId, substitutions) {
     // Only the global variables should be given, the local variables should already be stored in the SvgInstruction.
     
     // Local substs are in the instruction, global are given as a param, so combined
-    const allSubstitutions = Object.assign({}, ...Symbols.getSymbolInstructions(symbolId).map(
+    let allSubstitutions = Object.assign({}, ...Symbols.getSymbolInstructions(symbolId).map(
         instr => instr.addSubstitutions(substitutions).getSubstitutions()
+    ));
+    
+    // Clean substitution values
+    allSubstitutions = Object.fromEntries(Object.entries(allSubstitutions).map(
+        entr => [entr[0], String(entr[1]).replaceAll(".", "d")] 
     ));
 
     // Get names of substitutions used by any instruction as a sorted array using each substName only once

@@ -62,7 +62,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
 
         // Draw decorations ---
         if (instr.type === RenderInstruction.DECORATION) {
-            drawDecorationAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationHeights[instr.decoration]);
+            drawDecorationAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationHeights[instr.decoration], spacing.drumCenterY);
             prevDecorationCount++;
         }
         

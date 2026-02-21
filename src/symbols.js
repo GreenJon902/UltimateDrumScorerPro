@@ -480,7 +480,14 @@ export class SvgInstruction {
     addSubstitutions(newSubstitutions) {
         // Saves the given substitutions to be used when this instruction's substitutions are computed.
         // This returns a new SvgInstruction (because SvgInstruction are immutable).
-        // The given newSubstitutions should be {string: float}.
+        // The given newSubstitutions should be {string: float}, and error will be thrown if otherwise.
+        
+        // Check the types of newSubstitutions
+        Object.entries(newSubstitutions).forEach(entr => {
+            const [k, v] = entr;
+            if (!(typeof k === "string" || k instanceof String)) throw `Expected string as key, not ${typeof k} - ${k}`;
+            if (isNaN(parseFloat(v))) throw `Expected float as value, not ${typeof k} - ${k}`;
+        })
         
         // Check if duplicate substitution
         if (new Set(Object.keys(newSubstitutions)).intersection(new Set(Object.keys(this.#substitutions))).size !== 0) throw "Cannot substitute the same name twice - current: " + this.#substitutions + ", new: " + newSubstitutions;
@@ -538,7 +545,7 @@ export class SvgInstruction {
         if (this.type === SvgInstruction.PATH) {
             return this.#getNamesInSubstitutions(this.path);
         } else if (this.type === SvgInstruction.CIRCLE) {
-            return this.#getNamesInSubstitutions(this.cx) + this.#getNamesInSubstitutions(this.cy) + this.#getNamesInSubstitutions(this.r);
+            return Object.freeze(new Set([...this.#getNamesInSubstitutions(this.cx), ...this.#getNamesInSubstitutions(this.cy), ...this.#getNamesInSubstitutions(this.r)]));
         } else if (this.type === SvgInstruction.USE) {
             return this.#getNamesInSubstitutions(this.id);
         } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {

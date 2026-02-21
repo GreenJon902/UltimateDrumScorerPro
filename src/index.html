@@ -72,6 +72,14 @@
         ComponentManager.toggleComponentDrum("component-0", 2, 0, "kick");
         ComponentManager.toggleComponentDrum("component-0", 2, 2, "kick");
         ComponentManager.toggleComponentDrum("component-0", 2, 4, "kick");
+        ComponentManager.setComponentRightDecoration("component-0", "bar-end");
+
+        ComponentManager.createEmptyComponent("score-component");
+        ComponentManager.createEmptyComponent("score-component");
+        ComponentManager.setComponentRightDecoration("component-1", "end"); 
+        ComponentManager.setComponentRightDecoration("component-2", "repeat-end");
+        ComponentManager.setComponentY("component-1", 30);
+        ComponentManager.setComponentY("component-2", 40);
         
         
         attachEditor(document.getElementById("editor-pane"));
