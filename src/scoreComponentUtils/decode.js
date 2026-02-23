@@ -337,6 +337,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
 
     // Get decoration heights ---
+    // TODO: Ensure this is consistant with the README doc
     const maxStemTop = Math.max(...stemTopYs, 0);  // TODO: Should we only take into account the adjacent stem tops, or stem tops in that group?
     const centerDrumY = topDrumYTop + drumsHeight / 2;
     const bottomDrumYBottom = topDrumYTop + drumsHeight;  // Bottom edge of the lowest drum

@@ -17,13 +17,24 @@ A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i
 `new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
 The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up. These sizes should not account for stroke-width.  
+![image](docImages/drumSizing.png)
 
 `new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.  
-The min-below and min-above mean the minimum distances between the - for example - bottom of the drums and bottom of the decorations. Leave this empty for don't. E.g. ...,,... means just go to the minimum height, ...,0,... means go to the bottom of the drums, ...,5, means go five below the bottom of the drums. The min height is processed from the centre of the drums - if min-below-drums is not given, then the bottom is `middle-of-drums + min-height / 2` even if it extends over `min-height/2` over the middle of the drums. The min-below and above-drums will also take the top and bottom of the rests into account.  
 The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.  
 The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.  
 The given sizes should not account for stroke-width. The min-below and min-above quantities will not be adjusted for stroke width.  
+
+If specified, `min-below-drums`, `min-above-drums`, and `min-above bars` require the appropriate edge to be the given distance below or above the drums (depending on the implementation - if it makes sense - this may also take rests into account). These can be negative, but positive values work in the direction away from the centre.  
+The height of the decoration will always be at least `min-height`.  
+![image](docImages/decorationSizing.png)
+
+1: If no "min-..." parameters are given, then the anchor-y is taken to be `drum-center-y` and the height is taken to be `min-height`.  
+2: If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre, and the height to be `min-height`.  
+3: If both an "above" and a "below" "min-..." parameter is given, then the anchor-y is taken centred between them. If the distance between these points is less than `min-height` then the height is set to `min-height` (centred on the same anchor-y).  
+In all cases, the anchor is on the right edge and vertically centred.  
+
+![image](docImages/decorationCases.png)
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
@@ -65,11 +76,11 @@ There are two types of variables, local and global. Local apply only to that ins
 Variables can only store floats.
 | Identifier                                                                     | __L__ocal/__G__lobal | D__r__ums/D__e__corations | Notes                                                                                       |
 |--------------------------------------------------------------------------------|----------------------|---------------------------|---------------------------------------------------------------------------------------------|
-| `size_left`, `size_right`, `size_up`, `size_down`                              | G                    | r                         | The size of the final symbol after any modifications are processed.  <br>Relative to the anchor.                       |
-| `base_size_left`, `base_size_right`, `base_size_up`, `base_size_down`          | G                    | r                         | The size of the base symbol before any modifications are processed.  <br>Relative to the anchor.                       |
-| `parent_size_left`, `parent_size_right` , `parent_size_up`, `parent_size_down` | L                    | r                         | Refer specifically to the direct parent.  <br>Only available for automatically modified drums. |
-| `drum_center_y`                                                                | G                    | e                         | Relative to the (0,0) of the decoration.                                                    |
-| `width`, `height`                                                              | G                    | e                         |                                                                                             |
+| `size_left`, `size_right`, `size_up`, `size_down`                              | G                    | r                         | The size of the final symbol after any modifications are processed.  <br>Relative to the anchor.                         |
+| `base_size_left`, `base_size_right`, `base_size_up`, `base_size_down`          | G                    | r                         | The size of the base symbol before any modifications are processed.  <br>Relative to the anchor.                         |
+| `parent_size_left`, `parent_size_right` , `parent_size_up`, `parent_size_down` | L                    | r                         | Refer specifically to the direct parent.  <br>Only available for automatically modified drums.   |
+| `drum_center_y`                                                                | G                    | e                         | Relative to the (0,0) of the decoration. See the diagram in the `new,decoration` instruction. |
+| `width`, `height`                                                              | G                    | e                         |                                                                                               |
 
 `transform-string`: 
 This should be the same format as the SVG spec uses for transforms. This should contain no commas, and should not be wrapped with quotes.

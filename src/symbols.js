@@ -777,6 +777,7 @@ export class Symbols {
     static getDecorationMinHeight(symbolId) {
         // Returns the minimum height of a decoration. If the symbolId is not a valid decoration id then an error is thrown.
         // Note that this does not account for stoke width.
+        // See the `new,decoration` documentation (src/README.md) for usage specifics.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minHeight;
         throw "SymbolId does not exist, or is not decoration";
     }
@@ -784,6 +785,7 @@ export class Symbols {
     static getDecorationMinBelowDrums(symbolId) {
         // Returns the minimum distance a decoration should descend below the bottom of the lowest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
         // If there is no constraint then this returns null.
+        // See the `new,decoration` documentation (src/README.md) for usage specifics.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minBelowDrums;
         throw "SymbolId does not exist, or is not decoration";
     }
@@ -791,6 +793,7 @@ export class Symbols {
     static getDecorationMinAboveDrums(symbolId) {
         // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) drum. If the symbolId is not a valid decoration id then an error is thrown.
         // If there is no constraint then this returns null.
+        // See the `new,decoration` documentation (src/README.md) for usage specifics.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveDrums;
         throw "SymbolId does not exist, or is not decoration";
     }
@@ -798,6 +801,7 @@ export class Symbols {
     static getDecorationMinAboveBars(symbolId) {
         // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
         // If there is no constraint then this returns null.
+        // See the `new,decoration` documentation (src/README.md) for usage specifics.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBars;
         throw "SymbolId does not exist, or is not decoration";
     }
