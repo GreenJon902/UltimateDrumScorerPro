@@ -285,3 +285,8 @@ It will only drag when a component is the start-point / where the mouse-down occ
 	3. ComponentManager dispatches ComponentBeatsAdded {<nos>, 4, 1, 4}
 		4. Editor and Renderer respond accordingly.
 ```
+
+# Current Architecture
+I have this diagram, I like diagram.
+![image](/docImages/v4-stage2-architecture.jpeg)
+Just wait for Stage2-V3 it get's worse.
