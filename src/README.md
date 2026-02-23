@@ -17,7 +17,7 @@ A group-id refers to a group of symbol-ids. This can only be a symbol-id-part (i
 `new,drum,<id: base-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new base-symbol for a drum with the given id. The id must not be taken.  
 The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up. These sizes should not account for stroke-width.  
-![image](docImages/drumSizing.png)
+<img src="/docImages/drumSizing.jpeg" alt="image" width="200"/>
 
 `new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-bars: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.  
@@ -27,14 +27,14 @@ The given sizes should not account for stroke-width. The min-below and min-above
 
 If specified, `min-below-drums`, `min-above-drums`, and `min-above bars` require the appropriate edge to be the given distance below or above the drums (depending on the implementation - if it makes sense - this may also take rests into account). These can be negative, but positive values work in the direction away from the centre.  
 The height of the decoration will always be at least `min-height`.  
-![image](docImages/decorationSizing.png)
+![image](/docImages/decorationSizing.jpeg)
 
-1: If no "min-..." parameters are given, then the anchor-y is taken to be `drum-center-y` and the height is taken to be `min-height`.  
-2: If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre, and the height to be `min-height`.  
-3: If both an "above" and a "below" "min-..." parameter is given, then the anchor-y is taken centred between them. If the distance between these points is less than `min-height` then the height is set to `min-height` (centred on the same anchor-y).  
+1:   If no "min-..." parameters are given, then the anchor-y is taken to be `drum-center-y` and the height is taken to be `min-height`.  
+2:   If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre, and the height to be `min-height`.  
+3,4: If both an "above" and a "below" "min-..." parameter is given, then the anchor-y is taken centred between them. If the distance between these points is less than `min-height` then the height is set to `min-height` (centred on the same anchor-y).  
 In all cases, the anchor is on the right edge and vertically centred.  
 
-![image](docImages/decorationCases.png)
+![image](/docImages/decorationCases.jpg)
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
