@@ -30,7 +30,7 @@ The height of the decoration will always be at least `min-height`.
 ![image](/docImages/decorationSizing.jpeg)
 
 1:   If no "min-..." parameters are given, then the anchor-y is taken to be `drum-center-y` and the height is taken to be `min-height`.  
-2:   If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre, and the height to be `min-height`.  
+2:   If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre from the furthest given parameter, and the height to be `min-height`.  
 3,4: If both an "above" and a "below" "min-..." parameter is given, then the anchor-y is taken centred between them. If the distance between these points is less than `min-height` then the height is set to `min-height` (centred on the same anchor-y).  
 In all cases, the anchor is on the right edge and vertically centred.  
 

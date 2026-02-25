@@ -47,6 +47,25 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                 stroke: rgba(255, 0, 0, 0.5);
             }
             
+            .minHeight {
+                stroke: rgba(0, 255, 0, 0.5);
+                stroke-dasharray: 4;
+            }
+            
+            rect.decoABBound {
+                fill: rgba(0, 112, 255, 0.5);
+            }
+            
+            path.decoABBound {
+                stroke: rgba(0, 112, 255, 0.5);
+                stroke-dasharray: 4;
+            }
+            
+            .drumCenterY {
+                stroke: rgba(128, 0, 128, 0.5);
+                stroke-dasharray: 4;
+            }
+            
             .backgroundBox {
                 fill: rgba(0, 0, 0, 0.2);
             }
@@ -103,22 +122,28 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         </p>
         
         <h1>Non-Symbols</h1>
-        <span>We expect the blue lines to be as small as possible, while still entirely containing all pixels drawn by the drawFunc (so they account for the stroke-width).</span>
-        <span>The blue lines here should be centred on the edge of the stroke.</span>
+        <p>We expect the blue lines to be as small as possible, while still entirely containing all pixels drawn by the drawFunc (so they account for the stroke-width).</p>
+        <p>The blue lines here should be centred on the edge of the stroke.</p>
         <div id="non-symbol-container"></div>
         
         <h1>Symbols</h1>
-        <span>It's harder to describe the disired results here. And I don't yet know if the blue lines account for stroke-width. Look at it and it should look good enough to indicate the side of the symbol - so if a symbol was placed with it's bottom blue line on the top blue line of the symbol below then they don't overlap (too much).</span>
-        <span>The blue line's inside edge should be the actual line coordinate, and the outside edge match the edge of the stroke.</span>
+        <p>It's harder to describe the disired results here. And I don't yet know if the blue lines account for stroke-width. Look at it and it should look good enough to indicate the side of the symbol - so if a symbol was placed with it's bottom blue line on the top blue line of the symbol below then they don't overlap (too much).</p>
+        <p>The blue line's inside edge should be the actual line coordinate, and the outside edge match the edge of the stroke.</p>
         <h2>Drums</h2>
         <div id="symbol-drums-container"></div>
         <h2>Decorations</h2>
+        <p>I'm not gonna describe the desired results here. Really this is more useful for checking that the actual algorithms to compute heights and y-levels are correct, rather than debugging the actual symbols...</p>
+        <p>Cyan dotted/filled areas are minAboveBeams, minAboveDrums, minBelowDrums. If it's a rect, then the outside edge is after adding the distance, and the inside edge is where the drums/beams actually stop.</p>
+        <p>The dashed purple line is drum-center-y.</p>
         <div id="symbol-decorations-container"></div>
 
     </body>
     <script type="module">
         import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt, getDrumSize, getDecorationSize} from "../src/scoreComponentUtils/drawUtils.js";
+        import {_exportedForTesting} from "../src/scoreComponentUtils/decode.js";
         import {Symbols} from "../src/symbols.js";
+
+        const {computeDecorationHeight, computeDecorationY} = _exportedForTesting;
 
         // DEBUG STUFF -------------
         window.S = Symbols;
@@ -192,7 +217,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
             // drawFunc: Callable[svg, container, ...drawArgs]
-            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth, size(left,right,up,down)(inside,outside)}
+            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth, size(left,right,up,down)(inside,outside), minHeight, belowDrums, aboveDrums, aboveBeams, drumsCenterY, drumsBottom, drumsTop, beamsTop}
             // drawArgs: Array
             // sizeArgs: Array
             //
@@ -201,7 +226,10 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             //
             // The svg will be given a tooltip to report the arguments that were used when generating it.
             //
-            // For the size func, either you have all inside+outside sizes and nothing else, or you have no inside+outside sizes. In the second case you need the left+up+down sizes and either sizeRight or minAnchorWidth but not both.
+            // The belowDrums, aboveDrums, aboveBeams mean the drumsBottom-minBelowDrums, ... . These can be null.
+            //
+            // For the size func, either you have all inside+outside sizes and nothing else, or you have no inside+outside sizes. In the second case you need the left+up+down sizes and either sizeRight or minAnchorWidth but not both. Either you have all of minHeight+belowDrums+aboveDrums+aboveBeams+drumsCenterY+drumsBottom+drumsTop+beamsTop or none of them.
+        
             
             // Create container
             const {svg, container} = createSvgAndContainer(section);
@@ -236,6 +264,25 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                     drawLine(svg, "maw", maw, bbox.y, maw, bbox.y + bbox.height);  
                     drawLine(svg, "mawSideSize", maw + size.sizeRight, bbox.y, maw + size.sizeRight, bbox.y + bbox.height);  
                 }
+            }
+            if (size.minHeight !== undefined) {
+                drawLine(svg, "minHeight", 0, -size.minHeight / 2, 0, size.minHeight / 2);
+                if (size.belowDrums !== null) {
+                    drawSquare(svg, "decoABBound", bbox.x, size.drumsBottom, bbox.width, size.belowDrums - size.drumsBottom);
+                } else {
+                    drawLine(svg, "decoABBound", bbox.x, size.drumsBottom, bbox.x + bbox.width, size.drumsBottom);
+                }
+                if (size.aboveDrums !== null) {
+                    drawSquare(svg, "decoABBound", bbox.x, size.aboveDrums, bbox.width, size.drumsTop - size.aboveDrums);
+                } else {
+                    drawLine(svg, "decoABBound", bbox.x, size.drumsTop, bbox.x + bbox.width, size.drumsTop);
+                }
+                if (size.aboveBeams !== null) {
+                    drawSquare(svg, "decoABBound", bbox.x, size.aboveBeams, bbox.width, size.beamsTop - size.aboveBeams);
+                } else {
+                    drawLine(svg, "decoABBound", bbox.x, size.beamsTop, bbox.x + bbox.width, size.beamsTop);
+                }
+                drawLine(svg, "drumCenterY", bbox.x, size.drumCenterY, bbox.x + bbox.width, size.drumCenterY);
             }
             
             // Draw anchor
@@ -324,22 +371,44 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         });
         
         // Visualise decorations
-        // TODO: Paramaterise visualisations with different heights and drum_center_ys
-        const decorationSizeGetter = (decoId) => {
-            const adjustedDecoSize = getDecorationSize(decoId);
+        const decorationSizeGetter = (decoId, drumsBottom, drumsTop, beamsTop, drumCenterY, computedHeight) => {
+            const adjustedDecoSize = getDecorationSize(decoId, computedHeight);
+            const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
+            const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
+            const minAboveBeams = Symbols.getDecorationMinAboveBars(decoId);
+            const decorationY = computeDecorationY(decoId, drumsBottom, drumsTop, beamsTop);  // Draw the decoration at (0,0), so we need to adjust the sizing info to be around that
             return {
+                minHeight: Symbols.getDecorationMinHeight(decoId),
+                belowDrums: (minBelowDrums === null) ? null : drumsBottom + minBelowDrums - decorationY,
+                aboveDrums: (minAboveDrums === null) ? null : drumsTop - minAboveDrums - decorationY,
+                aboveBeams: (minAboveBeams === null) ? null : beamsTop - minAboveBeams - decorationY,
+                drumsBottom: drumsBottom - decorationY,
+                drumsTop: drumsTop - decorationY,
+                beamsTop: beamsTop - decorationY,
+                drumCenterY: drumCenterY - decorationY,
+
                 sizeLeftInside: Symbols.getDecorationWidth(decoId),
                 sizeRightInside: 0,
-                sizeUpInside: Symbols.getDecorationMinHeight(decoId) / 2,
-                sizeDownInside: Symbols.getDecorationMinHeight(decoId) / 2,
+                sizeUpInside: computedHeight / 2,
+                sizeDownInside: computedHeight / 2,
                 sizeLeftOutside: adjustedDecoSize.sizeLeft,
                 sizeRightOutside: adjustedDecoSize.sizeRight,
-                sizeUpOutside: adjustedDecoSize.minHeight / 2,
-                sizeDownOutside: adjustedDecoSize.minHeight / 2
+                sizeUpOutside: adjustedDecoSize.sizeUp,
+                sizeDownOutside: adjustedDecoSize.sizeDown
             };
         };
         [...Symbols.listLeftDecorations(), ...Symbols.listRightDecorations()].forEach(decoId => {
-            createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter, [decoId, 0, 0, 10, 0], [decoId]);
+            [0].forEach(drumsBottom => {
+                [drumsBottom - 5, drumsBottom - 50, drumsBottom - 70].forEach(drumsTop => {
+                    [drumsTop, drumsTop - 10, drumsTop - 30].forEach(beamsTop => {
+                        const height = computeDecorationHeight(decoId, drumsBottom, drumsTop, beamsTop);
+                        const drumCenterY = (drumsBottom + drumsTop) / 2;
+                        createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter,
+                                  [decoId, 0, 0, height, drumCenterY],
+                                  [decoId, drumsBottom, drumsTop, beamsTop, drumCenterY, height]);
+                    })
+                })
+            })
         });
 
     </script>

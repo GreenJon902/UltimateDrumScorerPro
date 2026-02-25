@@ -259,26 +259,29 @@ export function getDrumSize(drumId) {
     }
 }
 
-export function drawDecorationAt(svg, container, decorationId, x, y, height, drumCenterY) {
+export function drawDecorationAt(svg, container, decorationId, x, y, computedHeight, drumCenterY) {
     // Draws the decoration with the given id to the given node (container) at the given coordinates..
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
-    console.log("y", y);
-    console.log("height", height)
-     
+    // The computedHeight is the height to draw the decoration, this should satisfy all the constraints. This should not have been adjusted for stroke-width.
     drawSymbolAt(svg, container, decorationId, x, y, {
         width: Symbols.getDecorationWidth(decorationId),
-        height: height,
+        height: computedHeight,
         drum_center_y: drumCenterY
     });
 }
-export function getDecorationSize(decoId) {
-    // Returns the given decortaions {sizeLeft, sizeRight, minHeight} after adjusting for stroke-width.
-    // The minHeight is centred around the centre-y of the decoration.
+export function getDecorationSize(decoId, computedHeight) { 
+    // Returns the given decortaions {sizeLeft, sizeRight, sizeUp, sizeDown} after adjusting for stroke-width.
+    // If computedHeight is not given then only sizeLeft and sizeRight are returned.
+    // The computed height is the height before adjusting for stroke-width. This will be shared equally between sizeUp and sizeDown.
+    if (computedHeight === null || computedHeight === undefined) {
+        computedHeight = NaN;
+    }
     return {
         sizeLeft: Symbols.getDecorationWidth(decoId) + SR,  
         sizeRight: SR,
-        minHeight: Symbols.getDecorationMinHeight(decoId) + 2 * SR  // Stroke width on top and bottom
-    }
+        sizeUp: computedHeight / 2 + SR, 
+        sizeDown: computedHeight / 2 + SR
+    };
 }
 
 function createRequisiteName(symbolId, substitutions) {

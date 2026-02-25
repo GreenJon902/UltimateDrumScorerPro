@@ -333,13 +333,12 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // Compute decorationCenterYs
     const decorationCenterYs = instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => topDrumYTop + drumsHeight / 2);
+            .map(instr => getDecorationY(instr.id));
     
 
     // Get decoration heights ---
     // TODO: Ensure this is consistant with the README doc
     const maxStemTop = Math.max(...stemTopYs, 0);  // TODO: Should we only take into account the adjacent stem tops, or stem tops in that group?
-    const centerDrumY = topDrumYTop + drumsHeight / 2;
     const bottomDrumYBottom = topDrumYTop + drumsHeight;  // Bottom edge of the lowest drum
     const topInDrumSpace = Math.min(topDrumYTop, toppestRestTop);  // minAboveDrums takes rests into account
     const bottomInDrumSpace = Math.max(bottomDrumYBottom, bottomestRestBottom);  // minBelowDrums takes rests into account
@@ -351,23 +350,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
                     .map(instr => instr.decoration)))
         // Get heights of said decoration ids
         .map(id => {
-            const minHeight = Symbols.getDecorationMinHeight(id);  // Use the value from symbols as that does not account for stroke width.
-            const minAboveDrums = Symbols.getDecorationMinAboveDrums(id);
-            const minAboveBars = Symbols.getDecorationMinAboveBars(id);
-            const minBelowDrums = Symbols.getDecorationMinBelowDrums(id);
-            return [id, -Math.min(  // Get minimum decoration top coordinate
-                
-                    centerDrumY - minHeight / 2,  
-                    ...((minAboveDrums !== null) ? [topInDrumSpace - minAboveDrums] : []),  // This is optional, so I've written it as a list expansion
-                    ...((minAboveBars !== null) ? [maxStemTop - minAboveBars] : [])  
-                
-                ) + Math.max(  // Get maximum decoration bottom coordinate
-                    
-                    centerDrumY + minHeight / 2,  
-                    ...((minBelowDrums !== null) ? [bottomInDrumSpace + minBelowDrums] : [])  // This is optional, so I've written it as a list expansion
-                    
-                )
-            ];
+            return [id, computeDecorationHeight(id, bottomInDrumSpace, topInDrumSpace, maxStemTop)];
         })
     );
     
@@ -376,6 +359,73 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
     return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
 }
+
+function computeDecorationY(decoId, drumBottom, drumTop, beamTop) {
+    // decoId: str - The id of the decoration that we're finding the y-level of.
+    // drumBottom: float - The y-level of the bottom of the bottom drum.
+    // drumTop: float - The top of the top drum.
+    // beamTop: float - The y-level of the top of the top beam.
+    // returns: float - The y-coordinate of the anchor of this decoration, relative to the given coordinate space.
+    // 
+    // Computes the y-coordinate of the anchor of the given decoration.
+    // See the doc for the "new,decoration,..." instruction in src/README.md.
+    
+    const centerDrumY = (drumTop + drumBottom) / 2;
+
+    const minHeight = Symbols.getDecorationMinHeight(decoId);  // Use the value from symbols as that does not account for stroke width.
+    const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
+    const minAboveBeams = Symbols.getDecorationMinAboveBars(decoId);
+    const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
+    
+    if (minBelowDrums === null && minAboveDrums === null && minAboveBeams === null) {  
+        return centerDrumY;
+    } else if (minBelowDrums === null && minAboveDrums === null) {
+        return drumTop - minAboveDrums + minHeight / 2;
+    } else if (minBelowDrums === null && minAboveBeams === null) {
+        return beamTop - minAboveBeams + minHeight / 2;
+    } else if (minBelowDrums === null) {  // Both minAbove(beams|drums) were given, so take the minimum (highest up)
+        return Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + minHeight / 2;
+    } else if (minAboveDrums === null && minAboveBeams === null) {  // Only minBelowDrums given
+        return drumsBottom + minBelowDrums - minHeight / 2;
+    } else if (minAboveBeams === null) {  // minBelowDrums and minAboveDrums given
+        return (drumBottom + minBelowDrums + drumTop - minAboveDrums) / 2;
+    } else if (minAboveDrums === null) {  // minBelowDrums and minAboveBeams given
+        return (drumBottom + minBelowDrums + beamTop - minAboveBeams) / 2;
+    } else {  // All are given, so find the heighest of top params
+        return (Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + drumBottom + minBelowDrums) / 2;
+    }
+}
+
+function computeDecorationHeight(decoId, drumBottom, drumTop, beamTop) {
+    // decoId: str - Id of the decoration to compute the height of.
+    // drumBottom: float - The y-level of the bottom of the bottom drum.
+    // drumTop: float - The top of the top drum.
+    // beamTop: float - The y-level of the top of the top beam.
+    // returns: float - The height of this decoration.
+    //
+    // Computes the height of the given decoration.
+        
+    const computedY = computeDecorationY(decoId, drumBottom, drumTop, beamTop);
+
+    const minHeight = Symbols.getDecorationMinHeight(decoId);  // Use the value from symbols as that does not account for stroke width.
+    const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
+    const minAboveBars = Symbols.getDecorationMinAboveBars(decoId);
+    const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
+    return (-Math.min(  // Get minimum decoration top coordinate
+        
+            computedY - minHeight / 2,  
+            ...((minAboveDrums !== null) ? [drumTop - minAboveDrums] : []),  // This is optional, so I've written it as a list expansion
+            ...((minAboveBars !== null) ? [beamTop - minAboveBars] : [])  
+        
+        ) + Math.max(  // Get maximum decoration bottom coordinate
+            
+            computedY + minHeight / 2,  
+            ...((minBelowDrums !== null) ? [drumBottom + minBelowDrums] : [])  // This is optional, so I've written it as a list expansion
+            
+        ));
+    
+}
+
 
 function minKey(key, ...items) {
     // Returns the item in items with the lowest key(item).
@@ -425,4 +475,10 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
 
     return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
+}
+
+
+// These functions shouldn't be exported normally, but we need data from them for testing
+export const _exportedForTesting = {
+    computeDecorationHeight, computeDecorationY
 }

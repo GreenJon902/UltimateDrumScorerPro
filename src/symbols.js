@@ -798,7 +798,7 @@ export class Symbols {
         throw "SymbolId does not exist, or is not decoration";
     }
     
-    static getDecorationMinAboveBars(symbolId) {
+    static getDecorationMinAboveBars(symbolId) {  // TODO: This should be beams, not bars :person_facepalming:
         // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
         // If there is no constraint then this returns null.
         // See the `new,decoration` documentation (src/README.md) for usage specifics.
