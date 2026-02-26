@@ -268,21 +268,21 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             if (size.minHeight !== undefined) {
                 drawLine(svg, "minHeight", 0, -size.minHeight / 2, 0, size.minHeight / 2);
                 if (size.belowDrums !== null) {
-                    drawSquare(svg, "decoABBound", bbox.x, size.drumsBottom, bbox.width, size.belowDrums - size.drumsBottom);
+                    drawSquare(svg, "decoABBound", bbox.x, size.drumsBottom, bbox.width, size.belowDrums - size.drumsBottom);  
                 } else {
-                    drawLine(svg, "decoABBound", bbox.x, size.drumsBottom, bbox.x + bbox.width, size.drumsBottom);
+                    drawLine(svg, "decoABBound", bbox.x - 2, size.drumsBottom, bbox.x + bbox.width, size.drumsBottom);  // Extend line/rect 2 to the left of the decoration so it's more visible
                 }
                 if (size.aboveDrums !== null) {
                     drawSquare(svg, "decoABBound", bbox.x, size.aboveDrums, bbox.width, size.drumsTop - size.aboveDrums);
                 } else {
-                    drawLine(svg, "decoABBound", bbox.x, size.drumsTop, bbox.x + bbox.width, size.drumsTop);
+                    drawLine(svg, "decoABBound", bbox.x - 2, size.drumsTop, bbox.x + bbox.width, size.drumsTop);
                 }
                 if (size.aboveBeams !== null) {
                     drawSquare(svg, "decoABBound", bbox.x, size.aboveBeams, bbox.width, size.beamsTop - size.aboveBeams);
                 } else {
-                    drawLine(svg, "decoABBound", bbox.x, size.beamsTop, bbox.x + bbox.width, size.beamsTop);
+                    drawLine(svg, "decoABBound", bbox.x - 2, size.beamsTop, bbox.x + bbox.width, size.beamsTop);
                 }
-                drawLine(svg, "drumCenterY", bbox.x, size.drumCenterY, bbox.x + bbox.width, size.drumCenterY);
+                drawLine(svg, "drumCenterY", bbox.x - 2, size.drumCenterY, bbox.x + bbox.width, size.drumCenterY);
             }
             
             // Draw anchor
@@ -406,9 +406,9 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                         createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter,
                                   [decoId, 0, 0, height, drumCenterY],
                                   [decoId, drumsBottom, drumsTop, beamsTop, drumCenterY, height]);
-                    })
-                })
-            })
+                    });
+                });
+            });
         });
 
     </script>
