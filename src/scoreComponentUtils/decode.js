@@ -377,22 +377,28 @@ function computeDecorationY(decoId, drumBottom, drumTop, beamTop) {
     const minAboveBeams = Symbols.getDecorationMinAboveBars(decoId);
     const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
     
-    if (minBelowDrums === null && minAboveDrums === null && minAboveBeams === null) {  
-        return centerDrumY;
-    } else if (minBelowDrums === null && minAboveDrums === null) {
-        return drumTop - minAboveDrums + minHeight / 2;
-    } else if (minBelowDrums === null && minAboveBeams === null) {
-        return beamTop - minAboveBeams + minHeight / 2;
-    } else if (minBelowDrums === null) {  // Both minAbove(beams|drums) were given, so take the minimum (highest up)
-        return Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + minHeight / 2;
-    } else if (minAboveDrums === null && minAboveBeams === null) {  // Only minBelowDrums given
-        return drumsBottom + minBelowDrums - minHeight / 2;
-    } else if (minAboveBeams === null) {  // minBelowDrums and minAboveDrums given
-        return (drumBottom + minBelowDrums + drumTop - minAboveDrums) / 2;
-    } else if (minAboveDrums === null) {  // minBelowDrums and minAboveBeams given
-        return (drumBottom + minBelowDrums + beamTop - minAboveBeams) / 2;
-    } else {  // All are given, so find the heighest of top params
-        return (Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + drumBottom + minBelowDrums) / 2;
+    const mbdG = minBelowDrums !== null;
+    const madG = minAboveDrums !== null;
+    const mabG = minAboveBeams !== null;
+    
+    if (!mbdG && !madG && !mabG) {  
+        return centerDrumY;  // No constraints given so we'll place the anchorY on the centerDrumY
+    } else if (!mbdG && madG && !mabG) {
+        return drumTop - minAboveDrums + minHeight / 2;  // Only minAboveDrums given, so attach upper edge of decoration to the aboveDrums y-level
+    } else if (!mbdG && !madG && mabG) {
+        return beamTop - minAboveBeams + minHeight / 2;  // Only minAboveBeams given, so attach upper edge of decoration to the aboveBeams y-level
+    } else if (!mbdG && madG && mabG) {
+        return Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + minHeight / 2;  // Both minAboveDrums and minAboveBeams given, so attach upper edge of decoration to whichever constraint is highest
+    } else if (mbdG && !madG && !mabG) {
+        return drumsBottom + minBelowDrums - minHeight / 2;  // Only minBelowDrums given, so attach bottom edge of decoration to belowDrums y-level
+    } else if (mbdG && madG && !mabG) {  
+        return (drumBottom + minBelowDrums + drumTop - minAboveDrums) / 2;  // Center anchorY between belowDrums and aboveDrums
+    } else if (mbdG && !madG && mabG) {  
+        return (drumBottom + minBelowDrums + beamTop - minAboveBeams) / 2;  // Center anchorY between belowDrums and aboveBeams
+    } else if (mbdG && madG && mabG){  
+        return (Math.min(drumTop - minAboveDrums, beamTop - minAboveBeams) + drumBottom + minBelowDrums) / 2;  // Center anchorY between belowDrums and the higher of aboveDrums and aboveBeams
+    } else {
+        throw `Unkown combination of conditions ${mbdG} ${madG} ${mabG}`;
     }
 }
 
