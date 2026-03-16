@@ -136,6 +136,8 @@ export function getBeamSize(fullBeams, brokenBeams, dots) {
     // Calculates the height and minimum width required to draw the specified beams and dots after stem.
     // BrokenBeams is the same as specified in RenderInstruction.
     // 
+    // Note this will always return accounting for stroke-width, even if there are no beams (so it cannot return sizeUp 0).
+    // 
     // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, minAnchorWidth: float}:
     //     sizeLeft is measured from the anchor1/the-left-anchor, and sizeRight from anchor2/the-right-anchor.
     //     sizeUp is measured from the highest anchor (as they may be slanted).
@@ -158,7 +160,7 @@ export function getBeamSize(fullBeams, brokenBeams, dots) {
     
     return {
         sizeLeft: SR,
-        sizeRight: SR,
+        sizeRight: SR, 
         sizeUp: SR,
         sizeDown: sizeDown,
         minAnchorWidth: minAnchorWidth
@@ -217,17 +219,19 @@ export function getFlagSize(flags, dots) {
     // Returns {sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float} which are the distances this extends from the anchor-position (see corresponding draw function).
     // Every pixel drawn will be within this bounding box.
     
-    const flagRight = (flags != 0) ? 5 + SR : 0; 
+    const flagRight = (flags !== 0) ? 5 + SR : 0; 
     const dotsSize = getDotsSize(dots);
     const dotsRight = (dots !== 0) ? SR + 1 + (dotsSize.sizeLeft + dotsSize.sizeRight) : 0;  // SR of stem + 1mm padding + width of dots
 
     const maxRight = Math.max(flagRight, dotsRight);
     
+    const flagSR = (flags !== 0) ? SR : 0;  // We only need to account for stroke-width for flags if there are actually flags
+
     return {
-        sizeLeft: SR,
+        sizeLeft: flagSR,
         sizeRight: maxRight,
-        sizeUp: SR,
-        sizeDown: 2 * flags + SR + ((dots !== 0) ? (0.5 + dotsSize.sizeUp + dotsSize.sizeDown) : 0)
+        sizeUp: flagSR,
+        sizeDown: 2 * flags + flagSR + ((dots !== 0) ? (0.5 + dotsSize.sizeUp + dotsSize.sizeDown) : 0)
     };
 }
 

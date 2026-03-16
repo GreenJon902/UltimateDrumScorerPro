@@ -38,7 +38,6 @@ In all cases, the anchor is on the right edge and vertically centred.
   
 `new,part,<id: part-id>,<instructions...: list<instruction...>>`  
 Adds a new part symbol with the given id. The id must not be taken.  
-  
 `modifier,drum,explicit,<id: drum-id>,<size-left: float>,<size-up: float>,<size-right: float>,<size-down: float>,<instructions...: list<instruction...>>,<groups...: list<group-id>>`  
 Adds a new symbol for a drum with the given id. The id must not be taken, however the modifier itself can have already been used. The id must be modified at least once, and the base-id must be taken.  
 The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up.  
@@ -79,7 +78,7 @@ Variables can only store floats.
 | `size_left`, `size_right`, `size_up`, `size_down`                              | G                    | r                         | The size of the final symbol after any modifications are processed.  <br>Relative to the anchor.                         |
 | `base_size_left`, `base_size_right`, `base_size_up`, `base_size_down`          | G                    | r                         | The size of the base symbol before any modifications are processed.  <br>Relative to the anchor.                         |
 | `parent_size_left`, `parent_size_right` , `parent_size_up`, `parent_size_down` | L                    | r                         | Refer specifically to the direct parent.  <br>Only available for automatically modified drums.   |
-| `drum_center_y`                                                                | G                    | e                         | Relative to the (0,0) of the decoration. See the diagram in the `new,decoration` instruction. |
+| `drum_center_y`                                                                | G                    | e                         | Relative to the (0,0) of the decoration. See the diagram in the `new,decoration` instruction. This does not take rests into account. |
 | `width`, `height`                                                              | G                    | e                         |                                                                                               |
 
 `transform-string`: 

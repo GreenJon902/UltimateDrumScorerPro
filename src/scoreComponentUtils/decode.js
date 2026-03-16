@@ -29,7 +29,7 @@ function getWidth(sizeInfo) {
 function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
     // 
-    // Returns a map {str: float} from drumId to distance between that drum's anchorY and the anchorY of the highest drum.
+    // Returns a map {str: float} from drumId to distance between that drum's anchorY and the anchorY of the highest drum. The anchorY of the highest drum will be 0.
     
     
     // Get all drum IDs that are used ---
@@ -68,7 +68,7 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
     //     1: a is 10 above c, 2: a is 5 above b, 3: b is 5 above c.
     //     If we start with {a: 0, b: 0, c: 0}, and then apply 1 we get {a: 0, b: 0, c: 10}. Then after 2 and 3 we have {a: 0, b: 5, c: 10}. But if we choose a better order to apply the constraints in, we can get {a: 0, b: 5, c: 5}.
 
-    const directRelativeDrumYs = [{id: orderedDrumIds[0], dist: getDrumSize(orderedDrumIds[0]).sizeUp}];  // [{id: drumId, dist: float}] where the distance is to the anchor above it. The order of items in this array should be in the order that symbols are drawn top to bottom  // The top of the first item should always be 0
+    const directRelativeDrumYs = [{id: orderedDrumIds[0], dist: 0}];  // [{id: drumId, dist: float}] where the distance is to the anchor above it. The order of items in this array should be in the order that symbols are drawn top to bottom  // The anchorY (not top) of the first item should always be 0
     for (let i=1; i<orderedDrumIds.length; i++) {  // i is the index of the drum we are adding.  // Start with i=0 as we've already added item 0.
         const iid = orderedDrumIds[i];
         
@@ -231,7 +231,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
     const relativeDrumYs = getRelativeDrumYs(vertGroupLinkedComponentInstructions);  // Relative to anchor of top drum
     const maxBeamFlagDotHeight = Math.max(
-        // If there are no BEAM, FLAGs, or BEAM_ENDs then take 0
+        0, // If there are no BEAM, FLAGs, or BEAM_ENDs then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.BEAM)
             .map(instr => getHeight(getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots))),
@@ -241,12 +241,6 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
         ...instructions
             .filter(instr => instr.type === RenderInstruction.FLAG)
             .map(instr => getHeight(getFlagSize(instr.flags, instr.dots)))
-    );
-    const maxDecorationHeight = Math.max(
-        0,  // If there are no decorations then take 0
-        ...instructions
-            .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => getDecorationSize(instr.decoration).minHeight)
     );
     const maxDecorationMinAboveBars = Math.max(
         0,  // If there are no decorations then take 0
@@ -278,7 +272,6 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
             .filter(instr => instr.type === RenderInstruction.REST)
             .map(instr => getHeight(getRestSize(instr.ticks, instr.dots)))
     );
-
 
     // Compute contractCenterYs ---
     // For now just put them all touching (but not going over) the top edge
@@ -315,6 +308,9 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     );
     const topDrumY = topDrumYTop + highestDrumSizeUp;  // Anchor of top drum
     
+    // Calculate the bottom of the lowest drum
+    const bottomDrumYBottom = topDrumYTop + drumsHeight;
+    
     // Create drumYs
     const drumYs = Object.fromEntries(
         Object.keys(relativeDrumYs).map(id => [id, topDrumY + relativeDrumYs[id]])
@@ -330,29 +326,19 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     const bottomestRestBottom = topDrumYTop + drumsHeight / 2 + maxRestHeight / 2;
     
     
-    // Compute decorationCenterYs
+    // Compute decoration CenterYs and Heights ---
+    const drumSpaceTop = Math.min(topDrumYTop, toppestRestTop);  // Highest point in drum-space (drums and rests)
+    const drumSpaceBottom = Math.max(bottomDrumYBottom, bottomestRestBottom);  // Highest point in drum-space (drums and rests)
+    // 
+    // CenterYs:
     const decorationCenterYs = instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => getDecorationY(instr.id));
+            .map(instr => computeDecorationY(instr.decoration, drumSpaceBottom, drumSpaceTop, stemTop));  // Do we call this stem top or beam top. Also all referneces to bars need to be replaced ffs
     
-
-    // Get decoration heights ---
-    // TODO: Ensure this is consistant with the README doc
-    const maxStemTop = Math.max(...stemTopYs, 0);  // TODO: Should we only take into account the adjacent stem tops, or stem tops in that group?
-    const bottomDrumYBottom = topDrumYTop + drumsHeight;  // Bottom edge of the lowest drum
-    const topInDrumSpace = Math.min(topDrumYTop, toppestRestTop);  // minAboveDrums takes rests into account
-    const bottomInDrumSpace = Math.max(bottomDrumYBottom, bottomestRestBottom);  // minBelowDrums takes rests into account
-    const decorationHeights = Object.fromEntries(
-        // Get set of used decoration ids
-        // Then convert to an array so we can map it
-        new Array(...new Set(instructions
-                    .filter(instr => instr.type === RenderInstruction.DECORATION)
-                    .map(instr => instr.decoration)))
-        // Get heights of said decoration ids
-        .map(id => {
-            return [id, computeDecorationHeight(id, bottomInDrumSpace, topInDrumSpace, maxStemTop)];
-        })
-    );
+    // Heights:
+    const decorationHeights = instructions
+            .filter(instr => instr.type === RenderInstruction.DECORATION)
+            .map(instr => computeDecorationHeight(instr.decoration, drumSpaceBottom, drumSpaceTop, stemTop));  // Do we call this stem top or beam top. Also all referneces to bars need to be replaced ffs
     
     // Calculate drum center y
     const drumCenterY = (topDrumYTop + bottomDrumYBottom) / 2;
@@ -469,7 +455,7 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //     stemTopYs: [float],  // The y-level that should be the top of each stem. The index corresponds to the number of previous stems drawn.
     //     decorationCenterYs: [float],  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
     //     drumCenterY: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
-    //     decorationHeights: {str: float}  // A map from decoration-id to decoration height. This height does not include the stroke-width on the boundary.
+    //     decorationHeights: [float]  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
     // }
     
     // TODO: Take rhtyhmLengthHint into account
