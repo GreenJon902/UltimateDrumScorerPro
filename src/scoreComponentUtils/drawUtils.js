@@ -6,7 +6,7 @@
 //           - However sizes should take into account stroke-width, and therefore bounding boxes should contain every pixel drawn to by the drawFunction.
 //     - Anchor is just a name to refer to the coordinate around which each thing will be drawn, and around which sizes and measured from.
 
-import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
+import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate, drawDebugAnchor} from "./svgUtils.js";
 import {Symbols, SvgInstruction, splitSymbolId} from "../symbols.js";
 
 const SW = 1;  // Stroke width is 1mm
@@ -16,6 +16,8 @@ export function drawRest(svg, container, ticks, dots, anchorX, anchorY) {
     // Draws a rest with the given number of ticks and dots to the container.
     // If ticks is zero then a crotchet rest is drawn.
     // The given anchorX is the right hand side of the rest (this does not include dots, or take stroke width into account). The given anchorY is the Y coordinate to centre the rest on.
+    drawDebugAnchor(svg, anchorX, anchorY);
+    
     
     if (ticks === 0) {
         // This is a crotchet rest
@@ -76,6 +78,7 @@ export function drawDots(svg, container, dots, anchorX, anchorY) {
     // The anchorX and anchorY are the centre of the first/left-most dot.
     // 
     // Specifically: We draw dots of radius 1mm, between which we have a spacing of 2mm. However you can use getDotsSize to get a rectangular bounding box.
+    if (dots !== 0) drawDebugAnchor(svg, anchorX, anchorY);  // If no dots then don't draw the debug anchor
 
     for (let n=0; n<dots; n++) {
         createCircle(svg, container, 1, anchorX + 4*n, anchorY);
@@ -103,6 +106,7 @@ export function drawBeams(svg, container, fullBeams, brokenBeams, dots, anchor1X
     // Draws the given beams and dots to the container. The top beam will go from (anchor1X, anchor1Y) to (anchor2X, anchor2Y) and subsequent beams will be placed below this. These anchors are where it attaches to the stem, and should be the actual stem coordinate (aka not adjusted for stem stroke width).
     // Anchor1X should be left-of/smaller-than anchor2X.
     // BrokenBeams is the same as specified in RenderInstruction.
+    drawDebugAnchor(svg, anchor1X, anchor1Y, anchor2X, anchor2Y);
 
     const beamCount = fullBeams + Math.abs(brokenBeams);  // Total number of beams and broken-beams
 
@@ -169,6 +173,7 @@ export function getBeamSize(fullBeams, brokenBeams, dots) {
 
 export function drawContract(svg, container, ratio, hooks, startX, endX, centerY) {
     // Draws the given contract to the container.
+    drawDebugAnchor(svg, startX, centerY, endX, centerY);
     
     const textWidth = 5;  // TODO: This properly
     const textHeight = 5;  // TODO: This properly
@@ -196,6 +201,7 @@ export function drawFlags(svg, container, flags, dots, anchorX, anchorY) {
     // Draws the given number of flags and dots to the container. The number of flags can be zero, in which case this is just a stem.
     // The first flag will be drawn descending to the right from (anchorX, anchorY) and subsequent flags will be drawn below.
     // This anchor position should be the stem-coordinate (so should not take into account stem stroke-width).
+    drawDebugAnchor(svg, anchorX, anchorY)
 
     // Draw flags
     if (flags !== 0) {  // If there are no flags, then this will just create an empty path
@@ -239,6 +245,7 @@ export function getFlagSize(flags, dots) {
 export function drawDrumAt(svg, container, drumId, x, y) {
     // Draws the drum with the given id to the given node (container) at the given coordinates..
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
+    drawDebugAnchor(svg, x, y)
     
     const baseId = splitSymbolId(drumId).base;
      
@@ -267,6 +274,8 @@ export function drawDecorationAt(svg, container, decorationId, x, y, computedHei
     // Draws the decoration with the given id to the given node (container) at the given coordinates..
     // Any required definitions will be added to the given svg. It is expected that container is a (indirect) child of svg.
     // The computedHeight is the height to draw the decoration, this should satisfy all the constraints. This should not have been adjusted for stroke-width.
+    drawDebugAnchor(svg, x, y)
+    
     drawSymbolAt(svg, container, decorationId, x, y, {
         width: Symbols.getDecorationWidth(decorationId),
         height: computedHeight,
@@ -389,5 +398,13 @@ function createSymbolGroup(svg, symbolId, substitutions) {
 
 export function drawStem(svg, container, x, topY, bottomY) {
     // Draws a stem into the container with endpoints (x, topY) and (x, bottomY).
+    drawDebugAnchor(svg, x, topY, x, bottomY)
     createPath(svg, container, `M${x} ${topY} L${x} ${bottomY}`);
+}
+
+
+export function createMain(svg) {
+    // Create the container that all score items should be rendered to. 
+    // This allows debug symbols to be placed in a separate group which will always render above this group (assuming this is created before any debug symbols are drawn).
+    return createGroup(svg, svg);
 }

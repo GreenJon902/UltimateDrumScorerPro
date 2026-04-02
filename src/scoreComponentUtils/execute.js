@@ -1,4 +1,4 @@
-import {drawDrumAt, drawDecorationAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract} from "./drawUtils.js";
+import {drawDrumAt, drawDecorationAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract, createMain} from "./drawUtils.js";
 import {RenderInstruction} from "./compile.js";
 
 
@@ -18,6 +18,8 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     //
     // Renders the given instructions to the given svg using the given spacing data.
     
+    const main = createMain(svg); // The container in which to draw everything
+    
     let prevStemCount = 0;  // The number of stems we've already drawn
     let prevDecorationCount = 0;  // The number of decorations we've already drawn
     let prevRestCount = 0;  // The number of rests we've already drawn
@@ -33,11 +35,11 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const nextStemI = findSatisfying(instructions, instrI, 1, i => i.hasDrums);  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to
             const beamEndX = spacing.instructionXs[nextStemI];  
             const beamEndY = spacing.stemTopYs[prevStemCount + 1];  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to            
-            drawBeams(svg, svg, instr.fullBeams, instr.brokenBeams, instr.dots, beamStartX, beamStartY, beamEndX, beamEndY);
+            drawBeams(svg, main, instr.fullBeams, instr.brokenBeams, instr.dots, beamStartX, beamStartY, beamEndX, beamEndY);
         } else if (instr.type === RenderInstruction.BEAM_END) {
-            drawDots(svg, svg, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
+            drawDots(svg, main, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
         } else if (instr.type === RenderInstruction.FLAG) {
-            drawFlags(svg, svg, instr.flags, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
+            drawFlags(svg, main, instr.flags, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
         }
         
         // Draw symbols ---
@@ -47,14 +49,14 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
                 const x = spacing.instructionXs[instrI];
                 const y = spacing.drumYs[drumId];
                 
-                drawDrumAt(svg, svg, drumId, x, y);
+                drawDrumAt(svg, main, drumId, x, y);
             });
             
             // An instruction has a stem iff it has symbols, so draw the stem
             const stemX = spacing.instructionXs[instrI];
             const stemTopY = spacing.stemTopYs[prevStemCount];
             const stemBottomY = Math.max(...Array.from(instr.drums).map(id => spacing.drumYs[id]));  // Get the anchor of the lowest drum
-            drawStem(svg, svg, stemX, stemTopY, stemBottomY);
+            drawStem(svg, main, stemX, stemTopY, stemBottomY);
             
             prevStemCount++;
         }
@@ -62,13 +64,13 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
 
         // Draw decorations ---
         if (instr.type === RenderInstruction.DECORATION) {
-            drawDecorationAt(svg, svg, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationHeights[prevDecorationCount], spacing.drumCenterY);
+            drawDecorationAt(svg, main, instr.decoration, spacing.instructionXs[instrI], spacing.decorationCenterYs[prevDecorationCount], spacing.decorationHeights[prevDecorationCount], spacing.drumCenterY);
             prevDecorationCount++;
         }
         
         // Draw rests ---
         if (instr.type === RenderInstruction.REST) {
-            drawRest(svg, svg, instr.ticks, instr.dots, spacing.instructionXs[instrI], spacing.restCenterYs[prevRestCount]);
+            drawRest(svg, main, instr.ticks, instr.dots, spacing.instructionXs[instrI], spacing.restCenterYs[prevRestCount]);
             prevRestCount++;
         }
         
@@ -77,7 +79,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const contractStartX = spacing.instructionXs[instrI];
             const contractEndX = spacing.instructionXs[findSatisfying(instructions, instrI, 1, i => i.type === RenderInstruction.CONTRACT_END)];
             const contractY = spacing.contractCenterYs[prevContractCount];
-            drawContract(svg, svg, instr.ratio, instr.hooks, contractStartX, contractEndX, contractY);
+            drawContract(svg, main, instr.ratio, instr.hooks, contractStartX, contractEndX, contractY);
             prevContractCount++;
         }
     }

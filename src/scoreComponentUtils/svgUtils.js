@@ -124,3 +124,62 @@ export function createCenteredText(svg, container, text, centerX, centerY) {
     node.style.fontWeight = "bold";
     container.appendChild(node);
 }
+
+
+const DEBUG_DEFINITIONS = "debug_definitions"
+function setDebugStyle(node) {
+    // Sets the style to what we want debug markers to look like
+    node.style.fill = "none";
+    node.style.stroke = "rgba(255, 0, 0, 0.5)";
+    node.style.strokeWith = "1.5px";
+    node.style.vectorEffect = "non-scaling-stroke"
+}
+export function drawDebugAnchor(svg, ...anchorCoords) {
+    // Draws the anchor which is hidden by default, but can be shown in the dev tools.
+    // Draws to the container which is contained by the svg.
+    // AnchorCoords should be [x0, y0, x1, y1, ...]. If multiple are given then lines will be drawn between them and they will be drawn as circles. If only one is given then they will be drawn as crosses.
+    // This creates (if not already created for this svg) a group node with [data-debug-symbols].
+    
+    let container = svg.querySelector("[data-debug-symbols]");
+    if (container === null) {
+        container = createGroup(svg, svg);
+        container.setAttribute("data-debug-symbols", "");
+    }
+    
+
+    if (anchorCoords.length == 0 || anchorCoords.length % 2 !== 0) {
+        throw "Expected an even positive number of anchor coords, got " + anchorCoords;
+    } else if (anchorCoords.length === 2) {
+        if (!hasDefinition(svg, DEBUG_DEFINITIONS, "anchorCross")) {
+            // We haven't yet defined anchorCross, so create the definition
+            const anchor_node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            anchor_node.setAttribute("d", "M1 1 l-2 -2 m2 0 l-2 2");
+            setDebugStyle(anchor_node);
+            attachDefinition(svg, DEBUG_DEFINITIONS, "anchorCross", anchor_node);
+        }
+        // Draw the anchor
+        createUse(svg, container, DEBUG_DEFINITIONS, "anchorCross", translate(anchorCoords[0], anchorCoords[1]));
+    } else {
+        if (!hasDefinition(svg, DEBUG_DEFINITIONS, "anchorCircle")) {
+            // We haven't yet defined anchorCircle, so create the definition
+            const anchor_node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            anchor_node.setAttribute("d", "M1 0 a1 1 0 1 0 -2 0 a1 1 0 1 0 2 0");
+            setDebugStyle(anchor_node);
+            attachDefinition(svg, DEBUG_DEFINITIONS, "anchorCircle", anchor_node);
+        }
+        // Draw the anchors
+        for (let i=0; i<anchorCoords.length / 2; i++) {
+            createUse(svg, container, DEBUG_DEFINITIONS, "anchorCircle", translate(anchorCoords[2*i], anchorCoords[2*i+1]));
+        }
+        // Join the anchors
+        const pathParts = new Array();
+        pathParts.push(`M${anchorCoords[0]} ${anchorCoords[1]}`);
+        for (let i=1; i<anchorCoords.length / 2; i++) {
+            pathParts.push(`L${anchorCoords[2*i]} ${anchorCoords[2*i+1]}`);
+        }
+        const line_node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line_node.setAttribute("d", pathParts.join(" "));
+        setDebugStyle(line_node);
+        container.appendChild(line_node);
+    }
+}
