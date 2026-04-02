@@ -187,7 +187,7 @@ function parseSymbolSourceString(symbolsSource) {
     const parseData = {
         parts: {},  // {part-id: Object.freeze({instructions: Object.freeze(Array<SvgInstruction>)})}
         drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
-        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBars: float|null, size: Union<"left", "right"> instructions: Object.freeze(Array<SvgInstruction>)})}
+        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBeams: float|null, size: Union<"left", "right"> instructions: Object.freeze(Array<SvgInstruction>)})}
         constraints: new Set(),  // Object.freeze({topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float})
         groups: new Set()  // group-id 
     }
@@ -299,7 +299,7 @@ function parseNewDecoration(tokens, parseData) {
     const minHeight = parseFloatNN(dequeue(tokens));
     const minBelowDrums = parseOptionalFloat(dequeue(tokens), null);
     const minAboveDrums = parseOptionalFloat(dequeue(tokens), null);
-    const minAboveBars = parseOptionalFloat(dequeue(tokens), null);
+    const minAboveBeams = parseOptionalFloat(dequeue(tokens), null);
     const side = dequeue(tokens);
     const instructions = parseList(tokens, parseInstruction, parseData);
     
@@ -307,7 +307,7 @@ function parseNewDecoration(tokens, parseData) {
     if (side !== LEFT && side !== RIGHT) throw "Invalid side " + side;
     
     // Add decoration to parseData
-    parseData.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBars: minAboveBars, side: side, instructions: Object.freeze(instructions)};
+    parseData.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBeams: minAboveBeams, side: side, instructions: Object.freeze(instructions)};
 }
 
 function parseNewPart(tokens, parseData) {
@@ -798,11 +798,11 @@ export class Symbols {
         throw "SymbolId does not exist, or is not decoration";
     }
     
-    static getDecorationMinAboveBars(symbolId) {  // TODO: This should be beams, not bars :person_facepalming:
-        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) bar. If the symbolId is not a valid decoration id then an error is thrown.
+    static getDecorationMinAboveBeams(symbolId) {  
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) beam. If the symbolId is not a valid decoration id then an error is thrown.
         // If there is no constraint then this returns null.
         // See the `new,decoration` documentation (src/README.md) for usage specifics.
-        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBars;
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBeams;
         throw "SymbolId does not exist, or is not decoration";
     }
     

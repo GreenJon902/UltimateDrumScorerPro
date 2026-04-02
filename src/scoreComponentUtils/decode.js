@@ -207,8 +207,8 @@ function calculateInstructionX(instr, trackers) {
         
         newX = lastDrumSpaceRight + restSize.sizeLeft;
         newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
-        newRyhthmRight = lastRyhthmRight;  // Rests are below bars so don't impact them
-        // TODO: Using lastRyhthmRight, center the rest underneath the bars
+        newRyhthmRight = lastRyhthmRight;  // Rests are below beams so don't impact them
+        // TODO: Using lastRyhthmRight, center the rest underneath the beams
 
         
     } else {
@@ -247,11 +247,11 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
             .filter(instr => instr.type === RenderInstruction.FLAG)
             .map(instr => getHeight(getFlagSize(instr.flags, instr.dots)))
     );
-    const maxDecorationMinAboveBars = Math.max(
+    const maxDecorationMinAboveBeams = Math.max(
         0,  // If there are no decorations then take 0
         ...instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => Symbols.getDecorationMinAboveBars(instr.decoration))
+            .map(instr => Symbols.getDecorationMinAboveBeams(instr.decoration))
     );
     const maxDecorationMinAboveDrums = Math.max(
         0,  // If there are no decorations then take 0
@@ -327,12 +327,12 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // CenterYs:
     const decorationCenterYs = instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => computeDecorationY(instr.decoration, drumRestBottom, drumRestTop, stemTop));  // TODO: Do we call this stem top or beam top. Also all referneces to bars need to be replaced ffs
+            .map(instr => computeDecorationY(instr.decoration, drumRestBottom, drumRestTop, stemTop));  
     
     // Heights:
     const decorationHeights = instructions
             .filter(instr => instr.type === RenderInstruction.DECORATION)
-            .map(instr => computeDecorationHeight(instr.decoration, drumRestBottom, drumRestTop, stemTop));  // TODO: Do we call this stem top or beam top. Also all referneces to bars need to be replaced ffs
+            .map(instr => computeDecorationHeight(instr.decoration, drumRestBottom, drumRestTop, stemTop));  
     
     
 
@@ -353,7 +353,7 @@ function computeDecorationY(decoId, drumBottom, drumTop, beamTop) {
 
     const minHeight = Symbols.getDecorationMinHeight(decoId);  // Use the value from symbols as that does not account for stroke width.
     const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
-    const minAboveBeams = Symbols.getDecorationMinAboveBars(decoId);
+    const minAboveBeams = Symbols.getDecorationMinAboveBeams(decoId);
     const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
     
     const mbdG = minBelowDrums !== null;
@@ -394,13 +394,13 @@ function computeDecorationHeight(decoId, drumBottom, drumTop, beamTop) {
 
     const minHeight = Symbols.getDecorationMinHeight(decoId);  // Use the value from symbols as that does not account for stroke width.
     const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
-    const minAboveBars = Symbols.getDecorationMinAboveBars(decoId);
+    const minAboveBeams = Symbols.getDecorationMinAboveBeams(decoId);
     const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
     return (-Math.min(  // Get minimum decoration top coordinate
         
             computedY - minHeight / 2,  
             ...((minAboveDrums !== null) ? [drumTop - minAboveDrums] : []),  // This is optional, so I've written it as a list expansion
-            ...((minAboveBars !== null) ? [beamTop - minAboveBars] : [])  
+            ...((minAboveBeams !== null) ? [beamTop - minAboveBeams] : [])  
         
         ) + Math.max(  // Get maximum decoration bottom coordinate
             
