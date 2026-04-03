@@ -57,3 +57,32 @@ export function createEvent(object, name) {
         object[callbackSetName].forEach(func => func(...args));  // Call each callback
     }
 }
+
+export function bindAll(manager, callbacks) {
+    // callbacks: {onEventName: null|callable} - The dictionary of callbacks we want to bind
+    // Binds all the given callbacks.
+    // This will throw an error if we have forgotten an event (if you intend to not bind then you can set it to null).
+    
+    const callbackEntries = Object.entries(callbacks);
+
+    Object.entries(manager).filter(entr => entr[0].startsWith("on"))
+                           .forEach(entr => {
+                               const [onEventName, bindFunc] = entr;
+                               
+                               // Get index of this event in the callbackEntries
+                               const cbEntrI = callbackEntries.map(ce => ce[0]).indexOf(onEventName);
+                               
+                               // Throw an error if we were not given a callback for this event
+                               if (cbEntrI === -1) throw "Callback for " + onEventName + " was not given";
+                               
+                               
+                               // Get the callback function
+                               const callback = callbackEntries[cbEntrI][1];
+                               callbackEntries.splice(cbEntrI, 1);  // Remove callback from the entries array so we know we've processed it
+                               
+                               // Register the event (if the callback is given)
+                               if (callback !== null) bindFunc(callback);
+                           });
+    
+    if (callbackEntries.length > 0) throw "Given callbacks that were not processed, remaining: " + callbackEntries.join(", ");
+}

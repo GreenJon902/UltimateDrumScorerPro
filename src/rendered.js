@@ -5,6 +5,12 @@ import {createSvgText, updateSvgText} from "./textComponentSvgRenderer.js";
 import {compileScoreComponent} from "./scoreComponentUtils/compile.js";
 import {calculateScoreComponentSpacing} from "./scoreComponentUtils/decode.js";
 import {renderScoreComponentFromInstructionsAndSpacing} from "./scoreComponentUtils/execute.js";
+import {bindAll} from "./managerHelpers.js";
+
+function partial(func, ...args) {
+    // Returns the functions with the given arguements already passed before any new arguements.
+    return (...args2) => func(...args, ...args2);
+}
 
 export function attachRendered(componentContainer) {
     // Sets up bindings for the given componentContainer to connect it ot he various managers.
@@ -16,20 +22,35 @@ export function attachRendered(componentContainer) {
     ComponentManager.getComponentIds().forEach(componentId => createInitialGenericComponent(componentContainer, componentId));
     
     //  TODO: Bind all events
+    const pusc = partial(updateScoreComponent, componentContainer);
+    bindAll(ComponentManager, {
+        // Bind component addition / removal events
+        onComponentAdded: partial(createInitialGenericComponent, componentContainer),
+        onComponentRemoved: partial(createInitialGenericComponent, componentContainer),
+        onBeforeComponentRemoved: null,  // Ignore this, we remove onComponentRemoved
+        // Bind events for generic component changes
+        onComponentXChanged: partial(updateComponentX, componentContainer),
+        onComponentYChanged: partial(updateComponentY, componentContainer),
+        // Bind events for text-components changes
+        onComponentTextChanged: partial(updateTextComponent, componentContainer, "text"),
+        onComponentFontSizeChanged: partial(updateTextComponent, componentContainer, "fontSize"),
+        // Bind events for score-components changes
+        onComponentDrumToggled: pusc,
+        onComponentTimeSignatureDenomenatorChanged: null,  // This has no effect at the moment
+        onComponentRhythmLengthHintChanged: null,  // TODO: Take this into account
+        onComponentLeftDecorationChanged: pusc,
+        onComponentRightDecorationChanged: pusc,
+        onComponentVertGroupChanged: null, // TODO: Take this into account
+        onComponentDrumToggled: pusc,
+        onComponentDrumEnabledStateChanged: pusc,  // This may remove some toggled drums without triggering onComponentDrumToggled
+        onComponentBeatsAdded: pusc,
+        onComponentBeatsRemoved: pusc,
+        onComponentSubdivisionsAdded: pusc,
+        onComponentSubdivisionsRemoved: pusc
+    });
 
-    // Bind component addition / removal events
-    ComponentManager.onComponentAdded((componentId) => createInitialGenericComponent(componentContainer, componentId));
 
-    // Bind events for text-components changes
-    ComponentManager.onComponentTextChanged((componentId, newValue) => updateTextComponent(componentContainer, "text", componentId, newValue));
-    ComponentManager.onComponentFontSizeChanged((componentId, newValue) => updateTextComponent(componentContainer, "fontSize", componentId, newValue));
     
-    // Bind events for score-components changes
-    ComponentManager.onComponentDrumToggled((componentId, _, __, ___, ____) => updateScoreComponent(componentContainer, componentId));
-    
-    // Bind events for generic component changes
-    ComponentManager.onComponentXChanged((componentId, newValue) => updateComponentX(componentContainer, componentId, newValue));
-    ComponentManager.onComponentYChanged((componentId, newValue) => updateComponentY(componentContainer, componentId, newValue));
     
     // Bind selection events
     SelectionManager.onSelectionStateChanged((componentId, selectionState) => updateSelectionState(componentContainer, componentId, selectionState));
@@ -89,6 +110,12 @@ function createInitialGenericComponent(componentContainer, componentId) {
     } else {
         throw "Not implemented";
     }
+}
+
+function removeComponent(componentContainer, componentId) {
+    // Removes the given component from the container.
+    // This expects it to exist.
+    getSvgFor(componentContainer, componentId).remove()
 }
 
 function createBaseSvg(componentContainer, componentId) {
