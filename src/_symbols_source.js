@@ -42,7 +42,7 @@ export const SYMBOLS_SOURCE = [
     "modifier,drum,auto,ghost,1,+*drums,+2,+1,+2,+1,0,0,1,path,M${-parent_size_left - 1} ${-parent_size_up - 1} A10 10 0 0 0 ${-parent_size_left - 1} ${parent_size_down + 1} M${parent_size_right + 1} ${parent_size_down + 1} A10 10 0 0 0 ${parent_size_right + 1} ${-parent_size_up - 1},1,ghosted",
 
     // Accents
-    "modifier,drum,auto,accent,2,+*drums,-ghosted,~1,+2,~1,0,0,0,1,path,M${-base_size_left - 1} ${-parent_size_up} L${(-base_size_left + base_size_right) / 2} ${-parent_size_up - 2} L${base_size_right + 1} ${0 - parent_size_up},1,accented",  // TODO: Don't take width from flam into account
+    "modifier,drum,auto,accent,2,+*drums,-ghosted,~1,+2,~1,0,0,0,1,path,M${-base_size_left - 1} ${-parent_size_up} L${(-base_size_left + base_size_right) / 2} ${-parent_size_up - 2} L${base_size_right + 1} ${0 - parent_size_up},1,accented",
 
     // Decorations
     "new,decoration,bar-end,0,1,1,,1,,right,1,path,M0 ${-height / 2} L0 ${+height / 2}",
@@ -58,3 +58,5 @@ export const SYMBOLS_SOURCE = [
 // TODO: If you draw a drum and snare at the same time, they draw over oneanother
 
 
+
+// TODO: Compare the cow-bell and ride_bell. cow-bell's size_down = base_size_down = 0, ride_bell's size_down = 0 but base_size_down = 3 (as ride_bell's base is ride). So instead we keep track of each symbol's 'parent'. So a new symbol and an explicit modification have no parent, while auto modifications have parents. Then we define the root of some symbol to be: i) that symbol if it has no parent, ii) the root of the parent if it has a parent. Then we can create the variables root_size_left, ... 
