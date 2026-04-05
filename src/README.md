@@ -19,15 +19,16 @@ Adds a new base-symbol for a drum with the given id. The id must not be taken.
 The sizes are the distance from the anchor (the location where the symbol attaches to the stem) that this symbol takes up. These sizes should not account for stroke-width.  
 <img src="/docImages/drumSizing.jpeg" alt="image" width="200"/>
 
-`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-beams: optional<float>>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
+`new,decoration,<id: base-id>,<width: float>,<min-height: float>,<min-below-drums: optional<float>>,<min-above-drums: optional<float>>,<min-above-beams: optional<float>>,<min-above-contracts>,<side: union<"left","right">>,<instructions...: list<instruction...>>`  
 Adds a new base-symbol for a decoration with the given id. The id must not be taken.  
 The side can be "left" or "right", and is used to decide which side of the bar the decoration goes on.  
 The decoration instructions are relative to the right side of the decoration, and centre-y of the decoration.  
 The given sizes should not account for stroke-width. The min-below and min-above quantities will not be adjusted for stroke width.  
 
-If specified, `min-below-drums`, `min-above-drums`, and `min-above-beams` require the appropriate edge to be the given distance below or above the drums (depending on the implementation - if it makes sense - this may also take rests into account). These can be negative, but positive values work in the direction away from the centre.  
+If specified, `min-below-drums`, `min-above-drums`, `min-above-beams`, `min-above-contracts` require the appropriate edge to be the given distance below or above the drums (depending on the implementation - if it makes sense - this may also take rests into account). These can be negative, but positive values work in the direction away from the centre.  
 The height of the decoration will always be at least `min-height`.  
 ![image](/docImages/decorationSizing.jpeg)
+*(Note that `min-above-contracts` is ommitted here, but that height would be taken from the top of the three (3))*
 
 1:   If no "min-..." parameters are given, then the anchor-y is taken to be `drum-center-y` and the height is taken to be `min-height`.  
 2:   If only "above" or only "below" "min-..." parameters are given, then the anchor-y is taken to be `min-height/2` towards the centre from the furthest given parameter, and the height to be `min-height`.  

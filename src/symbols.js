@@ -187,7 +187,7 @@ function parseSymbolSourceString(symbolsSource) {
     const parseData = {
         parts: {},  // {part-id: Object.freeze({instructions: Object.freeze(Array<SvgInstruction>)})}
         drums: {},  // {symbol-id: Object.freeze({sizeLeft: float, sizeUp: float, sizeRight: float, sizeDown: float, instructions: Object.freeze(Array<SvgInstruction>), groups: Object.freeze(Array<group-id>)})}
-        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBeams: float|null, size: Union<"left", "right"> instructions: Object.freeze(Array<SvgInstruction>)})}
+        decorations: {},  // {decoration-id: Object.freeze({width: float, minHeight: float, minBelowDrums: float|null, minAboveDrums: float|null, minAboveBeams: float|null, minAboveContracts: float|null, size: Union<"left", "right"> instructions: Object.freeze(Array<SvgInstruction>)})}
         constraints: new Set(),  // Object.freeze({topId: (symbol|group)-id, bottomId: (symbol|group)-id, distance: float})
         groups: new Set()  // group-id 
     }
@@ -300,6 +300,7 @@ function parseNewDecoration(tokens, parseData) {
     const minBelowDrums = parseOptionalFloat(dequeue(tokens), null);
     const minAboveDrums = parseOptionalFloat(dequeue(tokens), null);
     const minAboveBeams = parseOptionalFloat(dequeue(tokens), null);
+    const minAboveContracts = parseOptionalFloat(dequeue(tokens), null);
     const side = dequeue(tokens);
     const instructions = parseList(tokens, parseInstruction, parseData);
     
@@ -307,7 +308,7 @@ function parseNewDecoration(tokens, parseData) {
     if (side !== LEFT && side !== RIGHT) throw "Invalid side " + side;
     
     // Add decoration to parseData
-    parseData.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBeams: minAboveBeams, side: side, instructions: Object.freeze(instructions)};
+    parseData.decorations[id] = {width: width, minHeight: minHeight, minBelowDrums: minBelowDrums, minAboveDrums: minAboveDrums, minAboveBeams: minAboveBeams, minAboveContracts: minAboveContracts, side: side, instructions: Object.freeze(instructions)};
 }
 
 function parseNewPart(tokens, parseData) {
@@ -486,7 +487,7 @@ export class SvgInstruction {
         Object.entries(newSubstitutions).forEach(entr => {
             const [k, v] = entr;
             if (!(typeof k === "string" || k instanceof String)) throw `Expected string as key, not ${typeof k} - ${k}`;
-            if (isNaN(parseFloat(v))) throw `Expected float as value, not ${typeof k} - ${k}`;
+            if (isNaN(parseFloat(v))) throw `Expected float as value, not ${typeof v} - ${v}`;
         })
         
         // Check if duplicate substitution
@@ -803,6 +804,14 @@ export class Symbols {
         // If there is no constraint then this returns null.
         // See the `new,decoration` documentation (src/README.md) for usage specifics.
         if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveBeams;
+        throw "SymbolId does not exist, or is not decoration";
+    }
+    
+    static getDecorationMinAboveContracts(symbolId) {
+        // Returns the minimum distance a decoration should ascend above the top of the highest (rendered) contract. If the symbolId is not a valid decoration id then an error is thrown.
+        // If there is no constraint then this returns null.
+        // See the `new,decoration` documentation (src/README.md) for usage specifics.
+        if (parseData.decorations.hasOwnProperty(symbolId)) return parseData.decorations[symbolId].minAboveContracts;
         throw "SymbolId does not exist, or is not decoration";
     }
     
