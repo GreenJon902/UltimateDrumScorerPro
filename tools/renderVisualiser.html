@@ -133,7 +133,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         <div id="symbol-drums-container"></div>
         <h2>Decorations</h2>
         <p>I'm not gonna describe the desired results here. Really this is more useful for checking that the actual algorithms to compute heights and y-levels are correct, rather than debugging the actual symbols...</p>
-        <p>Cyan dotted/filled areas are minAboveBeams, minAboveDrums, minBelowDrums. If it's a rect, then the outside edge is after adding the distance, and the inside edge is where the drums/beams actually stop.</p>
+        <p>Cyan dotted/filled areas are minAboveContracts, minAboveBeams, minAboveDrums, minBelowDrums. If it's a rect, then the outside edge is after adding the distance, and the inside edge is where the drums/beams actually stop.</p>
         <p>The dashed purple line is drum-center-y.</p>
         <div id="symbol-decorations-container"></div>
 
@@ -217,7 +217,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         
         function createSvg(section, drawFunc, sizeFunc, drawArgs, sizeArgs) {
             // drawFunc: Callable[svg, container, ...drawArgs]
-            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth, size(left,right,up,down)(inside,outside), minHeight, belowDrums, aboveDrums, aboveBeams, drumsCenterY, drumsBottom, drumsTop, beamsTop}
+            // sizeFunc: Callable[svg, ...sizeArgs] -> {sizeLeft, sizeUp, sizeDown, sizeRight, minAnchorWidth, size(left,right,up,down)(inside,outside), minHeight, belowDrums, aboveDrums, aboveBeams, aboveContracts, drumsCenterY, drumsBottom, drumsTop, beamsTop, contractsTop}
             // drawArgs: Array
             // sizeArgs: Array
             //
@@ -228,7 +228,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             //
             // The belowDrums, aboveDrums, aboveBeams mean the drumsBottom-minBelowDrums, ... . These can be null.
             //
-            // For the size func, either you have all inside+outside sizes and nothing else, or you have no inside+outside sizes. In the second case you need the left+up+down sizes and either sizeRight or minAnchorWidth but not both. Either you have all of minHeight+belowDrums+aboveDrums+aboveBeams+drumsCenterY+drumsBottom+drumsTop+beamsTop or none of them.
+            // For the size func, either you have all inside+outside sizes and nothing else, or you have no inside+outside sizes. In the second case you need the left+up+down sizes and either sizeRight or minAnchorWidth but not both. Either you have all of minHeight+belowDrums+aboveDrums+aboveBeams+aboveContracts+drumsCenterY+drumsBottom+drumsTop+beamsTop+contractsTop or none of them.
         
             
             // Create container
@@ -281,6 +281,11 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
                     drawSquare(svg, "decoABBound", bbox.x, size.aboveBeams, bbox.width, size.beamsTop - size.aboveBeams);
                 } else {
                     drawLine(svg, "decoABBound", bbox.x - 2, size.beamsTop, bbox.x + bbox.width, size.beamsTop);
+                }
+                if (size.aboveContracts !== null) {
+                    drawSquare(svg, "decoABBound", bbox.x, size.aboveContracts, bbox.width, size.contractsTop - size.aboveContracts);
+                } else {
+                    drawLine(svg, "decoABBound", bbox.x - 2, size.contractsTop, bbox.x + bbox.width, size.contractsTop);
                 }
                 drawLine(svg, "drumCenterY", bbox.x - 2, size.drumCenterY, bbox.x + bbox.width, size.drumCenterY);
             }
@@ -371,20 +376,23 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         });
         
         // Visualise decorations
-        const decorationSizeGetter = (decoId, drumsBottom, drumsTop, beamsTop, drumCenterY, computedHeight) => {
+        const decorationSizeGetter = (decoId, drumsBottom, drumsTop, beamsTop, contractsTop, drumCenterY, computedHeight) => {
             const adjustedDecoSize = getDecorationSize(decoId, computedHeight);
             const minBelowDrums = Symbols.getDecorationMinBelowDrums(decoId);
             const minAboveDrums = Symbols.getDecorationMinAboveDrums(decoId);
-            const minAboveBeams = Symbols.getDecorationMinAboveBars(decoId);
-            const decorationY = computeDecorationY(decoId, drumsBottom, drumsTop, beamsTop);  // Draw the decoration at (0,0), so we need to adjust the sizing info to be around that
+            const minAboveBeams = Symbols.getDecorationMinAboveBeams(decoId);
+            const minAboveContracts = Symbols.getDecorationMinAboveContracts(decoId);
+            const decorationY = computeDecorationY(decoId, drumsBottom, drumsTop, beamsTop, contractsTop);  // Draw the decoration at (0,0), so we need to adjust the sizing info to be around that
             return {
                 minHeight: Symbols.getDecorationMinHeight(decoId),
                 belowDrums: (minBelowDrums === null) ? null : drumsBottom + minBelowDrums - decorationY,
                 aboveDrums: (minAboveDrums === null) ? null : drumsTop - minAboveDrums - decorationY,
                 aboveBeams: (minAboveBeams === null) ? null : beamsTop - minAboveBeams - decorationY,
+                aboveContracts: (minAboveContracts === null) ? null : contractsTop - minAboveContracts - decorationY,
                 drumsBottom: drumsBottom - decorationY,
                 drumsTop: drumsTop - decorationY,
                 beamsTop: beamsTop - decorationY,
+                contractsTop: contractsTop - decorationY,
                 drumCenterY: drumCenterY - decorationY,
 
                 sizeLeftInside: Symbols.getDecorationWidth(decoId),
@@ -401,11 +409,13 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
             [0].forEach(drumsBottom => {
                 [drumsBottom - 5, drumsBottom - 50, drumsBottom - 70].forEach(drumsTop => {
                     [drumsTop, drumsTop - 10, drumsTop - 30].forEach(beamsTop => {
-                        const height = computeDecorationHeight(decoId, drumsBottom, drumsTop, beamsTop);
-                        const drumCenterY = (drumsBottom + drumsTop) / 2;
-                        createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter,
-                                  [decoId, 0, 0, height, drumCenterY],
-                                  [decoId, drumsBottom, drumsTop, beamsTop, drumCenterY, height]);
+                        [beamsTop, beamsTop - 10, beamsTop - 30].forEach(contractsTop => {
+                            const height = computeDecorationHeight(decoId, drumsBottom, drumsTop, beamsTop, contractsTop);
+                            const drumCenterY = (drumsBottom + drumsTop) / 2;
+                            createSvg("symbol-decorations-container", drawDecorationAt, decorationSizeGetter,
+                                      [decoId, 0, 0, height, drumCenterY],
+                                      [decoId, drumsBottom, drumsTop, beamsTop, contractsTop, drumCenterY, height]);
+                        });
                     });
                 });
             });

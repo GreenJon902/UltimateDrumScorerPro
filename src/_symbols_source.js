@@ -47,7 +47,10 @@ export const SYMBOLS_SOURCE = [
     // Decorations
     "new,decoration,bar-end,0,1,1,,1,,right,1,path,M0 ${-height / 2} L0 ${+height / 2}",
     "new,decoration,end,3,10,0,,0,,right,3,path,M0 ${-5} L0 ${+5},circle,-2,-3,1,circle,-2,3,1",
-    "new,decoration,repeat-end,6,16,1,,,1,right,4,push-transform,translate(-2 0),use,end,pop-transform,path,M0 ${-height / 2 + 1.5} L0 ${+height / 2 - 1.5} M0 ${+height / 2 - 2} l-6 2 M0 ${-height / 2 + 2} l-6 -2"
+    "new,decoration,repeat-end,6,16,2,,2,0,right,4,push-transform,translate(-2 0),use,end,pop-transform,path,M0 ${-height / 2 + 1.5} L0 ${+height / 2 - 1.5} M0 ${+height / 2 - 2} l-6 2 M0 ${-height / 2 + 2} l-6 -2",
+
+    "new,decoration,start,3,10,0,,0,,left,3,push-transform,scale(-1 1) translate(3 0),use,end,pop-transform",
+    "new,decoration,repeat-start,6,16,2,,2,0,left,3,push-transform,scale(-1 1) translate(6 0),use,repeat-end,pop-transform"
 
 
 ].join(",");

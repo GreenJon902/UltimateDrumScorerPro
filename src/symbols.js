@@ -548,7 +548,10 @@ export class SvgInstruction {
         } else if (this.type === SvgInstruction.CIRCLE) {
             return Object.freeze(new Set([...this.#getNamesInSubstitutions(this.cx), ...this.#getNamesInSubstitutions(this.cy), ...this.#getNamesInSubstitutions(this.r)]));
         } else if (this.type === SvgInstruction.USE) {
-            return this.#getNamesInSubstitutions(this.id);
+            // In this case, return the substitutions used by the symbol this is linking to
+            return Object.freeze(new Set(Iterator.concat(...Array.from(
+                Symbols.getSymbolInstructions(this.id).map(instr => instr.getUsedSubstitionNames())
+            ))));
         } else if (this.type === SvgInstruction.PUSH_TRANSFORM) {
             return this.#getNamesInSubstitutions(this.transform);
         } else if (this.type === SvgInstruction.POP_TRANSFORM) {

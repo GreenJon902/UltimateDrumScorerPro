@@ -365,7 +365,7 @@ function createSymbolGroup(svg, symbolId, substitutions) {
         } else if (instr.type === SvgInstruction.CIRCLE) {
             createCircle(svg, currentParent, instr.r, instr.cx, instr.cy);
         } else if (instr.type === SvgInstruction.USE) {
-            createUse(svg, currentParent, SYMBOL_DEFINITIONS, instr.id);
+            createUse(svg, currentParent, SYMBOL_DEFINITIONS, createRequisiteName(instr.id, substitutions));
             requisites.add(instr.id);
             
         // These two are special

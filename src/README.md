@@ -70,7 +70,7 @@ The instruction arguements depend on the name. These are the instructions:
 * `push-transform,<transform-string>` - Pushes a transformation. The given string is as per the SVG spec.  
 * `pop-transform` - Pops a transformation.  
 
-Inside these instructions, we can specify 'format_values' by writing `${expression}`.  
+Inside these instructions (apart from `use`), we can specify 'format_values' by writing `${expression}`.  
 This expression can use `+`, `-`, `*`, `/`, `(` and `)` and can work on variables and float-literals. Unary operations are supported for `+` and `-`.  
 There are two types of variables, local and global. Local apply only to that instruction, and do not carry through to bases or through 'use' calls. Global variables will.
 Variables can only store floats.
