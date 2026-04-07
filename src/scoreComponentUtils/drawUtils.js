@@ -75,10 +75,10 @@ export function drawDots(svg, container, dots, anchorX, anchorY) {
     // Draws the given number of dots to the container.
     // The anchorX and anchorY are the centre of the first/left-most dot.
     // 
-    // Specifically: We draw dots of radius 1mm, between which we have a spacing of 2mm. However you can use getDotsSize to get a rectangular bounding box.
+    // Specifically: We draw dots of radius 1mm, between which we have a spacing of 1mm. However you can use getDotsSize to get a rectangular bounding box.
 
     for (let n=0; n<dots; n++) {
-        createCircle(svg, container, 1, anchorX + 4*n, anchorY);
+        createCircle(svg, container, 1, anchorX + 3*n, anchorY);  // 3 * n as 1mm for right radius of left dot, 1mm spacing, 1mm for right's radius
     }
 }
 export function getDotsSize(dots) {
@@ -92,7 +92,7 @@ export function getDotsSize(dots) {
     
     return {
         sizeLeft: 1,
-        sizeRight: 4*(dots-1) + 1,  // For n dots we draw (n-1) times: 1mm right of dot, 2mm spacing, 1mm left of next dot. Then add one more for the right of the last dot
+        sizeRight: 3*(dots-1) + 1,  // For n dots we draw (n-1) times: 1mm right of dot, 1mm spacing, 1mm left of next dot. Then add one more for the right of the last dot
         sizeUp: 1,
         sizeDown: 1
     }; 
@@ -152,9 +152,9 @@ export function getBeamSize(fullBeams, brokenBeams, dots) {
     // TODO: Figure out if dots are below or on same level as broken-beams (we'll need to know final width?)
     // For now assume they are underneath broken beams
     const minAnchorWidth = Math.max(
-        SR + 1 + SR,  // If no dots and no broken-beams, then say 1mm between inside edges of stems
-        brokenBeamWidth + SR,  // + SR for stroke width of stem on right side
-        SR + 1 + dotsSize.sizeLeft + dotsSize.sizeRight + 1 + SR  // Add padding of 1mm between inside edges of stems and outside edges of dots, and account of SR of stem on each side
+        SR + 1,  // If no dots and no broken-beams, then say 1mm between inside edges of stems
+        brokenBeamWidth,  
+        SR + 1 + dotsSize.sizeLeft + dotsSize.sizeRight  // Account for stroke-width of the stem on the left, + 1mm padding between stem and dots, then add width of dots
     );  
     const sizeDown = 2*(fullBeams+Math.abs(brokenBeams)-1) + SR + ((dots !== 0) ? 1 : 0) + dotsSize.sizeUp + dotsSize.sizeDown;  // We have 2 between the coordinates the beams are drawn at, then SR of bottom beam, then 1mm padding (if there are dots), then height of dots (when applicable, will be zero otherwise)
     
@@ -390,4 +390,9 @@ function createSymbolGroup(svg, symbolId, substitutions) {
 export function drawStem(svg, container, x, topY, bottomY) {
     // Draws a stem into the container with endpoints (x, topY) and (x, bottomY).
     createPath(svg, container, `M${x} ${topY} L${x} ${bottomY}`);
+}
+export function getStemSize(svg, container) {
+    // Returns the stem's {sizeLeft, sizeRight} after adjusting for stroke-width.
+    
+    return {sizeLeft: SR, sizeRight: SR};
 }

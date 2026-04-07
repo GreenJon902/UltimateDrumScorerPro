@@ -80,6 +80,23 @@
         ComponentManager.setComponentRightDecoration("component-2", "repeat-end");
         ComponentManager.setComponentY("component-1", 30);
         ComponentManager.setComponentY("component-2", 40);
+
+        ComponentManager.createEmptyComponent("score-component");
+        ComponentManager.setComponentLeftDecoration("component-3", "start");
+        ComponentManager.setComponentRightDecoration("component-3", "bar-end");
+        ComponentManager.addSubdivisions("component-3", 0, ...Array(30).fill(0));
+        ComponentManager.addSubdivisions("component-3", 2, 0, 1, 2, 3, 4, 5);
+        ComponentManager.addSubdivisions("component-3", 3, ...Array(6).fill(0));
+        ComponentManager.toggleComponentDrumEnabledState("component-3", "debug");
+        ComponentManager.toggleComponentDrum("component-3", 0, 0, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 0, 13, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 0, 22, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 1, 1, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 2, 0, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 2, 7, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 3, 0, "debug");
+        ComponentManager.toggleComponentDrum("component-3", 3, 2, "debug");
+        ComponentManager.setComponentY("component-3", 70);
         
         
         attachEditor(document.getElementById("editor-pane"));

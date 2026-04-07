@@ -7,7 +7,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getContractSize, getDrumSize, getDecorationSize} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getStemSize, getContractSize, getDrumSize, getDecorationSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getHeight(sizeInfo) {
@@ -157,6 +157,8 @@ function getInstructionXs(instructions, rhythmLengthHint) {
     return instructionXs;
 }
 
+const LINE_X_PADDING = 1;  // The minimum distance we should have between adjacent lines (after account for stroke wdith)
+
 function calculateInstructionX(instr, trackers, rhythmLengthHint) {
     // instr: RenderInstruction
     // trackers: the return value from the last call of this function, or null if this is the first call
@@ -187,19 +189,24 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
         // Select the (minimum) width of the rhythm part after the stem
         const ryhthmWidthPart = {
             [RenderInstruction.BEAM]: () => getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minAnchorWidth,
-            [RenderInstruction.BEAM_END]: () => getWidth(getDotsSize(instr.dots)),
+            [RenderInstruction.BEAM_END]: () => getWidth(getFlagSize(0, instr.dots)),  // Draw dots draws directly at the given x, and does not account for the fact there is a stem there. So use getFlagSize(flags=0). We use getFlagSize and not getBeamSize as we use that to draw the beam_ends in the next step
             [RenderInstruction.FLAG]: () => getWidth(getFlagSize(instr.flags, instr.dots))
         }[instr.type]();  // Do as lambda functions so we only call the one we want
         
-        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
-        newDrumSpaceRight = newX + drumsSize.sizeRight;
-        newRyhthmRight = newX + Math.max(ryhthmWidthPart, instr.length * rhythmLengthHint);  // If the length is below what is suggested (by the hint), then add padding before the next stem
+        // Get the sizeLeft that happens in rhythmSpace
+        const stemSizeLeft = getStemSize().sizeLeft;  // We assume that the sizeLeft of beams or flags is also at most the width of the stem
+        
+        newX = Math.max(lastRyhthmRight + stemSizeLeft, lastDrumSpaceRight + drumsSize.sizeLeft);
+        newDrumSpaceRight = newX + drumsSize.sizeRight + LINE_X_PADDING;  
+        newRyhthmRight = newX + Math.max(ryhthmWidthPart,
+                                         instr.length * rhythmLengthHint  // If the length is below what is suggested (by the hint), then add padding before the next stem
+                                        ) + LINE_X_PADDING;
         
 
     } else if (instr.type === RenderInstruction.DECORATION) {
         const decorationSize = getDecorationSize(instr.decoration);
         
-        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + decorationSize.sizeLeft);
+        newX = Math.max(lastRyhthmRight, lastDrumSpaceRight) + decorationSize.sizeLeft;
         newDrumSpaceRight = newX + decorationSize.sizeRight;
         newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
 
@@ -208,9 +215,10 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
         const restSize = getRestSize(instr.ticks, instr.dots);
         
         newX = Math.max(lastDrumSpaceRight, lastRyhthmRight) + restSize.sizeLeft;  // We want the left edge of any rest to begin after any padding from rhythmLengthHint
-        newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
+        newDrumSpaceRight = newX + restSize.sizeRight + LINE_X_PADDING;  // Rests are drawn in drum-space
         newRyhthmRight = Math.max(lastRyhthmRight,  // Rests are below beams so don't impact them
-                                  newX + instr.length * rhythmLengthHint - restSize.sizeLeft);  // We accounted for width of rest for rhythmLengthHint when we calcaulted newX, so remove it here
+                                  newX + instr.length * rhythmLengthHint - restSize.sizeLeft)  // We accounted for width of rest for rhythmLengthHint when we calcaulted newX, so remove it here
+                         + LINE_X_PADDING;  
 
         
     } else {

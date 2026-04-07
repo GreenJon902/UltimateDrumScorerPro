@@ -1,4 +1,7 @@
 export const SYMBOLS_SOURCE = [
+    // Debug
+    "new,drum,debug,0,0,0,0,0,0",
+
     // Kicks
     "new,drum,kick,5.15,0.35,0.15,2.85,1,path,M0 0 A2.5 1 157.5 0 0 -5 2.5 A2.5 1 157.5 0 0 0 0 M-3.5 1.75 A1 1 157.5 0 0 -1.5 0.75 A1 1 157.5 0 0 -3.5 1.75,1,feet",  // The angle is derived from: 180-arctan(2.5/5)=157.5
     "new,drum,hi-hat-kick,5,0,0,5,1,path,M0 0 l-5 5 m5 0 l-5 -5,1,feet",
