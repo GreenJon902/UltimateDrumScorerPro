@@ -391,7 +391,7 @@ export function drawStem(svg, container, x, topY, bottomY) {
     // Draws a stem into the container with endpoints (x, topY) and (x, bottomY).
     createPath(svg, container, `M${x} ${topY} L${x} ${bottomY}`);
 }
-export function getStemSize(svg, container) {
+export function getStemSize() {
     // Returns the stem's {sizeLeft, sizeRight} after adjusting for stroke-width.
     
     return {sizeLeft: SR, sizeRight: SR};

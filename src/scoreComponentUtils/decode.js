@@ -170,16 +170,21 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
     // return {instructionX: float, trackers}.
     
     // Handle trackers unpacking
-    if (trackers === null) trackers = {x: 0, ryhthmRight: 0, drumSpaceRight: 0};  // Default value
-    const {x: lastX, ryhthmRight: lastRyhthmRight, drumSpaceRight: lastDrumSpaceRight} = trackers;
+    if (trackers === null) trackers = {x: 0, ryhthmRight: 0, drumSpaceRight: 0, hintedRight: 0};  // Default value
+    const {x: lastX, ryhthmRight: lastRyhthmRight, drumSpaceRight: lastDrumSpaceRight, hintedRight: lastHintedRight} = trackers;  // Hinted right is the right edge if we only consider rhythmLengthHint from the last stem
+
     
 
     // Calculate the new x and tracker values
-    let newX, newDrumSpaceRight, newRyhthmRight;
-    if (instr.isContract) {
-        newX = Math.max(lastX, lastRyhthmRight, lastDrumSpaceRight);
+    let newX, newDrumSpaceRight, newRyhthmRight, newHintedRight;
+    if (instr.isContract) {  // TODO: Re-write the contract x-spacing calculations
+        newX = Math.max(
+            lastX, lastRyhthmRight, lastDrumSpaceRight, 
+            ...(instr.type === RenderInstruction.CONTRACT_START) ? [lastHintedRight] : []  // TODO: Make contract starts always begin left of the drums
+        );
         newDrumSpaceRight = lastDrumSpaceRight;
         newRyhthmRight = lastRyhthmRight;
+        newHintedRight = lastHintedRight;
         // TODO: Process minimum width of a contract
         
 
@@ -189,18 +194,19 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
         // Select the (minimum) width of the rhythm part after the stem
         const ryhthmWidthPart = {
             [RenderInstruction.BEAM]: () => getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots).minAnchorWidth,
-            [RenderInstruction.BEAM_END]: () => getWidth(getFlagSize(0, instr.dots)),  // Draw dots draws directly at the given x, and does not account for the fact there is a stem there. So use getFlagSize(flags=0). We use getFlagSize and not getBeamSize as we use that to draw the beam_ends in the next step
-            [RenderInstruction.FLAG]: () => getWidth(getFlagSize(instr.flags, instr.dots))
+            [RenderInstruction.BEAM_END]: () => getFlagSize(0, instr.dots).sizeRight,  // Draw dots draws directly at the given x, and does not account for the fact there is a stem there. So use getFlagSize(flags=0). We use getFlagSize and not getBeamSize as we use that to draw the beam_ends in the next step
+            [RenderInstruction.FLAG]: () => getFlagSize(instr.flags, instr.dots).sizeRight
         }[instr.type]();  // Do as lambda functions so we only call the one we want
         
         // Get the sizeLeft that happens in rhythmSpace
         const stemSizeLeft = getStemSize().sizeLeft;  // We assume that the sizeLeft of beams or flags is also at most the width of the stem
         
-        newX = Math.max(lastRyhthmRight + stemSizeLeft, lastDrumSpaceRight + drumsSize.sizeLeft);
+        newX = Math.max(lastRyhthmRight + stemSizeLeft,
+                        lastHintedRight,  
+                        lastDrumSpaceRight + drumsSize.sizeLeft);
         newDrumSpaceRight = newX + drumsSize.sizeRight + LINE_X_PADDING;  
-        newRyhthmRight = newX + Math.max(ryhthmWidthPart,
-                                         instr.length * rhythmLengthHint  // If the length is below what is suggested (by the hint), then add padding before the next stem
-                                        ) + LINE_X_PADDING;
+        newRyhthmRight = newX + ryhthmWidthPart + LINE_X_PADDING;
+        newHintedRight = newX + instr.length * rhythmLengthHint;
         
 
     } else if (instr.type === RenderInstruction.DECORATION) {
@@ -209,16 +215,18 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
         newX = Math.max(lastRyhthmRight, lastDrumSpaceRight) + decorationSize.sizeLeft;
         newDrumSpaceRight = newX + decorationSize.sizeRight;
         newRyhthmRight = lastRyhthmRight;  // Decorations don't impact rhthm stuff (though technically there should be no beams over decorations anyway)
+        newHintedRight = lastHintedRight;
 
         
     } else if (instr.type === RenderInstruction.REST) {
         const restSize = getRestSize(instr.ticks, instr.dots);
         
-        newX = Math.max(lastDrumSpaceRight, lastRyhthmRight) + restSize.sizeLeft;  // We want the left edge of any rest to begin after any padding from rhythmLengthHint
+        newX = Math.max(lastDrumSpaceRight, 
+                        lastHintedRight  // We want the left edge of any rest to begin after any padding from rhythmLengthHint
+                        ) + restSize.sizeLeft;  
         newDrumSpaceRight = newX + restSize.sizeRight + LINE_X_PADDING;  // Rests are drawn in drum-space
-        newRyhthmRight = Math.max(lastRyhthmRight,  // Rests are below beams so don't impact them
-                                  newX + instr.length * rhythmLengthHint - restSize.sizeLeft)  // We accounted for width of rest for rhythmLengthHint when we calcaulted newX, so remove it here
-                         + LINE_X_PADDING;  
+        newRyhthmRight = lastRyhthmRight + LINE_X_PADDING;  // Rests are below beams so don't impact them
+        newHintedRight = newX - restSize.sizeLeft + instr.length * rhythmLengthHint;  // We measure from the left edge of the rest
 
         
     } else {
@@ -226,7 +234,7 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
     }
     
     // Return new data
-    const newTrackers = {x: newX, ryhthmRight: newRyhthmRight, drumSpaceRight: newDrumSpaceRight};
+    const newTrackers = {x: newX, ryhthmRight: newRyhthmRight, drumSpaceRight: newDrumSpaceRight, hintedRight: newHintedRight};
     return {instructionX: newX, trackers: newTrackers};
 }
 
@@ -435,11 +443,11 @@ function minKey(key, ...items) {
 export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhythmLengthHint) {
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
-    // rhtyhmLengthHint: float
+    // rhythmLengthHint: float
     // 
     // Calculates the spacing specification to which the given RenderInstructions should be drawn with.
     // The calculations are applicable only for instructions. vertGroupLinkedComponentInstructions are used to ensure that drums (etc) shared between vert-linked-bars are drawn at the correct height.
-    // The rhtyhmLengthHint is used as a minimum width for the bar. That's to say, should it be possible, horizontal space will be added between groups. This should follow the RenderInstruction.length.
+    // The rhythmLengthHint is used as a minimum width for the bar. That's to say, should it be possible, horizontal space will be added between groups. This should follow the RenderInstruction.length.
     // 
     // It returns {
     //     instructionXs: [float],  // The x-coordinate of a stem, or the right edge of a rest or decoration, or the location of a contract hook (when required).
