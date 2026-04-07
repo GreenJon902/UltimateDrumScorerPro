@@ -169,7 +169,7 @@ export class ComponentManager {
     // Component Score -----------------------------------------------------------------------------------------
     static {
         createBasicComponentGetterSetter(this, "score-component", "TimeSignatureDenomenator", "time-signature-denomenator", v => typeof v === "number" && v % 1 === 0 && v > 0);  // Positive integer
-        createBasicComponentGetterSetter(this, "score-component", "RhythmLengthHint", "rhythm-length-hint", v => typeof v === "number" && v > 0);  // Positive real
+        createBasicComponentGetterSetter(this, "score-component", "RhythmLengthHint", "rhythm-length-hint", v => typeof v === "number" && v >= 0);  // Non-negative real
         createBasicComponentGetterSetter(this, "score-component", "LeftDecoration", "left-decoration", v => [null, ...Symbols.listLeftDecorations()].includes(v));  
         createBasicComponentGetterSetter(this, "score-component", "RightDecoration", "right-decoration", v => [null, ...Symbols.listRightDecorations()].includes(v));  
     }

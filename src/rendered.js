@@ -36,7 +36,7 @@ export function attachRendered(componentContainer) {
         // Bind events for score-components changes
         onComponentDrumToggled: pusc,
         onComponentTimeSignatureDenomenatorChanged: null,  // This has no effect at the moment
-        onComponentRhythmLengthHintChanged: null,  // TODO: Take this into account
+        onComponentRhythmLengthHintChanged: pusc,  
         onComponentLeftDecorationChanged: pusc,
         onComponentRightDecorationChanged: pusc,
         onComponentVertGroupChanged: null, // TODO: Take this into account

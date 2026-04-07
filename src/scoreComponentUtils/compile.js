@@ -39,7 +39,7 @@ export class RenderInstruction {
     // ticks: The number (zero or positive) of ticks to draw on a rest. Zero means it's a crotchet rest.
     // ratio: The length (positive integer) of notes to contracted into one beat. This is the number to be drawn between the start and end.
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
-    // length: The fraction of a beat that this group inhabits (e.g. a semiquaver is 0.25). This is used as metadata for stylised spacing when drawing, so need not be technically accurate and the fraction part is a suggestion. It could also be greater than 1, and they need not add to 1. It should be non-negative though.
+    // length: The fraction of a beat that this group inhabits (e.g. a semiquaver is 0.25). This is used as metadata for stylised spacing when drawing, so need not be technically accurate. It should be non-negative though.
     // decoration:  The (decoration) symbolID of the decoration to draw. 
     // 
     // BEAMs connect to the next BEAM or BEAM-END, so must be followed by at least one of these.

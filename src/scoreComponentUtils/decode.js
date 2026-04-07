@@ -130,8 +130,9 @@ function getMaxHorizSizeOfDrums(drums) {
     };
 }
 
-function getInstructionXs(instructions) {
+function getInstructionXs(instructions, rhythmLengthHint) {
     // instructions: Array<RenderInstruction>
+    // rhythmLengthHint: float
     // 
     // Calculates the x-coordinate data for each instruction.
     // For BEAMs, BEAM_ENDs and FLAGs: this is the anchor-x.
@@ -148,7 +149,7 @@ function getInstructionXs(instructions) {
         
         // Get new X coordinate
         let instructionX;
-        ({instructionX, trackers: xTrackers} = calculateInstructionX(instr, xTrackers));
+        ({instructionX, trackers: xTrackers} = calculateInstructionX(instr, xTrackers, rhythmLengthHint));
 
         instructionXs.push(instructionX);
     }
@@ -156,9 +157,10 @@ function getInstructionXs(instructions) {
     return instructionXs;
 }
 
-function calculateInstructionX(instr, trackers) {
+function calculateInstructionX(instr, trackers, rhythmLengthHint) {
     // instr: RenderInstruction
     // trackers: the return value from the last call of this function, or null if this is the first call
+    // rhythmLengthHint: float
     //
     // Calculates the instructionX (see calculateScoreComponentSpacing return value) for this instruction.
     // This depends data that was calculated by previous calls of this function, which is saved in this "trackers" object. This first call of this function should have trackers as null, for all future calls it *must* be the value returned for the last instruction.
@@ -191,7 +193,7 @@ function calculateInstructionX(instr, trackers) {
         
         newX = Math.max(lastRyhthmRight, lastDrumSpaceRight + drumsSize.sizeLeft);
         newDrumSpaceRight = newX + drumsSize.sizeRight;
-        newRyhthmRight = newX + ryhthmWidthPart; 
+        newRyhthmRight = newX + Math.max(ryhthmWidthPart, instr.length * rhythmLengthHint);  // If the length is below what is suggested (by the hint), then add padding before the next stem
         
 
     } else if (instr.type === RenderInstruction.DECORATION) {
@@ -205,10 +207,10 @@ function calculateInstructionX(instr, trackers) {
     } else if (instr.type === RenderInstruction.REST) {
         const restSize = getRestSize(instr.ticks, instr.dots);
         
-        newX = lastDrumSpaceRight + restSize.sizeLeft;
+        newX = Math.max(lastDrumSpaceRight, lastRyhthmRight) + restSize.sizeLeft;  // We want the left edge of any rest to begin after any padding from rhythmLengthHint
         newDrumSpaceRight = newX + restSize.sizeRight;  // Rests are drawn in drum-space
-        newRyhthmRight = lastRyhthmRight;  // Rests are below beams so don't impact them
-        // TODO: Using lastRyhthmRight, center the rest underneath the beams
+        newRyhthmRight = Math.max(lastRyhthmRight,  // Rests are below beams so don't impact them
+                                  newX + instr.length * rhythmLengthHint - restSize.sizeLeft);  // We accounted for width of rest for rhythmLengthHint when we calcaulted newX, so remove it here
 
         
     } else {
@@ -422,7 +424,7 @@ function minKey(key, ...items) {
     return lowestItem;
 }
 
-export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhtyhmLengthHint) {
+export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, rhythmLengthHint) {
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
     // rhtyhmLengthHint: float
@@ -442,12 +444,11 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //     decorationHeights: [float]  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
     // }
     
-    // TODO: Take rhtyhmLengthHint into account
     // TODO: stemTopYs inside of groups is unintuative. What if we want to have a beam at an angle
     //          Either: Store for first BEAM in beam-group and for BEAM_END
     //          Or: Calculate the whole slant here (does that really make sense though?)
 
-    const instructionXs = getInstructionXs(instructions);
+    const instructionXs = getInstructionXs(instructions, rhythmLengthHint);
     const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
 
     return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};

@@ -125,7 +125,8 @@ ComponentManager - Stores persistant state of entities.
 		- ToggleComponentDrumEnabledState(componentId, drumId)
 		- GetComponentDrumEnabledState(componentId, drumId) -> bool
 		- SetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId, newValue)
-		- GetComponent(X|Y|TimeSignatureDenomenator|RhythmLengthHint|Text|FontSize)(componentId) -> someApplicableType
+		- GetComponent(X|Y|TimeSignatureDenomenator|Text|FontSize)(componentId) -> someApplicableType
+        - GetComponentRhythmLengthHint(componentId) -> float - The minimum desired width (in mm) for each beat. Padding can be added (where spacing is representative of the rhythmic gap). This is guidline and need not be exactly adhered to; the current implementation only adds padding when the current width is smaller than than it's rythmic value.
 		- SetComponent(Left|Right)Decoration(componentId, decoration-id|null)
 		- GetComponent(Left|Right)Decoration(componentId) -> decoration-id|null
 		- AddVertGroup(...componentIds) - Creates a vertical-group between the given components, any already given components will be removed from those groups.
