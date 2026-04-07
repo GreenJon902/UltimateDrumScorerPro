@@ -154,7 +154,7 @@ DragManager - Stores temporary state of drag. Also determines wether the mouse m
 		- Drag(Start|End) {Object.freeze(Set<component-id>)} - Dispatched only when a mouse movement is deemed significant enough.
 		- DragMove {Object.freeze(Set<component-id>), totalDeltaX, totalDeltaY} - componentIds will remain the same as DragStart until ended. Delta is relative to start position. Dispatched only when a mouse movement is deemed significant enough.
 	- Methods
-		- startDrag(cardinal, extraId) - Cardinal is whether to lock movement to cardinal directions, what is passed is initial value. ExtraId is a component-id that should be dragged regardless of whether it is selected.
+		- startDrag(cardinal, mainTarget) - Cardinal is whether to lock movement to cardinal directions, what is passed is initial value. MainTarget is the component that was actually clicked
 		- moveDrag(deltaX, deltaY) - Delta is relative to last time moveDrag was called.
 		- endDrag() -> bool  - Returns true if the drag was significant (and components were actually moved)
 		- setCardinal(cardinal) - Cardinal is whether to lock movement to cardinal directions.
@@ -233,8 +233,9 @@ It will only drag when a component is the start-point / where the mouse-down occ
 ```
 1. <id> clicked on.
 	3. <shift> is true if shift is pressed.
-	4. index.html calls DragManager.startDrag(cardinal=<shift>, extraId=<id>)
-		5. <selected> is set to current SelectionManager.getSelection().
+	4. index.html calls DragManager.startDrag(cardinal=<shift>, targetId=<id>)
+		5a. If <targetId> is currently selected, then <selected> is set to current SelectionManager.getSelection().
+		5b. If <targetId> is not currently selected, so <selected> is set to <targetId>.
 [      	6. DragManager emits DragStart {<selection>}.                     ]  // This may be done late when drag significance is determined
 [			7. Renderer adds "translate" to each of <selection>'s style.  ]
 8a. Mouse moves by <delta>mm.

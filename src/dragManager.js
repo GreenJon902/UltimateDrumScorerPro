@@ -29,18 +29,18 @@ export class DragManager {
         });
     }
     
-    static startDrag(cardinal, extraId) {
+    static startDrag(cardinal, mainTarget) {
         // cardinal: bool - Should dragging be locked to cardinal directions. True for yes.
-        // extraId: component-id - Even if this widget is not selected, it should be dragged anyway.
+        // mainTarget: component-id - The widget that was actually clicked on.
         //
         // Called when the mouse is pressed down.
-        // The current selection will be taken to be dragged.
+        // If the mainTarget is currently selected then the current selection will be dragged, otherwise only mainTarget will be dragged.
         // This should only be called if isDragging() returns false.
         
         if (this.#currentDrag !== null) throw "Tried to start drag when drag already in progress";
         
         this.#currentDrag = {
-            componentIds: new Set([...SelectionManager.getSelection(), extraId]),  // We don't want this set to be frozen
+            componentIds: new Set((SelectionManager.isSelected(mainTarget)) ? SelectionManager.getSelection() : [mainTarget]),  // We don't want this set to be frozen
             totalDeltaX: 0,  // Initial delta is 0
             totalDeltaY: 0,
             significant: false,  // This drag is not significant yet - the mouse has not moved far enough
