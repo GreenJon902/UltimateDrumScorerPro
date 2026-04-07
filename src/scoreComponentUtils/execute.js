@@ -35,7 +35,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const beamEndY = spacing.stemTopYs[prevStemCount + 1];  // There must be a BEAM or BEAM_END after instr (before any FLAGs), this is what we want to join the beams to            
             drawBeams(svg, svg, instr.fullBeams, instr.brokenBeams, instr.dots, beamStartX, beamStartY, beamEndX, beamEndY);
         } else if (instr.type === RenderInstruction.BEAM_END) {
-            drawDots(svg, svg, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
+            drawFlags(svg, svg, 0, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);  // Draw dots draws directly at the given x, and does not account for the fact there is a stem there. So use drawFlags(flags=0) instead
         } else if (instr.type === RenderInstruction.FLAG) {
             drawFlags(svg, svg, instr.flags, instr.dots, spacing.instructionXs[instrI], spacing.stemTopYs[prevStemCount]);
         }
