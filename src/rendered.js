@@ -21,7 +21,6 @@ export function attachRendered(componentContainer) {
     // Add components that already exist
     ComponentManager.getComponentIds().forEach(componentId => createInitialGenericComponent(componentContainer, componentId));
     
-    //  TODO: Bind all events
     const pusc = partial(updateScoreComponent, componentContainer);
     bindAll(ComponentManager, {
         // Bind component addition / removal events
