@@ -25,7 +25,7 @@ export function attachRendered(componentContainer) {
     bindAll(ComponentManager, {
         // Bind component addition / removal events
         onComponentAdded: partial(createInitialGenericComponent, componentContainer),
-        onComponentRemoved: partial(createInitialGenericComponent, componentContainer),
+        onComponentRemoved: partial(removeComponent, componentContainer),
         onBeforeComponentRemoved: null,  // Ignore this, we remove onComponentRemoved
         // Bind events for generic component changes
         onComponentXChanged: partial(updateComponentX, componentContainer),

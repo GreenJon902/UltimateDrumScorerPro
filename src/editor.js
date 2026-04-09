@@ -79,10 +79,9 @@ function selectionStateChanged(editorPane, ..._) {
             "text-component": createFullTextComponentEditor,
             "score-component": createFullScoreComponentEditor
         }[ComponentManager.getComponentType(theComponentId)](editorPane, theComponentId);
-    } else {
-        console.log("Not implemented");
-        // TODO: IMplement this
-        //throw "Not implemented"
+    } else if (new Array(...currentSelection).map(id => ComponentManager.getComponentType(id) === "score-component").reduce((a, b) => a && b)) {
+        // Multiple children that are all score-components, so show vert-group option
+        createFullVertLinkEditor(editorPane, currentSelection);
     }
 }
 
@@ -605,3 +604,14 @@ function getUniqueId() {
 }
 
 
+function createFullVertLinkEditor(editorPane, componentIds) {
+    // Creates the options that allows the user to vertically link multiple components (the ones that are given).
+    // This also adds a button to delete multiple components.
+    // 
+    // This will not listen to events from the component manager or selection managers, as if a component is deleted then the selection manager will propogate that event. And if a component is selected or unselected then it is expected that this method is called again.
+    
+    createButton(editorPane, "Add to VertGroup", () => ComponentManager.addVertGroup(...componentIds));
+    createButton(editorPane, "Delete", () => componentIds.forEach(id => ComponentManager.removeComponent(id)));
+    // TODO: Delete mutliple components that aren;t of the same type
+    // TODO: ACtually implement the vert group rendering
+}
