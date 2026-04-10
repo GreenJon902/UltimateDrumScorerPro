@@ -247,27 +247,30 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     
     // Calculate prerequisite data ---
     
+    // Get one large array of all instructions
+    const flattenedVertInstructions = new Array(...vertGroupLinkedComponentInstructions).reduce((a, b) => [...a, ...b]);  
+    
     const maxRestHeight = Math.max(
         0,  // If there are no rests then take 0
-        ...instructions
+        ...flattenedVertInstructions
             .filter(instr => instr.type === RenderInstruction.REST)
             .map(instr => getHeight(getRestSize(instr.ticks, instr.dots)))
     );
     const maxBeamFlagDotHeight = Math.max(
         0, // If there are no BEAM, FLAGs, or BEAM_ENDs then take 0
-        ...instructions
+        ...flattenedVertInstructions
             .filter(instr => instr.type === RenderInstruction.BEAM)
             .map(instr => getHeight(getBeamSize(instr.fullBeams, instr.brokenBeams, instr.dots))),
-        ...instructions
+        ...flattenedVertInstructions
             .filter(instr => instr.type === RenderInstruction.BEAM_END)
             .map(instr => getHeight(getBeamSize(0, 0, instr.dots))),
-        ...instructions
+        ...flattenedVertInstructions
             .filter(instr => instr.type === RenderInstruction.FLAG)
             .map(instr => getHeight(getFlagSize(instr.flags, instr.dots)))
     );
     const maxContractHeight = Math.max(
         0,  // If there are no contracts then take 0
-        ...instructions
+        ...flattenedVertInstructions
             .filter(instr => instr.type === RenderInstruction.CONTRACT_START)  // Only contract starts store data about the ratio and hooks
             .map(instr => getHeight(getContractSize(instr.ratio, instr.hooks)))
     );
