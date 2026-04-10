@@ -143,8 +143,8 @@ export class ComponentManager {
 
         if (!this.componentExists(componentId)) throw "Component " + componentId + " does not exist";
         this.dispatchBeforeComponentRemoved(componentId);
+        this.removeFromVertGroup(true, true, componentId);  // Silently drop from vert group
         delete CURRENT_PROJECT["components"][componentId];
-        // TODO: Handle vert groups
         this.dispatchComponentRemoved(componentId);
     }
 
@@ -273,13 +273,17 @@ export class ComponentManager {
     
     static removeFromVertGroup(...args) {
         // Removes the given components from any vert groups. If a resulting vert group has length 1 then it will be removed.
-        // If a componentId is not in a vert group and the requireInGroup flag is set then an error is thrown.
+        // If a componentId is not in a vert group and the requireInGroup flag (default true) is set then an error is thrown.
+        // If the silent flag (default false) is set then no error is thrown.
         // 
-        // The args are either (requireInGroup: boolean, ...componentIds) or (...componentIds)
+        // The args are either (requireInGroup: boolean, silent: boolean, ...componentIds) 
+        //                  or (requireInGroup: boolean, ...componentIds)
+        //                  or (...componentIds)
         
         // Handle args
         args = new Array(...args);  // Duplicate as we edit
         const requireInGroup = (args.length > 0 && typeof args[0] === "boolean") ? args.shift() : true; 
+        const silent = (args.length > 0 && typeof args[0] === "boolean") ? args.shift() : false; 
         const componentIds = args;
         
         // Validate componentIds exist and are score components
@@ -313,12 +317,13 @@ export class ComponentManager {
                 modifiedAfter.push(Object.freeze(new Set(vgAfter)));  // Duplicate set object as we store vgAfter (in CURRENT_PROJECT) and don't want the one we store frozen
             }
         }
-        console.log(newVertGroups);
         
         // Commit changes
         CURRENT_PROJECT["vert-groups"] = newVertGroups;
-        for (let i=0; i<modifiedBefore.length; i++) {
-            this.dispatchComponentVertGroupChanged(modifiedBefore[i], modifiedAfter[i]);
+        if (!silent) {
+            for (let i=0; i<modifiedBefore.length; i++) {
+                this.dispatchComponentVertGroupChanged(modifiedBefore[i], modifiedAfter[i]);
+            }
         }
     }
     

@@ -190,9 +190,10 @@ The basic thought process is all data flows through the managers. If the editor 
 				5. SelectionManager emits SelectionStateChanged.
 					6a. Editor responds accordingly.
 					6b. Renderer responds accordingly.
-			7. Renderer responds accordingly.
-		8. ComponentManager removes component internally and silently drops groups.
+			7. Renderer saves components vertically grouped with id.
+		8. ComponentManager removes component internally and silently drops vert-groups.
 		9. ComponentManager emits ComponentRemoved.	
+            10. Renderer responds accordingly by removing the component, and updating components saved in (7.).
 ```
 ### Duplicating a component.
 ```

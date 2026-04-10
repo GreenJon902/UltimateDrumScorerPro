@@ -18,6 +18,12 @@ export function attachRendered(componentContainer) {
     // 
     // This will not handle zooming and panning, that should be done externally.
     
+    // When a component is removed, we need to redraw any components that were vertically grouped with it
+    // When we recieve onBeforeComponentRemoved (when we still know what is in this group), we save the linked components
+    // Then when we reciept onComponentRemoved (when this component has been (silently) dropped from its group), we can update the linked components
+    // This may contain the id of the removed component
+    const scoreComponentsToBeUpdatedOnComponentRemoved = new Set();
+    
     // Add components that already exist
     ComponentManager.getComponentIds().forEach(componentId => createInitialGenericComponent(componentContainer, componentId));
     
@@ -25,8 +31,19 @@ export function attachRendered(componentContainer) {
     bindAll(ComponentManager, {
         // Bind component addition / removal events
         onComponentAdded: partial(createInitialGenericComponent, componentContainer),
-        onComponentRemoved: partial(removeComponent, componentContainer),
-        onBeforeComponentRemoved: null,  // Ignore this, we remove onComponentRemoved
+        onBeforeComponentRemoved: id => {
+            // Save all ids of components in the group that the given component is in (if applicable)
+            if (ComponentManager.isInVertGroup(id)) 
+                new Array(...ComponentManager.getVertGroup(id)).forEach(linkedId => scoreComponentsToBeUpdatedOnComponentRemoved.add(linkedId));
+        },
+        onComponentRemoved: id => {
+            // Remove component
+            removeComponent(componentContainer, id);
+            // Update components that were linked to the deleted component
+            new Array(...scoreComponentsToBeUpdatedOnComponentRemoved)
+                .filter(linkedId => ComponentManager.componentExists(linkedId))  // Drop components that no-longer exist
+                .forEach(linkedId => pusc(linkedId));
+        },
         // Bind events for generic component changes
         onComponentXChanged: partial(updateComponentX, componentContainer),
         onComponentYChanged: partial(updateComponentY, componentContainer),
@@ -35,11 +52,13 @@ export function attachRendered(componentContainer) {
         onComponentFontSizeChanged: partial(updateTextComponent, componentContainer, "fontSize"),
         // Bind events for score-components changes
         onComponentDrumToggled: pusc,
-        onComponentTimeSignatureDenomenatorChanged: null,  // This has no effect at the moment
+        onComponentTimeSignatureDenomenatorChanged: null,  // This has no effect at the moment  // TODO: This
         onComponentRhythmLengthHintChanged: pusc,  
         onComponentLeftDecorationChanged: pusc,
         onComponentRightDecorationChanged: pusc,
-        onComponentVertGroupChanged: null, // TODO: Take this into account
+        onComponentVertGroupChanged: (before, after) => 
+            new Array(...new Set([...(before === null) ? [] : before, ...(after === null) ? [] : after]))  // Get array of unique component ids involved in this change
+                .forEach(id => pusc(id)), 
         onComponentDrumToggled: pusc,
         onComponentDrumEnabledStateChanged: pusc,  // This may remove some toggled drums without triggering onComponentDrumToggled
         onComponentBeatsAdded: pusc,
@@ -114,7 +133,7 @@ function createInitialGenericComponent(componentContainer, componentId) {
 function removeComponent(componentContainer, componentId) {
     // Removes the given component from the container.
     // This expects it to exist.
-    getSvgFor(componentContainer, componentId).remove()
+    getSvgFor(componentContainer, componentId).remove();
 }
 
 function createBaseSvg(componentContainer, componentId) {
@@ -197,18 +216,35 @@ function createInitialScoreComponent(componentContainer, componentId) {
     // This requires bindings (via updateScoreComponent) to be called whenever component manager changes.
     const svg = createBaseSvg(componentContainer, componentId);
     const instructions = compileScoreComponent(componentId);
+    const vertGroupLinkedComponentInstructions = new Set((ComponentManager.isInVertGroup(componentId)) ?
+        new Array(...ComponentManager.getVertGroup(componentId).difference(new Set([componentId])))  // Array so we can use for each. We remove componentId as we've already compiled it
+            .map(id => compileScoreComponent(id)) : [])
+        .add(instructions);  // Add the instructions from this component too
+    // TODO: Cache whether a vertGroupLinked component changing affects this compoennt (so whether we actually need to redraw it)
     console.log(instructions);
-    const spacing = calculateScoreComponentSpacing(instructions, new Set([instructions]), ComponentManager.getComponentRhythmLengthHint(componentId));
+    console.log(vertGroupLinkedComponentInstructions);
+    const spacing = calculateScoreComponentSpacing(instructions, vertGroupLinkedComponentInstructions, ComponentManager.getComponentRhythmLengthHint(componentId));
     console.log(spacing);
     renderScoreComponentFromInstructionsAndSpacing(svg, instructions, spacing);
     componentContainer.appendChild(svg);
 }
 
 function updateScoreComponent(componentContainer, componentId) {
-    // TODO: Doc and write this better
-    const svg = getSvgFor(componentContainer, componentId);
-    componentContainer.removeChild(svg);
-    createInitialScoreComponent(componentContainer, componentId);
+    // Re-renders the given score-component, and any components that are vertically-grouped with the given component.
+    // This works on the SVGs created by createInitialScoreComponent.
+    
+    // Collect ids of components that need redrawing
+    let redrawIds;
+    if (ComponentManager.isInVertGroup(componentId)) {
+        redrawIds = new Array(...ComponentManager.getVertGroup(componentId));  // Array so we can use for each
+    } else {
+        redrawIds = [componentId];
+    }
 
+    redrawIds.forEach(id => {
+        const svg = getSvgFor(componentContainer, id);
+        componentContainer.removeChild(svg);
+        createInitialScoreComponent(componentContainer, id);
+    });
 }
 

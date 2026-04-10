@@ -613,5 +613,4 @@ function createFullVertLinkEditor(editorPane, componentIds) {
     createButton(editorPane, "Add to VertGroup", () => ComponentManager.addVertGroup(...componentIds));
     createButton(editorPane, "Delete", () => componentIds.forEach(id => ComponentManager.removeComponent(id)));
     // TODO: Delete mutliple components that aren;t of the same type
-    // TODO: ACtually implement the vert group rendering
 }
