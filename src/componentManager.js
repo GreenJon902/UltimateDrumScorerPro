@@ -301,18 +301,19 @@ export class ComponentManager {
             const vgAfter = vgBefore.difference(new Set(componentIds));  // Remove all of the given componentIds from vgBefore   
             
             // If any were removed then handle that
-            if (vgAfter.size === 1) {  // Destroy group
+            if (vgAfter.size <= 1) {  // Destroy group
                 newVertGroups.splice(vgi, 1);
                 vgi--;  // We removed the current vgi so we don't need to change the index
                 modifiedBefore.push(Object.freeze(vgBefore));
                 modifiedAfter.push(null);
             
             } else if (vgBefore.size !== vgAfter.size) {  // Replace group
-                newVertGroups[vgi] = vgAfter;
+                newVertGroups[vgi] = new Array(...vgAfter);  // We need an array, not a set
                 modifiedBefore.push(Object.freeze(vgBefore));
                 modifiedAfter.push(Object.freeze(new Set(vgAfter)));  // Duplicate set object as we store vgAfter (in CURRENT_PROJECT) and don't want the one we store frozen
             }
         }
+        console.log(newVertGroups);
         
         // Commit changes
         CURRENT_PROJECT["vert-groups"] = newVertGroups;
