@@ -79,9 +79,9 @@ function selectionStateChanged(editorPane, ..._) {
             "text-component": createFullTextComponentEditor,
             "score-component": createFullScoreComponentEditor
         }[ComponentManager.getComponentType(theComponentId)](editorPane, theComponentId);
-    } else if (new Array(...currentSelection).map(id => ComponentManager.getComponentType(id) === "score-component").reduce((a, b) => a && b)) {
-        // Multiple children that are all score-components, so show vert-group option
-        createFullVertLinkEditor(editorPane, currentSelection);
+    } else {
+        // Multiple children, so show general editor
+        createFullMultiEditor(editorPane, currentSelection);
     }
 }
 
@@ -185,13 +185,14 @@ function createTextEditorOptions(editorPane, componentId) {
     return div;
 }
 
-function createDeleteDuplicate(container, componentId) {
-    // Creates the delete and duplicate buttons for the given component inside the given container.
-    createButton(container, "Delete", () => ComponentManager.removeComponent(componentId));
-    createButton(container, "Duplicate", () => {
-        const newId = ComponentManager.duplicateComponent(componentId);
-        SelectionManager.select(newId);
-    });
+function createDeleteDuplicate(container, ...componentIds) {
+    // Creates the delete and duplicate buttons for the given component(s) inside the given container.
+    createButton(container, "Delete", () => componentIds.forEach(id => ComponentManager.removeComponent(id)));
+    createButton(container, "Duplicate", () => SelectionManager.select(...
+        componentIds.map(id => ComponentManager.duplicateComponent(id))  // duplicateComponent returns the id of the new created components. We then select all new components
+    ));
+
+
 }
 
 function createVertGroupControls(container, componentId) {
@@ -604,13 +605,17 @@ function getUniqueId() {
 }
 
 
-function createFullVertLinkEditor(editorPane, componentIds) {
-    // Creates the options that allows the user to vertically link multiple components (the ones that are given).
-    // This also adds a button to delete multiple components.
+function createFullMultiEditor(editorPane, componentIds) {
+    // Creates the options for when multiple components are selected.
     // 
     // This will not listen to events from the component manager or selection managers, as if a component is deleted then the selection manager will propogate that event. And if a component is selected or unselected then it is expected that this method is called again.
     
-    createButton(editorPane, "Add to VertGroup", () => ComponentManager.addVertGroup(...componentIds));
-    createButton(editorPane, "Delete", () => componentIds.forEach(id => ComponentManager.removeComponent(id)));
-    // TODO: Delete mutliple components that aren;t of the same type
+    // If all the components are score-components then show a button to vertically-group them
+    const allAreScoreComponents = new Array(...componentIds).map(id => ComponentManager.getComponentType(id) === "score-component").reduce((a, b) => a && b);
+    if (allAreScoreComponents)
+        createButton(editorPane, "Add to VertGroup", () => ComponentManager.addVertGroup(...componentIds));
+    
+    // Create buttons that show for any combination of component types
+    createDeleteDuplicate(editorPane, ...componentIds);
+
 }
