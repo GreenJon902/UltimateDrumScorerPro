@@ -322,14 +322,12 @@ function drawSymbolAt(svg, container, symbolId, x, y, substitutions) {
     const requisites = [symbolId]; 
     while (requisites.length !== 0) {
         const newSymbolId = requisites.pop();
+        const defId = createRequisiteName(newSymbolId, substitutions);
         
-        if (hasDefinition(svg, SYMBOL_DEFINITIONS, newSymbolId)) continue;  // If we have the definition then we have its requisites too
+        if (hasDefinition(svg, SYMBOL_DEFINITIONS, defId)) continue;  // If we have the definition then we don't need to add it (and it's requisites must already be added to, so can be ignored here)
         
         // Attach the definition for id, and add any requisites to the array to be processed
         const {group, requisites: newRequisites} = createSymbolGroup(svg, newSymbolId, substitutions);
-        
-        const defId = createRequisiteName(newSymbolId, substitutions);
-
         attachDefinition(svg, SYMBOL_DEFINITIONS, defId, group);
         requisites.push(...newRequisites);
     }
