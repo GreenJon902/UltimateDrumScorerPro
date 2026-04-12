@@ -93,6 +93,8 @@ If the id is a group, then it adds/removes all ids that are in that group.
 If the id is the string literal "\*drums" or "\*decorations" or "\*parts", then it will add every id from the given group.
 
 
+# Data storage
+The component manager (currently saves) the data in this format: `V4-<major>.<minor>[-SNAPSHOT] <Project data>`. However, when this is copied into the pdf, it is escaped.
 
 
 # Data flow / event processing

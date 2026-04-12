@@ -7,11 +7,9 @@ import {Symbols} from "./symbols.js";
 // TODO: Add second file extension to PDFs (e.g. filename.udsp.pdf).
 
 let CURRENT_PROJECT;  // Stores the raw form of the data (as JSON).
+const CURRENT_FILE_VERSION = "V4-1.0-SNAPSHOT";
 /*
- * JSON Format V4-1.0-SNAPSHOT.
- *
  * <Root>: {
- *     "version": "V4-1.0-SNAPSHOT",                 * This is added when we serialize the JSON, and is removed when we deserialize it.
  *     "components": {component-id: <Component>},
  *     "vert-groups": [<VertGroup>]
  * }
@@ -49,6 +47,7 @@ export class ComponentManager {
     static loadEmptyProject() {
         // Loads an empty project into memory.
         // This overwrites what was previously in there.
+        // Note: This will not emit any events.
         
         CURRENT_PROJECT = {
             "components": {},
@@ -56,7 +55,6 @@ export class ComponentManager {
         }
     }
     
-    // TODO: Serializing and deserializing the project - we need to add and remove the version. Also verify data is formatted correctly and consistant
     
     // Events --------------------------------------------------------------------------------------------------
     static {
@@ -505,6 +503,43 @@ export class ComponentManager {
     static {
         createBasicComponentGetterSetter(this, "text-component", "Text", "text", v => typeof v === "string");  // Some string
         createBasicComponentGetterSetter(this, "text-component", "FontSize", "font-size", v => typeof v === "number" && v > 0);  // Positive real
+    }
+    
+
+    // Saving & Loading utils ----------------------------------------------------------------------------------
+    static writeProjectToString() {
+        // Exports the current project as a string that can be imported later by loadProjectFromString.
+        // This writes the value of <CURRENT_FILE_VERSION> <stringified json of CURRENT_PROJECT>.
+        
+        return CURRENT_FILE_VERSION + " " + JSON.stringify(CURRENT_PROJECT);
+    }
+    
+    static loadProjectFromString(string) {
+        // Loads the given string and overwrites the current project without warning.
+        // This expects the format to be as declared in writeProjectToString.
+        // TODO: Add backwards compatibility.
+        // TODO: Verify that data is formatted correctly.
+        // This will throw an error if the version is wrong.
+        // This will emit events for all removed and added components.
+        
+        // TODO: Change all the little events to one big project reloaded event - create a flow in the readme for this. All listeners (e.g. SelectionManager) to this event should not emit following events of their own
+        
+        // Split version and json
+        const splitI = string.indexOf(" ");
+        const version = string.slice(0, splitI);
+        const json = string.slice(splitI + 1);  // +1 to skip space
+        
+        // Check the version is correct
+        if (version !== CURRENT_FILE_VERSION) throw "Unsupported project version";
+        
+        // Clear current components
+        Array.from(this.getComponentIds()).map(id => this.removeComponent(id));
+        
+        // Parse and save the json
+        CURRENT_PROJECT = JSON.parse(json);
+        
+        // Send events for each added component
+        Array.from(this.getComponentIds()).map(id => this.dispatchComponentAdded(id));
     }
 }
 

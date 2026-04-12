@@ -35,6 +35,7 @@
         import {Symbols} from "./symbols.js";
         import {attachEditor} from "./editor.js";
         import {attachRendered} from "./rendered.js";
+        import {nodeToPDF, loadMetaFromPDFString} from "./print.js";
         
         // DEBUG STUFF -------------
         window.CM = ComponentManager;
@@ -275,7 +276,6 @@
 
 
 
-
         // BROKEN: ---------------------------------
         window.saveProject = function() {
             // Saves the project as a PDF with all the content, and with some metadata to allow the pdf to be imported back into the program.
@@ -304,17 +304,12 @@
                 
                     // Load result into files.js
                     const binaryString = e.target.result;
-                    try {
-                        loadMetaFromPDFString(binaryString);
-                    } catch (err) {
-                        alert("Failed to load file: " + err);
-                    }
+                    //try { // TODO: Catch this error
+                        loadMetaFromPDFString(binaryString);  // This will inform the ComponentManager what to do
+                    //} catch (err) {
+                    //    alert("Failed to load file: " + err);
+                    //}
                     
-                    // Clear old rendered data and re-render new
-                    const componentContainer = document.getElementById("component-container");
-                    Array.from(componentContainer.children).forEach(c => c.remove());  // Remove all children
-                    setEditComponent("", "");  // Edit nothing
-                    listComponents().forEach(args => renderComponent(args[0], args[1]));
                     
                 };
                 

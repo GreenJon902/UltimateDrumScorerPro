@@ -1,7 +1,7 @@
 // Apparently converting HTML that contains SVGs to PDFs doesn't exist... So I've written it myself.
 // Also, respectfully, jsPDF, I don't come from js so I don't know the norm, but yo crap is a mess.
 
-import {loadProjectFromString, writeProjectToString} from "./files.js";
+import {ComponentManager} from "./componentManager.js";
 
 
 const MM_TO_PT = 2.83465;
@@ -19,10 +19,11 @@ export function nodeToPDF(node, pdfFileName) {
     const rootRect = node.getBoundingClientRect();
     const posConvert = (node) => {
         const rect = node.getBoundingClientRect();
+        const borderWidth = parseFloat(getComputedStyle(node).borderWidth);  // Account for border width
         
         return {
-            x: (rect.x - rootRect.x) / rootRect.width * 210,
-            y: (rect.y - rootRect.y) / rootRect.height * 297,
+            x: (rect.x - rootRect.x + borderWidth) / rootRect.width * 210,
+            y: (rect.y - rootRect.y + borderWidth) / rootRect.height * 297,
             w: rect.width / rootRect.width * 210,
             h: rect.height / rootRect.height * 297
         };
@@ -39,10 +40,10 @@ export function nodeToPDF(node, pdfFileName) {
 }
 
 function addMeta(doc) {
-    // Attaches the result of writeProjectToString to the doc under the namespace "https://github.com/GreenJon902/UltimateDrumScorerPro".
+    // Attaches the result of ComponentManager.writeProjectToString to the doc under the namespace "https://github.com/GreenJon902/UltimateDrumScorerPro".
     
     // Get and escape all data
-    const stringData = writeProjectToString();
+    const stringData = ComponentManager.writeProjectToString();
     const safeStringData = stringData.replace(/[<>&'"]/g, c => {  
         switch (c) {
             case '<': return '&lt;';
@@ -58,7 +59,7 @@ function addMeta(doc) {
 }
 
 export function loadMetaFromPDFString(pdfString) {
-    // Loads data written to the pdf by addMeta, this will forward it to loadProjectFromString.
+    // Loads data written to the pdf by addMeta, this will forward it to ComponentManager.loadProjectFromString.
     // This throws the error string "Malformed PDF" if it fails.
 
     // Get and unescape data
@@ -75,7 +76,7 @@ export function loadMetaFromPDFString(pdfString) {
     stringData = stringData.replace(/&quot;/g, '"');
     
     // Load as current project
-    loadProjectFromString(stringData);
+    ComponentManager.loadProjectFromString(stringData);
 }
 
 function pushTranslation(doc, x, y) {
@@ -96,7 +97,7 @@ function pushScale(doc, x, y) {
 
 function addNode(doc, node, posConvert) {
     // Add the given node to the document, where width and height are is the size of the whole document.
-    //      posConvert(node|[int, int, int, int]) => {x, y, w, h} - Convert the locations of the given node / the [x, y, w, h] to pdf metrics.
+    //      posConvert(node|[int, int, int, int]) => {x, y, w, h} - Converts the locations of the given node / the [x, y, w, h] to pdf metrics.
     
     // Save state
     doc.saveGraphicsState();  // We do this for two reasons: a) to allow matrixes to be popped. b) to reduce the impact of changing styling settings (like stroke width and fill)
@@ -106,10 +107,15 @@ function addNode(doc, node, posConvert) {
 
     // If there is a transform then apply it
     if (node.getAttribute("transform") !== null) {
-        const transforms = Array.from(node.getAttribute("transform").matchAll(/([a-z]+)\(([[0-9. -]+]*)\)/g));
+        const transforms = Array.from(
+            node.getAttribute("transform")
+                .replace(/(?:, *)|(?: +)/, " ")  // Commas or spaces work, so just convert commas to spaces to simplify the regex
+                .matchAll(/([a-z]+)\(([[0-9. -]+]*)\)/g));
+        
         for (let i=0; i<transforms.length; i++) {
             const transform = transforms[i];
             const args = transform[2].split(" ");
+            console.log(transform, args);
             if (transform[1] === "translate") {
                 const x = parseFloat(args[0]);
                 const y = parseFloat(args[1]);
@@ -126,7 +132,7 @@ function addNode(doc, node, posConvert) {
 
     // Handle the node
     const nodeName = node.nodeName.toUpperCase();
-    if (nodeName === "DIV") {  // Run for each child
+    if (nodeName === "DIV" || nodeName === "G") {  // Run for each child
         Array.from(node.children).forEach(childNode => addNode(doc, childNode, posConvert));
     } else if (nodeName === "SVG") {  // Translate, then run for each child
         // Account for left and top of svg
@@ -177,6 +183,22 @@ function addNode(doc, node, posConvert) {
                 doc.line(currentX, currentY, currentX + currentArgs[0], currentY + currentArgs[1]);
                 currentX += currentArgs[0];
                 currentY += currentArgs[1];      
+            } else if (c === "A") {  // Absolute arc
+                 
+                // PDF doesn't support arc, so we convert to a bezier
+                const bezier = arcToBezier(currentX, currentY, currentArgs[0], currentArgs[1], currentArgs[2], currentArgs[3], currentArgs[4], currentArgs[5], currentArgs[6]);         
+                // Convert bezier to the format doc.path uses
+                const path = [{ op: "m", c: [currentX, currentY] }];  // Move to current coordinates
+                for (let bezI = 0; bezI < bezier.length / 6; bezI++) {
+                    path.push({ op: "c", c: bezier.slice(bezI * 6, bezI * 6 + 6) });  // Add the 6 control points of the bezier
+                }
+                
+                // Draw and move currentX, currentY
+                doc.path(path, "S");
+                doc.line(0, 0, 0, 0);  // For some reason the path doesn't draw correctly without this
+                currentX = currentArgs[5];
+                currentY = currentArgs[6];
+                
             } else if (c === "Q") {  // Absolute bezier
                 doc.lines([[0, 0, currentArgs[0] - currentX, currentArgs[1] - currentY, currentArgs[2] - currentX, currentArgs[3] - currentY]], currentX, currentY);  // Subtract currentX and currentY as points are all relative to initial coords (currentX, currentY)
                 currentX = currentArgs[2];
@@ -196,7 +218,7 @@ function addNode(doc, node, posConvert) {
                   
         }
     } else if (nodeName === "USE") {  // Translate, then run for children of def
-        Array.from(document.querySelector(node.getAttribute("href")).children).forEach(childNode => addNode(doc, childNode, posConvert));
+        addNode(doc, document.querySelector(node.getAttribute("href")), posConvert);
     } else if (nodeName === "CIRCLE") {  // Just draw a circle, with/without a fill as required
         // Set up styling
         const computedStyle = getComputedStyle(node);
@@ -222,6 +244,8 @@ function addNode(doc, node, posConvert) {
         // Draw text
         doc.text(node.innerHTML, x, y, {align: "center", baseline: "middle"});
         
+    } else if (nodeName === "DEFS") {
+        // We skip defs because these are added in-place when a "USE" node us handled
     } else {
         throw "Unexpected node type";
     }
@@ -271,4 +295,107 @@ function getDeclaredCSSProperty(element, propertyName) {
 
     // Not found so return null
     return null;
+}
+
+function arcToBezier(x1, y1, rx, ry, angle, large_arc_flag, sweep_flag, x2, y2, recursive) {
+    // THIS IS NOT MY CODE, THIS IS TAKEN FROM:
+    //      https://github.com/DmitryBaranovskiy/raphael/blob/ea2562a6290c0a158c3db09f5c55042d6870c17c/dev/raphael.core.js#L1837
+    // The recursive parameter is not given, it is used internally.
+    // This returns absolute coordinates for control points in groups of six:
+    //      So [x11, y11, x12, y12, x13, y13, x21, y21, 22, y22, x23, y23, ...]
+    
+    const math = Math;
+    const abs = Math.abs;
+    const PI = math.PI;
+    const a2c = arcToBezier;
+    const concat = "concat";
+    const split = "split";
+
+    // for more information of where this math came from visit:
+    // http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
+    var _120 = PI * 120 / 180,
+        rad = PI / 180 * (+angle || 0),
+        res = [],
+        xy,
+        rotate = /*cacher*/(function (x, y, rad) {
+            var X = x * math.cos(rad) - y * math.sin(rad),
+                Y = x * math.sin(rad) + y * math.cos(rad);
+            return {x: X, y: Y};
+        });
+    if (!recursive) {
+        xy = rotate(x1, y1, -rad);
+        x1 = xy.x;
+        y1 = xy.y;
+        xy = rotate(x2, y2, -rad);
+        x2 = xy.x;
+        y2 = xy.y;
+        var cos = math.cos(PI / 180 * angle),
+            sin = math.sin(PI / 180 * angle),
+            x = (x1 - x2) / 2,
+            y = (y1 - y2) / 2;
+        var h = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+        if (h > 1) {
+            h = math.sqrt(h);
+            rx = h * rx;
+            ry = h * ry;
+        }
+        var rx2 = rx * rx,
+            ry2 = ry * ry,
+            k = (large_arc_flag == sweep_flag ? -1 : 1) *
+                math.sqrt(abs((rx2 * ry2 - rx2 * y * y - ry2 * x * x) / (rx2 * y * y + ry2 * x * x))),
+            cx = k * rx * y / ry + (x1 + x2) / 2,
+            cy = k * -ry * x / rx + (y1 + y2) / 2,
+            f1 = math.asin(((y1 - cy) / ry).toFixed(9)),
+            f2 = math.asin(((y2 - cy) / ry).toFixed(9));
+
+        f1 = x1 < cx ? PI - f1 : f1;
+        f2 = x2 < cx ? PI - f2 : f2;
+        f1 < 0 && (f1 = PI * 2 + f1);
+        f2 < 0 && (f2 = PI * 2 + f2);
+        if (sweep_flag && f1 > f2) {
+            f1 = f1 - PI * 2;
+        }
+        if (!sweep_flag && f2 > f1) {
+            f2 = f2 - PI * 2;
+        }
+    } else {
+        f1 = recursive[0];
+        f2 = recursive[1];
+        cx = recursive[2];
+        cy = recursive[3];
+    }
+    var df = f2 - f1;
+    if (abs(df) > _120) {
+        var f2old = f2,
+            x2old = x2,
+            y2old = y2;
+        f2 = f1 + _120 * (sweep_flag && f2 > f1 ? 1 : -1);
+        x2 = cx + rx * math.cos(f2);
+        y2 = cy + ry * math.sin(f2);
+        res = a2c(x2, y2, rx, ry, angle, 0, sweep_flag, x2old, y2old, [f2, f2old, cx, cy]);
+    }
+    df = f2 - f1;
+    var c1 = math.cos(f1),
+        s1 = math.sin(f1),
+        c2 = math.cos(f2),
+        s2 = math.sin(f2),
+        t = math.tan(df / 4),
+        hx = 4 / 3 * rx * t,
+        hy = 4 / 3 * ry * t,
+        m1 = [x1, y1],
+        m2 = [x1 + hx * s1, y1 - hy * c1],
+        m3 = [x2 + hx * s2, y2 - hy * c2],
+        m4 = [x2, y2];
+    m2[0] = 2 * m1[0] - m2[0];
+    m2[1] = 2 * m1[1] - m2[1];
+    if (recursive) {
+        return [m2, m3, m4][concat](res);
+    } else {
+        res = [m2, m3, m4][concat](res).join()[split](",");
+        var newres = [];
+        for (var i = 0, ii = res.length; i < ii; i++) {
+            newres[i] = i % 2 ? rotate(res[i - 1], res[i], rad).y : rotate(res[i], res[i + 1], rad).x;
+        }
+        return newres;
+    }
 }
