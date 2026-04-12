@@ -33,7 +33,7 @@ export function attachRendered(componentContainer) {
         onComponentAdded: partial(createInitialGenericComponent, componentContainer),
         onBeforeComponentRemoved: id => {
             // Save all ids of components in the group that the given component is in (if applicable)
-            if (ComponentManager.isInVertGroup(id)) 
+            if (ComponentManager.getComponentType(id) === "score-component" && ComponentManager.isInVertGroup(id)) 
                 new Array(...ComponentManager.getVertGroup(id)).forEach(linkedId => scoreComponentsToBeUpdatedOnComponentRemoved.add(linkedId));
         },
         onComponentRemoved: id => {

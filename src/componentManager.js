@@ -143,7 +143,7 @@ export class ComponentManager {
 
         if (!this.componentExists(componentId)) throw "Component " + componentId + " does not exist";
         this.dispatchBeforeComponentRemoved(componentId);
-        this.removeFromVertGroup(true, true, componentId);  // Silently drop from vert group
+        if (this.getComponentType(componentId) === "score-component") this.removeFromVertGroup(false, true, componentId);  // Silently drop from vert group
         delete CURRENT_PROJECT["components"][componentId];
         this.dispatchComponentRemoved(componentId);
     }
