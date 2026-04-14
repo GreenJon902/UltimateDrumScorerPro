@@ -139,7 +139,7 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
 
     </body>
     <script type="module">
-        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt, getDrumSize, getDecorationSize} from "../src/scoreComponentUtils/drawUtils.js";
+        import {drawRest, getRestSize, drawDots, getDotsSize, drawBeams, getBeamSize, drawContract, getContractSize, drawFlags, getFlagSize, drawDrumAt, drawDecorationAt, getDrumSize, getDecorationSize, drawTimeSignature, getTimeSignatureSize} from "../src/scoreComponentUtils/drawUtils.js";
         import {_exportedForTesting} from "../src/scoreComponentUtils/decode.js";
         import {Symbols} from "../src/symbols.js";
 
@@ -349,6 +349,14 @@ Just a node about scope: This can be considered akin to a unit test. I.E.: the p
         [0, 1, 2].forEach(flags => {  // flags == 0 is a stem, a flag instruction is used for stems so that makes sense to test here
             [0, 1, 2, 10].forEach(dots => {
                 createSvg("non-symbol-container", drawFlags, getFlagSize, [flags, dots, 0, 0], [flags, dots]);
+            });
+        });
+        createBr("non-symbol-container");
+        
+        // Visualise time-signatures
+        [1, 2, 5, 9, 12, 234].forEach(numerator => {  
+            [5, 6, 9, 52, 102].forEach(denomenator => {
+                createSvg("non-symbol-container", drawTimeSignature, getTimeSignatureSize, [numerator, denomenator, 0, 0], [numerator, denomenator]);
             });
         });
         createBr("non-symbol-container");

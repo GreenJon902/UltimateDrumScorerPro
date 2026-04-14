@@ -7,7 +7,7 @@
 //
 
 import {RenderInstruction} from "./compile.js";
-import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getStemSize, getContractSize, getDrumSize, getDecorationSize} from "./drawUtils.js";
+import {getRestSize, getFlagSize, getDotsSize, getBeamSize, getStemSize, getContractSize, getDrumSize, getDecorationSize, getTimeSignatureSize} from "./drawUtils.js";
 import {Symbols} from "../symbols.js";
 
 function getHeight(sizeInfo) {
@@ -227,6 +227,15 @@ function calculateInstructionX(instr, trackers, rhythmLengthHint) {
         newDrumSpaceRight = newX + restSize.sizeRight + LINE_X_PADDING;  // Rests are drawn in drum-space
         newRyhthmRight = lastRyhthmRight + LINE_X_PADDING;  // Rests are below beams so don't impact them
         newHintedRight = newX - restSize.sizeLeft + instr.length * rhythmLengthHint;  // We measure from the left edge of the rest
+        
+
+    } else if (instr.type === RenderInstruction.TIME_SIGNATURE) {
+        const timeSignatureSize = getTimeSignatureSize(instr.numerator, instr.denomenator);
+        
+        newX = lastDrumSpaceRight + timeSignatureSize.sizeLeft;
+        newDrumSpaceRight = newX + timeSignatureSize.sizeRight;
+        newRyhthmRight = lastRyhthmRight;  // No effect
+        newHintedRight = lastHintedRight;
 
         
     } else {
@@ -242,7 +251,7 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
     // instructions: Array<RenderInstruction>
     // vertGroupLinkedComponentInstructions: Set<Array<RenderInstruction>>
     // 
-    // Calculates the drumYs, restCenterYs, contractCenterYs, decorationCenterYs, decorationHeights, drumCenterY and stemTopYs that are returned by calculateScoreComponentSpacing.
+    // Calculates the drumYs, restCenterYs, contractCenterYs, decorationCenterYs, decorationHeights, drumCenterY, timeSignatureYs and stemTopYs that are returned by calculateScoreComponentSpacing.
     // While this does not return heights for decorations, it does take their heights into account.
     
     // Calculate prerequisite data ---
@@ -338,9 +347,15 @@ function calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedC
             .filter(instr => instr.type === RenderInstruction.DECORATION)
             .map(instr => computeDecorationHeight(instr.decoration, drumRestBottom, drumRestTop, stemTop, contractTop));  
     
+
+    // Compute timeSignatureYs ---
+    // Just center them in drum-space
+    const timeSignatureYs = instructions
+            .filter(instr => instr.type === RenderInstruction.TIME_SIGNATURE)
+            .map(instr => (drumRestTop + drumRestBottom) / 2);
     
 
-    return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
+    return {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY, timeSignatureYs};
 }
 
 function computeDecorationY(decoId, drumBottom, drumTop, beamTop, contractTop) {
@@ -453,14 +468,15 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     // The rhythmLengthHint is used as a minimum width for the bar. That's to say, should it be possible, horizontal space will be added between groups. This should follow the RenderInstruction.length.
     // 
     // It returns {
-    //     instructionXs: [float],  // The x-coordinate of a stem, or the right edge of a rest or decoration, or the location of a contract hook (when required).
+    //     instructionXs: [float],  // The x-coordinate of a stem, or the right edge of a rest or decoration, or the x-coordinate of a time signature, or the location of a contract hook (when required).
     //     drumYs: {str: float},  // A map from drum-id to anchor (the location where the symbol attaches to the stem) y-level.
     //     restCenterYs: [float],  // The y line that rests should be centred on. The index corresponds to the number of previous REST instructions.
     //     contractCenterYs: [float],  // The y line that contracts should be centred on. The index corresponds to the number of previous CONTRACT_START instructions.
     //     stemTopYs: [float],  // The y-level that should be the top of each stem. The index corresponds to the number of previous stems drawn.
     //     decorationCenterYs: [float],  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
     //     drumCenterY: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
-    //     decorationHeights: [float]  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
+    //     decorationHeights: [float],  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
+    //     timeSignatureYs: [float]  // The y-level that time-signatures should be centred on. The index corresponds to the number of previous TIME_SIGNATURE instructions.
     // }
     
     // TODO: stemTopYs inside of groups is unintuative. What if we want to have a beam at an angle
@@ -468,9 +484,9 @@ export function calculateScoreComponentSpacing(instructions, vertGroupLinkedComp
     //          Or: Calculate the whole slant here (does that really make sense though?)
 
     const instructionXs = getInstructionXs(instructions, rhythmLengthHint);
-    const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
+    const {drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY, timeSignatureYs} = calculateRestContractStemDeorationDrumYs(instructions, vertGroupLinkedComponentInstructions);
 
-    return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY};
+    return {instructionXs, drumYs, restCenterYs, contractCenterYs, stemTopYs, decorationCenterYs, decorationHeights, drumCenterY, timeSignatureYs};
 }
 
 

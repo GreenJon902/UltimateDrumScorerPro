@@ -30,6 +30,9 @@ export class RenderInstruction {
     //     CONTRACT-END:
     //     DECORATION:
     //         - decoration
+    //     TIME_SIGNATURE:
+    //         - numerator
+    //         - denomenator
     // 
     // drums: A string array of the (drum) symbolIDs to draw.
     // full-beams: The number (non-zero and positive) of full beams to draw between this instruction and the next instruction (with a stem, full beams go over rests).
@@ -41,13 +44,14 @@ export class RenderInstruction {
     // hooks: Should hooks (the lines that show where a contraction has effect) be drawn. This is true or false.
     // length: The fraction of a beat that this group inhabits (e.g. a semiquaver is 0.25). This is used as metadata for stylised spacing when drawing, so need not be technically accurate. It should be non-negative though.
     // decoration:  The (decoration) symbolID of the decoration to draw. 
+    // numerator/denomenator: The top and bottom numbers of the time-signature to draw.
     // 
     // BEAMs connect to the next BEAM or BEAM-END, so must be followed by at least one of these.
     // A BEAM-END must follow a BEAM.
     // FLAGs stand alone so should not follow an un-ended BEAM. This means crotchets should be represented using a FLAG with flags=0.
     // Each CONTRACT-START must be closed by a CONTRACT-END, and must be closed before another CONTRACT can start.
     // RESTS and CONTRACTING-START/END can come anywhere between BEAMs and FLAGs.
-    // DECORATIONs cannot come within unended beams.
+    // DECORATIONs and TIME_SIGNATUREs cannot come within unended beams.
     // 
     // CONTRACT beams are for contracting-ratios, they say notes inside this beam (of the length given inside ratio) should be contracted so that they last the length of a single beat.
     // 
@@ -62,6 +66,7 @@ export class RenderInstruction {
     static get CONTRACT_START() {return "CONTRACT_START";}
     static get CONTRACT_END() {return "CONTRACT_END";}
     static get DECORATION() {return "DECORATION";}
+    static get TIME_SIGNATURE() {return "TIME_SIGNATURE";}
 
     constructor(type, ...args) {
         // Type should be the value in BEAM, BEAM_END...
@@ -94,6 +99,9 @@ export class RenderInstruction {
             // No args taken
         } else if (type === RenderInstruction.DECORATION) {
             this.decoration = args[0];
+        } else if (type === RenderInstruction.TIME_SIGNATURE) {
+            this.numerator = args[0];
+            this.denomenator = args[1];
         } else {
             throw "Unkown type " + type;
         }
@@ -344,6 +352,11 @@ export function compileScoreComponent(componentId) {
     // Left-Decoration
     const leftDeco = ComponentManager.getComponentLeftDecoration(componentId);
     if (leftDeco !== null) instructions.push(new RenderInstruction(RenderInstruction.DECORATION, leftDeco));
+    
+    // TIme-signature
+    instructions.push(new RenderInstruction(RenderInstruction.TIME_SIGNATURE, 
+                                            ComponentManager.getComponentBeatCount(componentId),
+                                            ComponentManager.getComponentTimeSignatureDenomenator(componentId)));
 
     // Convert actual note information to instructions
     const beatCount = ComponentManager.getComponentBeatCount(componentId)

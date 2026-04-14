@@ -1,4 +1,4 @@
-import {drawDrumAt, drawDecorationAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract} from "./drawUtils.js";
+import {drawDrumAt, drawDecorationAt, drawStem, drawBeams, drawFlags, drawDots, drawRest, drawContract, drawTimeSignature} from "./drawUtils.js";
 import {RenderInstruction} from "./compile.js";
 
 
@@ -6,14 +6,15 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     // svg: SVG
     // instructions: Array<RenderInstruction>
     // spacing: {
-    //     instructionXs: [float],  // The x-coordinate of a stem, or the right edge of a rest or decoration, or the location of a contract hook (when required).
+    //     instructionXs: [float],  // The x-coordinate of a stem, or the right edge of a rest or decoration, x-coordinate of a time-signature, or the location of a contract hook (when required).
     //     drumYs: {str: float},  // A map from drum-id to anchor (the location where the symbol attaches to the stem) y-level.
     //     restCenterYs: [float],  // The y line that rests should be centred on. The index corresponds to the number of previous REST instructions.
     //     contractCenterYs: [float],  // The y line that contracts should be centred on. The index corresponds to the number of previous CONTRACT_START instructions.
     //     stemTopYs: [float],  // The y-level that should be the top of each stem. The index corresponds to the number of previous stems drawn.
     //     decorationCenterYs: [float],  // The y-level that decorations should be centres on. The index corresponds to the number of previous DECORATION instructions.
     //     drumCenterYs: float,  // The y-level that the drums are centered on (this includes size of the drums, not just the anchors).
-    //     decorationHeights: [float]  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
+    //     decorationHeights: [float],  // The decoration heights. This height does not include the stroke-width on the boundary. The index corresponds to the number of previous DECORATION instructions.
+    //     timeSignatureYs: [float]  // The y-level that time-signatures should be centred on. The index corresponds to the number of previous TIME_SIGNATURE instructions.
     // }
     //
     // Renders the given instructions to the given svg using the given spacing data.
@@ -22,6 +23,7 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
     let prevDecorationCount = 0;  // The number of decorations we've already drawn
     let prevRestCount = 0;  // The number of rests we've already drawn
     let prevContractCount = 0;  // The number of contracts we've already drawn
+    let prevTimeSigCount = 0;  // The number of time signatures we've already drawn
     for (let instrI = 0; instrI < instructions.length; instrI++) {
         const instr = instructions[instrI];
 
@@ -79,6 +81,12 @@ export function renderScoreComponentFromInstructionsAndSpacing(svg, instructions
             const contractY = spacing.contractCenterYs[prevContractCount];
             drawContract(svg, svg, instr.ratio, instr.hooks, contractStartX, contractEndX, contractY);
             prevContractCount++;
+        }
+        
+        // Draw time signature ---
+        if (instr.type === RenderInstruction.TIME_SIGNATURE) {
+            drawTimeSignature(svg, svg, instr.numerator, instr.denomenator, spacing.instructionXs[instrI], spacing.timeSignatureYs[prevTimeSigCount]);
+            prevTimeSigCount++;
         }
     }
 }

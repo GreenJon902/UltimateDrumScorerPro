@@ -399,3 +399,28 @@ export function getStemSize() {
     
     return {sizeLeft: SR, sizeRight: SR};
 }
+
+export function getTimeSignatureSize(numerator, denomenator) {
+    // Get the rendered size of a time-signature with the given top and bottom numbers.
+    // The anchorY is the y-level between the numbers.
+    // Returns {size_up, size_down, size_left, size_right};
+    
+    // For now we just place both on top of eachother
+    const numSize = calculateRenderedTextSize(createCenteredText, numerator);
+    const denSize = calculateRenderedTextSize(createCenteredText, denomenator);
+    return {sizeUp: (numSize.sizeUp + numSize.sizeDown) * 0.6, 
+            sizeDown: (denSize.sizeUp + denSize.sizeDown) * 0.6,
+            sizeLeft: Math.max(numSize.sizeLeft, denSize.sizeLeft),
+            sizeRight: Math.max(numSize.sizeRight, denSize.sizeRight)};
+}
+export function drawTimeSignature(svg, container, numerator, denomenator, x, y) {
+    // Draws the given time-signature to the container (which is a child or is the svg).
+    // The anchorY is the y-level between the numbers.
+    // The given coordinates are given to createCenteredText.
+    
+    // For now we just place both on top of eachother
+    const numSize = calculateRenderedTextSize(createCenteredText, numerator);
+    const denSize = calculateRenderedTextSize(createCenteredText, denomenator);
+    createCenteredText(svg, container, numerator, x, y - numSize.sizeDown * 0.6);  // Multiply by some factor to put text closer together
+    createCenteredText(svg, container, denomenator, x, y + denSize.sizeUp * 0.6);
+}

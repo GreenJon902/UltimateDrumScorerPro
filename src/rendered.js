@@ -52,7 +52,7 @@ export function attachRendered(componentContainer) {
         onComponentFontSizeChanged: partial(updateTextComponent, componentContainer, "fontSize"),
         // Bind events for score-components changes
         onComponentDrumToggled: pusc,
-        onComponentTimeSignatureDenomenatorChanged: null,  // This has no effect at the moment  // TODO: This
+        onComponentTimeSignatureDenomenatorChanged: pusc,  // TODO: Properly implement denomenators
         onComponentRhythmLengthHintChanged: pusc,  
         onComponentLeftDecorationChanged: pusc,
         onComponentRightDecorationChanged: pusc,
@@ -68,8 +68,6 @@ export function attachRendered(componentContainer) {
     });
 
 
-    
-    
     // Bind selection events
     SelectionManager.onSelectionStateChanged((componentId, selectionState) => updateSelectionState(componentContainer, componentId, selectionState));
     
@@ -77,6 +75,9 @@ export function attachRendered(componentContainer) {
     DragManager.onDragStart((componentIds) => prepDrag(componentContainer, componentIds));
     DragManager.onDragMove((componentIds, totalDeltaX, totalDeltaY) => updateDrag(componentContainer, componentIds, totalDeltaX, totalDeltaY));
     DragManager.onDragEnd((componentIds) => removeDrag(componentContainer, componentIds));
+    
+
+    
 }
 
 function prepDrag(componentContainer, componentIds) {
