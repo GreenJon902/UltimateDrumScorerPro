@@ -8,6 +8,7 @@
 
 import {attachDefinition, hasDefinition, createPath, createCenteredText, createGroup, createCircle, createUse, translate} from "./svgUtils.js";
 import {Symbols, SvgInstruction, splitSymbolId} from "../symbols.js";
+import {calculateRenderedTextSize} from "./textUtils.js";
 
 const SW = 1;  // Stroke width is 1mm
 const SR = SW / 2;  // Stroke radius / distance of edge of line from centre of line
@@ -170,15 +171,16 @@ export function getBeamSize(fullBeams, brokenBeams, dots) {
 export function drawContract(svg, container, ratio, hooks, startX, endX, centerY) {
     // Draws the given contract to the container.
     
-    const textWidth = 5;  // TODO: This properly
-    const textHeight = 5;  // TODO: This properly
+    const size = calculateRenderedTextSize(createCenteredText, ratio);
+    const textWidth = size.sizeLeft + size.sizeRight;
+    const textHeight = size.sizeDown + size.sizeUp;
     
     const centerX = (startX + endX) / 2;
-    const height = Math.max(textHeight, 2 * 2);  // Hook height * 2 = 2 * 2
+    const height = Math.max(textHeight, 2);  // Hook height is 2
     
     // Create hooks
     if (hooks) {
-        createPath(svg, container, `M${startX} ${centerY + 2} l0 -2 L${centerX - textWidth / 2} ${centerY} M${centerX + textWidth / 2} ${centerY} L${endX} ${centerY} l0 2`);
+        createPath(svg, container, `M${startX} ${centerY + 2} l0 -2 L${centerX - textWidth / 2 - 1} ${centerY} M${centerX + textWidth / 2 + 1} ${centerY} L${endX} ${centerY} l0 2`);  // Add and subtract one to the inner x-coordinates as padding
     }
     
     // Create text
@@ -188,8 +190,11 @@ export function getContractSize(ratio, hooks) {
     // Calculates the minimum width, and the sizeUp and sizeDown, of a contract.
     // returns {minWidth: float, sizeUp: float, sizeDown: float}.
 
-    // TODO: This properly
-    return {minWidth: 5, sizeUp: 2.5, sizeDown: 2.5};
+    const size = calculateRenderedTextSize(createCenteredText, ratio);
+    return {minWidth: 5 + size.sizeLeft + size.sizeRight, 
+            sizeUp: size.sizeUp, 
+            sizeDown: Math.max(2.5, size.sizeDown)
+    };
 }
 
 export function drawFlags(svg, container, flags, dots, anchorX, anchorY) {

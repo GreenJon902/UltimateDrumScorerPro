@@ -112,6 +112,7 @@ export function translate(x, y) {
 
 export function createCenteredText(svg, container, text, centerX, centerY) {
     // Creates a text node in the container with the given text that is centered on (centerX, centerY).
+    // This will return the created node, as well as adding it.
     
     const node = document.createElementNS("http://www.w3.org/2000/svg", "text");
     node.setAttribute("x", centerX);
@@ -119,8 +120,10 @@ export function createCenteredText(svg, container, text, centerX, centerY) {
     node.setAttribute("dominant-baseline", "middle");  // Center in Y
     node.setAttribute("text-anchor", "middle");  // Center in X
     node.textContent = text;
-    node.style.fontSize = "5px";
+    node.style.fontSize = "5px";  // Use px as that is scaled to mm due to the SVG viewbox size
     node.style.fontStyle = "italic";
     node.style.fontWeight = "bold";
     container.appendChild(node);
+    
+    return node;
 }
