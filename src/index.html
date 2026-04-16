@@ -82,6 +82,34 @@
         ComponentManager.setComponentY("component-1", 30);
         ComponentManager.setComponentY("component-2", 40);
 
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "crash");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "crash-second");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "crash-third");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "trash");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "ride");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "hi-hat");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "high-rack-tom");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "low-rack-tom");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "snare");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "high-floor-tom");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "low-floor-tom");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "kick");
+        ComponentManager.toggleComponentDrumEnabledState("component-1", "hi-hat-kick");
+        ComponentManager.addBeats("component-1", 5, 4);
+        ComponentManager.toggleComponentDrum("component-1", 0, 0, "crash");
+        ComponentManager.toggleComponentDrum("component-1", 0, 1, "crash-second");
+        ComponentManager.toggleComponentDrum("component-1", 1, 0, "crash-third");
+        ComponentManager.toggleComponentDrum("component-1", 1, 1, "trash");
+        ComponentManager.toggleComponentDrum("component-1", 2, 0, "ride");
+        ComponentManager.toggleComponentDrum("component-1", 2, 1, "hi-hat");
+        ComponentManager.toggleComponentDrum("component-1", 3, 0, "high-rack-tom");
+        ComponentManager.toggleComponentDrum("component-1", 3, 1, "low-rack-tom");
+        ComponentManager.toggleComponentDrum("component-1", 4, 0, "snare");
+        ComponentManager.toggleComponentDrum("component-1", 4, 1, "high-floor-tom");
+        ComponentManager.toggleComponentDrum("component-1", 4, 2, "low-floor-tom");
+        ComponentManager.toggleComponentDrum("component-1", 4, 3, "kick");
+        ComponentManager.toggleComponentDrum("component-1", 4, 4, "hi-hat-kick");
+
         ComponentManager.createEmptyComponent("score-component");
         ComponentManager.setComponentLeftDecoration("component-3", "start");
         ComponentManager.setComponentRightDecoration("component-3", "bar-end");

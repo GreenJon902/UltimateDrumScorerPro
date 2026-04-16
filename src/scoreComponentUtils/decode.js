@@ -85,6 +85,7 @@ function getRelativeDrumYs(vertGroupLinkedComponentInstructions) {
             // Check Symbol-constraints between iid and jid
             const constraintMinDist = Symbols.getMinVertDistBetweenDrums(jid, iid);  // We know already that jid is "above" iid, so this will not crash
             if (constraintMinDist > currentDist) {
+                console.log(jid, iid, constraintMinDist, currentDist, distRequirement);
                 distRequirement = constraintMinDist;
             }
             
