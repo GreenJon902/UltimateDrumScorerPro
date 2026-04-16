@@ -502,9 +502,21 @@ function createEnabledDrumsOptions(container, componentId) {
         table.appendChild(tr);
     });
     
+    // Create the search-box
+    const searchBox = document.createElement("input");
+    searchBox.placeholder = "Search..."
+    searchBox.oninput = () => {
+        Array.from(table.children).forEach(tr => {
+            // Remove spaces, dashes and underscores to make searching easier
+            const value = searchBox.value.replaceAll(" ", "").replaceAll("-", "").replaceAll("_", "")
+            tr.style.display = (value === "" || tr.children[0].children[0].textContent.replaceAll("-", "").replaceAll("_", "").includes(value)) ? "table-row" : "none"; 
+        });
+    }
+    
     // Construct node heirarchy
     const div = document.createElement("div");
     createSpan(div, "Enabled Drums:");
+    div.appendChild(searchBox);
     div.appendChild(table);
     container.appendChild(div);
     return div;

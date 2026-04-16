@@ -138,7 +138,7 @@ body {
 	border-top-right-radius: 0.5ch;
 }
 
-#editor-pane > div div:has(> input, > select) {
+#editor-pane > div div:has(> input, > select):not(:has(> table)) {
     display: flex;
 }
 
